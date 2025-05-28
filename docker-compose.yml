@@ -1,0 +1,53 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fyndora
+    container_name: fyndora-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=fyndora.settings
+      - DEBUG=${DEBUG:-0}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      - POSTGRES_DB=${POSTGRES_DB:-fyndora}
+      - POSTGRES_USER=${POSTGRES_USER:-fyndora}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST:-db}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: fyndora-db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-fyndora}
+      - POSTGRES_USER=${POSTGRES_USER:-fyndora}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: fyndora-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:

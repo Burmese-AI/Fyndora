@@ -1,0 +1,18 @@
+services:
+  web:
+    environment:
+      - DEBUG=${DEBUG:-1}
+      - DJANGO_SETTINGS_MODULE=fyndora.settings
+    volumes:
+      - .:/app/src:ro
+    ports:
+      - "8000:8000"
+    command: [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+
+  db:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"

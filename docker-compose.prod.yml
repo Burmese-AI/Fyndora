@@ -1,0 +1,28 @@
+services:
+  web:
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=fyndora.settings
+      - POSTGRES_DB=${POSTGRES_DB:-fyndora}
+      - POSTGRES_USER=${POSTGRES_USER:-fyndora}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST:-db}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+
+  db:
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-fyndora}
+      - POSTGRES_USER=${POSTGRES_USER:-fyndora}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: unless-stopped
+    # Don't expose ports in production
+
+  redis:
+    restart: unless-stopped
+    # Don't expose ports in production 

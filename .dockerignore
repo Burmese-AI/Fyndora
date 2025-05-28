@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Development
+.git/
+.gitignore
+.env
+.env.*
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+*.sublime-*
+
+# Project specific
+*.bak
+*.tmp
+*.temp
+.python-version
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Docker compose files
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Keep these files
+!pyproject.toml
+!uv.lock 

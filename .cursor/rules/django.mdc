@@ -1,0 +1,149 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+## Overview
+
+This Django project adheres to the HackSoft Django Styleguide.
+
+The goal is to:
+- Clearly separate concerns between logic layers (selectors, services, APIs).
+- Promote reusable, testable, and maintainable code.
+- Minimize coupling between data, logic, and presentation layers.
+
+---
+
+## DO: Organize Your Code by Responsibility
+
+### 1. Use the following layer structure:
+- `selectors.py` – Read logic (e.g., filters, aggregations)
+- `services.py` – Write logic and orchestration (e.g., create, update, delete, side-effects)
+- `apis.py` – API endpoints (no logic!)
+- `forms.py` – For validation and Django views (no side-effects)
+- `models.py` – Only define structure; minimal logic
+- `constants.py` – Enum-like values and internal choices
+- `exceptions.py` – Custom exceptions for services
+- `tests/` – Unit tests, integration tests, api tests
+
+---
+
+## Logic Placement
+
+| Type              | Where to put it          | Notes |
+|-------------------|--------------------------|-------|
+| **Read (no write)** | `selectors.py`            | Used by views, templates, services |
+| **Write / DB change** | `services.py`             | Handles business rules, orchestrates flow |
+| **Orchestration / Workflow** | `services/flow_name.py` | Optional for complex flows |
+| **Validation**    | `forms.py` or `model.clean()` | No DB writes here |
+| **View Rendering**| `views.py` (Django only)  | Uses forms/selectors |
+| **API Endpoint**  | `apis.py` (DRF only)      | No logic — call selectors/services |
+
+---
+
+## DON'T: Place Logic in These Places
+
+`views.py` – No direct DB queries or side-effects  
+`serializers.py` – No create/update logic beyond validation  
+`Model.save()` – Use `model_update()` in services  
+`signals.py` – Avoid. Use service orchestration  
+`ModelManager` or `QuerySet` – Only add filtering shortcuts
+
+---
+
+## API Design Guidelines (DRF)
+
+- Each endpoint has its own view class in `apis.py`
+- Use `InputSerializer` / `OutputSerializer`, not `ModelSerializer`
+- Always validate using `InputSerializer.is_valid(raise_exception=True)`
+- Always return serialized data via `OutputSerializer`
+- Use `@extend_schema` from `drf-spectacular` for OpenAPI docs
+
+---
+
+## Forms (for Django views)
+
+- Use `forms.py` only for validation and input handling
+- No business logic or DB writes
+- Use `full_clean()` in services when using forms inside services
+
+---
+
+## Services
+
+- Each service is either:
+  - **Function**: `def entry_create(*, user, data):`
+  - **Class**: `class EntryCreator: def create(): ...`
+- Accept only keyword arguments (`*`)
+- Never call `.save()` directly – use `model_update()`
+- Handle permissions, side-effects, and coordination between models
+- Raise custom exceptions (`ApplicationError`) when necessary
+
+---
+
+## Selectors
+
+- Selectors = read-only access layer
+- Example: `def get_active_entries_for_workspace(workspace):`
+- May use annotations, prefetch, filters, aggregations
+- Never call `save()`, `create()`, `update()` in selectors
+
+---
+
+## Updates
+
+- Use `model_update(instance, data, update_fields=...)` helper
+- Separate fields into side-effect vs non-side-effect
+- Run `full_clean()` after assignment before saving
+
+---
+
+## Testing
+
+- Test each layer independently:
+  - `tests/services/`, `tests/selectors/`, `tests/apis/`, `tests/forms/`
+- Test files: `test_<thing>.py`
+- Test classes: `<Thing>Tests`
+- Use `factory_boy` and `faker` to generate test data
+- Use `mixer` only for quick mocks (not preferred long term)
+
+---
+
+## Tools & Formatters
+
+- Formatter and Linter: `ruff`
+- Env: use `.env`, read via `django-environ`
+- Avoid `.env.example`, use `.env.sample` + `.envrc` if using `direnv`
+
+---
+
+## Models
+
+- Minimal logic
+- UUID as primary key is encouraged
+- Define `__str__()` for human-friendly admin listings
+- Use `CheckConstraint` where applicable
+- Avoid `auto_now`/`auto_now_add`; use `BaseModel` with `created_at`, `updated_at`
+- `Meta.ordering` is allowed
+
+---
+
+## Naming & Style
+
+- Functions: `snake_case`
+- Classes: `PascalCase`
+- APIs: `EntityCreateApi`, `EntityListApi`
+- Services: `entry_create`, `entry_update`
+- Selectors: `get_entries_for_user`
+- Constants: `ENTRY_STATUS_DRAFT = "draft"`
+
+---
+
+## Cursor AI Notes
+
+- Always split read/write logic into `selectors` and `services`
+- If unsure where logic goes, prefer `services.py`
+- When writing a view, assume you're calling into `selectors.py` and `services.py`
+- Never put logic in `Model.save()`, `Form.save()`, or DRF serializers
+- Always suggest class-based APIs with separate serializers
+- Prefer raising explicit errors via `ApplicationError`

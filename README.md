@@ -6,7 +6,14 @@ A modular finance and compliance platform built to support decentralized fundrai
 
 ### Development Setup
 
-1. **Configure environment variables:**
+1. **Install Python dependencies (via `uv`)**
+   This ensures `uv.lock` and `.venv/` are ready.
+
+   ```bash
+   uv sync
+   ```
+
+2. **Configure environment variables:**
 
    ```bash
    # Copy example environment file
@@ -19,23 +26,17 @@ A modular finance and compliance platform built to support decentralized fundrai
    vi .env  # or use any editor you prefer
    ```
 
-2. **Start the development environment:**
+3. **Start the development environment:**
 
    ```bash
    ./scripts/docker-dev.sh up
    ```
 
-3. **Access your services:**
+4. **Access your services:**
 
    * Web app: `http://localhost:8000`
    * PostgreSQL: `localhost:5432`
    * Redis: `localhost:6379`
-
-### Production Setup
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
 
 ## Development Commands
 
@@ -138,6 +139,8 @@ Managed using `.env` files:
 
 ### Local Development
 
+Always use `uv` to manage Python dependencies.
+
 ```bash
 # Install dependencies
 uv sync
@@ -151,8 +154,14 @@ uv add --group dev package-name
 
 ### In Docker
 
-* Dependencies are automatically installed by UV inside Docker
+* Dependencies are automatically installed by `uv` inside Docker
 * `uv.lock` ensures consistent environments
+
+### Production Setup
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
 
 ## Deployment Guide
 

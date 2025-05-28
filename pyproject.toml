@@ -1,0 +1,19 @@
+[project]
+name = "fyndora"
+version = "0.1.0"
+description = "specialized finance and compliance system designed to support decentralized fundraising networks"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2.1",
+    "psycopg2-binary>=2.9.10",
+    "ruff>=0.11.11",
+]
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=5.2.0",
+]
+prod = [
+    "gunicorn>=23.0.0",
+]

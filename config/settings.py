@@ -17,7 +17,6 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environment
-BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, ''),

@@ -2,7 +2,7 @@ services:
   web:
     environment:
       - DEBUG=${DEBUG:-1}
-      - DJANGO_SETTINGS_MODULE=fyndora.settings
+      - DJANGO_SETTINGS_MODULE=config.settings
     volumes:
       - .:/app/src:ro
     ports:

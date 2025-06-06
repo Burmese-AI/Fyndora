@@ -2,7 +2,7 @@ services:
   web:
     environment:
       - DEBUG=0
-      - DJANGO_SETTINGS_MODULE=fyndora.settings
+      - DJANGO_SETTINGS_MODULE=config.settings
       - POSTGRES_DB=${POSTGRES_DB:-fyndora}
       - POSTGRES_USER=${POSTGRES_USER:-fyndora}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

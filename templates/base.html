@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
   </head>
   <body>
+   {% include 'includes/nav_bar.html' %}
    {% block content %}
    {% endblock %}
+   {% include 'includes/footer.html' %}
   </body>
 </html>

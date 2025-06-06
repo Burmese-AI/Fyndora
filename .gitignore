@@ -16,3 +16,6 @@ wheels/
 
 #node modules
 node_modules/
+
+#static files
+static/css/output.css

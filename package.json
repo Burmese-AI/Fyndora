@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.8",
+    "tailwindcss": "^4.1.8"
+  },
+  "devDependencies": {
+    "daisyui": "^5.0.43"
+  },
+  "scripts": {
+    "tailwind:watch": "npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "tailwind:build": "npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css"
+  }
+}

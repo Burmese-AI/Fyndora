@@ -13,3 +13,9 @@ wheels/
 .env
 .env.local
 .env.production
+
+#node modules
+node_modules/
+
+#static files
+static/css/output.css

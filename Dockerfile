@@ -2,11 +2,9 @@
 FROM ubuntu:25.10 AS build
 
 SHELL ["sh", "-exc"]
-
-# Ensure apt-get doesn't open a menu
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install build dependencies
+# Install build dependencies including Node.js
 RUN <<EOT
 apt-get update -qy
 apt-get install -qyy \
@@ -14,8 +12,11 @@ apt-get install -qyy \
     -o APT::Install-Suggests=false \
     build-essential \
     ca-certificates \
+    curl \
     python3-setuptools \
-    python3.13-dev
+    python3.13-dev \
+    nodejs \
+    npm
 EOT
 
 # Install UV
@@ -28,20 +29,26 @@ ENV UV_LINK_MODE=copy \
     UV_PYTHON=/usr/bin/python3.13 \
     UV_PROJECT_ENVIRONMENT=/app/.venv
 
-# Copy dependency files to a temporary location
+# Copy dependency files and install Python deps
 COPY pyproject.toml uv.lock /_lock/
-
-# Synchronize dependencies
 RUN --mount=type=cache,target=/root/.cache \
     cd /_lock && \
-    uv sync \
-        --locked \
-        --no-group dev \
-        --group prod
+    uv sync --locked --no-group dev --group prod
+
+# Copy full source for building Tailwind
+WORKDIR /app
+COPY . .
+
+# Install Node.js deps and build Tailwind CSS
+RUN <<EOT
+npm install
+npm run tailwind:build
+EOT
 
 # Production image
 FROM ubuntu:25.10
 SHELL ["sh", "-exc"]
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Create non-root user
 RUN <<EOT
@@ -49,7 +56,7 @@ groupadd -r fyndora
 useradd -r -d /app -g fyndora -N fyndora
 EOT
 
-# Install runtime dependencies
+# Install Python runtime
 RUN <<EOT
 apt-get update -qy
 apt-get install -qyy \
@@ -57,7 +64,6 @@ apt-get install -qyy \
     -o APT::Install-Suggests=false \
     python3.13 \
     libpython3.13
-
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT
@@ -65,17 +71,17 @@ EOT
 # Set working directory
 WORKDIR /app
 
-# Copy the virtual environment from build stage
+# Copy built Python virtualenv
+COPY --from=build --chown=fyndora:fyndora /app/.venv /app/.venv
+
+# Copy application source (includes built CSS)
 COPY --from=build --chown=fyndora:fyndora /app /app
 
-# Copy the Django project files
-COPY --chown=fyndora:fyndora . .
-
-# Make sure we use the virtualenv python/gunicorn by default
+# Update PATH for virtualenv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Switch to non-root user
 USER fyndora
 
 # Run the application
-CMD ["gunicorn", "fyndora.wsgi:application", "--bind", "0.0.0.0:8000"] 
+CMD ["gunicorn", "fyndora.wsgi:application", "--bind", "0.0.0.0:8000"]

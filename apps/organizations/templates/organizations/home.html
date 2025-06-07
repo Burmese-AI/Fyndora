@@ -13,12 +13,13 @@
       <p class="mb-5">
           Fyndora is a platform for organizations to manage their fundraising and compliance.
       </p>
-      <button class="btn btn-primary">Get Started</button>
+      <button class="btn btn-primary" hx-get="/show-text" hx-target="#result" hx-trigger="click" hx-swap="innerHTML">Click to test HTMX</button>
+      <div id="result" class="text-primary"></div>
     </div>
   </div>
 </div>
 
-<div class="card card-side bg-base-100 shadow-sm">
+<div class="card card-side bg-base-100 shadow-sm mt-10 mx-auto w-1/2">
   <figure>
     <img
       src="https://img.daisyui.com/images/stock/photo-1635805737707-575885ab0820.webp"
@@ -33,6 +34,7 @@
   </div>
 </div>
 
+<div class="mx-auto w-1/2 mt-10">
 <div class="badge badge-primary">Primary</div>
 <div class="badge badge-secondary">Secondary</div>
 <div class="badge badge-accent">Accent</div>
@@ -41,8 +43,9 @@
 <div class="badge badge-success">Success</div>
 <div class="badge badge-warning">Warning</div>
 <div class="badge badge-error">Error</div>
+</div>
 
-<div class="mockup-browser border-base-300 border w-1/2 mx-auto mt-10">
+<div class="mockup-browser border-base-300 border w-1/2 mx-auto mt-10 ">
   <div class="mockup-browser-toolbar">
     <div class="input">https://daisyui.com</div>
   </div>

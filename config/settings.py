@@ -24,11 +24,11 @@ env = environ.Env(
     ALLOWED_HOSTS=(list, []),
 )
 
-# Read .env file
-environ.Env.read_env(BASE_DIR / ".env")
+# # Read .env file
+# environ.Env.read_env(BASE_DIR / ".env")
 
 # Read .env.local file
-# environ.Env.read_env(BASE_DIR / ".env.local")
+environ.Env.read_env(BASE_DIR / ".env.local")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("DJANGO_SECRET_KEY")

@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from .constants import STATUS_CHOICES
+from django.core.exceptions import ValidationError
 
 
 class baseModel(models.Model):
@@ -20,7 +21,16 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field is required")
+        if not username:
+            raise ValueError("The Username field is required")
+
         email = self.normalize_email(email)
+
+        if self.model.objects.filter(email=email).exists():
+            raise ValidationError("A user with this email already exists.")
+        if self.model.objects.filter(username=username).exists():
+            raise ValidationError("A user with this username already exists.")
+
         user = self.model(email=email, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

@@ -61,10 +61,6 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # default
     "allauth.account.auth_backends.AuthenticationBackend",  # allauth
 ]
-# ACCOUNT_FORMS = {
-#     'signup': 'apps.accounts.forms.CustomSignupForm',
-# }
-
 
 MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
@@ -173,6 +169,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "none"  # can be 'none', 'optional', or 'mandatory'
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 
+ACCOUNT_EMAIL_VERIFICATION = "none"  # can be 'none', 'optional', or 'mandatory'

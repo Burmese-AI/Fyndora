@@ -18,10 +18,9 @@
             <div class="card-body">
                 {% if form.errors %}
                 <div class="alert alert-error mb-4">
-                    <div class="flex-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-6 h-6 mx-2 stroke-current">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
-                        </svg>
+                    <div class="flex-1 flex items-center">
+        
+    
                         <div>
                             {% for error in form.non_field_errors %}
                             <p>{{ error }}</p>
@@ -36,7 +35,7 @@
                     
                     <!-- Username Field -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label mb-2">
                             <span class="label-text">{% trans "Username" %}</span>
                         </label>
                         <input type="text" name="login" placeholder="{% trans 'Enter your username' %}" 
@@ -55,7 +54,7 @@
 
                     <!-- Password Field -->
                     <div class="form-control mb-4">
-                        <label class="label">
+                        <label class="label mb-2">
                             <span class="label-text">{% trans "Password" %}</span>
                         </label>
                         <input type="password" name="password" placeholder="{% trans 'Enter your password' %}" 

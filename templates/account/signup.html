@@ -35,7 +35,7 @@
 
                     <!-- Email Field -->
                     <div class="form-control mb-4">
-                        <label class="label" for="id_email">
+                        <label class="label mb-2" for="id_email">
                             <span class="label-text">{% trans "Email" %}</span>
                         </label>
                         <input type="email" name="email" id="id_email" placeholder="{% trans 'Enter your email' %}" class="input input-bordered w-full{% if form.email.errors %} input-error{% endif %}" required autocomplete="email" value="{{ form.email.value|default_if_none:'' }}" />
@@ -50,7 +50,7 @@
 
                     <!-- Username Field -->
                     <div class="form-control mb-4">
-                        <label class="label" for="id_username">
+                        <label class="label mb-2" for="id_username">
                             <span class="label-text">{% trans "Username" %}</span>
                         </label>
                         <input type="text" name="username" id="id_username" placeholder="{% trans 'Enter your username' %}" class="input input-bordered w-full{% if form.username.errors %} input-error{% endif %}" required autocomplete="username" value="{{ form.username.value|default_if_none:'' }}" />
@@ -65,7 +65,7 @@
 
                     <!-- Password1 Field -->
                     <div class="form-control mb-4">
-                        <label class="label" for="id_password1">
+                        <label class="label mb-2" for="id_password1">
                             <span class="label-text">{% trans "Password" %}</span>
                         </label>
                         <input type="password" name="password1" id="id_password1" placeholder="{% trans 'Enter your password' %}" class="input input-bordered w-full{% if form.password1.errors %} input-error{% endif %}" required autocomplete="new-password" />
@@ -82,7 +82,7 @@
 
                     <!-- Password2 Field -->
                     <div class="form-control mb-4">
-                        <label class="label" for="id_password2">
+                        <label class="label mb-2" for="id_password2">
                             <span class="label-text">{% trans "Password (again)" %}</span>
                         </label>
                         <input type="password" name="password2" id="id_password2" placeholder="{% trans 'Re-enter your password' %}" class="input input-bordered w-full{% if form.password2.errors %} input-error{% endif %}" required autocomplete="new-password" />

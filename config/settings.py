@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.entries",
     "apps.attachments",
+    "apps.auditlog",
 ]
 
 SITE_ID = 1

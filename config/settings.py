@@ -41,12 +41,10 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 # Application definition
 
 INSTALLED_APPS = [
-
-    'django.contrib.sites',            # required by allauth
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-
+    "django.contrib.sites",  # required by allauth
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -60,8 +58,8 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # default
-    'allauth.account.auth_backends.AuthenticationBackend',  # allauth
+    "django.contrib.auth.backends.ModelBackend",  # default
+    "allauth.account.auth_backends.AuthenticationBackend",  # allauth
 ]
 # ACCOUNT_FORMS = {
 #     'signup': 'apps.accounts.forms.CustomSignupForm',
@@ -69,7 +67,7 @@ AUTHENTICATION_BACKENDS = [
 
 
 MIDDLEWARE = [
-    'allauth.account.middleware.AccountMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -123,7 +121,7 @@ CACHES = {
     }
 }
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = "accounts.CustomUser"
 
 
 # Password validation
@@ -172,11 +170,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
 
-ACCOUNT_AUTHENTICATION_METHOD = 'username'   # login by email only
+ACCOUNT_AUTHENTICATION_METHOD = "username"  # login by email only
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'  # can be 'none', 'optional', or 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = "none"  # can be 'none', 'optional', or 'mandatory'

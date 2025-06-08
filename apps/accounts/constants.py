@@ -1,5 +1,4 @@
-
 STATUS_CHOICES = (
-    ('active', 'Active'),
-    ('suspended', 'Suspended'),
+    ("active", "Active"),
+    ("suspended", "Suspended"),
 )

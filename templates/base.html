@@ -6,9 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <script src="{% static 'js/htmx.js' %}"></script>
+    <script src="{% static 'js/alpine.js' %}"></script>
   </head>
   <body>
    {% include 'includes/nav_bar.html' %}
+   {% include 'includes/message.html' %}
    {% block content %}
    {% endblock %}
    {% include 'includes/footer.html' %}

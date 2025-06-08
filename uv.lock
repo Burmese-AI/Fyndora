@@ -26,6 +26,16 @@ wheels = [
 ]
 
 [[package]]
+name = "django-allauth"
+version = "65.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/a3/00aa9d5bb5df4f7464495675074dc11107c08b3eea3462fb3edc059d71e1/django_allauth-65.9.0.tar.gz", hash = "sha256:a06bca9974df44321e94c33bcf770bb6f924d1a44b57defbce4d7ec54a55483e", size = 1710514, upload-time = "2025-06-01T19:21:07.771Z" }
+
+[[package]]
 name = "django-debug-toolbar"
 version = "5.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -66,6 +76,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "django" },
+    { name = "django-allauth" },
     { name = "django-environ" },
     { name = "django-redis" },
     { name = "psycopg2-binary" },
@@ -83,6 +94,7 @@ prod = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=5.2.1" },
+    { name = "django-allauth", specifier = ">=65.9.0" },
     { name = "django-environ", specifier = ">=0.12.0" },
     { name = "django-redis", specifier = ">=5.4.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Log Out" %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-base-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <!-- Logout Icon -->
+            <div class="flex justify-center mb-2">
+                <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" />
+                    </svg>
+                </span>
+            </div>
+            <h2 class="text-3xl font-bold">{% trans "Log Out" %}</h2>
+            <p class="mt-2 text-base-content/70">{% trans "Are you sure you want to log out?" %}</p>
+            <p class="text-sm text-base-content/50 mt-1">{% trans "You can always log back in at any time." %}</p>
+        </div>
+
+        <div class="card bg-base-100 shadow-2xl border border-base-300">
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flex items-center gap-3 bg-red-100 border border-red-400 text-red-800 px-5 py-4 rounded-xl shadow mb-6" role="alert">
+                            <span class="text-2xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="inline h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                            <div>{{ message }}</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" action="{% url 'account_logout' %}" class="space-y-6">
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                    {% endif %}
+
+                    <div class="flex justify-center space-x-4">
+                        <a href="/" class="btn btn-outline w-32 transition-transform duration-150 hover:scale-105">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-error w-32 transition-transform duration-150 hover:scale-105" aria-label="Log out">{% trans "Log Out" %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

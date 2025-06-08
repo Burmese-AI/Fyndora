@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-base-200 py-10">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Profile Card -->
+            <div class="lg:col-span-1">
+                <div class="bg-base-100 rounded-2xl shadow-xl overflow-hidden">
+                    <!-- Profile Header -->
+                    <div class="relative h-48 bg-gradient-to-r from-primary to-accent">
+                        <div class="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
+                            <div class="avatar">
+                                <div class="w-32 h-32 rounded-full ring-4 ring-base-100 shadow-lg overflow-hidden bg-base-200">
+                                    <div class="w-full h-full flex items-center justify-center text-4xl text-base-content/50">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Info -->
+                    <div class="pt-20 pb-8 px-6">
+                        <div class="text-center">
+                            <h2 class="text-2xl font-bold mb-1">{{ user.username }}</h2>
+                            <p class="text-base-content/70 mb-3">{{ user.status|title }}</p>
+                        </div>
+
+                        <!-- User Info -->
+                        <div class="space-y-4 mt-6">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-envelope text-primary"></i>
+                                <span>{{ user.email }}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-user-shield text-primary"></i>
+                                <span>{% if user.is_staff %}Staff Member{% else %}Regular User{% endif %}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-calendar text-primary"></i>
+                                <span>Joined {{ user.created_at|date:"F Y" }}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-clock text-primary"></i>
+                                <span>Last Updated: {{ user.updated_at|date:"F j, Y" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 space-y-3">
+                            <button class="btn btn-primary w-full">Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Account Status -->
+            <div class="lg:col-span-2">
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h3 class="card-title text-xl mb-4">Account Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title">Account Status</div>
+                                <div class="stat-value text-lg">{{ user.status|title }}</div>
+                            </div>
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title">Account Type</div>
+                                <div class="stat-value text-lg">{% if user.is_staff %}Staff{% else %}Regular{% endif %}</div>
+                            </div>
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title">User ID</div>
+                                <div class="stat-value text-sm font-mono">{{ user.user_id }}</div>
+                            </div>
+                            <div class="stat bg-base-200 rounded-lg p-4">
+                                <div class="stat-title">Account Created</div>
+                                <div class="stat-value text-sm">{{ user.created_at|date:"F j, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+{% endblock %}

@@ -1,4 +1,3 @@
-
 # class Entry(models.Model):
 #     entry_id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 #     workspace = #workspace id

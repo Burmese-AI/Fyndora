@@ -1,4 +1,3 @@
-
 # class Attachment(models.Model):
 #     attachment_id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 #     entry = #entry id

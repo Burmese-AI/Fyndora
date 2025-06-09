@@ -6,8 +6,9 @@ from django.contrib.auth.models import (
 from django.db import models
 from django.core.exceptions import ValidationError
 import uuid
-from .constants import STATUS_CHOICES
+from apps.accounts.constants import StatusChoices
 from apps.core.models import baseModel
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
@@ -33,11 +34,14 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, username, password, **extra_fields)
 
+
 class CustomUser(AbstractBaseUser, PermissionsMixin, baseModel):
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=True)  # ideally unique!
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    status = models.CharField(
+        max_length=20, choices=StatusChoices.choices, default=StatusChoices.ACTIVE
+    )
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

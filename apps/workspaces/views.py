@@ -7,7 +7,7 @@ from apps.workspaces.selectors import get_user_workspaces
 # Create your views here.
 class WorkspaceListView(ListView, LoginRequiredMixin):
     model = Workspace
-    template_name = "workspaces\workspaces_list.html"
+    template_name = "workspaces/workspaces_list.html"
     context_object_name = "workspaces"
 
     def get_queryset(self):

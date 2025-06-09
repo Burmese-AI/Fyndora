@@ -1,5 +1,3 @@
-from django.db import models
-from uuid import uuid4
 
 # class Attachment(models.Model):
 #     attachment_id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

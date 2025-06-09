@@ -13,7 +13,7 @@ class Organization(baseModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
     )
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255,null=False,blank=False)
     organization_owner = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="organization_owner"
     )
@@ -30,7 +30,7 @@ class Organization(baseModel):
         validators=[MinValueValidator(Decimal("0.00"))],
     )
     class Meta:
-        verbose_name = "orrganization"
+        verbose_name = "organization"
         verbose_name_plural = "organizations"
         ordering = ["-created_at"]
         unique_together = ("organization_owner", "title")

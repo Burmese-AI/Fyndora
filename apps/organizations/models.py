@@ -7,6 +7,7 @@ from decimal import Decimal
 from apps.core.models import baseModel
 from apps.accounts.models import CustomUser
 from apps.organizations.constants import StatusChoices
+from django.conf import settings
 
 
 class Organization(baseModel):
@@ -14,8 +15,8 @@ class Organization(baseModel):
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
     )
     title = models.CharField(max_length=255, null=False, blank=False)
-    organization_owner = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="owned_organizations"
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="owned_organizations"
     )
     status = models.CharField(
         max_length=20,
@@ -23,7 +24,7 @@ class Organization(baseModel):
         default=StatusChoices.ACTIVE,
     )
     description = models.TextField(blank=True, null=True)
-    organization_expense = models.DecimalField(
+    expense = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal("0.00"),
@@ -36,24 +37,24 @@ class Organization(baseModel):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["organization_owner", "title"],
+                fields=["owner", "title"],
                 name="unique_organization",
             )
         ]
 
     def __str__(self):
-        return self.title + " - " + self.organization_owner.username
+        return self.title + " - " + self.owner.username
 
 
 class OrganizationMember(baseModel):
     organization_member_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    organization_id = models.ForeignKey(
+    organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="members"
     )
-    user_id = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="organization_memberships"
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="organization_memberships"
     )
     is_active = models.BooleanField(default=True)
 
@@ -62,11 +63,11 @@ class OrganizationMember(baseModel):
         verbose_name_plural = "organization members"
         constraints = [
             models.UniqueConstraint(
-                fields=["organization_id", "user_id"],
+                fields=["organization", "user"],
                 name="unique_organization_member",
             )
         ]
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.user_id.username} in {self.organization_id.title}"
+        return f"{self.user.username} in {self.organization.title}"

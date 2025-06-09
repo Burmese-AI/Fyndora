@@ -12,10 +12,10 @@ class Workspace(baseModel):
     workspace_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    organization_id = models.ForeignKey(
+    organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="workspaces"
     )
-    workspace_admin_id = models.ForeignKey(
+    workspace_admin = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,
         related_name="administered_workspaces",
@@ -57,10 +57,10 @@ class Workspace(baseModel):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["organization_id", "title"],
+                fields=["organization", "title"],
                 name="unique_workspace_in_organization",
             )
         ]
 
     def __str__(self):
-        return f"{self.title} ({self.organization_id.title})"
+        return f"{self.title} ({self.organization.title})"

@@ -5,16 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0003_organizationmember_and_more'),
-        ('workspaces', '0001_initial'),
+        ("organizations", "0003_organizationmember_and_more"),
+        ("workspaces", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='workspace',
-            name='workspace_admin_id',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='administered_workspaces', to='organizations.organizationmember'),
+            model_name="workspace",
+            name="workspace_admin_id",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="administered_workspaces",
+                to="organizations.organizationmember",
+            ),
         ),
     ]

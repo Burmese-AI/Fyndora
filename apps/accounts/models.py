@@ -1,21 +1,13 @@
-import uuid
 from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
     BaseUserManager,
 )
 from django.db import models
-from .constants import STATUS_CHOICES
 from django.core.exceptions import ValidationError
-
-
-class baseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
+import uuid
+from .constants import STATUS_CHOICES
+from apps.core.models import baseModel
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
@@ -40,7 +32,6 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, username, password, **extra_fields)
-
 
 class CustomUser(AbstractBaseUser, PermissionsMixin, baseModel):
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

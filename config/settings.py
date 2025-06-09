@@ -53,6 +53,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.organizations",
     "apps.accounts",
+    "apps.core",
+    "apps.entries",
+    "apps.attachments",
 ]
 
 SITE_ID = 1

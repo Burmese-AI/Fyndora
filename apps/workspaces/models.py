@@ -4,7 +4,7 @@ from apps.organizations.models import Organization, OrganizationMember
 import uuid
 from apps.workspaces.constants import StatusChoices
 from decimal import Decimal
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 # Create your models here.
@@ -36,11 +36,11 @@ class Workspace(baseModel):
         default=StatusChoices.ACTIVE,
     )
     remittance_rate = models.DecimalField(
-        max_digits=10,
+        max_digits=5,# 0.00 - 100.00
         decimal_places=2,
         default=90.00,
         help_text="% obligation from entries (Default 90%)",
-        validators=[MinValueValidator(Decimal("0.00"))],
+        validators=[MinValueValidator(Decimal("0.00")), MaxValueValidator(Decimal("100.00"))],
     )
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)

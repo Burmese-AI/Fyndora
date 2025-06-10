@@ -38,21 +38,11 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
 
     @transaction.atomic
     def form_valid(self, form):
-        print("\n>>> Starting form_valid")
         invitation = form.save(commit=False)
-        print(f">>> Before save - PK: {invitation.pk}")
-        
-        # Explicitly set fields
+        # Set the organization and invited_by fields before saving the form
         invitation.organization = self.organization
-        invitation.invited_by = OrganizationMember.objects.get(
-            user=self.request.user,
-            organization=self.organization
-        )
-        
-        print(f">>> Before final save - PK: {invitation.pk}")
+        invitation.invited_by = OrganizationMember.objects.get(user=self.request.user, organization=self.organization)
         invitation.save()
-        print(f">>> After save - PK: {invitation.pk}")
-        
         return super().form_valid(form)
 
     def get_success_url(self):

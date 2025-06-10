@@ -5,21 +5,19 @@ from .models import Invitation
 @receiver(pre_save, sender=Invitation)
 def handle_invitation_creation(sender, instance, **kwargs):
     """
-    Deactivate old invitations and ensure new one is active
+    Deactivate old invitations before creating a new active invitation
     """
-    print(f">>> testing pre save {instance}")
-    if not Invitation.objects.filter(pk=instance.pk).exists():  # Only for new invitations
-        print(f">>> Handling invitation creation")
-        # Deactivate old invitations (no save needed after update)
+    
+    # Only for new invitations 
+    # Note: 'not instance.pk' doesn't work due to UUID field. pk is generated before the instance is saved)
+    if not Invitation.objects.filter(pk=instance.pk).exists():
+        # Deactivate unused active invitations
         Invitation.objects.filter(
             email=instance.email,
             organization=instance.organization,
             is_used=False,
             is_active=True
         ).update(is_active=False)
-        
-        # Ensure new invitation is active
-        instance.is_active = True
 
 @receiver(post_save, sender=Invitation)
 def send_invitation_email(sender, instance, created, **kwargs):
@@ -27,7 +25,6 @@ def send_invitation_email(sender, instance, created, **kwargs):
     Send invitation email after successful creation
     """
     if created and instance.is_active:
-        # Actual email sending implementation would go here
         print(f"Sending invitation email to {instance.email}")
         # Example:
         # from django.core.mail import send_mail
@@ -38,5 +35,3 @@ def send_invitation_email(sender, instance, created, **kwargs):
         #     [instance.email],
         #     fail_silently=False,
         # )
-        
-print(">>> pre_save connected:", pre_save.receivers)

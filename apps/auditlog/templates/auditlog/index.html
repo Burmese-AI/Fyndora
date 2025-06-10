@@ -114,8 +114,8 @@
                   <td>
                     <div class="flex items-center space-x-3">
                       <div>
-                        <div class="font-bold">{{ log.actor.username|default:"System" }}</div>
-                        <div class="text-sm opacity-50">{{ log.actor.email|default:"N/A" }}</div>
+                        <div class="font-bold">{{ log.user.username|default:"System" }}</div>
+                        <div class="text-sm opacity-50">{{ log.user.email|default:"N/A" }}</div>
                       </div>
                     </div>
                   </td>
@@ -123,7 +123,7 @@
                     <span class="badge badge-ghost badge-sm">{{ log.get_action_type_display }}</span>
                   </td>
                   <td>{{ log.get_target_entity_type_display|default:"N/A" }}</td>
-                  <td class="max-w-md truncate">{{ log.details|default:"No details" }}</td>
+                  <td class="max-w-md truncate">{{ log.metadata|default:"No details" }}</td>
                 </tr>
               {% empty %}
                 <tr>

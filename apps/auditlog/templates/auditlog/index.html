@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <body class="bg-base-200 min-h-screen">
-    <div class="flex min-h-screen">
+  
+    <div class="flex">
       <!-- Sidebar -->
-      <form method="get" action="" class="w-72 bg-base-100 shadow-xl border-r border-primary/20 p-6 flex flex-col">
+      <form method="get" action="" class="w-72 bg-base-200 p-6 flex flex-col h-screen sticky top-0 overflow-y-auto">
         <div class="flex items-center gap-2 mb-6">
           <i class="fas fa-filter text-primary text-lg"></i>
           <h2 class="text-xl font-bold text-base-content">Filters</h2>
@@ -78,7 +78,7 @@
         <!-- Header -->
         <div class="mb-6">
           <h1 class="text-4xl font-bold text-base-content mb-2">
-            🍋 Audit Logs
+            Audit Logs
           </h1>
           <p class="text-base-content/70 text-lg">A chronological trail of system activities.</p>
         </div>
@@ -123,7 +123,9 @@
                     <span class="badge badge-ghost badge-sm">{{ log.get_action_type_display }}</span>
                   </td>
                   <td>{{ log.get_target_entity_type_display|default:"N/A" }}</td>
-                  <td class="max-w-md truncate">{{ log.metadata|default:"No details" }}</td>
+                                    <td class="max-w-md">
+                    {{ log.details|default:"No details" }}
+                  </td>
                 </tr>
               {% empty %}
                 <tr>
@@ -159,5 +161,5 @@
         {% endif %}
       </div>
     </div>
-  </body>
+  
 {% endblock %}

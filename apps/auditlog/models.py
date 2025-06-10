@@ -23,6 +23,30 @@ class AuditTrail(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(blank=True, null=True)
 
+    @property
+    def details(self):
+        import json
+        if not self.metadata:
+            return "No details provided."
+
+        metadata_dict = self.metadata
+        if isinstance(self.metadata, str):
+            try:
+                metadata_dict = json.loads(self.metadata)
+            except json.JSONDecodeError:
+                return self.metadata  # Not a valid JSON string, return as is
+
+        if not isinstance(metadata_dict, dict):
+            return str(metadata_dict) # Valid JSON, but not a dictionary
+
+        if self.action_type == 'status_changed':
+            old = metadata_dict.get('old_status', 'N/A')
+            new = metadata_dict.get('new_status', 'N/A')
+            return f"Status changed from '{old}' to '{new}'."
+
+        # Generic fallback for other action types
+        return ', '.join([f'{key.replace("_", " ").title()}: {value}' for key, value in metadata_dict.items()])
+
     def __str__(self):
         return f"{self.action_type} by {self.user} on {self.target_entity_type}:{self.target_entity} at {self.timestamp}"
 

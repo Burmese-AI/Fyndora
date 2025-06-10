@@ -1,7 +1,6 @@
 from django.db import models
 from apps.core.models import baseModel
 from apps.organizations.models import OrganizationMember
-from apps.workspaces.models import Workspace
 import uuid
 from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -45,4 +44,4 @@ class Team(baseModel):
         ]
 
     def __str__(self):
-        return f"{self.title} of {self.workspace.title}"
+        return f"{self.title}"

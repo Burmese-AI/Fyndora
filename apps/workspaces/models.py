@@ -64,3 +64,37 @@ class Workspace(baseModel):
 
     def __str__(self):
         return f"{self.title} ({self.organization.title})"
+
+
+class WorkspaceTeam(baseModel):
+    workspace_team_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    team = models.ForeignKey(
+        'teams.Team',
+        on_delete=models.CASCADE,
+        related_name='workspace_teams'
+    )
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name='workspace_teams'
+    )
+
+    class Meta:
+        verbose_name = "workspace team"
+        verbose_name_plural = "workspace teams"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "workspace"],
+                name="unique_team_in_workspace"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.team.title} in {self.workspace.title}"
+
+
+
+

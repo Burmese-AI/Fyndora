@@ -1,13 +1,16 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from apps.organizations.models import Organization
+from apps.organizations.selectors import get_user_organizations
+
 
 # Create your views here.
 
 
-@login_required
-def home(request):
-    return render(request, "organizations/home.html")
+class HomeView(LoginRequiredMixin, ListView):
+    model = Organization
+    template_name = "organizations/home.html"
+    context_object_name = "organizations"
 
-
-def show_text(request):
-    return render(request, "organizations/show_text.html")
+    def get_queryset(self):
+        return get_user_organizations(self.request.user)

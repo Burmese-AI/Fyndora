@@ -1,78 +1,80 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div
-  class="hero min-h-screen"
-  style="background-image: url(https://plus.unsplash.com/premium_photo-1681487769650-a0c3fbaed85a?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZmluYW5jZXxlbnwwfHwwfHx8MA%3D%3D);"
->
-  <div class="hero-overlay"></div>
-  <div class="hero-content text-neutral-content text-center">
-    <div class="max-w-md">
-      <h1 class="mb-5 text-5xl font-bold">Hello from Fyndora</h1>
-      <p class="mb-5">
-          Fyndora is a platform for organizations to manage their fundraising and compliance.
-      </p>
-      <button class="btn btn-primary" hx-get="/show-text" hx-target="#result" hx-trigger="click" hx-swap="innerHTML">Click to test HTMX</button>
-      <div id="result" class="text-red-500"></div>
-    </div>
-  </div>
-</div>
-
-<div class="card card-side bg-base-100 shadow-sm mt-10 mx-auto w-1/2">
-  <figure>
-    <img
-      src="https://img.daisyui.com/images/stock/photo-1635805737707-575885ab0820.webp"
-      alt="Movie" />
-  </figure>
-  <div class="card-body">
-    <h2 class="card-title">New movie is released!</h2>
-    <p>Click the button to watch on Jetflix app.</p>
-    <div class="card-actions justify-end">
-      <button class="btn btn-primary">Watch</button>
-    </div>
-  </div>
-</div>
-
-<div class="mx-auto w-1/2 mt-10">
-<div class="badge badge-primary">Primary</div>
-<div class="badge badge-secondary">Secondary</div>
-<div class="badge badge-accent">Accent</div>
-<div class="badge badge-neutral">Neutral</div>
-<div class="badge badge-info">Info</div>
-<div class="badge badge-success">Success</div>
-<div class="badge badge-warning">Warning</div>
-<div class="badge badge-error">Error</div>
-</div>
-
-<div class="mockup-browser border-base-300 border w-1/2 mx-auto mt-10 ">
-  <div class="mockup-browser-toolbar">
-    <div class="input">https://daisyui.com</div>
-  </div>
-  <div class="grid place-content-center border-t border-base-300 h-80">Hello!</div>
-</div>
-
-<div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-  <div class="relative py-3 sm:max-w-xl sm:mx-auto">
-    <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
-      <div class="max-w-md mx-auto">
-        <div class="divide-y divide-gray-200">
-          <div class="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-            <h1 class="text-3xl font-bold text-gray-900 mb-8">Organizations</h1>
-            <div class="space-y-4">
-              <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
-                <h2 class="text-xl font-semibold text-gray-800">Organization 1</h2>
-                <p class="text-gray-600 mt-2">Description of organization 1</p>
-              </div>
-              <div class="bg-gray-50 p-4 rounded-lg shadow-sm">
-                <h2 class="text-xl font-semibold text-gray-800">Organization 2</h2>
-                <p class="text-gray-600 mt-2">Description of organization 2</p>
-              </div>
-            </div>
-          </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">My Organizations</h1>
+        <div class="flex gap-4">
+            <!-- <a href="#" class="btn btn-primary">
+                New Organization
+            </a> -->
+            <a href="{% url 'workspace_list' %}" class="btn btn-secondary">
+                My Workspaces
+            </a>
+            <a href="{% url 'team_list' %}" class="btn btn-secondary">
+                My Teams
+            </a>
         </div>
-      </div>
     </div>
-  </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for organization in organizations %}
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200">
+            <div class="card-body">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="card-title">{{ organization.title }}</h2>
+                    <div class="badge 
+                        {% if organization.status == 'active' %}
+                            badge-success
+                        {% elif organization.status == 'archived' %}
+                            badge-warning
+                        {% else %}
+                            badge-error
+                        {% endif %}">
+                        {{ organization.status|title }}
+                    </div>
+                </div>
+                
+                <p class="text-base-content/70 line-clamp-2">
+                    {{ organization.description|default:"No description provided" }}
+                </p>
+                
+                <div class="divider my-2"></div>
+                
+                <div class="flex justify-between items-center text-sm">
+                    <div class="text-base-content/60">
+                        Created {{ organization.created_at|date:"M d, Y" }}
+                    </div>
+                    <div class="font-medium">
+                        {{ organization.expense|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-actions justify-end p-4 bg-base-200">
+                <a href="#" class="btn btn-ghost btn-sm">
+                    Edit
+                </a>
+                <a href="#" class="btn btn-ghost btn-sm">
+                    View Details
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full">
+            <div class="hero bg-base-200 rounded-box">
+                <div class="hero-content text-center py-12">
+                    <div class="max-w-md">
+                        <h3 class="text-xl font-medium mb-2">No Organizations Yet</h3>
+                        <p class="text-base-content/70 mb-6">Create or Join your first organization to get started</p>
+                        <a href="#" class="btn btn-primary">
+                            Create Organization
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

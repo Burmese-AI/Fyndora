@@ -24,4 +24,6 @@ urlpatterns = [
     path("accounts/", include("apps.accounts.urls")),
     path("accounts/", include("allauth.urls")),
     path("auditlog/", include("apps.auditlog.urls")),
+    path("workspaces/", include("apps.workspaces.urls")),
+    path("teams/", include("apps.teams.urls")),
 ]

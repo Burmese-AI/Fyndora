@@ -47,7 +47,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            {{ workspace.organization_id.title }}
+                            {{ workspace.organization.title }}
                         </div>
                     </div>
                     <div class="font-medium">
@@ -63,14 +63,10 @@
                             </svg>
                             Created {{ workspace.created_at|date:"M d, Y" }}
                         </div>
-                        {% if workspace.workspace_admin_id %}
+                        {% if workspace.workspace_admin %}
                         <div class="flex items-center">
-                            <div class="avatar placeholder">
-                                <div class="bg-neutral text-neutral-content rounded-full w-6">
-                                    <span class="text-xs">{{ workspace.workspace_admin_id.user_id.username|first|upper }}</span>
-                                </div>
-                            </div>
-                            <span class="ml-2">{{ workspace.workspace_admin_id.user_id.username }}</span>
+                            <span class="text-xs">Workspace Admin:</span>
+                            <span class="ml-2">{{ workspace.workspace_admin.user.username }}</span>
                         </div>
                         {% endif %}
                     </div>

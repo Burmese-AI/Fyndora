@@ -43,7 +43,7 @@
                         Created {{ organization.created_at|date:"M d, Y" }}
                     </div>
                     <div class="font-medium">
-                        {{ organization.organization_expense }}
+                        {{ organization.expense|floatformat:2 }}
                     </div>
                 </div>
             </div>

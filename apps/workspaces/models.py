@@ -4,7 +4,7 @@ from apps.organizations.models import Organization, OrganizationMember
 import uuid
 from apps.workspaces.constants import StatusChoices
 from decimal import Decimal
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 # Create your models here.
@@ -36,11 +36,14 @@ class Workspace(baseModel):
         default=StatusChoices.ACTIVE,
     )
     remittance_rate = models.DecimalField(
-        max_digits=10,
+        max_digits=5,  # 0.00 - 100.00
         decimal_places=2,
         default=90.00,
         help_text="% obligation from entries (Default 90%)",
-        validators=[MinValueValidator(Decimal("0.00"))],
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("100.00")),
+        ],
     )
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
@@ -64,3 +67,28 @@ class Workspace(baseModel):
 
     def __str__(self):
         return f"{self.title} ({self.organization.title})"
+
+
+class WorkspaceTeam(baseModel):
+    workspace_team_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    team = models.ForeignKey(
+        "teams.Team", on_delete=models.CASCADE, related_name="workspace_teams"
+    )
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, related_name="workspace_teams"
+    )
+
+    class Meta:
+        verbose_name = "workspace team"
+        verbose_name_plural = "workspace teams"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "workspace"], name="unique_team_in_workspace"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.team.title} in {self.workspace.title}"

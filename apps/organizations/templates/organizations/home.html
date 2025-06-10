@@ -11,6 +11,9 @@
             <a href="{% url 'workspace_list' %}" class="btn btn-secondary">
                 My Workspaces
             </a>
+            <a href="{% url 'team_list' %}" class="btn btn-secondary">
+                My Teams
+            </a>
         </div>
     </div>
 
@@ -43,7 +46,7 @@
                         Created {{ organization.created_at|date:"M d, Y" }}
                     </div>
                     <div class="font-medium">
-                        {{ organization.organization_expense }}
+                        {{ organization.expense|floatformat:2 }}
                     </div>
                 </div>
             </div>

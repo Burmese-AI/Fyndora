@@ -6,27 +6,55 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0001_initial'),
-        ('workspaces', '0003_remove_workspace_unique_workspace_in_organization_and_more'),
+        ("teams", "0001_initial"),
+        (
+            "workspaces",
+            "0003_remove_workspace_unique_workspace_in_organization_and_more",
+        ),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WorkspaceTeam',
+            name="WorkspaceTeam",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('workspace_team_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workspace_teams', to='teams.team')),
-                ('workspace', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workspace_teams', to='workspaces.workspace')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "workspace_team_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workspace_teams",
+                        to="teams.team",
+                    ),
+                ),
+                (
+                    "workspace",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workspace_teams",
+                        to="workspaces.workspace",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'workspace team',
-                'verbose_name_plural': 'workspace teams',
-                'ordering': ['-created_at'],
-                'constraints': [models.UniqueConstraint(fields=('team', 'workspace'), name='unique_team_in_workspace')],
+                "verbose_name": "workspace team",
+                "verbose_name_plural": "workspace teams",
+                "ordering": ["-created_at"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("team", "workspace"), name="unique_team_in_workspace"
+                    )
+                ],
             },
         ),
     ]

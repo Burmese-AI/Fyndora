@@ -4,29 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0004_remove_organization_unique_organization_and_more'),
-        ('workspaces', '0002_alter_workspace_workspace_admin_id'),
+        ("organizations", "0004_remove_organization_unique_organization_and_more"),
+        ("workspaces", "0002_alter_workspace_workspace_admin_id"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='workspace',
-            name='unique_workspace_in_organization',
+            model_name="workspace",
+            name="unique_workspace_in_organization",
         ),
         migrations.RenameField(
-            model_name='workspace',
-            old_name='organization_id',
-            new_name='organization',
+            model_name="workspace",
+            old_name="organization_id",
+            new_name="organization",
         ),
         migrations.RenameField(
-            model_name='workspace',
-            old_name='workspace_admin_id',
-            new_name='workspace_admin',
+            model_name="workspace",
+            old_name="workspace_admin_id",
+            new_name="workspace_admin",
         ),
         migrations.AddConstraint(
-            model_name='workspace',
-            constraint=models.UniqueConstraint(fields=('organization', 'title'), name='unique_workspace_in_organization'),
+            model_name="workspace",
+            constraint=models.UniqueConstraint(
+                fields=("organization", "title"),
+                name="unique_workspace_in_organization",
+            ),
         ),
     ]

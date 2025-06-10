@@ -36,11 +36,14 @@ class Workspace(baseModel):
         default=StatusChoices.ACTIVE,
     )
     remittance_rate = models.DecimalField(
-        max_digits=5,# 0.00 - 100.00
+        max_digits=5,  # 0.00 - 100.00
         decimal_places=2,
         default=90.00,
         help_text="% obligation from entries (Default 90%)",
-        validators=[MinValueValidator(Decimal("0.00")), MaxValueValidator(Decimal("100.00"))],
+        validators=[
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("100.00")),
+        ],
     )
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
@@ -71,14 +74,10 @@ class WorkspaceTeam(baseModel):
         primary_key=True, default=uuid.uuid4, editable=False
     )
     team = models.ForeignKey(
-        'teams.Team',
-        on_delete=models.CASCADE,
-        related_name='workspace_teams'
+        "teams.Team", on_delete=models.CASCADE, related_name="workspace_teams"
     )
     workspace = models.ForeignKey(
-        Workspace,
-        on_delete=models.CASCADE,
-        related_name='workspace_teams'
+        Workspace, on_delete=models.CASCADE, related_name="workspace_teams"
     )
 
     class Meta:
@@ -87,14 +86,9 @@ class WorkspaceTeam(baseModel):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["team", "workspace"],
-                name="unique_team_in_workspace"
+                fields=["team", "workspace"], name="unique_team_in_workspace"
             )
         ]
 
     def __str__(self):
         return f"{self.team.title} in {self.workspace.title}"
-
-
-
-

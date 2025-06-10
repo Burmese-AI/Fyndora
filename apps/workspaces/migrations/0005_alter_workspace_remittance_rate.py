@@ -6,15 +6,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0004_workspaceteam'),
+        ("workspaces", "0004_workspaceteam"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='workspace',
-            name='remittance_rate',
-            field=models.DecimalField(decimal_places=2, default=90.0, help_text='% obligation from entries (Default 90%)', max_digits=5, validators=[django.core.validators.MinValueValidator(Decimal('0.00')), django.core.validators.MaxValueValidator(Decimal('100.00'))]),
+            model_name="workspace",
+            name="remittance_rate",
+            field=models.DecimalField(
+                decimal_places=2,
+                default=90.0,
+                help_text="% obligation from entries (Default 90%)",
+                max_digits=5,
+                validators=[
+                    django.core.validators.MinValueValidator(Decimal("0.00")),
+                    django.core.validators.MaxValueValidator(Decimal("100.00")),
+                ],
+            ),
         ),
     ]

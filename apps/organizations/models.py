@@ -5,7 +5,6 @@ import uuid
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 from apps.core.models import baseModel
-from apps.accounts.models import CustomUser
 from apps.organizations.constants import StatusChoices
 from django.conf import settings
 
@@ -16,7 +15,9 @@ class Organization(baseModel):
     )
     title = models.CharField(max_length=255, null=False, blank=False)
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="owned_organizations"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_organizations",
     )
     status = models.CharField(
         max_length=20,
@@ -54,7 +55,9 @@ class OrganizationMember(baseModel):
         Organization, on_delete=models.CASCADE, related_name="members"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="organization_memberships"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="organization_memberships",
     )
     is_active = models.BooleanField(default=True)
 

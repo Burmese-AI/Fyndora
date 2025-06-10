@@ -1,5 +1,12 @@
 from django.shortcuts import render
+from django.views.generic import ListView
+from .models import Team
 
 # Create your views here.
-def team_list(request):
-    return render(request, 'teams/team_list.html')
+class TeamListView(ListView):
+    model = Team
+    template_name = 'teams/team_list.html'
+    context_object_name = 'teams'
+
+    def get_queryset(self):
+        return Team.objects.all()

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <body class="bg-base-200 min-h-screen">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <form method="get" action="" class="w-72 bg-base-100 shadow-xl border-r border-primary/20 p-6 flex flex-col">
+        <div class="flex items-center gap-2 mb-6">
+          <i class="fas fa-filter text-primary text-lg"></i>
+          <h2 class="text-xl font-bold text-base-content">Filters</h2>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Search -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">Search Details</span>
+            </label>
+            <input type="text" name="q" placeholder="Search details..." value="{{ search_query }}" class="input input-bordered input-primary w-full" />
+          </div>
+
+          <!-- User Filter -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">User</span>
+            </label>
+            <select name="user" class="select select-bordered select-primary w-full">
+              <option value="">All Users</option>
+              {% for user in users %}
+                <option value="{{ user.id }}" {% if current_filters.user == user.id|stringformat:"s" %}selected{% endif %}>{{ user.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Action Type Filter -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">Action Type</span>
+            </label>
+            <select name="action_type" class="select select-bordered select-primary w-full">
+              <option value="">All Actions</option>
+              {% for value, display in action_types %}
+                <option value="{{ value }}" {% if current_filters.action_type == value %}selected{% endif %}>{{ display }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Date Range Filter -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">Start Date</span>
+            </label>
+            <input type="date" name="start_date" value="{{ current_filters.start_date }}" class="input input-bordered input-primary w-full" />
+          </div>
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">End Date</span>
+            </label>
+            <input type="date" name="end_date" value="{{ current_filters.end_date }}" class="input input-bordered input-primary w-full" />
+          </div>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="pt-4 space-y-2">
+          <button type="submit" class="btn btn-primary w-full">
+            <i class="fas fa-search mr-2"></i>
+            Apply Filters
+          </button>
+          <a href="{% url 'auditlog:auditlog_list' %}" class="btn btn-outline btn-primary w-full">
+            <i class="fas fa-times mr-2"></i>
+            Clear All
+          </a>
+        </div>
+      </form>
+
+      <!-- Main Content -->
+      <div class="flex-1 p-8 overflow-auto">
+        <!-- Header -->
+        <div class="mb-6">
+          <h1 class="text-4xl font-bold text-base-content mb-2">
+            🍋 Audit Logs
+          </h1>
+          <p class="text-base-content/70 text-lg">A chronological trail of system activities.</p>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="stats shadow mb-6 bg-base-100">
+          <div class="stat">
+            <div class="stat-figure text-primary">
+              <i class="fas fa-history text-3xl"></i>
+            </div>
+            <div class="stat-title">Total Log Entries</div>
+            <div class="stat-value text-primary">{{ paginator.count }}</div>
+            <div class="stat-desc">{{ paginator.count }} records found</div>
+          </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="bg-base-100 shadow-lg rounded-lg overflow-x-auto">
+          <table class="table w-full">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in audit_logs %}
+                <tr class="hover">
+                  <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                  <td>
+                    <div class="flex items-center space-x-3">
+                      <div>
+                        <div class="font-bold">{{ log.actor.username|default:"System" }}</div>
+                        <div class="text-sm opacity-50">{{ log.actor.email|default:"N/A" }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge badge-ghost badge-sm">{{ log.get_action_type_display }}</span>
+                  </td>
+                  <td>{{ log.get_target_entity_type_display|default:"N/A" }}</td>
+                  <td class="max-w-md truncate">{{ log.details|default:"No details" }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-10">
+                    <p class="text-lg font-semibold">No audit logs found.</p>
+                    <p class="text-base-content/60">Try adjusting your filters or clearing them.</p>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+          <div class="mt-6 flex justify-center">
+            <div class="btn-group">
+              {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&{{ current_filters.urlencode }}" class="btn">«</a>
+              {% else %}
+                <button class="btn btn-disabled">«</button>
+              {% endif %}
+
+              <button class="btn">Page {{ page_obj.number }} of {{ paginator.num_pages }}</button>
+
+              {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&{{ current_filters.urlencode }}" class="btn">»</a>
+              {% else %}
+                <button class="btn btn-disabled">»</button>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+{% endblock %}

@@ -9,9 +9,8 @@ def get_user_organizations(user):
     Returns all organizations where the user is an active member.
     """
     return Organization.objects.filter(
-            members__user=user,
-            members__is_active=True
-        ).select_related('owner')
+        members__user=user, members__is_active=True
+    ).select_related("owner")
     # Return empty queryset instead of 0
 
 
@@ -22,7 +21,7 @@ def get_organization_members_count(organization):
     try:
         count = organization.members.filter(is_active=True).count()
         return int(count) if count is not None else 0
-    except Exception as e:
+    except Exception:
         return 0
 
 
@@ -33,9 +32,9 @@ def get_workspaces_count(organization):
     try:
         count = organization.workspaces.filter(status=StatusChoices.ACTIVE).count()
         return int(count) if count is not None else 0
-    except Exception as e:
+    except Exception:
         return 0
-    
+
 
 def get_teams_count(organization):
     """
@@ -47,5 +46,5 @@ def get_teams_count(organization):
             workspace_teams__workspace__organization=organization
         ).count()
         return int(count) if count is not None else 0
-    except Exception as e:
+    except Exception:
         return 0

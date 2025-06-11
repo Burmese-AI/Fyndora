@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -16,19 +15,73 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='AuditTrail',
+            name="AuditTrail",
             fields=[
-                ('audit_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('action_type', models.CharField(choices=[('entry_created', 'Entry Created'), ('status_changed', 'Status Changed'), ('flagged', 'Flagged'), ('file_uploaded', 'File Uploaded')], max_length=100)),
-                ('target_entity', models.UUIDField()),
-                ('target_entity_type', models.CharField(choices=[('entry', 'Entry'), ('attachment', 'Attachment'), ('workspace', 'Workspace'), ('team', 'Team'), ('user', 'User'), ('system', 'System')], max_length=100)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('metadata', models.JSONField(blank=True, null=True)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "audit_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "action_type",
+                    models.CharField(
+                        choices=[
+                            ("entry_created", "Entry Created"),
+                            ("status_changed", "Status Changed"),
+                            ("flagged", "Flagged"),
+                            ("file_uploaded", "File Uploaded"),
+                        ],
+                        max_length=100,
+                    ),
+                ),
+                ("target_entity", models.UUIDField()),
+                (
+                    "target_entity_type",
+                    models.CharField(
+                        choices=[
+                            ("entry", "Entry"),
+                            ("attachment", "Attachment"),
+                            ("workspace", "Workspace"),
+                            ("team", "Team"),
+                            ("user", "User"),
+                            ("system", "System"),
+                        ],
+                        max_length=100,
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("metadata", models.JSONField(blank=True, null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-timestamp'],
-                'indexes': [models.Index(fields=['target_entity_type', 'target_entity'], name='auditlog_au_target__117286_idx'), models.Index(fields=['action_type'], name='auditlog_au_action__6ad037_idx'), models.Index(fields=['timestamp'], name='auditlog_au_timesta_65cbff_idx'), models.Index(fields=['user'], name='auditlog_au_user_id_c91882_idx')],
+                "ordering": ["-timestamp"],
+                "indexes": [
+                    models.Index(
+                        fields=["target_entity_type", "target_entity"],
+                        name="auditlog_au_target__117286_idx",
+                    ),
+                    models.Index(
+                        fields=["action_type"], name="auditlog_au_action__6ad037_idx"
+                    ),
+                    models.Index(
+                        fields=["timestamp"], name="auditlog_au_timesta_65cbff_idx"
+                    ),
+                    models.Index(
+                        fields=["user"], name="auditlog_au_user_id_c91882_idx"
+                    ),
+                ],
             },
         ),
     ]

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.workspaces",
     "apps.invitations",
     "apps.teams",
+    "apps.remittance",
 ]
 
 SITE_ID = 1

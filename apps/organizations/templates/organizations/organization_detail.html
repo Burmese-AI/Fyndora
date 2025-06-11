@@ -18,7 +18,13 @@
         <div class="mb-2 text-gray-700">
           <strong>Expense:</strong> ${{ organization.expense }}
         </div>
-  
+
+        <!-- Members Section -->
+        <div class="mb-2 text-gray-700">
+          <strong>Members:</strong> {{ members }}
+          <!-- <button class="btn btn-sm btn-outline">View Members</button> -->
+        </div>
+
         <div class="mt-4 flex justify-end">
           <button type="button" class="btn btn-sm btn-outline" @click="open = false">Close</button>
         </div>

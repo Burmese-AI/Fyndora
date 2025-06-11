@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from apps.organizations.models import Organization
-from apps.organizations.selectors import get_user_organization
+from apps.organizations.selectors import get_user_organizations, get_organization_members_count
 
 
 # Create your views here.
@@ -15,7 +15,7 @@ class HomeView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         try:
-            return get_user_organization(self.request.user)
+            return get_user_organizations(self.request.user)
         except Exception as e:
             # Log the error here if you have a logging system
             raise PermissionDenied("Unable to fetch organizations. Please try again later.")
@@ -25,6 +25,13 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
     template_name = "organizations/organization_detail.html"
     context_object_name = "organization"
+    
 
     def get_queryset(self):
-        return get_user_organization(self.request.user)
+        
+        return get_user_organizations(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["members"] = get_organization_members_count(self.object)
+        return context

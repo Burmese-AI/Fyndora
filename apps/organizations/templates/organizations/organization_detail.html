@@ -1,0 +1,23 @@
+<dialog id="organization-detail-modal-dialog" class="modal modal-open">
+    <form method="dialog" class="modal-box max-w-lg">
+      <h2 class="text-2xl font-bold mb-2">{{ organization.title }}</h2>
+      <div class="badge badge-primary mb-4">{{ organization.status }}</div>
+      <div class="mb-2 text-gray-700">
+          <strong>Owner:</strong> {{ organization.owner.username }}
+      </div>
+      {% if organization.description %}
+          <div class="mb-2 text-gray-600">
+              <strong>Description:</strong> {{ organization.description }}
+          </div>
+      {% endif %}
+      <div class="mb-2 text-gray-700">
+          <strong>Expense:</strong> ${{ organization.expense }}
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('organization-detail-modal').innerHTML = ''">Close</button>
+      </div>
+    </form>
+    <form method="dialog" class="modal-backdrop" onclick="document.getElementById('organization-detail-modal').innerHTML = ''">
+      <button>close</button>
+    </form>
+  </dialog> 

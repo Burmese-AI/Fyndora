@@ -51,7 +51,14 @@
 
                         <!-- Action Buttons -->
                         <div class="card-actions justify-end mt-4 flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline flex-1 sm:flex-none">View Details</button>
+                            <button 
+                                class="btn btn-sm btn-outline flex-1 sm:flex-none"
+                                hx-get="{% url 'organization_detail' organization.pk %}"
+                                hx-target="#organization-detail-modal"
+                                hx-swap="innerHTML"
+                            >
+                                View Details
+                            </button>
                             <button class="btn btn-sm btn-primary flex-1 sm:flex-none">Manage</button>
                         </div>
                     </div>
@@ -78,5 +85,8 @@
             </div>
         </div>
     {% endif %}
+    <!-- Modal for organization details -->
+    <div id="organization-detail-modal"></div>
 </div>
+
 {% endblock %}

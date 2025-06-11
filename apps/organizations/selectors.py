@@ -1,4 +1,5 @@
 from apps.organizations.models import Organization
+from apps.workspaces.models import StatusChoices
 
 
 # get all organizations when user is a member
@@ -17,3 +18,13 @@ def get_organization_members_count(organization):
     Returns the count of active members in the given organization.
     """
     return organization.members.filter(is_active=True).count()
+
+
+def get_workspaces_count(organization):
+    """
+    Returns the count of workspaces in the given organization.
+    """
+    
+    count = organization.workspaces.filter(status=StatusChoices.ACTIVE).count()
+    return int(count) if count is not None else 0
+    

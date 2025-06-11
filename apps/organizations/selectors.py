@@ -8,13 +8,11 @@ def get_user_organizations(user):
     """
     Returns all organizations where the user is an active member.
     """
-    try:
-        return Organization.objects.filter(
+    return Organization.objects.filter(
             members__user=user,
             members__is_active=True
         ).select_related('owner')
-    except Exception as e:
-        return Organization.objects.none()  # Return empty queryset instead of 0
+    # Return empty queryset instead of 0
 
 
 def get_organization_members_count(organization):

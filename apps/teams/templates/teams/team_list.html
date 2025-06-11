@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Teams</h1>
+            <p class="text-base-content/70 mt-2">Browse and manage your teams</p>
+        </div>
+        <!-- Optional: Add a button for new team if needed in the future -->
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for team in teams %}
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200">
+            <div class="card-body">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="card-title mb-0">{{ team.team.title }}</h2>
+                </div>
+                <div class="flex items-center text-base-content/70 mb-2">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>{{ team.team.description }}</span>
+                </div>
+            </div>
+            <div class="card-actions justify-end p-4 bg-base-200">
+                <a href="#" class="btn btn-ghost btn-sm">View Details</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full">
+            <div class="hero bg-base-200 rounded-box">
+                <div class="hero-content text-center py-12">
+                    <div class="max-w-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <h3 class="text-xl font-medium mb-2">No Teams Yet</h3>
+                        <p class="text-base-content/70 mb-6">Create your first team to start collaborating</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

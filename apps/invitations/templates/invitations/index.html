@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+<!-- Generate invitation URL to use in template -->
+{% load invitation_tags %}
+
+{% block content %}
+  <div class="p-6">
+    <h2 class="text-2xl font-bold mb-4">Invitations</h2>
+
+    <div class="overflow-x-auto">
+      <table class="table w-full">
+        <!-- head -->
+        <thead>
+          <tr class="bg-base-200">
+            <th>Email</th>
+            <th>Invited By</th>
+            <th>Organization</th>
+            <th>Status</th>
+            <th>Expired At</th>
+            <th>Full URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invitation in invitations %}
+            <tr class="hover">
+              <td>{{ invitation.email }}</td>
+              <td>{{ invitation.invited_by.user.get_full_name|default:"System" }}</td>
+              <td>{{ invitation.organization.title }}</td>
+              <td>
+                {% if invitation.is_used %}
+                  <span class="badge badge-error badge-outline">Used</span>
+                {% elif not invitation.is_active or invitation.expired_at < now %}
+                  <span class="badge badge-warning badge-outline">Expired</span>
+                {% else %}
+                  <span class="badge badge-success badge-outline">Active</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if invitation.expired_at %}
+                  {{ invitation.expired_at|date:"Y-m-d H:i" }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                <input
+                type="text"
+                value="{% invitation_url invitation %}"
+                readonly
+                class="input input-bordered input-sm w-full font-mono text-xs truncate"
+                onclick="this.select(); document.execCommand('copy')"
+                title="Click to copy"
+                />
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

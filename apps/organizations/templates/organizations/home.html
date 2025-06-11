@@ -66,7 +66,19 @@
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            
+            <div class="card-actions justify-end p-4 bg-base-200">
+                <a href="#" class="btn btn-ghost btn-sm">
+                    Edit
+                </a>
+                <a href="#" class="btn btn-ghost btn-sm">
+                    View Details
+                </a>
+                <a href="{% url 'invitation_create' organization_id=organization.pk %}" class="btn btn-ghost btn-sm">
+                    Invite
+                </a>
+            </div>
         </div>
     {% else %}
         <!-- Empty State -->

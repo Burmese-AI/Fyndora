@@ -46,6 +46,6 @@ class EntryAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'submitted_by__user',
-            'reviewed_by__user'
+            'submitted_by__organization_member__user',
+            'reviewed_by__organization_member__user'
         )

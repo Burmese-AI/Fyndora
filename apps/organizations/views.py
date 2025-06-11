@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from apps.organizations.models import Organization
-from apps.organizations.selectors import get_user_organizations, get_organization_members_count, get_workspaces_count
+from apps.organizations.selectors import get_user_organizations, get_organization_members_count, get_workspaces_count, get_teams_count
 
 
 # Create your views here.
@@ -39,6 +39,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             context = super().get_context_data(**kwargs)
             context["members"] = get_organization_members_count(self.object)
             context["workspaces"] = get_workspaces_count(self.object)
+            context["teams"] = get_teams_count(self.object)
             return context
         except Exception as e:
             # Log the error here if you have a logging system

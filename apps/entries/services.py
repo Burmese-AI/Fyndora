@@ -32,7 +32,7 @@ def entry_create(*, submitted_by, entry_type, amount, description):
     # transaction.atomic ensures all-or-nothing operation
     with transaction.atomic():
         entry = model_update(entry, entry_data)
-        
+
         # Create audit trail
         audit_create(
             user=submitted_by.organization_member.user,
@@ -43,7 +43,7 @@ def entry_create(*, submitted_by, entry_type, amount, description):
                 "entry_type": entry_type,
                 "amount": str(amount),
                 "description": description,
-            }
+            },
         )
 
     return entry

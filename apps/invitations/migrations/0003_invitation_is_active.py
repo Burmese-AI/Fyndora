@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('invitations', '0002_alter_invitation_expired_at'),
+        ("invitations", "0002_alter_invitation_expired_at"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='invitation',
-            name='is_active',
+            model_name="invitation",
+            name="is_active",
             field=models.BooleanField(default=False),
         ),
     ]

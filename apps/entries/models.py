@@ -16,7 +16,7 @@ class Entry(baseModel):
         on_delete=models.PROTECT,
         related_name="submitted_entries",
         limit_choices_to={"role": TeamMemberRole.SUBMITTER},
-        help_text="Must be a user with Submitter role"
+        help_text="Must be a user with Submitter role",
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     entry_type = models.CharField(max_length=20, choices=ENTRY_TYPE_CHOICES)
@@ -60,7 +60,7 @@ class Entry(baseModel):
                     "reviewed_by": "Reviewer must be a Team Coordinator, Operations Reviewer, or Workspace Admin."
                 }
             )
-            
+
         # Validate submitted_by role
         if self.submitted_by.role != TeamMemberRole.SUBMITTER:
             raise ValidationError(

@@ -1,10 +1,9 @@
 from django.db import models
-from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
 from apps.core.models import baseModel
 from apps.organizations.models import Organization, OrganizationMember
 from django.utils import timezone
 from uuid import uuid4
+
 
 class Invitation(baseModel):
     invitation_id = models.UUIDField(
@@ -28,7 +27,7 @@ class Invitation(baseModel):
     is_used = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     expired_at = models.DateTimeField()
-    
+
     @property
     def is_expired(self):
         return self.expired_at < timezone.now()

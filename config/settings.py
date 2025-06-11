@@ -12,10 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = environ.Path(__file__) - 2
 
 # Initialize environment
 env = environ.Env(
@@ -25,10 +25,11 @@ env = environ.Env(
 )
 
 # Read .env file
-environ.Env.read_env(BASE_DIR / ".env")
+# env_path = BASE_DIR('.env')
+# Read .env.local file
+env_path = BASE_DIR('.env.local')
 
-# # Read .env.local file
-# environ.Env.read_env(BASE_DIR / ".env.local")
+env.read_env(env_path, parse_comments=True, overwrite=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("DJANGO_SECRET_KEY")
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     "apps.entries",
     "apps.attachments",
     "apps.workspaces",
+    "apps.invitations",
 ]
 
 SITE_ID = 1
@@ -82,7 +84,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR('templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -161,7 +163,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR("static"),
 ]
 
 # Default primary key field type

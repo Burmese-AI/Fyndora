@@ -35,7 +35,7 @@ class Invitation(baseModel):
 
     @property
     def is_valid(self):
-        return not self.is_used and not self.is_expired
+        return self.is_active and not self.is_used and not self.is_expired
 
     def __str__(self):
         return f"{self.pk} - {self.organization.title} - {self.email} - {self.token} - {self.is_active}"

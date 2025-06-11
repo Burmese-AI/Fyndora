@@ -1,0 +1,45 @@
+<div x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
+    <div class="modal modal-open">
+      <form method="dialog" class="modal-box max-w-lg" @click.outside="open = false">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">{{ organization.title }}</h2>
+            <div class="badge badge-primary">{{ organization.status }}</div>
+        </div>
+        <div class="mb-2 text-gray-700">
+          <strong>Owner:</strong> {{ organization.owner.username }}
+        </div>
+  
+        {% if organization.description %}
+        <div class="mb-2 text-gray-600">
+          <strong>Description:</strong> {{ organization.description }}
+        </div>
+        {% endif %}
+  
+        <div class="mb-2 text-gray-700">
+          <strong>Expense:</strong> ${{ organization.expense }}
+        </div>
+
+        <!-- Members Section -->
+        <div class="mb-2 text-gray-700">
+          <strong>Members:</strong> {{ members }}
+          <!-- <button class="btn btn-sm btn-outline">View Members</button> -->
+        </div>
+        <div class="mb-2 text-gray-700">
+          <strong>Workspaces:</strong> {{ workspaces }}
+          <!-- <button class="btn btn-sm btn-outline">View Members</button> -->
+        </div>
+        <div class="mb-2 text-gray-700">
+          <strong>Teams:</strong> {{ teams }}
+          <!-- <button class="btn btn-sm btn-outline">View Teams</button> -->
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button type="button" class="btn btn-sm btn-outline" @click="open = false">Close</button>
+        </div>
+      </form>
+  
+      <!-- Optional: Background click to close -->
+      <div class="modal-backdrop" @click="open = false"></div>
+    </div>
+  </div>
+  

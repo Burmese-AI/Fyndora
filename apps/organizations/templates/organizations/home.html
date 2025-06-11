@@ -1,80 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold">My Organizations</h1>
-        <div class="flex gap-4">
-            <!-- <a href="#" class="btn btn-primary">
-                New Organization
-            </a> -->
-            <a href="{% url 'workspace_list' %}" class="btn btn-secondary">
-                My Workspaces
-            </a>
-            <a href="{% url 'team_list' %}" class="btn btn-secondary">
-                My Teams
-            </a>
-        </div>
-    </div>
+<h1 class="text-2xl font-bold mb-4">Organizations</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+{% if organizations %}
+    <ul class="space-y-4">
         {% for organization in organizations %}
-        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200">
-            <div class="card-body">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="card-title">{{ organization.title }}</h2>
-                    <div class="badge 
-                        {% if organization.status == 'active' %}
-                            badge-success
-                        {% elif organization.status == 'archived' %}
-                            badge-warning
-                        {% else %}
-                            badge-error
-                        {% endif %}">
-                        {{ organization.status|title }}
-                    </div>
-                </div>
-                
-                <p class="text-base-content/70 line-clamp-2">
-                    {{ organization.description|default:"No description provided" }}
-                </p>
-                
-                <div class="divider my-2"></div>
-                
-                <div class="flex justify-between items-center text-sm">
-                    <div class="text-base-content/60">
-                        Created {{ organization.created_at|date:"M d, Y" }}
-                    </div>
-                    <div class="font-medium">
-                        {{ organization.expense|floatformat:2 }}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-actions justify-end p-4 bg-base-200">
-                <a href="#" class="btn btn-ghost btn-sm">
-                    Edit
-                </a>
-                <a href="#" class="btn btn-ghost btn-sm">
-                    View Details
-                </a>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-span-full">
-            <div class="hero bg-base-200 rounded-box">
-                <div class="hero-content text-center py-12">
-                    <div class="max-w-md">
-                        <h3 class="text-xl font-medium mb-2">No Organizations Yet</h3>
-                        <p class="text-base-content/70 mb-6">Create or Join your first organization to get started</p>
-                        <a href="#" class="btn btn-primary">
-                            Create Organization
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <li class="p-4 border rounded shadow-sm">
+                <h2 class="text-xl font-semibold">{{ organization.title }}</h2>
+                <p class="text-gray-600">Owner: {{ organization.owner.username }}</p>
+                {% if organization.description %}
+                    <p class="mt-2">{{ organization.description }}</p>
+                {% endif %}
+            </li>
         {% endfor %}
-    </div>
-</div>
+    </ul>
+{% else %}
+    <p class="text-gray-600">No organizations found</p>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Invite to {{ organization.title }}</h1>
+
+    <form method="POST" class="max-w-lg mx-auto p-6 bg-base-100 shadow-xl rounded-lg">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error mb-4">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        <div class="form-control mb-4">
+            <label for="{{ form.email.id_for_label }}" class="label">
+                <span class="label-text">Invitee's Email</span>
+            </label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div class="text-error text-sm mt-1">
+                    {{ form.email.errors }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="form-control mb-4">
+            <label for="{{ form.expired_at.id_for_label }}" class="label">
+                <span class="label-text">Expiration Date</span>
+            </label>
+            {{ form.expired_at }}
+            {% if form.expired_at.errors %}
+                <div class="text-error text-sm mt-1">
+                    {{ form.expired_at.errors }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="form-control mt-6">
+            <button type="submit" class="btn btn-primary w-full">
+                Send Invitation
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

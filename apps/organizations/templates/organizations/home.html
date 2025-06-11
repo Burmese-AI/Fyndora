@@ -58,6 +58,9 @@
                 <a href="#" class="btn btn-ghost btn-sm">
                     View Details
                 </a>
+                <a href="{% url 'invitation_create' organization_id=organization.pk %}" class="btn btn-ghost btn-sm">
+                    Invite
+                </a>
             </div>
         </div>
         {% empty %}

@@ -10,9 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import environ
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = environ.Path(__file__) - 2
@@ -27,7 +25,7 @@ env = environ.Env(
 # Read .env file
 # env_path = BASE_DIR('.env')
 # Read .env.local file
-env_path = BASE_DIR('.env.local')
+env_path = BASE_DIR(".env.local")
 
 env.read_env(env_path, parse_comments=True, overwrite=True)
 
@@ -86,7 +84,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR('templates')],
+        "DIRS": [BASE_DIR("templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

@@ -6,29 +6,54 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('organizations', '0004_remove_organization_unique_organization_and_more'),
+        ("organizations", "0004_remove_organization_unique_organization_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Invitation',
+            name="Invitation",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('invitation_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('email', models.EmailField(max_length=255)),
-                ('token', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('is_used', models.BooleanField(default=False)),
-                ('expired_at', models.DateField()),
-                ('invited_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invitations_sent', to='organizations.organizationmember')),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='invitations', to='organizations.organization')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "invitation_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("email", models.EmailField(max_length=255)),
+                (
+                    "token",
+                    models.UUIDField(default=uuid.uuid4, editable=False, unique=True),
+                ),
+                ("is_used", models.BooleanField(default=False)),
+                ("expired_at", models.DateField()),
+                (
+                    "invited_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="invitations_sent",
+                        to="organizations.organizationmember",
+                    ),
+                ),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="invitations",
+                        to="organizations.organization",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
     ]

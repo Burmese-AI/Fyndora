@@ -1,7 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
-from apps.organizations.models import Organization
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from apps.organizations.models import Organization, OrganizationMember
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
@@ -10,7 +12,8 @@ from apps.organizations.selectors import (
 )
 from apps.organizations.forms import OrganizationForm
 from django.shortcuts import render, redirect
-
+from django.contrib import messages
+from django_htmx.http import HttpResponseClientRedirect
 
 # Create your views here.
 
@@ -58,7 +61,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             )
 
 
-# still working on creation not completed
+@login_required
 def organization_create(request):
     try:
         if request.method == "POST":
@@ -67,10 +70,24 @@ def organization_create(request):
                 organization = form.save(commit=False)
                 organization.owner = request.user
                 organization.save()
-                return redirect("home")
+                
+                # Create organization member for the owner
+                OrganizationMember.objects.create(
+                    organization=organization,
+                    user=request.user,
+                    is_active=True
+                )
+                
+                organization.owner= OrganizationMember.objects.get(organization=organization, user=request.user)
+                organization.save()
+
+                if request.headers.get('HX-Request'):
+                    # Return a success response for HTMX
+                    messages.success(request, "Organization created successfully!")
+                    return HttpResponseClientRedirect("/")
         else:
             form = OrganizationForm()
         return render(request, "organizations/organization_form.html", {"form": form})
-    except Exception:
-        # Log the error here if you have a logging system
+    except Exception as e:
+        messages.error(request, "Unable to create organization. Please try again later.")
         raise PermissionDenied("Unable to create organization. Please try again later.")

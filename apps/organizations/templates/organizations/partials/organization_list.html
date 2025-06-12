@@ -61,7 +61,7 @@
         <h3 class="mt-4 text-base sm:text-lg font-medium text-gray-900">No organizations found</h3>
         <p class="mt-2 text-sm sm:text-base text-gray-500">Get started by creating a new organization.</p>
         <div class="mt-6">
-            <button hx-get="{% url 'organization_create' %}"
+            <button hx-post="{% url 'organization_create' %}"
                     hx-target="#organization-create-modal"
                     hx-swap="innerHTML"
                     class="btn btn-primary w-full sm:w-auto">

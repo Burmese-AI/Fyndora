@@ -1,119 +1,133 @@
-{% extends "base.html" %}
+{% extends "layouts/auth_layout.html" %}
 {% load i18n %}
 {% load account %}
 
 {% block head_title %}{% trans "Sign Up" %}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-base-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-        <div class="text-center">
-            <h2 class="text-3xl font-bold">{% trans "Create an Account" %}</h2>
-            <p class="mt-2 text-base-content/70">{% trans "Sign up to get started" %}</p>
-        </div>
+<div class="w-full max-w-md px-4 space-y-6">
+  <!-- Header -->
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-primary">{% trans "Create an Account" %}</h2>
+    <p class="mt-2 text-sm text-base-content/70">{% trans "Sign up to get started" %}</p>
+  </div>
 
-        <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-                {% if form.errors %}
-                <div class="flex items-center gap-3 bg-red-100 border border-red-400 text-red-800 px-5 py-4 rounded-xl shadow mb-6">
-                    <span class="text-2xl">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="inline h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
-                        </svg>
-                    </span>
-                    <div>
-                        <p>{% trans "Please correct the errors below." %}</p>
-                        {% for error in form.non_field_errors %}
-                        <div>{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-
-                <form class="signup" method="POST" action="{% url 'account_signup' %}">
-                    {% csrf_token %}
-
-                    <!-- Email Field -->
-                    <div class="form-control mb-4">
-                        <label class="label mb-2" for="id_email">
-                            <span class="label-text">{% trans "Email" %}</span>
-                        </label>
-                        <input type="email" name="email" id="id_email" placeholder="{% trans 'Enter your email' %}" class="input input-bordered w-full{% if form.email.errors %} input-error{% endif %}" required autocomplete="email" value="{{ form.email.value|default_if_none:'' }}" />
-                        {% if form.email.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">
-                                {% for error in form.email.errors %}{{ error }}{% endfor %}
-                            </span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Username Field -->
-                    <div class="form-control mb-4">
-                        <label class="label mb-2" for="id_username">
-                            <span class="label-text">{% trans "Username" %}</span>
-                        </label>
-                        <input type="text" name="username" id="id_username" placeholder="{% trans 'Enter your username' %}" class="input input-bordered w-full{% if form.username.errors %} input-error{% endif %}" required autocomplete="username" value="{{ form.username.value|default_if_none:'' }}" />
-                        {% if form.username.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">
-                                {% for error in form.username.errors %}{{ error }}{% endfor %}
-                            </span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Password1 Field -->
-                    <div class="form-control mb-4">
-                        <label class="label mb-2" for="id_password1">
-                            <span class="label-text">{% trans "Password" %}</span>
-                        </label>
-                        <input type="password" name="password1" id="id_password1" placeholder="{% trans 'Enter your password' %}" class="input input-bordered w-full{% if form.password1.errors %} input-error{% endif %}" required autocomplete="new-password" />
-                        {% if form.password1.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">
-                                {% for error in form.password1.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
-                            </span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Password2 Field -->
-                    <div class="form-control mb-4">
-                        <label class="label mb-2" for="id_password2">
-                            <span class="label-text">{% trans "Password (again)" %}</span>
-                        </label>
-                        <input type="password" name="password2" id="id_password2" placeholder="{% trans 'Re-enter your password' %}" class="input input-bordered w-full{% if form.password2.errors %} input-error{% endif %}" required autocomplete="new-password" />
-                        {% if form.password2.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">
-                                {% for error in form.password2.errors %}{{ error }}{% endfor %}
-                            </span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    {% if redirect_field_value %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-                    {% endif %}
-
-                    <div class="form-control">
-                        <button type="submit" class="btn btn-primary w-full">
-                            {% trans "Sign Up" %}
-                        </button>
-                    </div>
-                </form>
-
-                <div class="divider my-6">{% trans "OR" %}</div>
-                <div class="text-center space-y-4">
-                    <a href="{% url 'account_login' %}" class="link link-primary">
-                        {% trans "Already have an account? Sign in" %}
-                    </a>
-                </div>
-            </div>
-        </div>
+  <!-- Error Alert -->
+  {% if form.errors %}
+  <div class="alert alert-error shadow rounded-box">
+    <div class="flex-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none"
+           viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="text-sm">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </span>
     </div>
+  </div>
+  {% endif %}
+
+  <!-- Signup Form -->
+  <form method="POST" action="{% url 'account_signup' %}" class="space-y-5">
+    {% csrf_token %}
+
+    <!-- Email Field -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">{% trans "Email" %}</span>
+      </label>
+      <input type="email" name="email" placeholder="{% trans 'Enter your email' %}"
+             class="input input-bordered w-full focus:ring focus:ring-primary/30 transition {% if form.email.errors %}input-error{% endif %}"
+             required autocomplete="email" value="{{ form.email.value|default_if_none:'' }}" />
+      {% if form.email.errors %}
+      <label class="label pt-1">
+        <span class="label-text-alt text-error text-xs">
+          {% for error in form.email.errors %}
+            {{ error }}
+          {% endfor %}
+        </span>
+      </label>
+      {% endif %}
+    </div>
+
+    <!-- Username Field -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">{% trans "Username" %}</span>
+      </label>
+      <input type="text" name="username" placeholder="{% trans 'Enter your username' %}"
+             class="input input-bordered w-full focus:ring focus:ring-primary/30 transition {% if form.username.errors %}input-error{% endif %}"
+             required autocomplete="username" value="{{ form.username.value|default_if_none:'' }}" />
+      {% if form.username.errors %}
+      <label class="label pt-1">
+        <span class="label-text-alt text-error text-xs">
+          {% for error in form.username.errors %}
+            {{ error }}
+          {% endfor %}
+        </span>
+      </label>
+      {% endif %}
+    </div>
+
+    <!-- Password1 Field -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">{% trans "Password" %}</span>
+      </label>
+      <input type="password" name="password1" placeholder="{% trans 'Enter your password' %}"
+             class="input input-bordered w-full focus:ring focus:ring-primary/30 transition {% if form.password1.errors %}input-error{% endif %}"
+             required autocomplete="new-password" />
+      {% if form.password1.errors %}
+      <label class="label pt-1">
+        <span class="label-text-alt text-error text-xs">
+          {% for error in form.password1.errors %}
+            {{ error }}
+          {% endfor %}
+        </span>
+      </label>
+      {% endif %}
+    </div>
+
+    <!-- Password2 Field -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">{% trans "Password (again)" %}</span>
+      </label>
+      <input type="password" name="password2" placeholder="{% trans 'Re-enter your password' %}"
+             class="input input-bordered w-full focus:ring focus:ring-primary/30 transition {% if form.password2.errors %}input-error{% endif %}"
+             required autocomplete="new-password" />
+      {% if form.password2.errors %}
+      <label class="label pt-1">
+        <span class="label-text-alt text-error text-xs">
+          {% for error in form.password2.errors %}
+            {{ error }}
+          {% endfor %}
+        </span>
+      </label>
+      {% endif %}
+    </div>
+
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+    {% endif %}
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary text-base-100 w-full hover:bg-primary-focus transition-all duration-200 shadow-md">
+      {% trans "Sign Up" %}
+    </button>
+  </form>
+
+  <!-- Divider -->
+  <div class="divider text-sm opacity-70">{% trans "OR" %}</div>
+
+  <!-- Links -->
+  <div class="text-center space-y-3 text-sm">
+    <a href="{% url 'account_login' %}" class="link link-primary hover:underline block font-semibold transition">
+      {% trans "Already have an account? Sign in" %}
+    </a>
+  </div>
 </div>
 {% endblock %}

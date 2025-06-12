@@ -9,10 +9,13 @@
     <script src="{% static 'js/alpine.js' %}"></script>
   </head>
   <body>
-   {% include 'includes/nav_bar.html' %}
+   {% comment %} {% include 'includes/nav_bar.html' %} {% endcomment %}
    {% include 'includes/message.html' %}
-   {% block content %}
-   {% endblock %}
+  {% block body %}{% endblock %}
+   {% comment %} {% block content %}
+   {% endblock %} {% endcomment %}
    {% include 'includes/footer.html' %}
   </body>
 </html>
+
+{% comment %} body (footer + messages) > dynamic layout > content {% endcomment %}

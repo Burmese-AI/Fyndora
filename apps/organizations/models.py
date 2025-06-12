@@ -8,6 +8,7 @@ from apps.core.models import baseModel
 from apps.organizations.constants import StatusChoices
 from django.conf import settings
 
+
 class Organization(baseModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True

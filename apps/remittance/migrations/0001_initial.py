@@ -6,30 +6,63 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('workspaces', '0005_alter_workspace_remittance_rate'),
+        ("workspaces", "0005_alter_workspace_remittance_rate"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Remittance',
+            name="Remittance",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('remittance_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('due_amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('paid_amount', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('partial', 'Partial'), ('paid', 'Paid'), ('overdue', 'Overdue')], default='pending', max_length=20)),
-                ('workspace_team', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='remittances', to='workspaces.workspaceteam')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "remittance_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("due_amount", models.DecimalField(decimal_places=2, max_digits=10)),
+                (
+                    "paid_amount",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("partial", "Partial"),
+                            ("paid", "Paid"),
+                            ("overdue", "Overdue"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "workspace_team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="remittances",
+                        to="workspaces.workspaceteam",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'remittance',
-                'verbose_name_plural': 'remittances',
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['status'], name='remittance__status_feb3e3_idx')],
+                "verbose_name": "remittance",
+                "verbose_name_plural": "remittances",
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["status"], name="remittance__status_feb3e3_idx"
+                    )
+                ],
             },
         ),
     ]

@@ -2,8 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from apps.organizations.models import Organization, OrganizationMember
+from apps.organizations.models import Organization
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
@@ -11,11 +10,11 @@ from apps.organizations.selectors import (
     get_teams_count,
 )
 from apps.organizations.forms import OrganizationForm
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
 from apps.organizations.services import create_organization_with_owner
-from apps.organizations.exceptions import OrganizationCreationError, OrganizationPermissionError
+from apps.organizations.exceptions import OrganizationCreationError
 
 # Create your views here.
 
@@ -70,24 +69,27 @@ def organization_create(request):
             form = OrganizationForm(request.POST)
             if form.is_valid():
                 try:
-                    organization = create_organization_with_owner(
-                        form=form,
-                        user=request.user
-                    )
-                    
-                    if request.headers.get('HX-Request'):
+                    create_organization_with_owner(form=form, user=request.user)
+
+                    if request.headers.get("HX-Request"):
                         messages.success(request, "Organization created successfully!")
                         return HttpResponseClientRedirect("/")
                 except OrganizationCreationError as e:
                     messages.error(request, str(e))
-                    if request.headers.get('HX-Request'):
+                    if request.headers.get("HX-Request"):
                         return HttpResponseClientRedirect("/")
-                    return render(request, "organizations/organization_form.html", {"form": form})
+                    return render(
+                        request, "organizations/organization_form.html", {"form": form}
+                    )
         else:
             form = OrganizationForm()
         return render(request, "organizations/organization_form.html", {"form": form})
-    except Exception as e:
-        if request.headers.get('HX-Request'):
-            messages.error(request, "An unexpected error occurred. Please try again later.")
+    except Exception:
+        if request.headers.get("HX-Request"):
+            messages.error(
+                request, "An unexpected error occurred. Please try again later."
+            )
             return HttpResponseClientRedirect("/")
-        raise PermissionDenied("An unexpected error occurred. Please try again later.")
+        raise OrganizationCreationError(
+            "An unexpected error occurred. Please try again later."
+        )

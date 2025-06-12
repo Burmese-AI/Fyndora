@@ -1,6 +1,6 @@
 <div x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
     <div class="modal modal-open">
-      <form method="post" 
+      <form 
             class="modal-box max-w-lg bg-white shadow-xl rounded-lg" 
             @click.outside="open = false"
             hx-post="{% url 'organization_create' %}"
@@ -41,8 +41,8 @@
         </div>
       </form>
   
-      <!-- Optional: Background click to close -->
-      <div class="modal-backdrop bg-black/50 backdrop-blur-sm" @click="open = false"></div>
+      <!-- background click to close the modal temporariy commented due to low perfomance( figure out later ) -->
+      <!-- <div class="modal-backdrop bg-black/50 backdrop-blur-sm" @click="open = false"></div> -->
     </div>
   </div>
   

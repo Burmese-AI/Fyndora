@@ -1,1 +1,1 @@
-default_app_config = 'apps.remittance.apps.RemittanceConfig'
+default_app_config = "apps.remittance.apps.RemittanceConfig"

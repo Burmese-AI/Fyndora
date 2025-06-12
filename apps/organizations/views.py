@@ -14,6 +14,8 @@ from apps.organizations.forms import OrganizationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
+from apps.organizations.services import create_organization_with_owner
+from apps.organizations.exceptions import OrganizationCreationError, OrganizationPermissionError
 
 # Create your views here.
 
@@ -67,27 +69,25 @@ def organization_create(request):
         if request.method == "POST":
             form = OrganizationForm(request.POST)
             if form.is_valid():
-                organization = form.save(commit=False)
-                organization.save()
-                # Create organization member for the owner
-                OrganizationMember.objects.create(
-                    organization=organization,
-                    user=request.user,
-                    is_active=True
-                )
-                
-                organization.owner= OrganizationMember.objects.get(organization=organization, user=request.user)
-                organization.save()
-
-                if request.headers.get('HX-Request'):
-                    # Return a success response for HTMX
-                    messages.success(request, "Organization created successfully!")
-                    return HttpResponseClientRedirect("/")
+                try:
+                    organization = create_organization_with_owner(
+                        form=form,
+                        user=request.user
+                    )
+                    
+                    if request.headers.get('HX-Request'):
+                        messages.success(request, "Organization created successfully!")
+                        return HttpResponseClientRedirect("/")
+                except OrganizationCreationError as e:
+                    messages.error(request, str(e))
+                    if request.headers.get('HX-Request'):
+                        return HttpResponseClientRedirect("/")
+                    return render(request, "organizations/organization_form.html", {"form": form})
         else:
             form = OrganizationForm()
         return render(request, "organizations/organization_form.html", {"form": form})
     except Exception as e:
         if request.headers.get('HX-Request'):
-            messages.error(request, "Unable to create organization. Please try again later.")
+            messages.error(request, "An unexpected error occurred. Please try again later.")
             return HttpResponseClientRedirect("/")
-        raise PermissionDenied("Unable to create organization. Please try again later.")
+        raise PermissionDenied("An unexpected error occurred. Please try again later.")

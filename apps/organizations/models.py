@@ -45,7 +45,7 @@ class Organization(baseModel):
         ]
 
     def __str__(self):
-        return self.title + " Owned by " + self.owner.username
+        return self.title
 
 
 class OrganizationMember(baseModel):

@@ -1,6 +1,6 @@
 ---
 description: 
-globs: *.py
+globs: 
 alwaysApply: false
 ---
 ## Overview

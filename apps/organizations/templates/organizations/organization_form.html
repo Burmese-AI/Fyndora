@@ -1,0 +1,41 @@
+<div x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
+    <div class="modal modal-open">
+      <form method="post" class="modal-box max-w-lg bg-white shadow-xl rounded-lg" @click.outside="open = false">
+        {% csrf_token %}
+        <div class="p-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-8">Create Organization</h2>
+
+          <div class="mb-6">
+            <label for="id_title" class="block text-lg font-medium text-gray-700 mb-2">Title</label>
+            {{ form.title.errors }}
+            {{ form.title }}
+          </div>
+
+          <div class="mb-6">
+            <label for="id_description" class="block text-lg font-medium text-gray-700 mb-2">Description</label>
+            {{ form.description.errors }}
+            {{ form.description }}
+          </div>
+
+          <div class="mb-8">
+            <label for="id_status" class="block text-lg font-medium text-gray-700 mb-2">Status</label>
+            {{ form.status.errors }}
+            {{ form.status }}
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button type="button" class="btn btn-base w-full sm:w-auto" @click="open = false">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary w-full sm:w-auto">
+              Create Organization
+            </button>
+          </div>
+        </div>
+      </form>
+  
+      <!-- Optional: Background click to close -->
+      <div class="modal-backdrop bg-black/50 backdrop-blur-sm" @click="open = false"></div>
+    </div>
+  </div>
+  

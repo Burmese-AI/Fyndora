@@ -70,7 +70,7 @@ def organization_create(request):
                 return redirect("home")
         else:
             form = OrganizationForm()
-        return render(request, "organizations/organization_create.html", {"form": form})
+        return render(request, "organizations/organization_form.html", {"form": form})
     except Exception:
         # Log the error here if you have a logging system
         raise PermissionDenied("Unable to create organization. Please try again later.")

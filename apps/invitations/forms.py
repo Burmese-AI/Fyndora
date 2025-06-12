@@ -1,8 +1,8 @@
 from django import forms
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from .models import Invitation
-from apps.organizations.models import OrganizationMember
+from .selectors import is_user_organization_member
+from apps.core.selectors import get_user_by_email
 
 
 class InvitationCreateForm(forms.ModelForm):
@@ -31,25 +31,21 @@ class InvitationCreateForm(forms.ModelForm):
         email = cleaned_data.get("email")
 
         # Check if organization and user are provided
-        if not self.organization and self.user:
+        if not self.organization or not self.user:
             raise forms.ValidationError("Organization ID and User are required.")
 
         # Check if the inviter is the actual organization member based on the user obj and its provided organization ID
-        if not OrganizationMember.objects.filter(
+        if not is_user_organization_member(
             user=self.user, organization=self.organization
-        ).exists():
+        ):
             raise forms.ValidationError(
                 "You must be a member of the organization to send an invitation."
             )
 
         # Check if email belongs to someone existing in the provied organization
-        User = get_user_model()
-        user = User.objects.filter(email=email).first()
-        if (
-            user
-            and OrganizationMember.objects.filter(
-                organization=self.organization, user=user
-            ).exists()
+        user = get_user_by_email(email)
+        if user and is_user_organization_member(
+            user=user, organization=self.organization
         ):
             raise forms.ValidationError(
                 "User with this email is already a member of the organization."

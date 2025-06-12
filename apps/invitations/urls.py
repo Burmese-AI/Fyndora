@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import accept_invitation
+from .views import accept_invitation_view
 
 urlpatterns = [
-    path("<uuid:invitation_token>/", accept_invitation, name="accept_invitation")
+    path("<uuid:invitation_token>/", accept_invitation_view, name="accept_invitation")
 ]

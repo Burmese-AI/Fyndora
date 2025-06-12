@@ -68,9 +68,7 @@ def organization_create(request):
             form = OrganizationForm(request.POST)
             if form.is_valid():
                 organization = form.save(commit=False)
-                organization.owner = request.user
                 organization.save()
-                
                 # Create organization member for the owner
                 OrganizationMember.objects.create(
                     organization=organization,
@@ -89,5 +87,7 @@ def organization_create(request):
             form = OrganizationForm()
         return render(request, "organizations/organization_form.html", {"form": form})
     except Exception as e:
-        messages.error(request, "Unable to create organization. Please try again later.")
+        if request.headers.get('HX-Request'):
+            messages.error(request, "Unable to create organization. Please try again later.")
+            return HttpResponseClientRedirect("/")
         raise PermissionDenied("Unable to create organization. Please try again later.")

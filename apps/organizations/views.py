@@ -17,7 +17,8 @@ from apps.organizations.services import create_organization_with_owner
 from apps.organizations.exceptions import OrganizationCreationError
 
 # Create your views here.
-
+def test_view(request):
+    return render(request, "organizations/dashboard.html")
 
 class HomeView(LoginRequiredMixin, ListView):
     model = Organization

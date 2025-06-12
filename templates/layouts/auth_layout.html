@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col lg:flex-row bg-base-200">
+  <!-- Left Side: Authentication Content -->
+  <div class="lg:w-1/2 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-base-200">
+    {% block content %}
+        {% endblock %}
+  </div>
+
+  <!-- Right Side: Post Container -->
+  <div class="hidden lg:flex lg:w-1/2 items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-base-200 to-primary">
+    <span class="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-base-100 via-base-100 to-primary/10 drop-shadow-lg">
+      Fyndora
+    </span>
+  </div>
+  
+</div>
+{% endblock %}

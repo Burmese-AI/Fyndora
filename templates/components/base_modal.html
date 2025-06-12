@@ -1,0 +1,11 @@
+<div
+  id="modal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
+  hx-get="{% url 'close_modal' %}"
+  hx-target="#modal"
+  hx-swap="outerHTML"
+>
+  <div class="w-full max-w-md" onclick="event.stopPropagation();">
+    {% block modal_content %}{% endblock modal_content %}
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div class="navbar bg-base-100 shadow-sm">
+    <!-- Logo / Branding -->
+    <div class="flex-1">
+      <a class="btn btn-ghost text-xl" href="{% url 'home' %}">Fyndora</a>
+    </div>
+  
+    <!-- Mobile Menu -->
+    <div class="navbar-start lg:hidden">
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-ghost">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </div>
+        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+          <li><a href="{% url 'home' %}">Home</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+  
+    <!-- Desktop Navigation -->
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1">
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="#">Support</a></li>
+      </ul>
+    </div>
+  
+    <!-- Authenticated User Avatar Dropdown -->
+    {% if user.is_authenticated %}
+    <div class="navbar-end flex gap-2 items-center">
+      <span class="text-sm font-medium">{{ user.username }}</span>
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+          <div class="w-10 rounded-full">
+            <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"  alt="User Avatar" />
+          </div>
+        </div>
+        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+          <li><a href="{% url 'profile' %}">Profile</a></li>
+          <li><a>Settings</a></li>
+          <li><a href="{% url 'account_logout' %}">Logout</a></li>
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+  </div>

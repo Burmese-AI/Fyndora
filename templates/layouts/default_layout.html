@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    {% include "includes/default_navbar.html" %}
+
+    <!-- content -->
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+
+{% endblock %}

@@ -8,7 +8,13 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from .models import Invitation
 from .forms import InvitationCreateForm
-from apps.organizations.models import Organization, OrganizationMember
+from apps.organizations.models import Organization
+from .services import (
+    create_invitation,
+    accept_invitation,
+    verify_invitation_for_acceptance,
+)
+from .selectors import get_organization_member_by_user_and_organization
 
 
 class InvitationListView(LoginRequiredMixin, ListView):
@@ -43,13 +49,14 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
 
     @transaction.atomic
     def form_valid(self, form):
-        invitation = form.save(commit=False)
-        # Set the organization and invited_by fields before saving the form
-        invitation.organization = self.organization
-        invitation.invited_by = OrganizationMember.objects.get(
-            user=self.request.user, organization=self.organization
+        create_invitation(
+            email=form.cleaned_data["email"],
+            expired_at=form.cleaned_data["expired_at"],
+            organization=self.organization,
+            invited_by=get_organization_member_by_user_and_organization(
+                user=self.request.user, organization=self.organization
+            ),
         )
-        invitation.save()
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -60,52 +67,26 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
 
 
 @login_required
-@transaction.atomic
-def accept_invitation(request, invitation_token):
+def accept_invitation_view(request, invitation_token):
+    """View to handle invitation acceptance"""
+
     # Get the current user
     user = request.user
-    # Verify the invitation token
-    is_verified, message, invitation = verify_invitation(user, invitation_token)
 
-    # If not legit, redirect back to the home page with an error msg
+    # Verify all requirements for accepting the invitation
+    is_verified, message, invitation = verify_invitation_for_acceptance(
+        user, invitation_token
+    )
     if not is_verified:
         messages.error(request, message)
-    else:
-        # If legit, add user to org
-        OrganizationMember.objects.create(
-            user=user, organization=invitation.organization
-        )
-        invitation.is_used = True
-        invitation.is_active = False
-        invitation.save()
-        messages.success(
-            request, f"Welcome to {invitation.organization.title}, {user.username}"
-        )
+        return redirect("home")
 
-        # Note: redirect user to org dashboard when the page is built
+    # Accept the invitation
+    accept_invitation(user, invitation)
+
+    messages.success(
+        request, f"Welcome to {invitation.organization.title}, {user.username}"
+    )
+
+    # Note: redirect user to org dashboard when the page is built
     return redirect("home")
-
-
-def verify_invitation(user, invitation_token: str) -> tuple:
-    try:
-        # Get the invitation withe the given token
-        invitation = Invitation.objects.get(token=invitation_token)
-    except Invitation.DoesNotExist:
-        return False, "Invalid Invitation Link", None
-
-    # Check if the invitation is for this user
-    if invitation.email != user.email:
-        return False, "Invitation link is not for this user account", None
-
-    # Check if the user has already joined the org
-    user_exists_in_org = OrganizationMember.objects.filter(
-        user=user, organization=invitation.organization
-    ).exists()
-    if user_exists_in_org:
-        return False, "You have already joined this organization", None
-
-    # Check if it's still valid
-    if not invitation.is_valid:
-        return False, "Invitation link is expired", None
-
-    return True, "Invitation verified successfully", invitation

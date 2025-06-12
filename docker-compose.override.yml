@@ -4,10 +4,12 @@ services:
       - DEBUG=${DEBUG:-1}
       - DJANGO_SETTINGS_MODULE=config.settings
     volumes:
-      - .:/app/src:ro
+      - ./apps:/app/apps
+      - ./config:/app/config
+      - ./templates:/app/templates
     ports:
       - "8000:8000"
-    command: [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000" ]
 
   db:
     ports:

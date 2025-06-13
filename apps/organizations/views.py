@@ -16,9 +16,15 @@ from django_htmx.http import HttpResponseClientRedirect
 from apps.organizations.services import create_organization_with_owner
 from apps.organizations.exceptions import OrganizationCreationError
 
+
 # Create your views here.
-def test_view(request):
-    return render(request, "organizations/dashboard.html")
+def dashboard_view(request, organization_id):
+    print(organization_id)
+    organization = Organization.objects.get(organization_id=organization_id)
+    print(organization)
+    context = {"organization": organization}
+    return render(request, "organizations/dashboard.html", context)
+
 
 class HomeView(LoginRequiredMixin, ListView):
     model = Organization
@@ -64,7 +70,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
 
 
 @login_required
-def organization_create(request):
+def create_organization(request):
     try:
         if request.method == "POST":
             form = OrganizationForm(request.POST)

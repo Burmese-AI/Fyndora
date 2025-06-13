@@ -84,31 +84,31 @@ class TestEntryCleanValidation:
         """Test that reviewer validation is checked first, stopping on first error."""
         non_submitter = TeamMemberFactory(role=TeamMemberRole.AUDITOR)
         invalid_reviewer = TeamMemberFactory(role=TeamMemberRole.AUDITOR)
-        
+
         entry = EntryFactory.build(
             submitted_by=non_submitter, reviewed_by=invalid_reviewer
         )
-        
+
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
-        
+
         error_dict = exc_info.value.message_dict
         # Only reviewer error is caught since it's checked first
         assert "reviewed_by" in error_dict
         assert "submitted_by" not in error_dict  # This validation is not reached
-    
+
     def test_submitter_validation_when_reviewer_valid(self):
         """Test that submitter validation is checked when reviewer is valid."""
         non_submitter = TeamMemberFactory(role=TeamMemberRole.AUDITOR)
         valid_reviewer = TeamMemberFactory(role=TeamMemberRole.TEAM_COORDINATOR)
-        
+
         entry = EntryFactory.build(
             submitted_by=non_submitter, reviewed_by=valid_reviewer
         )
-        
+
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
-        
+
         error_dict = exc_info.value.message_dict
         assert "submitted_by" in error_dict
         assert "reviewed_by" not in error_dict

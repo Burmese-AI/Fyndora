@@ -3,7 +3,7 @@
       <form 
             class="modal-box max-w-lg bg-white shadow-xl rounded-lg" 
             @click.outside="open = false"
-            hx-post="{% url 'organization_create' %}"
+            hx-post="{% url 'create_organization' %}"
             hx-target="#organization-create-modal"
             hx-swap="innerHTML">
         {% csrf_token %}

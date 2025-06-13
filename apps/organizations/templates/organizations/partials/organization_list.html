@@ -17,7 +17,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
-                        <span class="truncate">Owner: {{ organization.owner.username }}</span>
+                        <span class="truncate">Owner: {{ organization.owner.user.username }}</span>
                     </div>
                     
                     <!-- Description: hidden on mobile -->
@@ -50,7 +50,7 @@
                     >
                         Overview
                     </button>
-                    <button class="btn btn-sm btn-primary flex-1 sm:flex-none">Manage</button>
+                    <a href="{% url 'test' %}" class="btn btn-sm btn-primary flex-1 sm:flex-none">Manage</a>
                 </div>
             </div>
         </div>

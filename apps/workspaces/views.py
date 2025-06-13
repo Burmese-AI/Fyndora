@@ -53,15 +53,14 @@ def create_workspace(request, organization_id):
             messages.error(request, f"An error occurred: {str(e)}")
     else:
         form = WorkspaceForm(request.POST or None, organization=organization)
-        org_members = OrganizationMember.objects.filter(
-            organization=organization, is_active=True
-        ).values_list("user__username", flat=True)
-        # print(org_members)
+        # org_members = OrganizationMember.objects.filter(
+        #     organization=organization, is_active=True
+        # ).values_list("user__username", flat=True)
+        # # print(org_members)
 
     context = {
         "form": form,
         "organization": organization,
-        "org_members": org_members,
     }
     return render(
         request,

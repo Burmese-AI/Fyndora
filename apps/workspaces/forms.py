@@ -8,6 +8,7 @@ class WorkspaceForm(forms.ModelForm):
 
     workspace_admin = forms.ModelChoiceField(
         queryset=OrganizationMember.objects.none(), 
+        required=False, # allow for null values and can also be assigned later
         label='Select Workspace Admin',
         widget=forms.Select(
             attrs={"class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"}

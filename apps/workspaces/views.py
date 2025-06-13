@@ -40,7 +40,7 @@ class WorkspaceListView(
 def create_workspace(request, organization_id):
     organization = get_organization_by_id(organization_id)
     if request.method == "POST":
-        form = WorkspaceForm(request.POST)
+        form = WorkspaceForm(request.POST, organization=organization)
         try:
             if form.is_valid():
                 create_workspace_from_form(form=form, organization=organization)

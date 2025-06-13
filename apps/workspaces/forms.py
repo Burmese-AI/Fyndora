@@ -1,6 +1,7 @@
 from django import forms
 from .models import Workspace
 from apps.organizations.models import OrganizationMember
+from apps.workspaces.selectors import get_organization_members_by_organization_id
 
 
 class WorkspaceForm(forms.ModelForm):
@@ -70,7 +71,7 @@ class WorkspaceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if organization:
-            self.fields['workspace_admin'].queryset = OrganizationMember.objects.filter(organization=organization, is_active=True)
+            self.fields['workspace_admin'].queryset = get_organization_members_by_organization_id(organization.organization_id)
 
     def clean_title(self):
         title = self.cleaned_data.get("title")

@@ -2,6 +2,7 @@
 
 from apps.workspaces.models import Workspace
 from apps.organizations.models import Organization
+from apps.organizations.models import OrganizationMember
 
 
 def get_user_workspaces_under_organization(organization_id):
@@ -23,4 +24,14 @@ def get_organization_by_id(organization_id):
         return Organization.objects.get(organization_id=organization_id)
     except Exception as e:
         print(f"Error in get_organization_by_id: {str(e)}")
+        return None
+
+def get_organization_members_by_organization_id(organization_id):
+    """
+    Return organization members by organization ID.
+    """
+    try:
+        return OrganizationMember.objects.filter(organization=organization_id)
+    except Exception as e:
+        print(f"Error in get_organization_members_by_organization_id: {str(e)}")
         return None

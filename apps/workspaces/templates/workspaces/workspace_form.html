@@ -49,6 +49,12 @@
             {{ form.status }}
           </div>
 
+          <div class="mb-8">
+            <label for="id_workspace_admin" class="block text-lg font-medium text-gray-700 mb-2">Workspace Admin</label>
+            {{ form.workspace_admin.errors }}
+            {{ form.workspace_admin }}
+          </div>
+
           <div class="flex justify-end space-x-3">
             <button type="button" class="btn btn-base w-full sm:w-auto" @click="open = false">
               Cancel

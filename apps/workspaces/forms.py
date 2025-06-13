@@ -1,8 +1,17 @@
 from django import forms
 from .models import Workspace
+from apps.organizations.models import OrganizationMember
 
 
 class WorkspaceForm(forms.ModelForm):
+
+    workspace_admin = forms.ModelChoiceField(
+        queryset=OrganizationMember.objects.none(), 
+        label='Select Workspace Admin',
+        widget=forms.Select(
+            attrs={"class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"}
+        )
+    )
     class Meta:
         model = Workspace
         fields = [
@@ -12,6 +21,7 @@ class WorkspaceForm(forms.ModelForm):
             "remittance_rate",
             "start_date",
             "end_date",
+            "workspace_admin",
         ]
         widgets = {
             "title": forms.TextInput(
@@ -54,6 +64,13 @@ class WorkspaceForm(forms.ModelForm):
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop('organization', None)
+        super().__init__(*args, **kwargs)
+
+        if organization:
+            self.fields['workspace_admin'].queryset = OrganizationMember.objects.filter(organization=organization, is_active=True)
 
     def clean_title(self):
         title = self.cleaned_data.get("title")

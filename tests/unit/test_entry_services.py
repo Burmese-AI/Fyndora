@@ -4,11 +4,12 @@ Unit tests for Entry service business logic.
 Tests entry_create service function validation and business rules.
 """
 
-import pytest
 from decimal import Decimal
+from unittest.mock import patch
+
+import pytest
 from django.core.exceptions import ValidationError
 
-from apps.auditlog.models import AuditTrail
 from apps.entries.services import entry_create
 from apps.teams.constants import TeamMemberRole
 from tests.factories import TeamMemberFactory
@@ -143,25 +144,27 @@ class TestEntryCreateService:
         assert entry.description == long_description
         assert len(entry.description) == 255
 
-    def test_entry_create_creates_audit_trail_entry(self):
-        """Test that creating an entry also creates an audit trail record."""
+    @patch("apps.entries.services.audit_create")
+    def test_entry_create_calls_audit_service(self, mock_audit_create):
+        """Test that entry_create calls audit service with correct params."""
         submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
 
         entry = entry_create(
             submitted_by=submitter,
             entry_type="income",
             amount=Decimal("150.00"),
-            description="Test entry for audit trail",
+            description="Test entry",
         )
 
-        assert AuditTrail.objects.count() == 1
-        audit_log = AuditTrail.objects.first()
-        assert audit_log.user == submitter.organization_member.user
-        assert audit_log.action_type == "entry_created"
-        assert audit_log.target_entity == entry.entry_id
-        assert audit_log.target_entity_type == "entry"
-        assert audit_log.metadata == {
-            "entry_type": "income",
-            "amount": "150.00",
-            "description": "Test entry for audit trail",
-        }
+        # Verify audit_create was called with expected params
+        mock_audit_create.assert_called_once_with(
+            user=submitter.organization_member.user,
+            action_type="entry_created",
+            target_entity=entry.entry_id,
+            target_entity_type="entry",
+            metadata={
+                "entry_type": "income",
+                "amount": "150.00",
+                "description": "Test entry",
+            },
+        )

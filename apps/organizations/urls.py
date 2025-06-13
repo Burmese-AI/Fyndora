@@ -4,7 +4,7 @@ from apps.organizations.views import (
     HomeView,
     OrganizationDetailView,
     create_organization,
-    test_view,
+    dashboard_view,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
 
@@ -23,5 +23,5 @@ urlpatterns = [
         InvitationCreateView.as_view(),
         name="invitation_create",
     ),
-    path("test/", test_view, name="test"),
+    path("dashboard/<uuid:organization_id>/", dashboard_view, name="dashboard"),
 ]

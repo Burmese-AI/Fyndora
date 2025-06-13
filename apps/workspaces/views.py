@@ -18,47 +18,22 @@ class WorkspaceListView(ListView, LoginRequiredMixin):
     template_name = "workspaces/workspaces_list.html"
     context_object_name = "workspaces"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["organization"] = Organization.objects.get(organization_id=self.kwargs["organization_id"])
+        return context
+
     def get_queryset(self):
         return get_user_workspaces(self.request.user)
 
 
 @login_required
-def create_workspace(request):
-    try:
-        if request.method == "POST":
-            form = WorkspaceForm(request.POST)
-            if form.is_valid():
-                try:
-                    # Get the organization from the request
-                    organization = Organization.objects.get(
-                        organization_id=request.POST.get('organization_id')
-                    )
-                    
-                    create_workspace_with_admin(
-                        form=form,
-                        user=request.user,
-                        organization=organization
-                    )
-
-                    if request.headers.get("HX-Request"):
-                        messages.success(request, "Workspace created successfully!")
-                        return HttpResponseClientRedirect("/")
-                except WorkspaceCreationError as e:
-                    messages.error(request, str(e))
-                    if request.headers.get("HX-Request"):
-                        return HttpResponseClientRedirect("/")
-                    return render(
-                        request, "workspaces/workspace_form.html", {"form": form}
-                    )
-        else:
-            form = WorkspaceForm()
-        return render(request, "workspaces/workspace_form.html", {"form": form})
-    except Exception:
-        if request.headers.get("HX-Request"):
-            messages.error(
-                request, "An unexpected error occurred. Please try again later."
-            )
-            return HttpResponseClientRedirect("/")
-        raise WorkspaceCreationError(
-            "An unexpected error occurred. Please try again later."
-        )
+def create_workspace(request, organization_id):
+    form = WorkspaceForm()
+    organization = Organization.objects.get(organization_id=organization_id)
+    print(organization_id)
+    context = {
+        "form": form,
+        "organization": organization
+    }
+    return render(request, "workspaces/workspace_form.html", context)

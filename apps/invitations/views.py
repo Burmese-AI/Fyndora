@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -15,16 +15,28 @@ from .services import (
     verify_invitation_for_acceptance,
 )
 from .selectors import get_organization_member_by_user_and_organization
-
+from apps.core.constants import PAGINATION_SIZE
+from typing import Any
 
 class InvitationListView(LoginRequiredMixin, ListView):
     model = Invitation
     template_name = "invitations/index.html"
     context_object_name = "invitations"
+    paginate_by = PAGINATION_SIZE
 
     def get_queryset(self):
-        return Invitation.objects.filter(organization=self.kwargs["organization_id"])
-
+        organization = get_object_or_404(Organization, pk=self.kwargs["organization_id"])
+        return Invitation.objects.filter(organization=organization)
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "invitations"
+        return context
+    
+    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any):
+        if self.request.htmx:
+            return render(self.request, "invitations/partials/table.html", context)
+        return super().render_to_response(context, **response_kwargs)
 
 class InvitationCreateView(LoginRequiredMixin, CreateView):
     model = Invitation

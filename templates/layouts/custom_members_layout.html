@@ -1,0 +1,16 @@
+{% extends 'layouts/organization_layout.html' %}
+
+{% block header %}
+    {% include "components/organization_layout_header.html" with title="Members" subtitle="Manage your organization members and invitations" %}
+{% endblock %}
+
+
+{% block content %}
+
+    {% include "components/navigation_slider_for_members.html" %}
+
+    <div id="content-container">
+        {% block secondary_content %}{% endblock %}
+    </div>
+
+{% endblock %}

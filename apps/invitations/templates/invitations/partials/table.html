@@ -1,0 +1,31 @@
+<div class="overflow-x-auto">
+    <table class="table w-full">
+        <thead>
+            <tr>
+                <th class="text-base-content">Email</th>
+                <th class="text-base-content">Invited By</th>
+                <th class="text-base-content">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invitation in invitations %}
+                <tr class="hover:bg-base-200">
+                    <td class="text-base-content">{{ invitation.email }}</td>
+                    <td class="text-base-content">{{ invitation.invited_by.user.username|default:"N/A" }}</td>
+                    <td>
+                        <span class="badge {% if invitation.is_valid %}badge-primary{% else %}badge-secondary{% endif %}">
+                            {{ invitation.is_valid|yesno:"Valid,Invalid" }}
+                        </span>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-base-content">No invitations found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if is_paginated %}
+    {% include "organization_members/partials/pagination.html" %}
+{% endif %}

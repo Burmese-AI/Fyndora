@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
@@ -15,21 +15,38 @@ from .services import (
     verify_invitation_for_acceptance,
 )
 from .selectors import get_organization_member_by_user_and_organization
+from apps.core.constants import PAGINATION_SIZE
+from typing import Any
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from django.core.paginator import Paginator
+
 
 
 class InvitationListView(LoginRequiredMixin, ListView):
     model = Invitation
     template_name = "invitations/index.html"
     context_object_name = "invitations"
+    paginate_by = PAGINATION_SIZE
 
     def get_queryset(self):
-        return Invitation.objects.filter(organization=self.kwargs["organization_id"])
-
+        organization = get_object_or_404(Organization, pk=self.kwargs["organization_id"])
+        return Invitation.objects.filter(organization=organization)
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "invitations"
+        context["organization_id"] = self.kwargs["organization_id"]
+        return context
+    
+    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any):
+        if self.request.htmx:
+            return render(self.request, "invitations/partials/table.html", context)
+        return super().render_to_response(context, **response_kwargs)
 
 class InvitationCreateView(LoginRequiredMixin, CreateView):
     model = Invitation
     form_class = InvitationCreateForm
-    template_name = "invitations/create.html"
 
     def __init__(self):
         self.organization = None
@@ -46,6 +63,13 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         kwargs["organization"] = self.organization
         kwargs["user"] = self.request.user
         return kwargs
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["is_oob"] = True
+        context["messages"] = messages.get_messages(self.request) 
+        return context
+    
 
     @transaction.atomic
     def form_valid(self, form):
@@ -57,7 +81,43 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
                 user=self.request.user, organization=self.organization
             ),
         )
+        #For success, Send messages templates and invitation table with enabled OOB 
+        messages.success(self.request, "Invitation sent successfully")
+        if self.request.htmx:
+            return self._render_htmx_success_response()
+        
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, "Failed to send invitation")
+        if self.request.htmx:
+            return self._render_htmx_error_response(form)
+        
+        return super().form_invalid(form)
+    
+    def _render_htmx_success_response(self):
+        context = self.get_context_data()
+        invitations = Invitation.objects.filter(organization=self.organization)
+        paginator = Paginator(invitations, PAGINATION_SIZE)
+        page_obj = paginator.get_page(1)
+        # Merge the existing context dict with the new one
+        context.update({
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "invitations": page_obj.object_list,
+            "is_paginated": paginator.num_pages > 1,
+        })
+        message_html = render_to_string("includes/message.html", context=context, request=self.request)
+        table_html = render_to_string("invitations/partials/table.html", context=context, request=self.request)
+        return HttpResponse(f"{message_html} {table_html}")
+    
+    def _render_htmx_error_response(self, form):
+        context = self.get_context_data()
+        context["form"] = form
+        context["organization_id"] = self.organization.pk
+        message_html = render_to_string("includes/message.html", context=context, request=self.request)
+        modal_html = render_to_string("invitations/components/create_modal.html", context=context, request=self.request)
+        return HttpResponse(f"{message_html} {modal_html}")
 
     def get_success_url(self):
         return reverse(
@@ -90,3 +150,13 @@ def accept_invitation_view(request, invitation_token):
 
     # Note: redirect user to org dashboard when the page is built
     return redirect("home")
+
+@login_required
+def open_invitation_create_modal(request):
+    form = InvitationCreateForm()
+    context = {
+        'form': form,
+        'organization_id': request.GET.get('org_id'),
+    }
+    print(context)
+    return render(request, "invitations/components/create_modal.html", context=context)

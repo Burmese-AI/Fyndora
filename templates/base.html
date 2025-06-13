@@ -10,11 +10,8 @@
   </head>
   <body>
    {% include 'includes/message.html' %}
-  {% block body %}{% endblock %}
-   {% comment %} {% block content %}
-   {% endblock %} {% endcomment %}
+    {% block body %}{% endblock %}
+    {% include "components/modal_placeholder.html" %}
    {% include 'includes/footer.html' %}
   </body>
 </html>
-
-{% comment %} body (footer + messages) > dynamic layout > content {% endcomment %}

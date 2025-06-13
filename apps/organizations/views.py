@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
-from apps.organizations.models import Organization
+from apps.organizations.models import Organization, OrganizationMember
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
@@ -15,6 +15,9 @@ from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
 from apps.organizations.services import create_organization_with_owner
 from apps.organizations.exceptions import OrganizationCreationError
+from apps.core.constants import PAGINATION_SIZE
+from django.shortcuts import get_object_or_404
+from typing import Any
 
 
 # Create your views here.
@@ -100,3 +103,33 @@ def create_organization(request):
         raise OrganizationCreationError(
             "An unexpected error occurred. Please try again later."
         )
+
+
+class OrganizationMemberListView(LoginRequiredMixin, ListView):
+    model = OrganizationMember
+    template_name = "organization_members/index.html"
+    context_object_name = "members"
+    paginate_by = PAGINATION_SIZE
+    
+    def get_queryset(self):
+        organization = get_object_or_404(Organization, pk=self.kwargs["organization_id"])
+        query = OrganizationMember.objects.filter(organization=organization)
+        return query
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "members"
+        return context
+    
+    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any):
+        if self.request.htmx:
+            return render(self.request, "organization_members/partials/table.html", context)
+        return super().render_to_response(context, **response_kwargs)
+    
+    
+    
+#View to partially render the members section
+#View to partially render the invitations section
+#View to partially render the members table
+#View to partially render the invitations table
+#View to open a create invitation modal

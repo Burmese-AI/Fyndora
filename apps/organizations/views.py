@@ -22,9 +22,7 @@ def dashboard_view(request, organization_id):
     print(organization_id)
     organization = Organization.objects.get(organization_id=organization_id)
     print(organization)
-    context = {
-        "organization": organization
-    }
+    context = {"organization": organization}
     return render(request, "organizations/dashboard.html", context)
 
 

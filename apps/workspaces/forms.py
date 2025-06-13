@@ -5,7 +5,14 @@ from .models import Workspace
 class WorkspaceForm(forms.ModelForm):
     class Meta:
         model = Workspace
-        fields = ["title", "description", "status", "remittance_rate", "start_date", "end_date"]
+        fields = [
+            "title",
+            "description",
+            "status",
+            "remittance_rate",
+            "start_date",
+            "end_date",
+        ]
         widgets = {
             "title": forms.TextInput(
                 attrs={

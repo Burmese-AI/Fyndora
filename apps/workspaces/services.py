@@ -1,7 +1,6 @@
 from django.db import transaction
-from apps.workspaces.models import Workspace, WorkspaceTeam
+from apps.workspaces.models import Workspace
 from apps.workspaces.exceptions import WorkspaceCreationError
-from apps.core.utils import model_update
 from apps.organizations.models import OrganizationMember
 
 
@@ -24,9 +23,7 @@ def create_workspace_with_admin(*, form, user, organization) -> Workspace:
     try:
         # Get the organization member for the request user
         org_member = OrganizationMember.objects.get(
-            organization=organization,
-            user=user,
-            is_active=True
+            organization=organization, user=user, is_active=True
         )
 
         # Create the workspace
@@ -37,4 +34,4 @@ def create_workspace_with_admin(*, form, user, organization) -> Workspace:
 
         return workspace
     except Exception as e:
-        raise WorkspaceCreationError(f"Failed to create workspace: {str(e)}") 
+        raise WorkspaceCreationError(f"Failed to create workspace: {str(e)}")

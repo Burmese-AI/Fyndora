@@ -142,7 +142,7 @@ class TestEntryCreateService:
 
         assert entry.description == long_description
         assert len(entry.description) == 255
-        
+
     def test_entry_create_creates_audit_trail_entry(self):
         """Test that creating an entry also creates an audit trail record."""
         submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)

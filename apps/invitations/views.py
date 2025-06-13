@@ -102,3 +102,7 @@ def accept_invitation_view(request, invitation_token):
 
     # Note: redirect user to org dashboard when the page is built
     return redirect("home")
+
+@login_required
+def open_invitation_create_modal(request):
+    return render(request, "invitations/components/create_modal.html")

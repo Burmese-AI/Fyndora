@@ -1,4 +1,4 @@
-from core.utils import model_update
+from apps.core.utils import model_update
 
 from .models import AuditTrail
 

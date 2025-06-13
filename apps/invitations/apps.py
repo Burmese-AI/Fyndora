@@ -6,4 +6,4 @@ class InvitationsConfig(AppConfig):
     name = "apps.invitations"
 
     def ready(self):
-        pass
+        from . import signals

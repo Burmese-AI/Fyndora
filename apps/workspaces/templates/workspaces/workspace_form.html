@@ -3,12 +3,12 @@
       <form 
             class="modal-box max-w-lg bg-white shadow-xl rounded-lg" 
             @click.outside="open = false"
-            hx-post="{% url 'create_organization' %}"
-            hx-target="#organization-create-modal"
+            hx-post="{% url 'create_workspace' %}"
+            hx-target="#workspace-create-modal"
             hx-swap="innerHTML">
         {% csrf_token %}
         <div class="p-8">
-          <h2 class="text-2xl font-bold text-gray-800 mb-8">Create Organization</h2>
+          <h2 class="text-2xl font-bold text-gray-800 mb-8">Create Workspace</h2>
 
           <div id="form-errors" class="mb-4"></div>
 
@@ -24,6 +24,24 @@
             {{ form.description }}
           </div>
 
+          <div class="mb-6">
+            <label for="id_remittance_rate" class="block text-lg font-medium text-gray-700 mb-2">Remittance Rate (%)</label>
+            {{ form.remittance_rate.errors }}
+            {{ form.remittance_rate }}
+          </div>
+
+          <div class="mb-6">
+            <label for="id_start_date" class="block text-lg font-medium text-gray-700 mb-2">Start Date</label>
+            {{ form.start_date.errors }}
+            {{ form.start_date }}
+          </div>
+
+          <div class="mb-6">
+            <label for="id_end_date" class="block text-lg font-medium text-gray-700 mb-2">End Date (Optional)</label>
+            {{ form.end_date.errors }}
+            {{ form.end_date }}
+          </div>
+
           <div class="mb-8">
             <label for="id_status" class="block text-lg font-medium text-gray-700 mb-2">Status</label>
             {{ form.status.errors }}
@@ -35,7 +53,7 @@
               Cancel
             </button>
             <button type="submit" class="btn btn-primary w-full sm:w-auto">
-              Create Organization
+              Create Workspace
             </button>
           </div>
         </div>

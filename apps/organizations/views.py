@@ -66,7 +66,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
 
 
 @login_required
-def organization_create(request):
+def create_organization(request):
     try:
         if request.method == "POST":
             form = OrganizationForm(request.POST)

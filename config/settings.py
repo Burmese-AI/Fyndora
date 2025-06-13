@@ -23,9 +23,9 @@ env = environ.Env(
 )
 
 # Read .env file
-env_path = BASE_DIR(".env")
+# env_path = BASE_DIR(".env")
 # Read .env.local file
-# env_path = BASE_DIR(".env.local")
+env_path = BASE_DIR(".env.local")
 
 env.read_env(env_path, parse_comments=True, overwrite=True)
 

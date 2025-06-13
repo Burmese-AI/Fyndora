@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -39,11 +40,12 @@ def calculate_remittance_on_income(sender, instance, created, **kwargs):
         return
 
     # Calculate the remittance rate (team's custom rate or workspace default)
-    remittance_rate = (
+    rate = (
         team.custom_remittance_rate
         if team.custom_remittance_rate is not None
         else workspace.remittance_rate
-    ) / 100  # Convert percentage to decimal
+    )
+    remittance_rate = Decimal(str(rate)) / Decimal("100.00")
 
     # Calculate the due amount
     due_amount = instance.amount * remittance_rate

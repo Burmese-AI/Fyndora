@@ -33,7 +33,7 @@ ENV UV_LINK_MODE=copy \
 COPY pyproject.toml uv.lock /_lock/
 RUN --mount=type=cache,target=/root/.cache \
     cd /_lock && \
-    uv sync --locked --no-group dev --group prod
+    uv sync --locked --no-group dev --group prod --group test
 
 # Copy full source for building Tailwind
 WORKDIR /app

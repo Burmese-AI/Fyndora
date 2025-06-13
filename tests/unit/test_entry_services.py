@@ -8,6 +8,7 @@ import pytest
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 
+from apps.auditlog.models import AuditTrail
 from apps.entries.services import entry_create
 from apps.teams.constants import TeamMemberRole
 from tests.factories import TeamMemberFactory
@@ -141,3 +142,26 @@ class TestEntryCreateService:
 
         assert entry.description == long_description
         assert len(entry.description) == 255
+        
+    def test_entry_create_creates_audit_trail_entry(self):
+        """Test that creating an entry also creates an audit trail record."""
+        submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
+
+        entry = entry_create(
+            submitted_by=submitter,
+            entry_type="income",
+            amount=Decimal("150.00"),
+            description="Test entry for audit trail",
+        )
+
+        assert AuditTrail.objects.count() == 1
+        audit_log = AuditTrail.objects.first()
+        assert audit_log.user == submitter.organization_member.user
+        assert audit_log.action_type == "entry_created"
+        assert audit_log.target_entity == entry.entry_id
+        assert audit_log.target_entity_type == "entry"
+        assert audit_log.metadata == {
+            "entry_type": "income",
+            "amount": "150.00",
+            "description": "Test entry for audit trail",
+        }

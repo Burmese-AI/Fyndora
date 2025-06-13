@@ -39,7 +39,7 @@ class WorkspaceListView(
 def create_workspace(request, organization_id):
     organization = get_organization_by_id(organization_id)
     if request.method == "POST":
-        form = WorkspaceForm(request.POST)
+        form = WorkspaceForm(request.POST, organization=organization)
         try:
             if form.is_valid():
                 create_workspace_from_form(form=form, organization=organization)
@@ -51,9 +51,13 @@ def create_workspace(request, organization_id):
         except WorkspaceCreationError as e:
             messages.error(request, f"An error occurred: {str(e)}")
     else:
-        form = WorkspaceForm()
+        form = WorkspaceForm(request.POST or None, organization=organization)
+    context = {
+        "form": form,
+        "organization": organization,
+    }
     return render(
         request,
         "workspaces/workspace_form.html",
-        {"form": form, "organization": organization},
+        context,
     )

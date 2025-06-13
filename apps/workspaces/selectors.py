@@ -26,6 +26,7 @@ def get_organization_by_id(organization_id):
         print(f"Error in get_organization_by_id: {str(e)}")
         return None
 
+
 def get_organization_members_by_organization_id(organization_id):
     """
     Return organization members by organization ID.

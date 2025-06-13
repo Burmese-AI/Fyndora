@@ -6,7 +6,7 @@
             <div class="badge badge-primary">{{ organization.status }}</div>
         </div>
         <div class="mb-2 text-gray-700">
-          <strong>Owner:</strong> {{ organization.owner.username }}
+          <strong>Owner:</strong> {{ organization.owner.user.username }}
         </div>
   
         {% if organization.description %}

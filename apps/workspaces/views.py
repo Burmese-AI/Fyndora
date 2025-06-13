@@ -13,7 +13,6 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import create_workspace_from_form
 from django.contrib import messages
 from apps.workspaces.exceptions import WorkspaceCreationError
-from apps.organizations.models import OrganizationMember
 
 
 # Create your views here.
@@ -53,11 +52,6 @@ def create_workspace(request, organization_id):
             messages.error(request, f"An error occurred: {str(e)}")
     else:
         form = WorkspaceForm(request.POST or None, organization=organization)
-        # org_members = OrganizationMember.objects.filter(
-        #     organization=organization, is_active=True
-        # ).values_list("user__username", flat=True)
-        # # print(org_members)
-
     context = {
         "form": form,
         "organization": organization,
@@ -65,5 +59,5 @@ def create_workspace(request, organization_id):
     return render(
         request,
         "workspaces/workspace_form.html",
-        {"form": form, "organization": organization},
+        context,
     )

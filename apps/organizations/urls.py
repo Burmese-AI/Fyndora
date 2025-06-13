@@ -20,6 +20,14 @@ urlpatterns = [
         name="invitation_create",
     ),
     path("dashboard/<uuid:organization_id>/", dashboard_view, name="dashboard"),
-    path("<uuid:organization_id>/members", OrganizationMemberListView.as_view(), name="organization_member_list"),
-    path("<uuid:organization_id>/invitations/", InvitationListView.as_view(), name="invitation_list"),
+    path(
+        "<uuid:organization_id>/members",
+        OrganizationMemberListView.as_view(),
+        name="organization_member_list",
+    ),
+    path(
+        "<uuid:organization_id>/invitations/",
+        InvitationListView.as_view(),
+        name="invitation_list",
+    ),
 ]

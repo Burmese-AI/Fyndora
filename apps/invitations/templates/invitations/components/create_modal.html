@@ -2,6 +2,7 @@
 
 {% block modal_content %}
 <div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6">
+
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-base-content">
       Add Invitation
@@ -67,6 +68,5 @@
     </button>
   </div>
 </form>
-
 </div>
 {% endblock modal_content %}

@@ -3,6 +3,7 @@
 {% block body %}
 <div class="drawer lg:drawer-open">
   <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+
   <div class="drawer-content flex flex-col min-h-screen">
 
     <!-- Top Navbar -->
@@ -27,10 +28,13 @@
     
     <div class="divider my-0 mb-5"></div>
     
-    {% block content %}{% endblock %}
+    <div id="right-side-content-container">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 
   </div>
+ 
 
   <!-- Sidebar / Drawer -->
   <div class="drawer-side">

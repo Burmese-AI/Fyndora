@@ -8,7 +8,7 @@
             class="modal-box max-w-lg bg-white shadow-xl rounded-lg" 
             @click.outside="open = false"
             hx-post="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}"
-            hx-target="#workspace-create-modal"
+            hx-target="#right-side-content-container"
             hx-swap="innerHTML">
         {% csrf_token %}
         <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}">

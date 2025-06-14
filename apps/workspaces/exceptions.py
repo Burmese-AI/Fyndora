@@ -14,3 +14,9 @@ class WorkspacePermissionError(WorkspaceError):
     """Raised when user doesn't have permission for a workspace operation."""
 
     pass
+
+
+class WorkspaceUpdateError(WorkspaceError):
+    """Raised when workspace update fails."""
+
+    pass

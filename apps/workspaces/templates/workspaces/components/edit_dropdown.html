@@ -1,7 +1,7 @@
 <div x-data="{ showMenu: false }" class="relative">
     <button @click="showMenu = !showMenu" 
             aria-label="Open Menu" 
-            class="p-1 -mr-1 rounded-full hover:bg-base-200 transition-colors duration-200">
+            class="p-2 rounded-full hover:bg-base-200 transition-colors duration-200">
         <svg xmlns="http://www.w3.org/2000/svg" 
              fill="currentColor" viewBox="0 0 24 24" 
              stroke="currentColor" 
@@ -20,8 +20,8 @@
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
         @click.away="showMenu = false" 
-        class="absolute right-0 mt-2 w-48 bg-base-100 shadow-lg rounded-lg py-1 z-10 border border-base-200">
-        <a href="#" 
+        class="absolute left-0 mt-2 w-48 bg-base-100 shadow-lg rounded-lg py-1 z-10 border border-base-200">
+        <a hx-get="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#workspace-create-modal"
            class="flex items-center px-4 py-2 text-sm text-base-content/80 hover:bg-base-200 transition-colors duration-200">
            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

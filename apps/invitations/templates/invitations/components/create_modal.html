@@ -1,7 +1,7 @@
 {% extends "components/base_modal.html" %}
 
 {% block modal_content %}
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} class="bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6">
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="create_invitation_modal" class="bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6">
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-base-content">
       Add Invitation
@@ -19,56 +19,54 @@
   </div>
 
   <form
-      hx-post="{% url 'invitation_create' organization_id=organization_id %}"
-      hx-swap="none"
-      class="space-y-6"
-  >
-    {% csrf_token %}
-    
-    {% include "components/non_field_errors.html" %}
-    <!-- Email Field -->
-    <div>
-      <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-base-content">Email</label>
-      <div class="mt-2">
-        {{ form.email }}
-      </div>
-      {% if form.errors.email %}
-        {% for error in form.errors.email %}
-          <p class="mt-1 text-sm text-error">{{ error }}</p>
-        {% endfor %}
-      {% endif %}
-    </div>
+    hx-post="{% url 'invitation_create' organization_id=organization_id %}"
+    hx-swap="none"
+    class="space-y-6"
+>
+  {% csrf_token %}
 
-    <!-- Expired At Field -->
-    <div>
-      <label for="{{ form.expired_at.id_for_label }}" class="block text-sm font-medium text-base-content">Expiration Date</label>
-      <div class="mt-2">
-        {{ form.expired_at }}
-      </div>
-      {% if form.errors.expired_at %}
-        {% for error in form.errors.expired_at %}
-          <p class="mt-1 text-sm text-error">{{ error }}</p>
-        {% endfor %}
-      {% endif %}
-    </div>
+  {% include "components/non_field_errors.html" %}
 
-    <!-- Form Actions -->
-    <div class="flex justify-end space-x-2 pt-4">
-      <a
-        hx-get="{% url 'close_modal' %}"
-        hx-target="#modal"
-        hx-swap="outerHTML"
-        class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-      >
-        Cancel
-      </a>
-      <button
-        type="submit"
-        class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-      >
-        Save
-      </button>
+  <!-- Email Field -->
+  <div>
+    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-base-content">
+      Email
+    </label>
+    <div class="mt-2">
+      {{ form.email }}
     </div>
-  </form>
+    {% include "components/field_error.html" with field=form.email %}
+  </div>
+
+  <!-- Expired At Field -->
+  <div>
+    <label for="{{ form.expired_at.id_for_label }}" class="block text-sm font-medium text-base-content">
+      Expiration Date
+    </label>
+    <div class="mt-2">
+      {{ form.expired_at }}
+    </div>
+    {% include "components/field_error.html" with field=form.expired_at %}
+  </div>
+
+  <!-- Form Actions -->
+  <div class="flex justify-end space-x-2 pt-4">
+    <a
+      hx-get="{% url 'close_modal' %}"
+      hx-target="#modal"
+      hx-swap="outerHTML"
+      class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    >
+      Cancel
+    </a>
+    <button
+      type="submit"
+      class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    >
+      Save
+    </button>
+  </div>
+</form>
+
 </div>
 {% endblock modal_content %}

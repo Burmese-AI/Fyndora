@@ -77,7 +77,7 @@ def edit_workspace(request, organization_id, workspace_id):
             return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
         if request.method == "POST":
-            form = WorkspaceForm(request.POST, instance=workspace)
+            form = WorkspaceForm(request.POST, instance=workspace, organization=organization)
             try:
                 if form.is_valid():
                     update_workspace_from_form(form=form, workspace=workspace)
@@ -88,13 +88,30 @@ def edit_workspace(request, organization_id, workspace_id):
             except WorkspaceUpdateError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
         else:
-            form = WorkspaceForm(instance=workspace)
+            form = WorkspaceForm(instance=workspace, organization=organization)
             
         context = {
             "form": form,
             "organization": organization,
         }
         return render(request, "workspaces/workspace_edit_form.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+    
+def delete_workspace(request, organization_id, workspace_id):
+    try:
+        workspace = get_workspace_by_id(workspace_id)
+        organization = get_organization_by_id(organization_id)
+        
+        if not workspace or not organization:
+            messages.error(request, "Workspace or organization not found.")
+            return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+        
+        # Immediately delete on any request
+        workspace.delete()
+        messages.success(request, "Workspace deleted successfully.")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

@@ -13,6 +13,7 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import create_workspace_from_form
 from django.contrib import messages
 from apps.workspaces.exceptions import WorkspaceCreationError
+from apps.workspaces.selectors import get_workspace_by_id
 
 
 # Create your views here.
@@ -61,3 +62,23 @@ def create_workspace(request, organization_id):
         "workspaces/workspace_form.html",
         context,
     )
+
+
+def edit_workspace(request, organization_id, workspace_id):
+    workspace = get_workspace_by_id(workspace_id)
+    organization = get_organization_by_id(organization_id)
+    print(workspace)
+    print(organization)
+    if request.method == "POST":
+        form = WorkspaceForm(request.POST, instance=workspace)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Workspace updated successfully.")
+            return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+    else:
+        form = WorkspaceForm(instance=workspace)
+    context = {
+        "form": form,
+        "organization": organization,
+    }
+    return render(request, "workspaces/workspace_form.html", context)

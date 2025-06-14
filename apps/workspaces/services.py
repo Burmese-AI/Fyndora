@@ -25,6 +25,7 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
     except Exception as e:
         raise WorkspaceCreationError(f"Failed to create workspace: {str(e)}")
 
+
 @transaction.atomic
 def update_workspace_from_form(*, form, workspace) -> Workspace:
     """

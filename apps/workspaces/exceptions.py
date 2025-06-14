@@ -15,6 +15,7 @@ class WorkspacePermissionError(WorkspaceError):
 
     pass
 
+
 class WorkspaceUpdateError(WorkspaceError):
     """Raised when workspace update fails."""
 

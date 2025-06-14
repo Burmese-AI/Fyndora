@@ -45,7 +45,7 @@ def create_workspace(request, organization_id):
                 create_workspace_from_form(form=form, organization=organization)
                 messages.success(request, "Workspace created successfully.")
                 if request.headers.get("HX-Request"):
-                    return HttpResponseClientRedirect(f"/workspaces/{organization_id}")
+                    return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
             else:
                 messages.error(request, "Invalid form data.")
         except WorkspaceCreationError as e:

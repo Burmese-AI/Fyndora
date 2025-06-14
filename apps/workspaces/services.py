@@ -5,7 +5,7 @@ from apps.core.utils import model_update
 
 
 @transaction.atomic
-def create_workspace_from_form(*, form, organization) -> Workspace:
+def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
     """
     Creates a new workspace from a form and assigns it to an organization.
 
@@ -19,6 +19,7 @@ def create_workspace_from_form(*, form, organization) -> Workspace:
     try:
         workspace = form.save(commit=False)
         workspace.organization = organization
+        workspace.created_by = orgMember
         workspace.save()
         return workspace
     except Exception as e:

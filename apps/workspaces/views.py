@@ -13,7 +13,7 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import create_workspace_from_form
 from django.contrib import messages
 from apps.workspaces.exceptions import WorkspaceCreationError
-from apps.workspaces.selectors import get_workspace_by_id
+from apps.workspaces.selectors import get_workspace_by_id, get_orgMember_by_user_id_and_organization_id
 
 
 # Create your views here.
@@ -39,14 +39,16 @@ class WorkspaceListView(
 @login_required
 def create_workspace(request, organization_id):
     organization = get_organization_by_id(organization_id)
+    orgMember = get_orgMember_by_user_id_and_organization_id(request.user.user_id, organization_id)
+    print(orgMember)
     if request.method == "POST":
         form = WorkspaceForm(request.POST, organization=organization)
         try:
             if form.is_valid():
-                create_workspace_from_form(form=form, organization=organization)
+                create_workspace_from_form(form=form, orgMember=orgMember, organization=organization)
                 messages.success(request, "Workspace created successfully.")
                 if request.headers.get("HX-Request"):
-                    return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+                   return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
             else:
                 messages.error(request, "Invalid form data.")
         except WorkspaceCreationError as e:

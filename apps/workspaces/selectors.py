@@ -47,3 +47,13 @@ def get_workspace_by_id(workspace_id):
     except Exception as e:
         print(f"Error in get_workspace_by_id: {str(e)}")
         return None
+    
+def get_orgMember_by_user_id_and_organization_id(user_id, organization_id):
+    """
+    Return an organization member by its user ID.
+    """
+    try:
+        return OrganizationMember.objects.get(user_id=user_id, organization_id=organization_id)
+    except Exception as e:
+        print(f"Error in get_organization_member_by_user_id: {str(e)}")
+        return None

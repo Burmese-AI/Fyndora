@@ -45,7 +45,7 @@ class TestUserAuthenticationWorkflows(TestCase):
     @pytest.mark.django_db
     def test_user_login_with_wrong_password(self):
         """Test login failure with incorrect password."""
-        user = CustomUserFactory(username="testuser", password="testpass123")
+        CustomUserFactory(username="testuser", password="testpass123")
 
         # Try to authenticate with wrong password
         authenticated_user = authenticate(username="testuser", password="wrongpass")
@@ -270,7 +270,7 @@ class TestUserQueryWorkflows(TestCase):
         """Test searching users by email and username."""
         # Create users with specific attributes
         user1 = CustomUserFactory(email="john.doe@example.com", username="johndoe")
-        user2 = CustomUserFactory(email="jane.smith@example.com", username="janesmith")
+        CustomUserFactory(email="jane.smith@example.com", username="janesmith")
 
         # Search by email domain
         example_users = User.objects.filter(email__icontains="@example.com")
@@ -368,7 +368,7 @@ class TestUserSecurityWorkflows(TestCase):
         email = "unique@example.com"
 
         # Create first user
-        user1 = CustomUserFactory(email=email)
+        CustomUserFactory(email=email)
 
         # Try to create second user with same email - should fail at DB level
         from django.db import IntegrityError

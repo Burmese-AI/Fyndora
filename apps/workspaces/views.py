@@ -23,7 +23,7 @@ class WorkspaceListView(
     LoginRequiredMixin,
 ):
     model = Workspace
-    template_name = "workspaces/workspaces_list.html"
+    template_name = "workspaces/index.html"
     context_object_name = "workspaces"
 
     def get_context_data(self, **kwargs):
@@ -49,7 +49,13 @@ def create_workspace(request, organization_id):
                 create_workspace_from_form(form=form, orgMember=orgMember, organization=organization)
                 messages.success(request, "Workspace created successfully.")
                 if request.headers.get("HX-Request"):
-                   return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+                   organization = get_organization_by_id(organization_id)
+                   workspaces = get_user_workspaces_under_organization(organization_id)
+                   context = {
+                       "workspaces": workspaces,
+                       "organization": organization,
+                   }
+                   return render(request, "workspaces/main_content.html", context)
             else:
                 messages.error(request, "Invalid form data.")
         except WorkspaceCreationError as e:

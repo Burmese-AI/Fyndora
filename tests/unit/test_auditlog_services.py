@@ -146,9 +146,7 @@ class TestAuditCreateService(TestCase):
         # Verify complex metadata was stored correctly
         self.assertIsNotNone(audit)
         self.assertEqual(audit.metadata, complex_metadata)
-        self.assertEqual(
-            audit.metadata["user_details"]["username"], user.username
-        )
+        self.assertEqual(audit.metadata["user_details"]["username"], user.username)
         self.assertEqual(audit.metadata["changes"]["old_value"], "draft")
 
     @pytest.mark.django_db
@@ -201,9 +199,7 @@ class TestAuditCreateService(TestCase):
         user = CustomUserFactory()
         target_entity = uuid.uuid4()
 
-        entity_types = [
-            choice[0] for choice in AUDIT_TARGET_ENTITY_TYPE_CHOICES
-        ]
+        entity_types = [choice[0] for choice in AUDIT_TARGET_ENTITY_TYPE_CHOICES]
 
         for entity_type in entity_types:
             audit = audit_create(
@@ -250,9 +246,7 @@ class TestAuditLogSelectors(TestCase):
         AuditTrailFactory(user=user2)
 
         # Filter by user1
-        result = get_audit_logs_for_workspace_with_filters(
-            user_id=user1.user_id
-        )
+        result = get_audit_logs_for_workspace_with_filters(user_id=user1.user_id)
 
         # Should only return audits for user1
         self.assertEqual(result.count(), 2)
@@ -267,9 +261,7 @@ class TestAuditLogSelectors(TestCase):
         EntryCreatedAuditFactory()
 
         # Filter by entry_created
-        result = get_audit_logs_for_workspace_with_filters(
-            action_type="entry_created"
-        )
+        result = get_audit_logs_for_workspace_with_filters(action_type="entry_created")
 
         # Should only return entry_created audits
         self.assertEqual(result.count(), 2)
@@ -338,15 +330,9 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_search_query(self):
         """Test filtering audit logs by search query in metadata."""
-        AuditTrailFactory(
-            metadata={"description": "user submitted entry"}
-        )
-        AuditTrailFactory(
-            metadata={"description": "entry was approved"}
-        )
-        AuditTrailFactory(
-            metadata={"description": "file was uploaded"}
-        )
+        AuditTrailFactory(metadata={"description": "user submitted entry"})
+        AuditTrailFactory(metadata={"description": "entry was approved"})
+        AuditTrailFactory(metadata={"description": "file was uploaded"})
 
         # Search for "entry"
         result = get_audit_logs_for_workspace_with_filters(search_query="entry")

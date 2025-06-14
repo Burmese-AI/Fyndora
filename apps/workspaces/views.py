@@ -59,7 +59,7 @@ def create_workspace(request, organization_id):
     }
     return render(
         request,
-        "workspaces/workspace_form.html",
+        "workspaces/workspace_create_form.html",
         context,
     )
 
@@ -81,4 +81,4 @@ def edit_workspace(request, organization_id, workspace_id):
         "form": form,
         "organization": organization,
     }
-    return render(request, "workspaces/workspace_form.html", context)
+    return render(request, "workspaces/workspace_edit_form.html", context)

@@ -8,7 +8,7 @@
             <h1 class="text-3xl font-bold">My Workspaces under {{ organization.title }}</h1>
             <p class="text-base-content/70 mt-2">Manage your project workspaces</p>
         </div>
-        <a hx-get="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#workspace-form-modal" class="btn btn-primary">
+        <a hx-get="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#workspace-create-modal" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -109,6 +109,7 @@
         {% endfor %}
     </div>
     <!-- Modal for workspace creation -->
-    <div id="workspace-form-modal"></div>
+    <div id="workspace-create-modal"></div>
+    <div id="workspace-edit-modal"></div>
 </div>
 {% endblock %}

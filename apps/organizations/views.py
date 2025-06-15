@@ -28,21 +28,40 @@ def dashboard_view(request, organization_id):
     context = {"organization": organization}
     return render(request, "organizations/dashboard.html", context)
 
+@login_required
+def home_view(request):
+    organizations = get_user_organizations(request.user)
+    form = OrganizationForm()
+    context = {"organizations": organizations, "form": form}
+  
+    return render(request, "organizations/home.html", context)
 
-class HomeView(LoginRequiredMixin, ListView):
-    model = Organization
-    template_name = "organizations/home.html"
-    context_object_name = "organizations"
+def create_organization_view(request):
+    form = OrganizationForm()
 
-    def get_queryset(self):
-        try:
-            return get_user_organizations(self.request.user)
-        except Exception:
-            # Log the error here if you have a logging system
-            raise PermissionDenied(
-                "Unable to fetch organizations. Please try again later."
-            )
-
+    if request.method == "POST":
+        form = OrganizationForm(request.POST)
+        if form.is_valid():
+           create_organization_with_owner(form=form, user=request.user)
+           newform = OrganizationForm()
+           context = {"organizations": get_user_organizations(request.user), "form": newform}
+           messages.success(request, "Organization created successfully!")
+           print("org creation success is triggered")
+           response = render(request, "organizations/partials/organization_card.html", context)
+           response["HX-Trigger"] = "org-creation-success"
+           return response
+        else:
+           response = render(request, "organizations/partials/organization_create_form.html", {"form": form})
+           response["HX-Retarget"] = "#organization_modal"
+           response["HX-Reswap"] = "outerHTML"
+           response["HX-Trigger-After-Settle"] = "fail"
+           return response
+     
+            
+    
+    context = {"organizations": get_user_organizations(request.user), "form": form}
+    return render(request, "organizations/partials/organization_card.html", context)
+       
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
@@ -72,37 +91,6 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             )
 
 
-@login_required
-def create_organization(request):
-    try:
-        if request.method == "POST":
-            form = OrganizationForm(request.POST)
-            if form.is_valid():
-                try:
-                    create_organization_with_owner(form=form, user=request.user)
-
-                    if request.headers.get("HX-Request"):
-                        messages.success(request, "Organization created successfully!")
-                        return HttpResponseClientRedirect("/")
-                except OrganizationCreationError as e:
-                    messages.error(request, str(e))
-                    if request.headers.get("HX-Request"):
-                        return HttpResponseClientRedirect("/")
-                    return render(
-                        request, "organizations/organization_form.html", {"form": form}
-                    )
-        else:
-            form = OrganizationForm()
-        return render(request, "organizations/organization_form.html", {"form": form})
-    except Exception:
-        if request.headers.get("HX-Request"):
-            messages.error(
-                request, "An unexpected error occurred. Please try again later."
-            )
-            return HttpResponseClientRedirect("/")
-        raise OrganizationCreationError(
-            "An unexpected error occurred. Please try again later."
-        )
 
 
 class OrganizationMemberListView(LoginRequiredMixin, ListView):

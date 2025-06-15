@@ -1,7 +1,6 @@
 from django.urls import path
 
 from apps.organizations.views import (
-
     OrganizationDetailView,
     dashboard_view,
     OrganizationMemberListView,
@@ -9,7 +8,7 @@ from apps.organizations.views import (
     create_organization_view,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
-    
+
 
 urlpatterns = [
     path("", home_view, name="home"),

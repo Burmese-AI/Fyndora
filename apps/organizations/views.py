@@ -12,9 +12,7 @@ from apps.organizations.selectors import (
 from apps.organizations.forms import OrganizationForm
 from django.shortcuts import render
 from django.contrib import messages
-from django_htmx.http import HttpResponseClientRedirect
 from apps.organizations.services import create_organization_with_owner
-from apps.organizations.exceptions import OrganizationCreationError
 from apps.core.constants import PAGINATION_SIZE
 from django.shortcuts import get_object_or_404
 from typing import Any
@@ -28,13 +26,15 @@ def dashboard_view(request, organization_id):
     context = {"organization": organization}
     return render(request, "organizations/dashboard.html", context)
 
+
 @login_required
 def home_view(request):
     organizations = get_user_organizations(request.user)
     form = OrganizationForm()
     context = {"organizations": organizations, "form": form}
-  
+
     return render(request, "organizations/home.html", context)
+
 
 def create_organization_view(request):
     form = OrganizationForm()
@@ -42,26 +42,33 @@ def create_organization_view(request):
     if request.method == "POST":
         form = OrganizationForm(request.POST)
         if form.is_valid():
-           create_organization_with_owner(form=form, user=request.user)
-           newform = OrganizationForm()
-           context = {"organizations": get_user_organizations(request.user), "form": newform}
-           messages.success(request, "Organization created successfully!")
-           print("org creation success is triggered")
-           response = render(request, "organizations/partials/organization_card.html", context)
-           response["HX-Trigger"] = "org-creation-success"
-           return response
+            create_organization_with_owner(form=form, user=request.user)
+            newform = OrganizationForm()
+            context = {
+                "organizations": get_user_organizations(request.user),
+                "form": newform,
+            }
+            messages.success(request, "Organization created successfully!")
+            print("org creation success is triggered")
+            response = render(
+                request, "organizations/partials/organization_card.html", context
+            )
+            response["HX-Trigger"] = "org-creation-success"
+            return response
         else:
-           response = render(request, "organizations/partials/organization_create_form.html", {"form": form})
-           response["HX-Retarget"] = "#organization_modal"
-           response["HX-Reswap"] = "outerHTML"
-           response["HX-Trigger-After-Settle"] = "fail"
-           return response
-     
-            
-    
+            response = render(
+                request,
+                "organizations/partials/organization_create_form.html",
+                {"form": form},
+            )
+            response["HX-Retarget"] = "#organization_modal"
+            response["HX-Reswap"] = "outerHTML"
+            response["HX-Trigger-After-Settle"] = "fail"
+            return response
+
     context = {"organizations": get_user_organizations(request.user), "form": form}
     return render(request, "organizations/partials/organization_card.html", context)
-       
+
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
@@ -89,8 +96,6 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             raise PermissionDenied(
                 "Unable to fetch organization context data. Please try again later."
             )
-
-
 
 
 class OrganizationMemberListView(LoginRequiredMixin, ListView):

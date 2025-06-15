@@ -28,7 +28,7 @@ class OrganizationForm(forms.ModelForm):
             attrs={
                 "class": "select select-bordered w-full",
             }
-        )
+        ),
     )
 
     def clean_title(self):

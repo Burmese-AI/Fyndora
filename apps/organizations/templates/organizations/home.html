@@ -16,4 +16,12 @@
     {% include "organizations/partials/orgnaization_create_form.html" %}
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.addEventListener('fail', () => {
+        document.getElementById('organization_modal').showModal();
+        
+      });
+  });
+  </script>
 {% endblock %}

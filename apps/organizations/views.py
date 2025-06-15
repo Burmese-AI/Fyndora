@@ -48,8 +48,17 @@ def create_organization_view(request):
            response = render(request, "organizations/partials/organization_card.html", context)
            response["HX-Trigger"] = "org-creation-success"
            return response
-      
+        else:
+           response = render(request, "organizations/partials/orgnaization_create_form.html", {"form": form})
+           response["HX-Retarget"] = "#organization_modal"
+           response["HX-Reswap"] = "outerHTML"
+           response["HX-Trigger-After-Settle"] = "fail"
+           return response
+     
+            
     
+    context = {"organizations": get_user_organizations(request.user), "form": form}
+    return render(request, "organizations/partials/organization_card.html", context)
        
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):

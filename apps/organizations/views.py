@@ -38,11 +38,19 @@ def home_view(request):
 
 def create_organization_view(request):
     form = OrganizationForm()
-    context = {"organizations": get_user_organizations(request.user), "form": form, "is_oob": True}
-    messages.success(request, "Organization created successfully!")
-    response = render(request, "organizations/partials/organization_card.html", context)
-    response["HX-Trigger"] = "org-creation-success"
-    return response
+
+    if request.method == "POST":
+        form = OrganizationForm(request.POST)
+        if form.is_valid():
+           create_organization_with_owner(form=form, user=request.user)
+           context = {"organizations": get_user_organizations(request.user), "form": form}
+           messages.success(request, "Organization created successfully!")
+           response = render(request, "organizations/partials/organization_card.html", context)
+           response["HX-Trigger"] = "org-creation-success"
+           return response
+      
+    
+       
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization

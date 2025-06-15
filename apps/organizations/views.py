@@ -29,19 +29,10 @@ def dashboard_view(request, organization_id):
     return render(request, "organizations/dashboard.html", context)
 
 
-class HomeView(LoginRequiredMixin, ListView):
-    model = Organization
-    template_name = "organizations/home.html"
-    context_object_name = "organizations"
-
-    def get_queryset(self):
-        try:
-            return get_user_organizations(self.request.user)
-        except Exception:
-            # Log the error here if you have a logging system
-            raise PermissionDenied(
-                "Unable to fetch organizations. Please try again later."
-            )
+def home_view(request):
+    organizations = get_user_organizations(request.user)
+    context = {"organizations": organizations}
+    return render(request, "organizations/home.html", context)
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):

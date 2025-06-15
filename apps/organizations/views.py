@@ -31,7 +31,8 @@ def dashboard_view(request, organization_id):
 
 def home_view(request):
     organizations = get_user_organizations(request.user)
-    context = {"organizations": organizations}
+    form = OrganizationForm()
+    context = {"organizations": organizations, "form": form}
     return render(request, "organizations/home.html", context)
 
 
@@ -63,37 +64,6 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
             )
 
 
-@login_required
-def create_organization(request):
-    try:
-        if request.method == "POST":
-            form = OrganizationForm(request.POST)
-            if form.is_valid():
-                try:
-                    create_organization_with_owner(form=form, user=request.user)
-
-                    if request.headers.get("HX-Request"):
-                        messages.success(request, "Organization created successfully!")
-                        return HttpResponseClientRedirect("/")
-                except OrganizationCreationError as e:
-                    messages.error(request, str(e))
-                    if request.headers.get("HX-Request"):
-                        return HttpResponseClientRedirect("/")
-                    return render(
-                        request, "organizations/organization_form.html", {"form": form}
-                    )
-        else:
-            form = OrganizationForm()
-        return render(request, "organizations/organization_form.html", {"form": form})
-    except Exception:
-        if request.headers.get("HX-Request"):
-            messages.error(
-                request, "An unexpected error occurred. Please try again later."
-            )
-            return HttpResponseClientRedirect("/")
-        raise OrganizationCreationError(
-            "An unexpected error occurred. Please try again later."
-        )
 
 
 class OrganizationMemberListView(LoginRequiredMixin, ListView):

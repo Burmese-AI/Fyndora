@@ -5,15 +5,7 @@
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">My Organizations</h1>
-        <button class="btn btn-primary w-full sm:w-auto"
-                hx-get="{% url 'create_organization' %}"
-                hx-target="#organization-create-modal"
-                hx-swap="innerHTML">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            New Organization
-        </button>
+        <button class="btn btn-primary" onclick="organization_modal.showModal()">Add Organization</button>
     </div>
 
     <!-- Organization List -->
@@ -21,10 +13,7 @@
         {% include "organizations/partials/organization_list.html" %}
     </div>
 
-    <!-- Modal for organization details -->
-    <div id="organization-detail-modal"></div>
-    <!-- Modal for organization creation -->
-    <div id="organization-create-modal"></div>
+    {% include "organizations/organization_modal.html" %}
 </div>
 
 {% endblock %}

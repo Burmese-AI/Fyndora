@@ -2,6 +2,10 @@
 {% block content %}
 <h3 class="font-bold text-lg mb-4">Add New Organization</h3>
 
+<form hx-post="{% url 'create_organization' %}"
+hx-target="#organization-container"
+hx-swap="innerHTML">
+ {% csrf_token %}
 <div class="form-control w-full">
   <label class="label">
       <span class="label-text">Title</span>
@@ -53,4 +57,5 @@
               onclick="organization_modal.close()">Cancel</button>
           <button type="submit" class="btn btn-primary">Add Organization</button>
       </div>
+    </form>
 {% endblock %}

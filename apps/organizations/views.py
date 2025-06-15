@@ -35,6 +35,8 @@ def home_view(request):
     context = {"organizations": organizations, "form": form}
     return render(request, "organizations/home.html", context)
 
+def create_organization_view(request):
+    return render(request, "organizations/test.html")
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization

@@ -1,6 +1,8 @@
 {% if organizations %}
 <!-- Grid Layout -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="organization-container">
+
+
     {% for organization in organizations %}
         <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
             <div class="card-body p-4 sm:p-6">
@@ -55,6 +57,7 @@
             </div>
         </div>
     {% endfor %}
+ 
    
 </div>
 {% else %}

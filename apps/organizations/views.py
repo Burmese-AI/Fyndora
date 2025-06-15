@@ -51,7 +51,7 @@ def create_organization_view(request):
            response["HX-Trigger"] = "org-creation-success"
            return response
         else:
-           response = render(request, "organizations/partials/orgnaization_create_form.html", {"form": form})
+           response = render(request, "organizations/partials/organization_create_form.html", {"form": form})
            response["HX-Retarget"] = "#organization_modal"
            response["HX-Reswap"] = "outerHTML"
            response["HX-Trigger-After-Settle"] = "fail"

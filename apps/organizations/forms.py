@@ -14,10 +14,10 @@ class OrganizationForm(forms.ModelForm):
     )
 
     description = forms.CharField(
-        widget=forms.EmailInput(
+        widget=forms.Textarea(
             attrs={
-                "class": "input input-bordered w-full",
-                "placeholder": "Email Address",
+                "class": "textarea textarea-bordered w-full",
+                "placeholder": "Description",
             }
         )
     )

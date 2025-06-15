@@ -4,7 +4,9 @@
 
 <form hx-post="{% url 'create_organization' %}"
 hx-target="#organization-container"
-hx-swap="innerHTML">
+hx-swap="innerHTML"
+hx-on:org-creation-success="organization_modal.close()"
+>
  {% csrf_token %}
 <div class="form-control w-full">
   <label class="label">
@@ -28,9 +30,9 @@ hx-swap="innerHTML">
 
   {{ form.description }}
 
-  {% if form.email.errors %}
+  {% if form.description.errors %}
       <label class="label text-error">
-          {{ form.email.errors }}
+          {{ form.description.errors }}
       </label>
   {% endif %}        
 

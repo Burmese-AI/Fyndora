@@ -33,10 +33,16 @@ def home_view(request):
     organizations = get_user_organizations(request.user)
     form = OrganizationForm()
     context = {"organizations": organizations, "form": form}
+  
     return render(request, "organizations/home.html", context)
 
 def create_organization_view(request):
-    return render(request, "organizations/test.html")
+    form = OrganizationForm()
+    context = {"organizations": get_user_organizations(request.user), "form": form, "is_oob": True}
+    messages.success(request, "Organization created successfully!")
+    response = render(request, "organizations/partials/organization_card.html", context)
+    response["HX-Trigger"] = "org-creation-success"
+    return response
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization

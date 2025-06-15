@@ -28,7 +28,7 @@ def dashboard_view(request, organization_id):
     context = {"organization": organization}
     return render(request, "organizations/dashboard.html", context)
 
-
+@login_required
 def home_view(request):
     organizations = get_user_organizations(request.user)
     form = OrganizationForm()
@@ -43,8 +43,10 @@ def create_organization_view(request):
         form = OrganizationForm(request.POST)
         if form.is_valid():
            create_organization_with_owner(form=form, user=request.user)
-           context = {"organizations": get_user_organizations(request.user), "form": form}
+           newform = OrganizationForm()
+           context = {"organizations": get_user_organizations(request.user), "form": newform}
            messages.success(request, "Organization created successfully!")
+           print("org creation success is triggered")
            response = render(request, "organizations/partials/organization_card.html", context)
            response["HX-Trigger"] = "org-creation-success"
            return response

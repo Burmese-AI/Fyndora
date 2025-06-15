@@ -1,62 +1,9 @@
 <dialog id="organization_modal" class="modal">
-  <div class="modal-box">
+    <div class="modal-box">
+      {% block content %}
       
-      <h3 class="font-bold text-lg mb-4">Add New Organization</h3>
-
-      <div class="form-control w-full">
-        <label class="label">
-            <span class="label-text">Title</span>
-        </label>
-
-        {{ form.title }}
-
-        {% if form.title.errors %}
-            <label class="label text-error">
-                {{ form.title.errors }}
-            </label>
-        {% endif %}        
-
-        </div>
-
-        <div class="form-control w-full">
-        <label class="label">
-            <span class="label-text">Description</span>
-        </label>
-
-        {{ form.description }}
-
-        {% if form.email.errors %}
-            <label class="label text-error">
-                {{ form.email.errors }}
-            </label>
-        {% endif %}        
-
-        </div>
-
-        <div class="form-control w-full">
-            <label class="label">
-                <span class="label-text">Status</span>
-            </label>
-
-            {{ form.status }}
-
-            {% if form.status.errors %}
-                <label class="label text-error">
-                    {{ form.status.errors }}
-                </label>
-            {% endif %}        
-
-            </div>
-
-
-            <div class="modal-action">
-                <button type="button" class="btn"
-                    onclick="organization_modal.close()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Add Organization</button>
-            </div>
-
-
-
-
-  </div>
-</dialog>
+      
+      {% endblock %}
+    </div>
+  </dialog>
+  

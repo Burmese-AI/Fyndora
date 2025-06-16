@@ -1,29 +1,24 @@
-<div class="overflow-x-auto">
-    <table class="table w-full">
-        <thead>
-            <tr>
-                <th class="text-base-content">User</th>
-                <th class="text-base-content">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for member in members %}
-                <tr class="hover:bg-base-200">
-                    <td class="text-base-content">{{ member.user.username }}</td>
-                    <td>
-                        <span class="badge {% if member.is_active %}badge-primary{% else %}badge-secondary{% endif %}">
-                            {{ member.is_active|yesno:"Active,Inactive" }}
-                        </span>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="2" class="text-center text-base-content">No members found.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto rounded-xl my-3 shadow-md bg-lemonade-50">
+    <table class="table w-full min-w-[600px]">
+      <thead class="bg-lemonade-200 text-lemonade-900 text-sm uppercase font-semibold">
+        <tr>
+          <th>User</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          {% include "organization_members/partials/row.html" %}
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center py-4 text-lemonade-700">No members found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
-</div>
-{% if is_paginated %}
-    {% include "organization_members/partials/pagination.html" %}
-{% endif %}
+  </div>
+  
+  {% if is_paginated %}
+    {% include "components/pagination.html" %}
+  {% endif %}

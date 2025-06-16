@@ -46,7 +46,6 @@ def create_workspace(request, organization_id):
     orgMember = get_orgMember_by_user_id_and_organization_id(
         request.user.user_id, organization_id
     )
-    print(orgMember)
     if request.method == "POST":
         form = WorkspaceForm(request.POST, organization=organization)
         try:
@@ -65,6 +64,10 @@ def create_workspace(request, organization_id):
                     return render(request, "workspaces/main_content.html", context)
             else:
                 messages.error(request, "Invalid form data.")
+                response = render(request, "workspaces/workspace_create_form.html", {"form": form})
+                response["HX-Retarget"] = "#workspace-create-modal"
+                response["HX-Reswap"] = "innerHTML"
+                return response
         except WorkspaceCreationError as e:
             messages.error(request, f"An error occurred: {str(e)}")
     else:

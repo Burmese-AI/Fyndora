@@ -108,7 +108,11 @@ def edit_workspace(request, organization_id, workspace_id):
                     messages.success(request, "Workspace updated successfully.")
                     return render(request, "workspaces/main_content.html", context)
                 else:
+                    response = render(request, "workspaces/workspace_edit_form.html", {"form": form})
+                    response["HX-Retarget"] = "#workspace-edit-modal"
+                    response["HX-Reswap"] = "innerHTML"
                     messages.error(request, "Invalid form data.")
+                    return response
             except WorkspaceUpdateError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
         else:

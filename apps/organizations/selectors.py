@@ -11,7 +11,6 @@ def get_user_organizations(user):
     return Organization.objects.filter(
         members__user=user, members__is_active=True
     ).select_related("owner")
-    # Return empty queryset instead of 0
 
 
 def get_organization_members_count(organization):

@@ -18,6 +18,9 @@ from apps.workspaces.selectors import (
     get_orgMember_by_user_id_and_organization_id,
 )
 from apps.workspaces.services import update_workspace_from_form
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+
 
 
 # Create your views here.
@@ -60,14 +63,23 @@ def create_workspace(request, organization_id):
                     context = {
                         "workspaces": workspaces,
                         "organization": organization,
+                        "is_oob": True,
                     }
-                    return render(request, "workspaces/main_content.html", context)
+                    message_html = render_to_string("includes/message.html", context=context, request=request)
+                    workspace_display_html = render_to_string("includes/workspaces_display.html", context=context, request=request)
+                    return HttpResponse(f"{message_html} {workspace_display_html}")
             else:
                 messages.error(request, "Invalid form data.")
-                response = render(request, "workspaces/workspace_create_form.html", {"form": form})
-                response["HX-Retarget"] = "#workspace-create-modal"
-                response["HX-Reswap"] = "innerHTML"
-                return response
+                context = {
+                    "form": form,
+                    "is_oob": True
+                }
+                message_html = render_to_string("includes/message.html", context=context, request=request)
+                modal_html = render_to_string("workspaces/partials/create_form.html", context=context, request=request)
+                return HttpResponse(f"{message_html} {modal_html}")
+                # response = render(request, "workspaces/workspace_create_form.html", {"form": form})
+                # response["HX-Retarget"] = "#workspace-create-modal"
+                # response["HX-Reswap"] = "innerHTML"
         except WorkspaceCreationError as e:
             messages.error(request, f"An error occurred: {str(e)}")
     else:
@@ -78,7 +90,7 @@ def create_workspace(request, organization_id):
     }
     return render(
         request,
-        "workspaces/workspace_create_form.html",
+        "workspaces/partials/create_form.html",
         context,
     )
 

@@ -1,0 +1,55 @@
+{% if organization %}
+<div class="max-w-5xl mx-auto mt-10 px-4">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+    <div>
+      <h1 class="text-4xl font-bold mb-2">{{ organization.title }}</h1>
+      <p class="text-lg text-gray-500">{{ organization.description|default:'No description provided.' }}</p>
+    </div>
+    <div class="flex items-center gap-2 mt-4 sm:mt-0">
+      <span class="badge badge-outline badge-lg">Status: {{ organization.get_status_display }}</span>
+      {% if owner %}
+        <span class="badge badge-accent badge-lg">Owner: {{ owner.username }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+    <div class="bg-base-200 rounded-xl p-6 flex flex-col items-center shadow-sm">
+      <div class="text-2xl font-semibold text-primary">{{ members_count }}</div>
+      <div class="text-gray-500 mt-1">Members</div>
+    </div>
+    <div class="bg-base-200 rounded-xl p-6 flex flex-col items-center shadow-sm">
+      <div class="text-2xl font-semibold text-primary">{{ teams_count }}</div>
+      <div class="text-gray-500 mt-1">Teams</div>
+    </div>
+    <div class="bg-base-200 rounded-xl p-6 flex flex-col items-center shadow-sm">
+      <div class="text-2xl font-semibold text-primary">{{ workspaces_count }}</div>
+      <div class="text-gray-500 mt-1">Workspaces</div>
+    </div>
+  </div>
+
+  <!-- Info Section -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 bg-base-100 rounded-xl p-8 shadow-sm">
+    <div>
+      <div class="text-gray-400 text-sm mb-1">Organization Name</div>
+      <div class="font-medium text-lg">{{ organization.title }}</div>
+    </div>
+    <div>
+      <div class="text-gray-400 text-sm mb-1">Created At</div>
+      <div class="font-medium text-lg">{{ organization.created_at|date:'M d, Y' }}</div>
+    </div>
+    <div>
+      <div class="text-gray-400 text-sm mb-1">Owner</div>
+      <div class="font-medium text-lg">{% if owner %}{{ owner.username }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}</div>
+    </div>
+    <div>
+      <div class="text-gray-400 text-sm mb-1">Status</div>
+      <div class="font-medium text-lg">{{ organization.get_status_display }}</div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-error mt-8 max-w-2xl mx-auto">Unable to load organization dashboard.</div>
+{% endif %}

@@ -20,11 +20,23 @@ from typing import Any
 
 # Create your views here.
 def dashboard_view(request, organization_id):
-    print(organization_id)
-    organization = Organization.objects.get(organization_id=organization_id)
-    print(organization)
-    context = {"organization": organization}
-    return render(request, "organizations/dashboard.html", context)
+    try:
+        organization = Organization.objects.get(organization_id=organization_id)
+        members_count = get_organization_members_count(organization)
+        workspaces_count = get_workspaces_count(organization)
+        teams_count = get_teams_count(organization)
+        owner = organization.owner.user if organization.owner else None
+        context = {
+            "organization": organization,
+            "members_count": members_count,
+            "workspaces_count": workspaces_count,
+            "teams_count": teams_count,
+            "owner": owner,
+        }
+        return render(request, "organizations/dashboard.html", context)
+    except Exception as e:
+        messages.error(request, "Unable to load dashboard. Please try again later.")
+        return render(request, "organizations/dashboard.html", {"organization": None})
 
 
 @login_required

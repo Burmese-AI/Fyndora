@@ -99,9 +99,16 @@ class WorkspaceForm(forms.ModelForm):
         end_date = cleaned_data.get("end_date")
 
         if title and self.organization:
-            if Workspace.objects.filter(
+            # Create a queryset excluding the current instance (if editing)
+            workspace_queryset = Workspace.objects.filter(
                 title=title, organization=self.organization
-            ).exists():
+            )
+            
+            # If this is an edit operation (instance exists), exclude the current instance
+            if self.instance and self.instance.pk:
+                workspace_queryset = workspace_queryset.exclude(pk=self.instance.pk)
+            
+            if workspace_queryset.exists():
                 raise forms.ValidationError(
                     "A workspace with this title already exists in this organization."
                 )

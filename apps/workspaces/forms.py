@@ -6,7 +6,7 @@ from apps.workspaces.selectors import get_organization_members_by_organization_i
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(
-        queryset=OrganizationMember.objects.none(),
+        queryset=OrganizationMember.objects.none(),  # Will be initialized in __init__
         required=False,  # allow for null values and can also be assigned later
         label="Select Workspace Admin",
         widget=forms.Select(
@@ -38,7 +38,7 @@ class WorkspaceForm(forms.ModelForm):
                 attrs={
                     "class": "textarea textarea-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base min-h-[60px]",
                     "rows": 2,
-                    "placeholder": "Describe your workspace (optional)",
+                    "placeholder": "Describe your workspace (optional)"
                 }
             ),
             "status": forms.Select(
@@ -49,7 +49,7 @@ class WorkspaceForm(forms.ModelForm):
             "remittance_rate": forms.NumberInput(
                 attrs={
                     "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Enter remittance rate (0-100)",
+                    "placeholder": "Enter remittance rate (0-100)", 
                     "min": "0",
                     "max": "100",
                     "step": "0.01",
@@ -70,19 +70,17 @@ class WorkspaceForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        organization = kwargs.pop("organization", None)
+        self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        if organization:
-            self.fields[
-                "workspace_admin"
-            ].queryset = get_organization_members_by_organization_id(
-                organization.organization_id
+        if self.organization:
+            self.fields["workspace_admin"].queryset = get_organization_members_by_organization_id(
+                self.organization.organization_id
             )
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        if not title.strip():
+        if not title or not title.strip():
             raise forms.ValidationError("Title cannot be blank or only whitespace.")
         return title
 
@@ -94,10 +92,15 @@ class WorkspaceForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        title = cleaned_data.get("title")
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
 
+        if title and self.organization:
+            if Workspace.objects.filter(title=title, organization=self.organization).exists():
+                raise forms.ValidationError("A workspace with this title already exists in this organization.")
+        
         if end_date and start_date and end_date < start_date:
             raise forms.ValidationError("End date cannot be earlier than start date.")
-
+        
         return cleaned_data

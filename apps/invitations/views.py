@@ -127,7 +127,9 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         table_html = render_to_string(
             "invitations/partials/table.html", context=context, request=self.request
         )
-        return HttpResponse(f"{message_html} {table_html}")
+        response = HttpResponse(f"{message_html} {table_html}")
+        response["HX-trigger"] = "success"
+        return response
 
     def _render_htmx_error_response(self, form):
         context = self.get_context_data()

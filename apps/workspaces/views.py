@@ -147,15 +147,27 @@ def delete_workspace(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
-
-        if not workspace or not organization:
-            messages.error(request, "Workspace or organization not found.")
-            return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
-
-        # Immediately delete on any request
-        workspace.delete()
-        messages.success(request, "Workspace deleted successfully.")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+        if request.method == "POST":
+         
+            workspace.delete()
+            messages.success(request, "Workspace deleted successfully.")
+            organization = get_organization_by_id(organization_id)
+            workspaces = get_user_workspaces_under_organization(organization_id)
+            context = {
+                "workspaces": workspaces,
+                "organization": organization,
+                "is_oob": True,
+            }
+            message_html = render_to_string("includes/message.html", context=context, request=request)
+            workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
+            return HttpResponse(f"{message_html} {workspace_display_html}")
+         
+        else:
+            context = {
+            "workspace": workspace,
+            "organization": organization,
+        }
+        return render(request, "workspaces/partials/delete_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

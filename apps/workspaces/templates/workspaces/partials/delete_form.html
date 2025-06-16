@@ -1,0 +1,16 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+
+<form hx-post="{% url 'delete_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" hx-swap="none">
+    {% csrf_token %}
+    <div class="modal-box w-4xl bg-white shadow-xl rounded-lg">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8">Delete {{ workspace.title }} in {{ organization.title }}</h2>
+        <p class="text-gray-600 mb-8">Are you sure you want to delete this workspace?</p>
+        <div class="flex flex-col sm:flex-row gap-2 justify-end">
+            <button type="submit" class="btn btn-error">Delete</button>
+            <button type="button" class="btn btn-base" @click="open = false">Cancel</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

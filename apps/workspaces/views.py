@@ -160,7 +160,10 @@ def delete_workspace(request, organization_id, workspace_id):
             }
             message_html = render_to_string("includes/message.html", context=context, request=request)
             workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
-            return HttpResponse(f"{message_html} {workspace_display_html}")
+        
+            response = HttpResponse(f"{message_html} {workspace_display_html}")
+            response['HX-trigger'] = 'success'
+            return response
          
         else:
             context = {

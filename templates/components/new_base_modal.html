@@ -1,13 +1,10 @@
-<div id="modal" x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
- 
+<div id="modal" x-data="{ open: true }" x-show="open"
+     @keydown.escape.window="open = false"
+     @success.window="open = false">
     <div class="modal modal-open">
- 
-        
         {% block modal_content %}{% endblock %}
-
-  
-      <!-- background click to close the modal temporariy commented due to low perfomance( figure out later ) -->
-      <!-- <div class="modal-backdrop bg-black/50 backdrop-blur-sm" @click="open = false"></div> -->
+        <!-- background click to close the modal temporariy commented due to low perfomance( figure out later ) -->
+        <!-- <div class="modal-backdrop bg-black/50 backdrop-blur-sm" @click="open = false"></div> -->
     </div>
-  </div>
+</div>
   

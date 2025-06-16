@@ -20,6 +20,7 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from django.views.generic.edit import FormView
 
 
 
@@ -43,56 +44,69 @@ class WorkspaceListView(
         return get_user_workspaces_under_organization(self.kwargs["organization_id"])
 
 
-@login_required
-def create_workspace(request, organization_id):
-    organization = get_organization_by_id(organization_id)
-    orgMember = get_orgMember_by_user_id_and_organization_id(
-        request.user.user_id, organization_id
-    )
-    if request.method == "POST":
-        form = WorkspaceForm(request.POST, organization=organization)
+
+class CreateWorkspaceView(LoginRequiredMixin, FormView):
+    form_class = WorkspaceForm
+    template_name = "workspaces/partials/create_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_organization_by_id(kwargs['organization_id'])
+        self.orgMember = get_orgMember_by_user_id_and_organization_id(
+            request.user.user_id, self.organization.pk
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        """Pass organization into form."""
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def form_valid(self, form):
+        """Save and handle messages, then respond appropriately."""
         try:
-            if form.is_valid():
-                create_workspace_from_form(
-                    form=form, orgMember=orgMember, organization=organization
-                )
-                messages.success(request, "Workspace created successfully.")
-                if request.headers.get("HX-Request"):
-                    organization = get_organization_by_id(organization_id)
-                    workspaces = get_user_workspaces_under_organization(organization_id)
-                    context = {
-                        "workspaces": workspaces,
-                        "organization": organization,
-                        "is_oob": True,
-                    }
-                    message_html = render_to_string("includes/message.html", context=context, request=request)
-                    workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
-                    return HttpResponse(f"{message_html} {workspace_display_html}")
-            else:
-                messages.error(request, "Invalid form data.")
+            create_workspace_from_form(
+                form=form, orgMember=self.orgMember, organization=self.organization
+            )
+            messages.success(self.request, "Workspace created successfully.")
+            if self.request.headers.get("HX-Request"):
+                organization = self.organization
+                workspaces = get_user_workspaces_under_organization(organization.pk)
                 context = {
-                    "form": form,
-                    "is_oob": True
+                    "workspaces": workspaces,
+                    "organization": organization,
+                    "is_oob": True,
                 }
-                message_html = render_to_string("includes/message.html", context=context, request=request)
-                modal_html = render_to_string("workspaces/partials/create_form.html", context=context, request=request)
-                return HttpResponse(f"{message_html} {modal_html}")
-                # response = render(request, "workspaces/workspace_create_form.html", {"form": form})
-                # response["HX-Retarget"] = "#workspace-create-modal"
-                # response["HX-Reswap"] = "innerHTML"
+                message_html = render_to_string("includes/message.html", context=context, request=self.request)
+                workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=self.request)
+                
+                return HttpResponse(f"{message_html} {workspace_display_html}")
         except WorkspaceCreationError as e:
-            messages.error(request, f"An error occurred: {str(e)}")
-    else:
-        form = WorkspaceForm(request.POST or None, organization=organization)
-    context = {
-        "form": form,
-        "organization": organization,
-    }
-    return render(
-        request,
-        "workspaces/partials/create_form.html",
-        context,
-    )
+            messages.error(self.request, f"An error occurred: {str(e)}")
+        
+        context = {
+            "form": form,
+            "organization": self.organization,
+        }
+        return self.render_to_response(context)
+
+    def form_invalid(self, form):
+        """Handle form validation failure with messages and proper rendering."""
+        messages.error(self.request, "Invalid form data.")
+        context = {
+            "form": form,
+            "is_oob": True
+        }
+        message_html = render_to_string("includes/message.html", context=context, request=self.request)
+        modal_html = render_to_string("workspaces/partials/create_form.html", context=context, request=self.request)
+        return HttpResponse(f"{message_html} {modal_html}")
+
+    def get_context_data(self, **kwargs):
+        """Add organization to context for GET requests."""
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        return context
+
 
 
 def edit_workspace(request, organization_id, workspace_id):

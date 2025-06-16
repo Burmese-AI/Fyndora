@@ -38,7 +38,7 @@ class WorkspaceForm(forms.ModelForm):
                 attrs={
                     "class": "textarea textarea-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base min-h-[60px]",
                     "rows": 2,
-                    "placeholder": "Describe your workspace (optional)"
+                    "placeholder": "Describe your workspace (optional)",
                 }
             ),
             "status": forms.Select(
@@ -49,7 +49,7 @@ class WorkspaceForm(forms.ModelForm):
             "remittance_rate": forms.NumberInput(
                 attrs={
                     "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Enter remittance rate (0-100)", 
+                    "placeholder": "Enter remittance rate (0-100)",
                     "min": "0",
                     "max": "100",
                     "step": "0.01",
@@ -74,7 +74,9 @@ class WorkspaceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.organization:
-            self.fields["workspace_admin"].queryset = get_organization_members_by_organization_id(
+            self.fields[
+                "workspace_admin"
+            ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
 
@@ -97,10 +99,14 @@ class WorkspaceForm(forms.ModelForm):
         end_date = cleaned_data.get("end_date")
 
         if title and self.organization:
-            if Workspace.objects.filter(title=title, organization=self.organization).exists():
-                raise forms.ValidationError("A workspace with this title already exists in this organization.")
-        
+            if Workspace.objects.filter(
+                title=title, organization=self.organization
+            ).exists():
+                raise forms.ValidationError(
+                    "A workspace with this title already exists in this organization."
+                )
+
         if end_date and start_date and end_date < start_date:
             raise forms.ValidationError("End date cannot be earlier than start date.")
-        
+
         return cleaned_data

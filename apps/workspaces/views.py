@@ -20,9 +20,6 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-from django.views.generic.edit import FormView
-
-
 
 
 # Create your views here.
@@ -44,14 +41,13 @@ class WorkspaceListView(
     def get_queryset(self):
         return get_user_workspaces_under_organization(self.kwargs["organization_id"])
 
+
 @login_required
 def create_workspace(request, organization_id):
-    print(f"helloworld")
     organization = get_organization_by_id(organization_id)
     orgMember = get_orgMember_by_user_id_and_organization_id(
         request.user.user_id, organization_id
     )
-    print(f"helloworld")
     if request.method == "POST":
         form = WorkspaceForm(request.POST, organization=organization)
         try:
@@ -68,19 +64,28 @@ def create_workspace(request, organization_id):
                         "organization": organization,
                         "is_oob": True,
                     }
-                    message_html = render_to_string("includes/message.html", context=context, request=request)
-                    workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    workspace_display_html = render_to_string(
+                        "workspaces/partials/workspaces_display.html",
+                        context=context,
+                        request=request,
+                    )
                     response = HttpResponse(f"{message_html} {workspace_display_html}")
-                    response['HX-trigger'] = 'success'
+                    response["HX-trigger"] = "success"
                     return response
             else:
                 messages.error(request, "Invalid form data.")
-                context = {
-                    "form": form,
-                    "is_oob": True
-                }
-                message_html = render_to_string("includes/message.html", context=context, request=request)
-                modal_html = render_to_string("workspaces/partials/create_form.html", context=context, request=request)
+                context = {"form": form, "is_oob": True}
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                modal_html = render_to_string(
+                    "workspaces/partials/create_form.html",
+                    context=context,
+                    request=request,
+                )
                 return HttpResponse(f"{message_html} {modal_html}")
         except WorkspaceCreationError as e:
             messages.error(request, f"An error occurred: {str(e)}")
@@ -95,6 +100,7 @@ def create_workspace(request, organization_id):
         "workspaces/partials/create_form.html",
         context,
     )
+
 
 @login_required
 def edit_workspace(request, organization_id, workspace_id):
@@ -115,12 +121,18 @@ def edit_workspace(request, organization_id, workspace_id):
                         "organization": organization,
                         "is_oob": True,
                     }
-               
+
                     messages.success(request, "Workspace updated successfully.")
-                    message_html = render_to_string("includes/message.html", context=context, request=request)
-                    workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    workspace_display_html = render_to_string(
+                        "workspaces/partials/workspaces_display.html",
+                        context=context,
+                        request=request,
+                    )
                     response = HttpResponse(f"{message_html} {workspace_display_html}")
-                    response['HX-trigger'] = 'success'
+                    response["HX-trigger"] = "success"
                     return response
                 else:
                     messages.error(request, "Invalid form data.")
@@ -129,8 +141,14 @@ def edit_workspace(request, organization_id, workspace_id):
                         "is_oob": True,
                         "organization": organization,
                     }
-                    message_html = render_to_string("includes/message.html", context=context, request=request)
-                    modal_html = render_to_string("workspaces/partials/edit_form.html", context=context, request=request)
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    modal_html = render_to_string(
+                        "workspaces/partials/edit_form.html",
+                        context=context,
+                        request=request,
+                    )
                     return HttpResponse(f"{message_html} {modal_html}")
             except WorkspaceUpdateError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
@@ -152,7 +170,6 @@ def delete_workspace(request, organization_id, workspace_id):
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         if request.method == "POST":
-         
             workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
@@ -162,18 +179,24 @@ def delete_workspace(request, organization_id, workspace_id):
                 "organization": organization,
                 "is_oob": True,
             }
-            message_html = render_to_string("includes/message.html", context=context, request=request)
-            workspace_display_html = render_to_string("workspaces/partials/workspaces_display.html", context=context, request=request)
-        
+            message_html = render_to_string(
+                "includes/message.html", context=context, request=request
+            )
+            workspace_display_html = render_to_string(
+                "workspaces/partials/workspaces_display.html",
+                context=context,
+                request=request,
+            )
+
             response = HttpResponse(f"{message_html} {workspace_display_html}")
-            response['HX-trigger'] = 'success'
+            response["HX-trigger"] = "success"
             return response
-         
+
         else:
             context = {
-            "workspace": workspace,
-            "organization": organization,
-        }
+                "workspace": workspace,
+                "organization": organization,
+            }
         return render(request, "workspaces/partials/delete_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")

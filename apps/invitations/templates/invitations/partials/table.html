@@ -25,7 +25,8 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% if is_paginated %}
+        {% include "organization_members/partials/pagination.html" %}
+    {% endif %}
 </div>
-{% if is_paginated %}
-    {% include "organization_members/partials/pagination.html" %}
-{% endif %}

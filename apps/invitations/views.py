@@ -132,7 +132,7 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
     def _render_htmx_error_response(self, form):
         context = self.get_context_data()
         context["form"] = form
-        context["organization_id"] = self.organization.pk
+        context["organization"] = self.organization
         message_html = render_to_string(
             "includes/message.html", context=context, request=self.request
         )
@@ -148,7 +148,6 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
             "invitation_list",
             kwargs={"organization_id": self.kwargs["organization_id"]},
         )
-
 
 @login_required
 def accept_invitation_view(request, invitation_token):
@@ -174,4 +173,3 @@ def accept_invitation_view(request, invitation_token):
 
     # Note: redirect user to org dashboard when the page is built
     return redirect("home")
-

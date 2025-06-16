@@ -98,17 +98,21 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
     template_name = "organization_members/index.html"
     context_object_name = "members"
     paginate_by = PAGINATION_SIZE
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Get ORG ID from URL
+        organization_id = self.kwargs["organization_id"]
+        self.organization = get_object_or_404(Organization, pk=organization_id)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        organization = get_object_or_404(
-            Organization, pk=self.kwargs["organization_id"]
-        )
-        query = OrganizationMember.objects.filter(organization=organization)
+        query = OrganizationMember.objects.filter(organization=self.organization)
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "members"
+        context["organization"] = self.organization
         return context
 
     def render_to_response(self, context: dict[str, Any], **response_kwargs: Any):
@@ -117,10 +121,3 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
                 self.request, "organization_members/partials/table.html", context
             )
         return super().render_to_response(context, **response_kwargs)
-
-
-# View to partially render the members section
-# View to partially render the invitations section
-# View to partially render the members table
-# View to partially render the invitations table
-# View to open a create invitation modal

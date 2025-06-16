@@ -5,11 +5,12 @@
 {% endblock %}
 
 {% block content %}
+{{organization.pk}}
     <div class="flex flex-row justify-between items-center gap-1">
         {% include "components/navigation_slider_for_members.html" %}
         <button 
             class="btn btn-neutral w-auto md:px-10" 
-            hx-get="{% url 'invitation_create_modal' %}?org_id={{ organization_id }}" 
+            hx-get="{% url 'invitation_create' organization_id=organization.pk %}" 
             hx-target="#modal-placeholder" 
             hx-swap="outerHTML"
         >

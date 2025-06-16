@@ -27,17 +27,20 @@ class InvitationListView(LoginRequiredMixin, ListView):
     template_name = "invitations/index.html"
     context_object_name = "invitations"
     paginate_by = PAGINATION_SIZE
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Get ORG ID from URL
+        organization_id = self.kwargs["organization_id"]
+        self.organization = get_object_or_404(Organization, pk=organization_id)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        organization = get_object_or_404(
-            Organization, pk=self.kwargs["organization_id"]
-        )
-        return Invitation.objects.filter(organization=organization)
+        return Invitation.objects.filter(organization=self.organization)
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "invitations"
-        context["organization_id"] = self.kwargs["organization_id"]
+        context["organization"] = self.organization
         return context
 
     def render_to_response(self, context: dict[str, Any], **response_kwargs: Any):
@@ -58,6 +61,14 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
         return super().dispatch(request, *args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        form = InvitationCreateForm()
+        context = {
+            "form": form,
+            "organization": self.organization
+        }
+        return render(request, "invitations/components/create_modal.html", context=context)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -164,13 +175,3 @@ def accept_invitation_view(request, invitation_token):
     # Note: redirect user to org dashboard when the page is built
     return redirect("home")
 
-
-@login_required
-def open_invitation_create_modal(request):
-    form = InvitationCreateForm()
-    context = {
-        "form": form,
-        "organization_id": request.GET.get("org_id"),
-    }
-    print(context)
-    return render(request, "invitations/components/create_modal.html", context=context)

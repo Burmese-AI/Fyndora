@@ -1,4 +1,10 @@
-<div id="modal" x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
+<div 
+  id="modal" 
+  x-data="{ open: true }" 
+  x-show="open" 
+  @keydown.escape.window="open = false"
+  @success.window="open = false"
+>
  
     <div class="modal modal-open">
  

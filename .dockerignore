@@ -1,3 +1,8 @@
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+
 # Python
 __pycache__/
 *.py[cod]
@@ -10,23 +15,21 @@ htmlcov/
 .tox/
 .nox/
 .hypothesis/
+.ruff_cache/
 
 # Virtual Environment
 .venv/
 venv/
 ENV/
+env/
 
 # Django
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media/
-staticfiles/
 
-# Development
-.git/
-.gitignore
+# Development files
 .env
 .env.*
 *.swp
@@ -34,13 +37,11 @@ staticfiles/
 .DS_Store
 .idea/
 .vscode/
+.cursor/
 *.sublime-*
-
-# Project specific
-*.bak
-*.tmp
-*.temp
 .python-version
+
+# Testing and coverage
 .pytest_cache/
 .coverage
 htmlcov/
@@ -48,13 +49,28 @@ htmlcov/
 .nox/
 .hypothesis/
 
-# Docker compose files
-docker-compose.override.yml
-docker-compose.prod.yml
+# Build artifacts
+*.bak
+*.tmp
+*.temp
 
-# Keep these files
-!pyproject.toml
-!uv.lock 
+# Docker compose files (not needed in image)
+docker-compose*.yml
 
-#Static files
+# Documentation (not needed in production)
+README.md
+docs/
+
+# Node modules (we copy package files separately)
+node_modules/
+
+# Generated static files (we build these in container)
 static/css/output.css
+staticfiles/
+media/
+
+# Keep these files explicitly
+!pyproject.toml
+!uv.lock
+!package.json
+!package-lock.json

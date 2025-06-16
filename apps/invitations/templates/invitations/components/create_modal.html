@@ -13,6 +13,7 @@
     hx-post="{% url 'invitation_create' organization_id=organization.pk %}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
+    @click.outside="open = false"
     class="space-y-6"
 >
   {% csrf_token %}

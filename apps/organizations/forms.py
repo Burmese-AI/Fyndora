@@ -35,8 +35,13 @@ class OrganizationForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        if Organization.objects.filter(title=title, organization_id=self.instance.organization_id).exists():
-            raise forms.ValidationError("Organization with this hello title already exists.")
+        #for edit operation, exclude the current instance
+        if self.instance and self.instance.pk:
+            organization_queryset = Organization.objects.filter(title=title).exclude(pk=self.instance.pk)
+        else:
+            organization_queryset = Organization.objects.filter(title=title)
+        if organization_queryset.exists():
+            raise forms.ValidationError("Organization with this title already exists.")
         return title
 
     class Meta:

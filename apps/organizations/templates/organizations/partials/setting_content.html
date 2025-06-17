@@ -1,4 +1,4 @@
-<div class="max-w-5xl mx-auto mt-10 px-4 transition-all duration-200 transform hover:-translate-y-1" {% if is_oob %}hx-swap-oob="true"{% endif %} id="setting_content">
+<div class="max-w-5xl mx-auto mt-10 px-4 " {% if is_oob %}hx-swap-oob="true"{% endif %} id="setting_content">
     {% if organization %}
     <div class="bg-base-100 rounded-xl shadow-xl p-8">
       <!-- Header -->
@@ -8,7 +8,17 @@
           <p class="text-lg text-gray-500">{{ organization.description|default:'No description provided.' }}</p>
         </div>
         <div class="flex items-center gap-2 mt-4 sm:mt-0">
-          <span class="badge badge-primary badge-lg">Status: {{ organization.get_status_display }}</span>
+          <span class="badge 
+            {% if organization.status == 'active' %}
+              badge-success
+            {% elif organization.status == 'archived' %}
+              badge-warning
+            {% else %}
+              badge-error
+            {% endif %}
+            badge-lg">
+            Status: {{ organization.get_status_display }}
+          </span>
         </div>
       </div>
   
@@ -41,7 +51,12 @@
                 <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary btn-md" >Edit Organization</button>
             </div>
         </div>
+    
+        <!-- Example of a "thicken bar" below the button -->
+        <button class="btn btn-error btn-lg btn-block mt-8 font-bold py-4 text-lg">Delete Organization</button>
     {% else %}
+
+
     <div class="alert alert-error mt-8 max-w-2xl mx-auto">Unable to load organization settings.</div>
     {% endif %}
   </div>

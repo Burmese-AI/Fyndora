@@ -198,18 +198,53 @@ def settings_view(request, organization_id):
     
 
 def edit_organization_view(request, organization_id):
-    organization = get_object_or_404(Organization, organization_id=organization_id)
-    print(organization)
-    if request.method == "POST":
-        form = OrganizationForm(request.POST, instance=organization)
-        if form.is_valid():
-            update_organization_from_form(form=form, organization=organization)
-            messages.success(request, "Organization updated successfully!")
+    try:
+        organization = get_object_or_404(Organization, organization_id=organization_id)
+        print(organization)
+        if request.method == "POST":
+            form = OrganizationForm(request.POST, instance=organization)
+            if form.is_valid():
+                update_organization_from_form(form=form, organization=organization)
+                organization = get_user_organizations(request.user)
+                context = {
+                    "organization": organization,
+                    "is_oob": True,
+                }   
+                
+                setting_content_template = render_to_string(
+                    "organizations/partials/setting_content.html", context, request=request
+                )
+                message_template = render_to_string(
+                    "includes/message.html", context, request=request
+                )
+                messages.success(request, "Organization updated successfully!")
+                response = HttpResponse(f"{message_template} {setting_content_template}")
+                response["HX-Trigger"] = "success"
+                return response
+            else:
+                messages.error(request, "Please correct the errors below.")
+                print("it good heere and org is ", organization)
+                context = {
+                "form": form,
+                "is_oob": True,
+                "organization": organization,
+             }
+                form_template = render_to_string(
+                "organizations/partials/edit_organization_form.html",
+                context,
+                request=request,
+            )
+            message_template = render_to_string(
+                "includes/message.html", context, request=request
+            )
+            response = HttpResponse(f"{message_template} {form_template}")
+            return response
         else:
-            messages.error(request, "Please correct the errors below.")
+            form = OrganizationForm(instance=organization)
             return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
-    else:
-        form = OrganizationForm(instance=organization)
-        print("it good heere and org is ", organization)
+           
+    except Exception as e:
+        print(e)
+        messages.error(request, "An error occurred while updating organization. Please try again later.")
         return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
    

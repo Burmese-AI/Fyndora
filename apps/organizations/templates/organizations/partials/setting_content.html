@@ -39,7 +39,7 @@
   
       <!-- Edit Button Placeholder -->
             <div class="flex justify-end">
-                <button hx-get="{% url 'edit_organization' organization_id=organization.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary btn-md" >Edit Organization</button>
+                <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary btn-md" >Edit Organization</button>
             </div>
         </div>
   </div>

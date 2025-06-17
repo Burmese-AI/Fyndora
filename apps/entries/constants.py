@@ -1,12 +1,16 @@
-ENTRY_TYPE_CHOICES = (
-    ("income", "Income"),
-    ("disbursement", "Disbursement"),
-    ("remittance", "Remittance"),  # TODO: Add more entry types if needed
-)
+from django.db import models
 
-ENTRY_STATUS_CHOICES = (
-    ("pending_review", "Pending Review"),
-    ("approved", "Approved"),
-    ("flagged", "Flagged"),
-    ("rejected", "Rejected"),
-)
+
+class EntryType(models.TextChoices):
+    INCOME = "income", "Income"
+    DISBURSEMENT = "disbursement", "Disbursement"
+    REMITTANCE = "remittance", "Remittance"
+    WORKSPACE_EXP = "workspace_exp", "Workspace Expense"
+    ORG_EXP = "org_exp", "Organization Expense"
+
+
+class EntryStatus(models.TextChoices):
+    PENDING_REVIEW = "pending_review", "Pending Review"
+    APPROVED = "approved", "Approved"
+    FLAGGED = "flagged", "Flagged"
+    REJECTED = "rejected", "Rejected"

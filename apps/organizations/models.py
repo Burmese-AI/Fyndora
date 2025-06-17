@@ -63,6 +63,10 @@ class OrganizationMember(baseModel):
     )
     is_active = models.BooleanField(default=True)
 
+    @property
+    def is_org_owner(self):
+        return self.organization.owner == self
+
     class Meta:
         verbose_name = "organization member"
         verbose_name_plural = "organization members"

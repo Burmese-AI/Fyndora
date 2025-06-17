@@ -16,6 +16,11 @@ from apps.core.constants import PAGINATION_SIZE
 from django.shortcuts import get_object_or_404
 from typing import Any
 from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
+
+
+
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -40,13 +45,32 @@ def dashboard_view(request, organization_id):
 
 @login_required
 def home_view(request):
-    organizations = get_user_organizations(request.user)
-    page = request.GET.get("page", 1)
-    paginator = Paginator(organizations, PAGINATION_SIZE)
-    organizations = paginator.get_page(page)
-    context = {"organizations": organizations,}
+    try:
+        organizations = get_user_organizations(request.user)
+        paginator = Paginator(organizations, PAGINATION_SIZE)
+        page = request.GET.get("page", 1)
+        
+        try:
+            organizations = paginator.page(page)
+        except PageNotAnInteger:
+            organizations = paginator.page(1)
+        except EmptyPage:
+            organizations = paginator.page(paginator.num_pages)
 
-    return render(request, "organizations/home.html", context)
+        context = {
+            "organizations": organizations,
+        }
+
+        if request.headers.get("HX-Request"):
+            template = "organizations/partials/organization_list.html"
+        else:
+            template = "organizations/home.html"
+
+        return render(request, template, context)
+
+    except Exception as e:
+        messages.error(request, "An error occurred while loading organizations")
+        return render(request, "organizations/home.html", {"organizations": []})
 
 
 def create_organization_view(request):

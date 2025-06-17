@@ -1,10 +1,11 @@
+from django.db.models import Q
 from apps.remittance.models import Remittance
 
 
 def get_remittances_with_filters(
     workspace_id,
-    team_ids=None,
-    statuses=None,
+    team_id=None,
+    status=None,
     start_date=None,
     end_date=None,
     search=None,
@@ -18,11 +19,11 @@ def get_remittances_with_filters(
         "confirmed_by",
     ).filter(workspace_team__workspace_id=workspace_id)
 
-    if team_ids:
-        qs = qs.filter(workspace_team__team_id__in=team_ids)
+    if team_id:
+        qs = qs.filter(workspace_team__team_id=team_id)
 
-    if statuses:
-        qs = qs.filter(status__in=statuses)
+    if status:
+        qs = qs.filter(status=status)
 
     if start_date:
         qs = qs.filter(workspace_team__workspace__end_date__gte=start_date)
@@ -31,6 +32,9 @@ def get_remittances_with_filters(
         qs = qs.filter(workspace_team__workspace__end_date__lte=end_date)
 
     if search:
-        qs = qs.filter(workspace_team__team__title__icontains=search)
+        qs = qs.filter(
+            Q(workspace_team__team__title__icontains=search)
+            | Q(status__icontains=search)
+        )
 
     return qs

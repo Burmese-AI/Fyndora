@@ -27,7 +27,7 @@ class InvitationListView(LoginRequiredMixin, ListView):
     template_name = "invitations/index.html"
     context_object_name = "invitations"
     paginate_by = PAGINATION_SIZE
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
@@ -61,14 +61,13 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get(self, request, *args, **kwargs):
         form = InvitationCreateForm()
-        context = {
-            "form": form,
-            "organization": self.organization
-        }
-        return render(request, "invitations/components/create_modal.html", context=context)
+        context = {"form": form, "organization": self.organization}
+        return render(
+            request, "invitations/components/create_modal.html", context=context
+        )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -150,6 +149,7 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
             "invitation_list",
             kwargs={"organization_id": self.kwargs["organization_id"]},
         )
+
 
 @login_required
 def accept_invitation_view(request, invitation_token):

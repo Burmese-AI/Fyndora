@@ -34,7 +34,7 @@ def dashboard_view(request, organization_id):
             "owner": owner,
         }
         return render(request, "organizations/dashboard.html", context)
-    except Exception as e:
+    except Exception:
         messages.error(request, "Unable to load dashboard. Please try again later.")
         return render(request, "organizations/dashboard.html", {"organization": None})
 
@@ -115,7 +115,7 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
     template_name = "organization_members/index.html"
     context_object_name = "members"
     paginate_by = PAGINATION_SIZE
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]

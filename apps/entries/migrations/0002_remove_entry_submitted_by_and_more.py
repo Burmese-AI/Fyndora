@@ -6,54 +6,88 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('entries', '0001_initial'),
-        ('organizations', '0005_alter_organization_owner'),
-        ('workspaces', '0005_alter_workspace_remittance_rate'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("entries", "0001_initial"),
+        ("organizations", "0005_alter_organization_owner"),
+        ("workspaces", "0005_alter_workspace_remittance_rate"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='entry',
-            name='submitted_by',
+            model_name="entry",
+            name="submitted_by",
         ),
         migrations.AddField(
-            model_name='entry',
-            name='submitter_content_type',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
+            model_name="entry",
+            name="submitter_content_type",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="contenttypes.contenttype",
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='entry',
-            name='submitter_object_id',
-            field=models.UUIDField(default='00000000-0000-0000-0000-000000000000'),
+            model_name="entry",
+            name="submitter_object_id",
+            field=models.UUIDField(default="00000000-0000-0000-0000-000000000000"),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='entry',
-            name='workspace',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='workspaces.workspace'),
+            model_name="entry",
+            name="workspace",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="entries",
+                to="workspaces.workspace",
+            ),
         ),
         migrations.AddField(
-            model_name='entry',
-            name='workspace_team',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='workspaces.workspaceteam'),
+            model_name="entry",
+            name="workspace_team",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="entries",
+                to="workspaces.workspaceteam",
+            ),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='amount',
-            field=models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(0.01)]),
+            model_name="entry",
+            name="amount",
+            field=models.DecimalField(
+                decimal_places=2,
+                max_digits=10,
+                validators=[django.core.validators.MinValueValidator(0.01)],
+            ),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='entry_type',
-            field=models.CharField(choices=[('income', 'Income'), ('disbursement', 'Disbursement'), ('remittance', 'Remittance'), ('workspace_exp', 'Workspace Expense'), ('org_exp', 'Organization Expense')], max_length=20),
+            model_name="entry",
+            name="entry_type",
+            field=models.CharField(
+                choices=[
+                    ("income", "Income"),
+                    ("disbursement", "Disbursement"),
+                    ("remittance", "Remittance"),
+                    ("workspace_exp", "Workspace Expense"),
+                    ("org_exp", "Organization Expense"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='entry',
-            name='reviewed_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviewed_entries', to='organizations.organizationmember'),
+            model_name="entry",
+            name="reviewed_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviewed_entries",
+                to="organizations.organizationmember",
+            ),
         ),
     ]

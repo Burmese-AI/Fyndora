@@ -14,3 +14,8 @@ class OrganizationPermissionError(OrganizationError):
     """Raised when user doesn't have permission for an organization operation."""
 
     pass
+
+class OrganizationUpdateError(OrganizationError):
+    """Raised when organization update fails."""
+
+    pass

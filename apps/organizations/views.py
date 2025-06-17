@@ -23,6 +23,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from apps.core.constants import PAGINATION_SIZE_GRID
+from apps.organizations.services import update_organization_from_form
 
 
 # Create your views here.
@@ -202,9 +203,8 @@ def edit_organization_view(request, organization_id):
     if request.method == "POST":
         form = OrganizationForm(request.POST, instance=organization)
         if form.is_valid():
-            form.save()
+            update_organization_from_form(form=form, organization=organization)
             messages.success(request, "Organization updated successfully!")
-            return redirect("settings", organization_id=organization_id)
         else:
             messages.error(request, "Please correct the errors below.")
             return render(request, "organizations/partials/edit_organization_form.html", {"form": form})

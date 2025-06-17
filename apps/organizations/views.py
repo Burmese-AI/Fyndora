@@ -182,10 +182,34 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
 
 
 def settings_view(request, organization_id):
-    organization = get_object_or_404(Organization, pk=organization_id)
-    owner = organization.owner.user if organization.owner else None
-    context = {
-        "organization": organization,
-        "owner": owner,
-    }
-    return render(request, "organizations/settings.html", context)
+    try:
+        organization = get_object_or_404(Organization, pk=organization_id)
+        print(organization)
+        owner = organization.owner.user if organization.owner else None
+        context = {
+            "organization": organization,
+            "owner": owner,
+        }
+        return render(request, "organizations/settings.html", context)
+    except Exception as e:
+        messages.error(request, "An error occurred while loading settings. Please try again later.")
+        return render(request, "organizations/settings.html", {"organization": None})
+    
+
+def edit_organization_view(request, organization_id):
+    organization = get_object_or_404(Organization, organization_id=organization_id)
+    print(organization)
+    if request.method == "POST":
+        form = OrganizationForm(request.POST, instance=organization)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Organization updated successfully!")
+            return redirect("settings", organization_id=organization_id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+            return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
+    else:
+        form = OrganizationForm(instance=organization)
+        print("it good heere and org is ", organization)
+        return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
+   

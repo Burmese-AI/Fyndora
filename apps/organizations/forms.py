@@ -20,7 +20,8 @@ class OrganizationForm(forms.ModelForm):
                     "placeholder": "Enter organization description (optional)",
                     "rows": 2,
             }
-        )
+        ),
+        required=False,
     )
 
     status = forms.ChoiceField(

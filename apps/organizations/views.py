@@ -18,6 +18,9 @@ from typing import Any
 from django.core.paginator import Paginator
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.template.loader import render_to_string
+from django.http import HttpResponse
 
 
 
@@ -77,7 +80,22 @@ def create_organization_view(request):
         return render(request, "organizations/partials/create_organization_form.html", {"form": form})
     else:
         form = OrganizationForm(request.POST)
-        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
+        if form.is_valid():
+            create_organization_with_owner(form=form, user=request.user)
+            organizations = get_user_organizations(request.user)
+            context = {
+                "organizations": organizations,
+                "is_oob": True,
+            }
+            messages.success(request, "Organization created successfully!")
+            organizations_template = render_to_string("organizations/partials/organization_list.html", context, request=request )
+            message_template = render_to_string("includes/message.html", context, request=request)
+            response = HttpResponse(f"{message_template} {organizations_template}")
+            response["HX-Trigger"] = "success"
+            return response
+        else:
+            print("organization creation failed")
+            return render(request, "organizations/partials/create_organization_form.html", {"form": form})
 
 
 def organization_overview_view(request, organization_id):

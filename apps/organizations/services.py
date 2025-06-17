@@ -1,6 +1,9 @@
 from django.db import transaction
 from apps.organizations.models import Organization, OrganizationMember
-from apps.organizations.exceptions import OrganizationCreationError, OrganizationUpdateError
+from apps.organizations.exceptions import (
+    OrganizationCreationError,
+    OrganizationUpdateError,
+)
 from apps.core.utils import model_update
 
 
@@ -37,7 +40,6 @@ def create_organization_with_owner(*, form, user) -> Organization:
         return organization
     except Exception as e:
         raise OrganizationCreationError(f"Failed to create organization: {str(e)}")
-
 
 
 def update_organization_from_form(*, form, organization) -> Organization:

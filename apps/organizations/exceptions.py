@@ -15,6 +15,7 @@ class OrganizationPermissionError(OrganizationError):
 
     pass
 
+
 class OrganizationUpdateError(OrganizationError):
     """Raised when organization update fails."""
 

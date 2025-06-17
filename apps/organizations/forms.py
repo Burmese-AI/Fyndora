@@ -35,9 +35,11 @@ class OrganizationForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        #for edit operation, exclude the current instance
+        # for edit operation, exclude the current instance
         if self.instance and self.instance.pk:
-            organization_queryset = Organization.objects.filter(title=title).exclude(pk=self.instance.pk)
+            organization_queryset = Organization.objects.filter(title=title).exclude(
+                pk=self.instance.pk
+            )
         else:
             organization_queryset = Organization.objects.filter(title=title)
         if organization_queryset.exists():

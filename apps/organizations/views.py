@@ -16,12 +16,10 @@ from apps.core.constants import PAGINATION_SIZE
 from django.shortcuts import get_object_or_404
 from typing import Any
 from django.core.paginator import Paginator
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.auth.decorators import login_required
+from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 
@@ -42,7 +40,7 @@ def dashboard_view(request, organization_id):
             "owner": owner,
         }
         return render(request, "organizations/dashboard.html", context)
-    except Exception as e:
+    except Exception:
         messages.error(request, "Unable to load dashboard. Please try again later.")
         return render(request, "organizations/dashboard.html", {"organization": None})
 
@@ -73,13 +71,13 @@ def home_view(request):
             template = "organizations/home.html"
 
         return render(request, template, context)
-    except Exception as e:
+    except Exception:
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 
 
 def create_organization_view(request):
-    try:   
+    try:
         if request.method != "POST":
             form = OrganizationForm()
             return render(
@@ -132,8 +130,16 @@ def create_organization_view(request):
                 return response
     except Exception as e:
         print(e)
-        messages.error(request, "An error occurred while creating organization. Please try again later.")
-        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
+        messages.error(
+            request,
+            "An error occurred while creating organization. Please try again later.",
+        )
+        return render(
+            request,
+            "organizations/partials/create_organization_form.html",
+            {"form": form},
+        )
+
 
 def organization_overview_view(request, organization_id):
     organization = get_object_or_404(Organization, pk=organization_id)
@@ -181,7 +187,6 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().render_to_response(context, **response_kwargs)
 
 
-
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
@@ -192,10 +197,12 @@ def settings_view(request, organization_id):
             "owner": owner,
         }
         return render(request, "organizations/settings.html", context)
-    except Exception as e:
-        messages.error(request, "An error occurred while loading settings. Please try again later.")
+    except Exception:
+        messages.error(
+            request, "An error occurred while loading settings. Please try again later."
+        )
         return render(request, "organizations/settings.html", {"organization": None})
-    
+
 
 def edit_organization_view(request, organization_id):
     try:
@@ -213,31 +220,34 @@ def edit_organization_view(request, organization_id):
                     "organization": organization,
                     "is_oob": True,
                     "owner": owner,
-                }   
+                }
                 message_template = render_to_string(
                     "includes/message.html", context, request=request
                 )
                 setting_content_template = render_to_string(
-                    "organizations/partials/setting_content.html", context, request=request
+                    "organizations/partials/setting_content.html",
+                    context,
+                    request=request,
                 )
-               
-               
-                response = HttpResponse(f"{message_template} {setting_content_template}")
+
+                response = HttpResponse(
+                    f"{message_template} {setting_content_template}"
+                )
                 response["HX-Trigger"] = "success"
                 return response
             else:
                 messages.error(request, "Please correct the errors below.")
                 print("it good heere and org is ", organization)
                 context = {
-                "form": form,
-                "is_oob": True,
-                "organization": organization,
-             }
+                    "form": form,
+                    "is_oob": True,
+                    "organization": organization,
+                }
                 form_template = render_to_string(
-                "organizations/partials/edit_organization_form.html",
-                context,
-                request=request,
-            )
+                    "organizations/partials/edit_organization_form.html",
+                    context,
+                    request=request,
+                )
             message_template = render_to_string(
                 "includes/message.html", context, request=request
             )
@@ -245,13 +255,24 @@ def edit_organization_view(request, organization_id):
             return response
         else:
             form = OrganizationForm(instance=organization)
-            return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
-           
+            return render(
+                request,
+                "organizations/partials/edit_organization_form.html",
+                {"form": form},
+            )
+
     except Exception as e:
         print(e)
-        messages.error(request, "An error occurred while updating organization. Please try again later.")
-        return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
-   
+        messages.error(
+            request,
+            "An error occurred while updating organization. Please try again later.",
+        )
+        return render(
+            request,
+            "organizations/partials/edit_organization_form.html",
+            {"form": form},
+        )
+
 
 def delete_organization_view(request, organization_id):
     try:
@@ -262,7 +283,18 @@ def delete_organization_view(request, organization_id):
             messages.success(request, "Organization deleted successfully.")
             return redirect("/")
         else:
-            return render(request, "organizations/partials/delete_organization_form.html", {"organization": organization})
-    except Exception as e:
-        messages.error(request, "An error occurred while deleting organization. Please try again later.")
-        return render(request, "organizations/partials/delete_organization_form.html", {"organization": organization})
+            return render(
+                request,
+                "organizations/partials/delete_organization_form.html",
+                {"organization": organization},
+            )
+    except Exception:
+        messages.error(
+            request,
+            "An error occurred while deleting organization. Please try again later.",
+        )
+        return render(
+            request,
+            "organizations/partials/delete_organization_form.html",
+            {"organization": organization},
+        )

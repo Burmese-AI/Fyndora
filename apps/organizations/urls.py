@@ -38,7 +38,14 @@ urlpatterns = [
         name="invitation_list",
     ),
     path("<uuid:organization_id>/settings/", settings_view, name="settings"),
-    path("<uuid:organization_id>/settings/edit/", edit_organization_view, 
-         name="edit_organization"),
-    path("<uuid:organization_id>/settings/delete/", delete_organization_view, name="delete_organization"),
+    path(
+        "<uuid:organization_id>/settings/edit/",
+        edit_organization_view,
+        name="edit_organization",
+    ),
+    path(
+        "<uuid:organization_id>/settings/delete/",
+        delete_organization_view,
+        name="delete_organization",
+    ),
 ]

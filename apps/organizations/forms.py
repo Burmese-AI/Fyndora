@@ -16,9 +16,9 @@ class OrganizationForm(forms.ModelForm):
     description = forms.CharField(
         widget=forms.Textarea(
             attrs={
-               "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Enter organization description (optional)",
-                    "rows": 2,
+                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                "placeholder": "Enter organization description (optional)",
+                "rows": 2,
             }
         ),
         required=False,

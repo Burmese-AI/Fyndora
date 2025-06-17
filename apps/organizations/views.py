@@ -21,8 +21,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from apps.core.constants import PAGINATION_SIZE_GRID
 
 
 # Create your views here.
@@ -50,9 +50,9 @@ def dashboard_view(request, organization_id):
 def home_view(request):
     try:
         organizations = get_user_organizations(request.user)
-        paginator = Paginator(organizations, PAGINATION_SIZE)
+        paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
         page = request.GET.get("page", 1)
-        
+
         try:
             organizations = paginator.page(page)
         except PageNotAnInteger:
@@ -62,41 +62,80 @@ def home_view(request):
 
         context = {
             "organizations": organizations,
+            "is_paginated": organizations.paginator.num_pages > 1,
+            "page_obj": organizations,
+            "paginator": paginator,
         }
-        template = "organizations/home.html"
+        if request.headers.get("HX-Request"):
+            template = "organizations/partials/organization_list.html"
+        else:
+            template = "organizations/home.html"
 
         return render(request, template, context)
-
     except Exception as e:
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 
 
-# 
+#
+
 
 def create_organization_view(request):
-    if request.method != "POST":
-        form = OrganizationForm()
-        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
-    else:
-        form = OrganizationForm(request.POST)
-        if form.is_valid():
-            create_organization_with_owner(form=form, user=request.user)
-            organizations = get_user_organizations(request.user)
-            context = {
-                "organizations": organizations,
-                "is_oob": True,
-            }
-            messages.success(request, "Organization created successfully!")
-            organizations_template = render_to_string("organizations/partials/organization_list.html", context, request=request )
-            message_template = render_to_string("includes/message.html", context, request=request)
-            response = HttpResponse(f"{message_template} {organizations_template}")
-            response["HX-Trigger"] = "success"
-            return response
+    try:   
+        if request.method != "POST":
+            form = OrganizationForm()
+            return render(
+                request,
+                "organizations/partials/create_organization_form.html",
+                {"form": form},
+            )
         else:
-            print("organization creation failed")
-            return render(request, "organizations/partials/create_organization_form.html", {"form": form})
+            form = OrganizationForm(request.POST)
+            if form.is_valid():
+                create_organization_with_owner(form=form, user=request.user)
+                organizations = get_user_organizations(request.user)
+                paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
+                page = request.GET.get("page", 1)
+                organizations = paginator.page(page)
 
+                context = {
+                    "organizations": organizations,
+                    "is_paginated": organizations.paginator.num_pages > 1,
+                    "page_obj": organizations,
+                    "paginator": paginator,
+                    "is_oob": True,
+                }
+                messages.success(request, "Organization created successfully!")
+                organizations_template = render_to_string(
+                    "organizations/partials/organization_list.html",
+                    context,
+                    request=request,
+                )
+                message_template = render_to_string(
+                    "includes/message.html", context, request=request
+                )
+                response = HttpResponse(f"{message_template} {organizations_template}")
+                response["HX-Trigger"] = "success"
+                return response
+            else:
+                messages.error(request, "Organization creation failed")
+                print("it good heere")
+                print(form.errors)
+                context = {"form": form, "is_oob": True}
+                form_template = render_to_string(
+                    "organizations/partials/create_organization_form.html",
+                    context,
+                    request=request,
+                )
+                message_template = render_to_string(
+                    "includes/message.html", context, request=request
+                )
+                response = HttpResponse(f"{message_template} {form_template}")
+                return response
+    except Exception as e:
+        print(e)
+        messages.error(request, "An error occurred while creating organization. Please try again later.")
+        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
 
 def organization_overview_view(request, organization_id):
     organization = get_object_or_404(Organization, pk=organization_id)
@@ -113,12 +152,13 @@ def organization_overview_view(request, organization_id):
     }
     return render(request, "organizations/organization_overview.html", context)
 
+
 class OrganizationMemberListView(LoginRequiredMixin, ListView):
     model = OrganizationMember
     template_name = "organization_members/index.html"
     context_object_name = "members"
     paginate_by = PAGINATION_SIZE
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]

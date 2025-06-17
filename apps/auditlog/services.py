@@ -11,7 +11,7 @@ def audit_create(
     Service to create an audit log entry.
     """
     target_entity_type = ContentType.objects.get_for_model(target_entity)
-    target_entity_id = str(target_entity.pk)
+    target_entity_id = target_entity.pk
 
     audit = AuditTrail()
     data = {

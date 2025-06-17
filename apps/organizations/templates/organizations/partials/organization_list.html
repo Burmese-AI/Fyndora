@@ -1,11 +1,15 @@
 <div {% if is_oob %}hx-swap-oob="true"{% endif %} id="organizations_display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for organization in organizations %}
-    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200">
-        <div class="card-body">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="card-title mb-0">{{ organization.title }}</h2>
-                <div class="flex items-center gap-2">
-                    <div class="badge
+    <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1">
+        <div class="card-body p-6">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="card-title text-2xl font-semibold mb-1">{{ organization.title }}</h2>
+                    <p class="text-gray-500 text-sm">{{ organization.description|default:"No description provided" }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="badge badge-lg 
                         {% if organization.status == 'active' %}
                             badge-success
                         {% elif organization.status == 'archived' %}
@@ -14,49 +18,72 @@
                             badge-error
                         {% endif %}">
                         {{ organization.status|title }}
-                    </div>
+                    </span>
+                    
                     {% include "organizations/components/edit_dropdown.html" %}
                 </div>
             </div>
-            
-            <p class="text-base-content/70 line-clamp-2">
-                {{ organization.description|default:"No description provided" }}
-            </p>
-            
-            <div class="divider my-2"></div>
-            
-            <div class="flex justify-between items-center text-sm">
-                <div class="text-base-content/60">
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    
+            <div class="divider my-4"></div>
+    
+            <!-- Stats Section -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="stat p-4 bg-base-200 rounded-lg">
+                    <div class="stat-figure text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="font-medium">Expense:</span>
-                        <span class="ml-2">${{ organization.expense }}</span>
                     </div>
+                    <div class="stat-title text-sm">Expense</div>
+                    <div class="stat-value text-lg font-semibold">${{ organization.expense }}</div>
                 </div>
-            </div>
-
-            <div class="mt-2 text-sm text-base-content/60">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    
+                <div class="stat p-4 bg-base-200 rounded-lg">
+                    <div class="stat-figure text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Created {{ organization.created_at|date:"M d, Y" }}
                     </div>
-                    {% if organization.owner %}
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span class="text-sm font-medium">{{ organization.owner.user.username }}</span>
-                    </div>
-                    {% endif %}
+                    <div class="stat-title text-sm">Created</div>
+                    <div class="stat-value text-lg font-semibold">{{ organization.created_at|date:"M d, Y" }}</div>
                 </div>
             </div>
+    
+            <!-- Owner Section -->
+            {% if organization.owner %}
+            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                <div>
+                    <div class="font-semibold">{{ organization.owner.user.username }}</div>
+                    <div class="text-gray-500 text-sm">Owner</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-actions p-4 flex justify-end items-center gap-3">
+            <a 
+                href="" 
+                class="btn btn-ghost flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Manage
+            </a>
+            <a 
+                href="" 
+                class="btn btn-primary flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View Overview
+            </a>
         </div>
     </div>
+    
+        
+        
+        
     {% empty %}
     <div class="col-span-full">
         <div class="hero bg-base-200 rounded-box">
@@ -74,6 +101,7 @@
                         Create Organization
                     </a>
                 </div>
+                
             </div>
         </div>
     </div>

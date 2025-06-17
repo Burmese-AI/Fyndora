@@ -8,6 +8,7 @@ from apps.organizations.views import (
     organization_overview_view,
     settings_view,
     edit_organization_view,
+    delete_organization_view,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
 
@@ -37,5 +38,7 @@ urlpatterns = [
         name="invitation_list",
     ),
     path("<uuid:organization_id>/settings/", settings_view, name="settings"),
-    path("<uuid:organization_id>/settings/edit/", edit_organization_view, name="edit_organization"),
+    path("<uuid:organization_id>/settings/edit/", edit_organization_view, 
+         name="edit_organization"),
+    path("<uuid:organization_id>/settings/delete/", delete_organization_view, name="delete_organization"),
 ]

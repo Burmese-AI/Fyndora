@@ -252,3 +252,17 @@ def edit_organization_view(request, organization_id):
         messages.error(request, "An error occurred while updating organization. Please try again later.")
         return render(request, "organizations/partials/edit_organization_form.html", {"form": form})
    
+
+def delete_organization_view(request, organization_id):
+    try:
+        organization = get_object_or_404(Organization, pk=organization_id)
+        if request.method == "POST":
+            # delete organization
+            organization.delete()
+            messages.success(request, "Organization deleted successfully.")
+            return redirect("/")
+        else:
+            return render(request, "organizations/partials/delete_organization_form.html", {"organization": organization})
+    except Exception as e:
+        messages.error(request, "An error occurred while deleting organization. Please try again later.")
+        return render(request, "organizations/partials/delete_organization_form.html", {"organization": organization})

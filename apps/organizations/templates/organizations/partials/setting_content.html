@@ -7,18 +7,8 @@
           <h1 class="text-4xl font-bold mb-2">{{ organization.title }}</h1>
           <p class="text-lg text-gray-500">{{ organization.description|default:'No description provided.' }}</p>
         </div>
-        <div class="flex items-center gap-2 mt-4 sm:mt-0">
-          <span class="badge 
-            {% if organization.status == 'active' %}
-              badge-success
-            {% elif organization.status == 'archived' %}
-              badge-warning
-            {% else %}
-              badge-error
-            {% endif %}
-            badge-lg">
-            Status: {{ organization.get_status_display }}
-          </span>
+        <div class="flex justify-end">
+            <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-secondary btn-md" >Edit </button>
         </div>
       </div>
   
@@ -47,13 +37,11 @@
       </div>
   
       <!-- Edit Button Placeholder -->
-            <div class="flex justify-end">
-                <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary btn-md" >Edit Organization</button>
-            </div>
+            
         </div>
     
         <!-- Example of a "thicken bar" below the button -->
-        <button class="btn btn-error btn-lg btn-block mt-8 font-bold py-4 text-lg">Delete Organization</button>
+        <button  hx-get="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-error btn-lg btn-block mt-8 font-bold py-4 text-lg">Delete Organization</button>
     {% else %}
 
 

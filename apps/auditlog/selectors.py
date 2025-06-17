@@ -8,8 +8,8 @@ def get_audit_logs_for_workspace_with_filters(
     action_type=None,
     start_date=None,
     end_date=None,
-    entity_id=None,
-    entity_type=None,
+    target_entity_id=None,
+    target_entity_type=None,
     search_query=None,
 ):
     qs = AuditTrail.objects.select_related("user").all()
@@ -21,10 +21,10 @@ def get_audit_logs_for_workspace_with_filters(
         qs = qs.filter(timestamp__gte=start_date)
     if end_date:
         qs = qs.filter(timestamp__lte=end_date)
-    if entity_id:
-        qs = qs.filter(target_entity=entity_id)
-    if entity_type:
-        qs = qs.filter(target_entity_type=entity_type)
+    if target_entity_id:
+        qs = qs.filter(target_entity_id=target_entity_id)
+    if target_entity_type:
+        qs = qs.filter(target_entity_type=target_entity_type)
 
     if search_query:
         qs = qs.filter(metadata__icontains=search_query)

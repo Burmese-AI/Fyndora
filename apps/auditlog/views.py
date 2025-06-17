@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.views.generic import ListView
 
 from .constants import AUDIT_ACTION_TYPE_CHOICES
@@ -25,6 +26,8 @@ class AuditLogListView(ListView):
             action_type=self.request.GET.get("action_type"),
             start_date=self.request.GET.get("start_date"),
             end_date=self.request.GET.get("end_date"),
+            target_entity_id=self.request.GET.get("target_entity_id"),
+            target_entity_type=self.request.GET.get("target_entity_type"),
             search_query=self.request.GET.get("q"),
         )
 
@@ -34,6 +37,7 @@ class AuditLogListView(ListView):
         # Provide data for filter dropdowns
         context["users"] = User.objects.all().order_by("username")
         context["action_types"] = AUDIT_ACTION_TYPE_CHOICES
+        context["entity_types"] = ContentType.objects.all()
 
         # Create a copy of the GET parameters to preserve filters in pagination
         filters = self.request.GET.copy()

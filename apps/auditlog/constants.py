@@ -4,12 +4,3 @@ AUDIT_ACTION_TYPE_CHOICES = (
     ("flagged", "Flagged"),
     ("file_uploaded", "File Uploaded"),
 )
-
-AUDIT_TARGET_ENTITY_TYPE_CHOICES = (
-    ("entry", "Entry"),
-    ("attachment", "Attachment"),
-    ("workspace", "Workspace"),
-    ("team", "Team"),
-    ("user", "User"),
-    ("system", "System"),
-)

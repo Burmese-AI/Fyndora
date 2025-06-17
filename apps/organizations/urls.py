@@ -6,6 +6,7 @@ from apps.organizations.views import (
     home_view,
     create_organization_view,
     organization_overview_view,
+    settings_view,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
 
@@ -34,4 +35,5 @@ urlpatterns = [
         InvitationListView.as_view(),
         name="invitation_list",
     ),
+    path("<uuid:organization_id>/settings/", settings_view, name="settings"),
 ]

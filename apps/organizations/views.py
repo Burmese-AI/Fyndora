@@ -77,9 +77,6 @@ def home_view(request):
         return render(request, "organizations/home.html", {"organizations": []})
 
 
-#
-
-
 def create_organization_view(request):
     try:   
         if request.method != "POST":
@@ -181,3 +178,14 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
                 self.request, "organization_members/partials/table.html", context
             )
         return super().render_to_response(context, **response_kwargs)
+
+
+
+def settings_view(request, organization_id):
+    organization = get_object_or_404(Organization, pk=organization_id)
+    owner = organization.owner.user if organization.owner else None
+    context = {
+        "organization": organization,
+        "owner": owner,
+    }
+    return render(request, "organizations/settings.html", context)

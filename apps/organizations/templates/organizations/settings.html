@@ -1,0 +1,9 @@
+{% extends 'layouts/organization_layout.html' %}
+
+{% block header %}
+    {% include "components/organization_layout_header.html" with title="Settings" subtitle="Manage your organization settings here." %}
+{% endblock %}
+
+{% block content %}
+{% include "organizations/partials/setting_content.html" %}
+{% endblock %}

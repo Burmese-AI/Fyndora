@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">My Organizations</h1>
-        <button class="btn btn-primary">Create Organization</button>
+        <button hx-get="{% url 'create_organization' %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary">Create Organization</button>
     </div>
 
     <!-- Organization List -->

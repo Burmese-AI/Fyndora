@@ -60,11 +60,7 @@ def home_view(request):
         context = {
             "organizations": organizations,
         }
-
-        if request.headers.get("HX-Request"):
-            template = "organizations/partials/organization_list.html"
-        else:
-            template = "organizations/home.html"
+        template = "organizations/home.html"
 
         return render(request, template, context)
 
@@ -73,38 +69,15 @@ def home_view(request):
         return render(request, "organizations/home.html", {"organizations": []})
 
 
+# 
+
 def create_organization_view(request):
-    form = OrganizationForm()
-
-    if request.method == "POST":
+    if request.method != "POST":
+        form = OrganizationForm()
+        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
+    else:
         form = OrganizationForm(request.POST)
-        if form.is_valid():
-            create_organization_with_owner(form=form, user=request.user)
-            newform = OrganizationForm()
-            context = {
-                "organizations": get_user_organizations(request.user),
-                "form": newform,
-            }
-            messages.success(request, "Organization created successfully!")
-            print("org creation success is triggered")
-            response = render(
-                request, "organizations/partials/organization_card.html", context
-            )
-            response["HX-Trigger"] = "org-creation-success"
-            return response
-        else:
-            response = render(
-                request,
-                "organizations/partials/organization_create_form.html",
-                {"form": form},
-            )
-            response["HX-Retarget"] = "#organization_modal"
-            response["HX-Reswap"] = "outerHTML"
-            response["HX-Trigger-After-Settle"] = "fail"
-            return response
-
-    context = {"organizations": get_user_organizations(request.user), "form": form}
-    return render(request, "organizations/partials/organization_card.html", context)
+        return render(request, "organizations/partials/create_organization_form.html", {"form": form})
 
 
 def organization_overview_view(request, organization_id):

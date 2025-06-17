@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block body %}
+<div data-theme="lemonade" class="bg-base-200 p-4 sm:p-8">
+
+    <div class="max-w-7xl mx-auto bg-base-100 rounded-2xl shadow-lg p-6 sm:p-8">
+        
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold">{{ workspace.title }}: Remittance Management</h1>
+        </div>
+
+        <!-- Filters Form -->
+        <form hx-get="{% url 'remittance:remittance_list' workspace_id=workspace.pk %}" 
+              hx-trigger="change from:select, keyup changed delay:500ms from:input[type='text'], change from:input[type='date']"
+              hx-target="#remittance-list-container"
+              hx-push-url="true">
+            <div class="flex flex-wrap gap-4 items-center mb-6">
+                <select name="team" class="select select-bordered">
+                    <option value="">All teams</option>
+                    {% for team in all_teams %}
+                        <option value="{{ team.pk }}" {% if team.pk|stringformat:"s" == request.GET.team %}selected{% endif %}>
+                            {{ team.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <select name="status" class="select select-bordered">
+                    <option value="">All status</option>
+                    {% for value, display_name in all_statuses %}
+                        <option value="{{ value }}" {% if value == request.GET.status %}selected{% endif %}>
+                            {{ display_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <input type="date" name="start_date" class="input input-bordered" value="{{ request.GET.start_date|default:'' }}" title="Start date">
+                <input type="date" name="end_date" class="input input-bordered" value="{{ request.GET.end_date|default:'' }}" title="End date">
+                
+                <div class="flex-grow">
+                    <input type="text" name="q" class="input input-bordered w-full" placeholder="Search..." value="{{ search_query }}">
+                </div>
+
+                <a href="{% url 'remittance:remittance_list' workspace_id=workspace.pk %}" class="btn btn-neutral">Clear Filters</a>
+            </div>
+        </form>
+
+        <!-- Remittance Table Container -->
+        <div id="remittance-list-container">
+            {% include "remittance/remittance_list.html" %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

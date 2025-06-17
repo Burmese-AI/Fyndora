@@ -1,0 +1,46 @@
+{% load humanize %}
+
+<div class="overflow-x-auto">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team Name</th>
+                <th>Due Amount</th>
+                <th>Paid Amount</th>
+                <th>Status</th>
+                <th>Due Date</th>
+                <th>Confirmed By</th>
+                <th>Confirmed At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for remittance in remittances %}
+                {% include "remittance/remittance_row.html" %}
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center py-8">No remittances found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="join mt-8 flex justify-center">
+    {% if page_obj.has_previous %}
+        <a href="?{{ current_filters.urlencode }}&page={{ page_obj.previous_page_number }}" class="join-item btn" hx-get="?{{ current_filters.urlencode }}&page={{ page_obj.previous_page_number }}" hx-target="#remittance-list-container" hx-push-url="true">«</a>
+    {% else %}
+        <button class="join-item btn" disabled>«</button>
+    {% endif %}
+
+    <button class="join-item btn">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+    
+    {% if page_obj.has_next %}
+        <a href="?{{ current_filters.urlencode }}&page={{ page_obj.next_page_number }}" class="join-item btn" hx-get="?{{ current_filters.urlencode }}&page={{ page_obj.next_page_number }}" hx-target="#remittance-list-container" hx-push-url="true">»</a>
+    {% else %}
+        <button class="join-item btn" disabled>»</button>
+    {% endif %}
+</div>
+{% endif %}

@@ -7,9 +7,9 @@
       <p class="text-lg text-gray-500">{{ organization.description|default:'No description provided.' }}</p>
     </div>
     <div class="flex items-center gap-2 mt-4 sm:mt-0">
-      <span class="badge badge-outline badge-lg">Status: {{ organization.get_status_display }}</span>
+      <span class="badge badge-primary badge-lg">Status: {{ organization.get_status_display }}</span>
       {% if owner %}
-        <span class="badge badge-accent badge-lg">Owner: {{ owner.username }}</span>
+        <span class="badge badge-secondary badge-lg">Owner: {{ owner.username }}</span>
       {% endif %}
     </div>
   </div>

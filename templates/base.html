@@ -15,4 +15,11 @@
    {% include 'includes/footer.html' %}
   </body>
 </html>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+      document.body.addEventListener('success', () => {
+          document.getElementById('modal').removeAttribute('open');
+      });
+  });
+</script>
 

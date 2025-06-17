@@ -1,6 +1,7 @@
-<div x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
-    <div class="modal modal-open">
-      <form method="dialog" class="modal-box max-w-lg" @click.outside="open = false">
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+      <form method="dialog" class="modal-box max-w-lg">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-bold">{{ organization.title }}</h2>
             <div class="badge badge-primary">{{ organization.status }}</div>
@@ -33,13 +34,11 @@
           <!-- <button class="btn btn-sm btn-outline">View Teams</button> -->
         </div>
 
-        <div class="mt-4 flex justify-end">
-          <button type="button" class="btn btn-sm btn-outline" @click="open = false">Close</button>
+        <div class="flex justify-end">
+          <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
         </div>
       </form>
+     
   
-      <!-- Optional: Background click to close -->
-      <div class="modal-backdrop" @click="open = false"></div>
-    </div>
-  </div>
+{% endblock %}
   

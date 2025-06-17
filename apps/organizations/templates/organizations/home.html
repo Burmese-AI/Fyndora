@@ -5,25 +5,15 @@
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">My Organizations</h1>
-        <button class="btn btn-primary" onclick="organization_modal.showModal()">Add Organization</button>
+        <button hx-get="{% url 'create_organization' %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary">Create Organization</button>
     </div>
 
     <!-- Organization List -->
-    <div id="organization-list">
+    <div id="content-container">
         {% include "organizations/partials/organization_list.html" %}
     </div>
 
-    {% include "organizations/partials/organization_create_form.html" %}
         <!-- Modal for organization details -->
         <div id="organization-detail-modal"></div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.body.addEventListener('fail', () => {
-        document.getElementById('organization_modal').showModal();
-        
-      });
-  });
-  </script>
 {% endblock %}

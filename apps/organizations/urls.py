@@ -13,7 +13,7 @@ from apps.invitations.views import InvitationCreateView, InvitationListView
 urlpatterns = [
     path("", home_view, name="home"),
     path("create/", create_organization_view, name="create_organization"),
-    path("<uuid:pk>/overview/", organization_overview_view, name="organization_overview"),
+    path("<uuid:organization_id>/overview/", organization_overview_view, name="organization_overview"),
     path(
         "<uuid:organization_id>/invitations/create/",
         InvitationCreateView.as_view(),

@@ -1,6 +1,5 @@
-{% if organization %}
-{{ organization.organization_id }}
-<div class="max-w-5xl mx-auto mt-10 px-4 transition-all duration-200 transform hover:-translate-y-1">
+<div class="max-w-5xl mx-auto mt-10 px-4 transition-all duration-200 transform hover:-translate-y-1" {% if is_oob %}hx-swap-oob="true"{% endif %} id="setting_content">
+    {% if organization %}
     <div class="bg-base-100 rounded-xl shadow-xl p-8">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
@@ -42,7 +41,7 @@
                 <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-primary btn-md" >Edit Organization</button>
             </div>
         </div>
+    {% else %}
+    <div class="alert alert-error mt-8 max-w-2xl mx-auto">Unable to load organization settings.</div>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="alert alert-error mt-8 max-w-2xl mx-auto">Unable to load organization settings.</div>
-{% endif %}

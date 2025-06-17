@@ -200,24 +200,28 @@ def settings_view(request, organization_id):
 def edit_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, organization_id=organization_id)
-        print(organization)
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():
                 update_organization_from_form(form=form, organization=organization)
-                organization = get_user_organizations(request.user)
+                organization = get_object_or_404(Organization, pk=organization_id)
+                print(organization)
+                print(f"{organization} newly edited value")
+                owner = organization.owner.user if organization.owner else None
+                messages.success(request, "Organization updated successfully!")
                 context = {
                     "organization": organization,
                     "is_oob": True,
+                    "owner": owner,
                 }   
-                
-                setting_content_template = render_to_string(
-                    "organizations/partials/setting_content.html", context, request=request
-                )
                 message_template = render_to_string(
                     "includes/message.html", context, request=request
                 )
-                messages.success(request, "Organization updated successfully!")
+                setting_content_template = render_to_string(
+                    "organizations/partials/setting_content.html", context, request=request
+                )
+               
+               
                 response = HttpResponse(f"{message_template} {setting_content_template}")
                 response["HX-Trigger"] = "success"
                 return response

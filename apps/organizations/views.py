@@ -16,7 +16,7 @@ from apps.organizations.services import create_organization_with_owner
 from apps.core.constants import PAGINATION_SIZE
 from django.shortcuts import get_object_or_404
 from typing import Any
-
+from django.core.paginator import Paginator
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -42,8 +42,10 @@ def dashboard_view(request, organization_id):
 @login_required
 def home_view(request):
     organizations = get_user_organizations(request.user)
-    form = OrganizationForm()
-    context = {"organizations": organizations, "form": form}
+    page = request.GET.get("page", 1)
+    paginator = Paginator(organizations, PAGINATION_SIZE)
+    organizations = paginator.get_page(page)
+    context = {"organizations": organizations,}
 
     return render(request, "organizations/home.html", context)
 

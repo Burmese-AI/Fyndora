@@ -34,11 +34,7 @@
           <!-- <button class="btn btn-sm btn-outline">View Teams</button> -->
         </div>
 
-        <div class="modal-action">
-          <button @click="open = false" class="btn">
-            Close
-          </button>
-        </div>
+        <button class="btn" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
       </form>
      
   

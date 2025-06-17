@@ -1,13 +1,8 @@
-<div id="modal" 
-     x-data="{ 
-       open: true,
-     }"
-     @keydown.escape.window="open = false"
-     @success.window="open = false">
-     
-  <template x-if="open">
-    <div class="modal modal-open">
-      {% block modal_content %}{% endblock %}
-    </div>
-  </template>
+<div id="modal" class="modal" open>
+    {% block modal_content %}
+    
+    {% endblock %}
+    <!-- background click to close the modal temporariy commented due to low perfomance( figure out later ) -->
+    <!-- <div class="modal-backdrop bg-black/50 backdrop-blur-sm" onclick="this.closest('.modal').removeAttribute('open')"></div> -->
 </div>
+  

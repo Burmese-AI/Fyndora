@@ -53,9 +53,7 @@
     </div>
 
     <div class="flex justify-end space-x-3">
-    <button type="button" class="btn btn-base w-full sm:w-auto" @click="open = false">
-        Cancel
-    </button>
+    <button class="btn" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
     <button type="submit" class="btn btn-primary w-full sm:w-auto">
         Create Organization
     </button>

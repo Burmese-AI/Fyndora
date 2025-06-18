@@ -3,20 +3,18 @@ Factory Boy factories for Entry models.
 """
 
 import uuid
-import factory
-from factory.django import DjangoModelFactory
-from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 
-from apps.entries.models import Entry
+import factory
+from django.contrib.contenttypes.models import ContentType
+from factory.django import DjangoModelFactory
+
 from apps.entries.constants import EntryType
+from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
-from tests.factories.team_factories import (
-    TeamMemberFactory,
-    TeamCoordinatorFactory,
-    OperationsReviewerFactory,
-    WorkspaceAdminMemberFactory,
-)
+from tests.factories.organization_factories import OrganizationMemberFactory
+from tests.factories.team_factories import TeamMemberFactory
+from tests.factories.workspace_factories import WorkspaceFactory, WorkspaceTeamFactory
 
 
 class EntryFactory(DjangoModelFactory):
@@ -27,14 +25,22 @@ class EntryFactory(DjangoModelFactory):
 
     entry_id = factory.LazyFunction(uuid.uuid4)
     submitter = factory.SubFactory(TeamMemberFactory, role=TeamMemberRole.SUBMITTER)
-    submitter_content_type = factory.LazyAttribute(lambda obj: ContentType.objects.get_for_model(obj.submitter))
+    submitter_content_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get_for_model(obj.submitter)
+    )
     submitter_object_id = factory.LazyAttribute(lambda obj: obj.submitter.pk)
     entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])
     amount = factory.Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
     description = factory.Faker("sentence", nb_words=8)
     status = "pending_review"  # Default status
-
-    # reviewed_by and review_notes will be set when needed
+    workspace = factory.LazyAttribute(lambda obj: WorkspaceFactory())
+    workspace_team = factory.LazyAttribute(
+        lambda obj: WorkspaceTeamFactory(
+            workspace=obj.workspace, team=obj.submitter.team
+        )
+    )
+    reviewed_by = None
+    review_notes = None
 
 
 class IncomeEntryFactory(EntryFactory):
@@ -75,7 +81,7 @@ class ApprovedEntryFactory(EntryFactory):
     """Factory for creating approved financial transactions."""
 
     status = "approved"
-    reviewed_by = factory.SubFactory(TeamCoordinatorFactory)
+    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
     review_notes = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Approved financial transaction {n}")
 
@@ -84,7 +90,7 @@ class RejectedEntryFactory(EntryFactory):
     """Factory for creating rejected financial transactions."""
 
     status = "rejected"
-    reviewed_by = factory.SubFactory(OperationsReviewerFactory)
+    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
     review_notes = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Rejected financial transaction {n}")
 
@@ -93,7 +99,7 @@ class FlaggedEntryFactory(EntryFactory):
     """Factory for creating flagged financial transactions."""
 
     status = "flagged"
-    reviewed_by = factory.SubFactory(WorkspaceAdminMemberFactory)
+    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
     review_notes = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Flagged financial transaction {n}")
 
@@ -137,6 +143,7 @@ class EntryWithReviewFactory(EntryFactory):
 
         # Assign appropriate reviewer based on status
         if status in ["approved", "rejected", "flagged"]:
-            self.reviewed_by = TeamCoordinatorFactory()
+            # Use OrganizationMember instead of TeamMember
+            self.reviewed_by = OrganizationMemberFactory()
             self.review_notes = f"Financial transaction {status} after review"
             self.save()

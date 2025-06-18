@@ -247,7 +247,7 @@ def add_team_to_workspace(request, organization_id, workspace_id):
                     context=context,
                     request=request,
                 )
-                response = HttpResponse(f"{message_html} {workspace_display_html}")
+                response = HttpResponse(f"{workspace_display_html} {message_html} ")
                 response["HX-trigger"] = "success"
                 return response
             else:
@@ -264,7 +264,7 @@ def add_team_to_workspace(request, organization_id, workspace_id):
                     context=context,
                     request=request,
                 )
-                response = HttpResponse(f"{message_html} {add_team_form_html}")
+                response = HttpResponse(f"{add_team_form_html} {message_html}")
                 return response
         except AddTeamToWorkspaceError as e:
             messages.error(request, str(e))
@@ -304,6 +304,7 @@ def remove_team_from_workspace(request, organization_id, workspace_id, team_id):
                 "workspace_teams": workspace_teams,
                 "workspace": workspace,
                 "organization": organization,
+                "is_oob": True,
             }
             workspace_team_display_html = render_to_string(
                 "workspaces/partials/workspaces_team_display.html",
@@ -317,7 +318,7 @@ def remove_team_from_workspace(request, organization_id, workspace_id, team_id):
             response["HX-trigger"] = "success"
             return response
         else:
-            return render(request, "workspaces/partials/workspace_remove_form.html", {"team": team, "workspace": workspace, "organization": organization})
+            return render(request, "workspaces/partials/workspace_team_remove_form.html", {"team": team, "workspace": workspace, "organization": organization})
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

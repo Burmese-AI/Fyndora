@@ -274,13 +274,16 @@ def add_team_to_workspace(request, organization_id, workspace_id):
 
 
 def get_workspace_teams(request, organization_id, workspace_id):
-    workspace = get_workspace_by_id(workspace_id)
-    if request.headers.get("HX-Request"):
-        workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
-        print(workspace_teams)
-        context = {
-            "workspace_teams": workspace_teams,
-            "workspace": workspace,
-        }
-        return render(request, "workspaces/workspace_teams.html", context) 
-    return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+    try:
+        workspace = get_workspace_by_id(workspace_id)
+        if request.headers.get("HX-Request"):
+            workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
+            context = {
+                "workspace_teams": workspace_teams,
+                "workspace": workspace,
+            }
+            return render(request, "workspaces/workspace_teams.html", context) 
+        return HttpResponseClientRedirect( f"/{organization_id}/workspaces/")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

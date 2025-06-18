@@ -52,7 +52,7 @@ class Entry(baseModel):
         related_name="reviewed_entries",
     )
     review_notes = models.TextField(null=True, blank=True)
-    
+
     @property
     def submitter_user_name(self):
         if isinstance(self.submitter, OrganizationMember):

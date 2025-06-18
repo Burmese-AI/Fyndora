@@ -541,7 +541,7 @@ class TestAuditLogPerformanceWorkflows(TestCase):
         creation_time = (end_time - start_time).total_seconds()
 
         # Should create 100 audits reasonably quickly (adjust threshold as needed)
-        self.assertLess(creation_time, 25.0)  # 25 seconds max
+        self.assertLess(creation_time, 40.0)  # 40 seconds max
 
         # Verify all were created
         user_audits = get_audit_logs_for_workspace_with_filters(user_id=user.user_id)

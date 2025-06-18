@@ -6,5 +6,8 @@
 
 {% block content %}
   <h1 class="text-2xl font-bold">Test</h1>
+  {% for team in workspace_teams %}
+    <h2 class="text-lg font-bold">{{ team.team.title }}</h2>
+  {% endfor %}
 {% endblock %}
 

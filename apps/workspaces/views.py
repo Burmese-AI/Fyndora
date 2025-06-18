@@ -21,6 +21,8 @@ from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.workspaces.forms import AddTeamToWorkspaceForm
+from apps.workspaces.models import WorkspaceTeam
+from apps.workspaces.exceptions import AddTeamToWorkspaceError
 
 
 # Create your views here.
@@ -206,12 +208,53 @@ def delete_workspace(request, organization_id, workspace_id):
 
 def add_team_to_workspace(request, organization_id, workspace_id):
     organization = get_organization_by_id(organization_id)
+    workspace = get_workspace_by_id(workspace_id)
+    
     if request.method == "POST":
-        print(request.POST)
-        form = AddTeamToWorkspaceForm(request.POST, organization=organization)
-        return render(request, "workspaces/partials/add_team_form.html")
+        form = AddTeamToWorkspaceForm(request.POST, organization=organization, workspace=workspace)
+        try:
+            if form.is_valid():
+                WorkspaceTeam.objects.create(
+                    workspace_id=workspace_id,
+                    team_id=form.cleaned_data["team"].team_id,
+                )
+                workspaces = get_user_workspaces_under_organization(organization_id)
+                context = {
+                    "workspaces": workspaces,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                messages.success(request, "Team added to workspace successfully.")
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                workspace_display_html = render_to_string(
+                    "workspaces/partials/workspaces_display.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {workspace_display_html}")
+                response["HX-trigger"] = "success"
+                return response
+            else:
+                messages.error(request, "Invalid form data.")
+                context = {
+                    "form": form,
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                add_team_form_html = render_to_string(
+                    "workspaces/partials/add_team_form.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {add_team_form_html}")
+                return response
+        except AddTeamToWorkspaceError as e:
+            messages.error(request, str(e))
+            return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
     else:
         form = AddTeamToWorkspaceForm(organization=organization)
-        print(organization.teams.all())
-        print(organization_id, workspace_id)
         return render(request, "workspaces/partials/add_team_form.html", {"form": form})

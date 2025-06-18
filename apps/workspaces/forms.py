@@ -6,6 +6,7 @@ from apps.teams.models import Team
 from apps.organizations.models import Organization
 from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.selectors import get_teams_by_organization_id
+from django.core.exceptions import ValidationError
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(
@@ -130,7 +131,7 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         label="Select Team",  # Temporary label, will be overwritten in __init__
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mb-4 mt-4",
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mt-4",
             }
         ),
     )
@@ -141,6 +142,7 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
         super().__init__(*args, **kwargs)
 
         if self.organization:
@@ -148,3 +150,13 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
             self.fields["team"].label = f"Select Team from {self.organization.title}"
 
 
+    def clean_team(self):
+        team = self.cleaned_data.get("team")
+        team_exists = WorkspaceTeam.objects.filter(team=team, workspace_id=self.workspace.workspace_id).exists()
+        if team_exists:
+            raise ValidationError("Team already exists in this workspace.")
+        return team
+
+    def clean(self):
+        cleaned_data = super().clean()
+        team = cleaned_data.get("team")

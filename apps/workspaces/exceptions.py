@@ -20,3 +20,20 @@ class WorkspaceUpdateError(WorkspaceError):
     """Raised when workspace update fails."""
 
     pass
+
+class TeamAlreadyExistsInWorkspaceError(WorkspaceError):
+    """Raised when team already exists in workspace."""
+
+    pass
+
+
+class AddTeamToWorkspaceError(WorkspaceError):
+    """Raised when adding team to workspace fails."""
+
+    pass
+
+
+class TeamDoesNotBelongToOrganizationError(WorkspaceError):
+    """Raised when team does not belong to organization."""
+
+    pass

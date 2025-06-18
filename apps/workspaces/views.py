@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django_htmx.http import HttpResponseClientRedirect
 from apps.workspaces.selectors import (
     get_organization_by_id,
-    get_user_workspaces_under_organization,
 )
 from apps.workspaces.services import create_workspace_from_form
 from django.contrib import messages
@@ -18,18 +17,16 @@ from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.workspaces.forms import AddTeamToWorkspaceForm
-from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.exceptions import AddTeamToWorkspaceError
 from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from django.shortcuts import redirect
+from apps.workspaces.selectors import get_workspaces_with_team_counts
+from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 
-def get_workspaces(request, organization_id):
+
+def get_workspaces_view(request, organization_id):
     organization = get_organization_by_id(organization_id)
-    workspaces = get_user_workspaces_under_organization(organization_id)
-    for workspace in workspaces:
-        workspace.teams_count = get_workspace_teams_by_workspace_id(
-            workspace.workspace_id
-        ).count()
+    workspaces = get_workspaces_with_team_counts(organization_id)
     return render(
         request,
         "workspaces/index.html",
@@ -41,7 +38,7 @@ def get_workspaces(request, organization_id):
 
 
 @login_required
-def create_workspace(request, organization_id):
+def create_workspace_view(request, organization_id):
     organization = get_organization_by_id(organization_id)
     orgMember = get_orgMember_by_user_id_and_organization_id(
         request.user.user_id, organization_id
@@ -56,11 +53,7 @@ def create_workspace(request, organization_id):
                 messages.success(request, "Workspace created successfully.")
                 if request.headers.get("HX-Request"):
                     organization = get_organization_by_id(organization_id)
-                    workspaces = get_user_workspaces_under_organization(organization_id)
-                    for workspace in workspaces:
-                        workspace.teams_count = get_workspace_teams_by_workspace_id(
-                            workspace.workspace_id
-                        ).count()
+                    workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
                         "workspaces": workspaces,
                         "organization": organization,
@@ -106,7 +99,7 @@ def create_workspace(request, organization_id):
 
 
 @login_required
-def edit_workspace(request, organization_id, workspace_id):
+def edit_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
@@ -118,11 +111,7 @@ def edit_workspace(request, organization_id, workspace_id):
             try:
                 if form.is_valid():
                     update_workspace_from_form(form=form, workspace=workspace)
-                    workspaces = get_user_workspaces_under_organization(organization_id)
-                    for workspace in workspaces:
-                        workspace.teams_count = get_workspace_teams_by_workspace_id(
-                            workspace.workspace_id
-                        ).count()
+                    workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
                         "workspaces": workspaces,
                         "organization": organization,
@@ -172,7 +161,7 @@ def edit_workspace(request, organization_id, workspace_id):
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
-def delete_workspace(request, organization_id, workspace_id):
+def delete_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
@@ -180,11 +169,7 @@ def delete_workspace(request, organization_id, workspace_id):
             workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
-            workspaces = get_user_workspaces_under_organization(organization_id)
-            for workspace in workspaces:
-                workspace.teams_count = get_workspace_teams_by_workspace_id(
-                    workspace.workspace_id
-                ).count()
+            workspaces = get_workspaces_with_team_counts(organization_id)
             context = {
                 "workspaces": workspaces,
                 "organization": organization,
@@ -214,7 +199,7 @@ def delete_workspace(request, organization_id, workspace_id):
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
-def add_team_to_workspace(request, organization_id, workspace_id):
+def add_team_to_workspace_view(request, organization_id, workspace_id):
     organization = get_organization_by_id(organization_id)
     workspace = get_workspace_by_id(workspace_id)
 
@@ -224,15 +209,8 @@ def add_team_to_workspace(request, organization_id, workspace_id):
         )
         try:
             if form.is_valid():
-                WorkspaceTeam.objects.create(
-                    workspace_id=workspace_id,
-                    team_id=form.cleaned_data["team"].team_id,
-                )
-                workspaces = get_user_workspaces_under_organization(organization_id)
-                for workspace in workspaces:
-                    workspace.teams_count = get_workspace_teams_by_workspace_id(
-                        workspace.workspace_id
-                    ).count()
+                add_team_to_workspace(workspace_id, form.cleaned_data["team"].team_id)
+                workspaces = get_workspaces_with_team_counts(organization_id)
                 context = {
                     "workspaces": workspaces,
                     "organization": organization,
@@ -274,7 +252,7 @@ def add_team_to_workspace(request, organization_id, workspace_id):
         return render(request, "workspaces/partials/add_team_form.html", {"form": form})
 
 
-def get_workspace_teams(request, organization_id, workspace_id):
+def get_workspace_teams_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         if request.headers.get("HX-Request"):
@@ -283,21 +261,20 @@ def get_workspace_teams(request, organization_id, workspace_id):
                 "workspace_teams": workspace_teams,
                 "workspace": workspace,
             }
-            return render(request, "workspaces/workspace_teams.html", context) 
+            return render(request, "workspaces/workspace_teams.html", context)
         return redirect(f"/{organization_id}/workspaces/")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
-    
 
-def remove_team_from_workspace(request, organization_id, workspace_id, team_id):
+
+def remove_team_from_workspace_view(request, organization_id, workspace_id, team_id):
     try:
         team = get_team_by_id(team_id)
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         if request.method == "POST":
-            workspace_team = WorkspaceTeam.objects.get(workspace_id=workspace_id, team_id=team_id)
-            workspace_team.delete()
+            remove_team_from_workspace(workspace_id, team_id)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {
@@ -318,7 +295,11 @@ def remove_team_from_workspace(request, organization_id, workspace_id, team_id):
             response["HX-trigger"] = "success"
             return response
         else:
-            return render(request, "workspaces/partials/workspace_team_remove_form.html", {"team": team, "workspace": workspace, "organization": organization})
+            return render(
+                request,
+                "workspaces/partials/workspace_team_remove_form.html",
+                {"team": team, "workspace": workspace, "organization": organization},
+            )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

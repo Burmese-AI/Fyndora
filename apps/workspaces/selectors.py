@@ -85,6 +85,7 @@ def get_workspace_teams_by_workspace_id(workspace_id):
         print(f"Error in get_workspace_teams_by_workspace_id: {str(e)}")
         return None
 
+
 def get_team_by_id(team_id):
     """
     Return a team by its ID.
@@ -94,3 +95,12 @@ def get_team_by_id(team_id):
     except Exception as e:
         print(f"Error in get_team_by_id: {str(e)}")
         return None
+
+
+def get_workspaces_with_team_counts(organization_id):
+    workspaces = get_user_workspaces_under_organization(organization_id)
+    for workspace in workspaces:
+        workspace.teams_count = get_workspace_teams_by_workspace_id(
+            workspace.workspace_id
+        ).count()
+    return workspaces

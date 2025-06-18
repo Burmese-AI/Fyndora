@@ -1,10 +1,6 @@
-from apps.workspaces.models import Workspace
-from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.workspaces.forms import WorkspaceForm
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from apps.organizations.models import Organization
 from django_htmx.http import HttpResponseClientRedirect
 from apps.workspaces.selectors import (
     get_organization_by_id,
@@ -23,26 +19,24 @@ from django.http import HttpResponse
 from apps.workspaces.forms import AddTeamToWorkspaceForm
 from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.exceptions import AddTeamToWorkspaceError
+from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 
 
-# Create your views here.
-class WorkspaceListView(
-    ListView,
-    LoginRequiredMixin,
-):
-    model = Workspace
-    template_name = "workspaces/index.html"
-    context_object_name = "workspaces"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["organization"] = Organization.objects.get(
-            organization_id=self.kwargs["organization_id"]
-        )
-        return context
-
-    def get_queryset(self):
-        return get_user_workspaces_under_organization(self.kwargs["organization_id"])
+def get_workspaces(request, organization_id):
+    organization = get_organization_by_id(organization_id)
+    workspaces = get_user_workspaces_under_organization(organization_id)
+    for workspace in workspaces:
+        workspace.teams_count = get_workspace_teams_by_workspace_id(
+            workspace.workspace_id
+        ).count()
+    return render(
+        request,
+        "workspaces/index.html",
+        {
+            "workspaces": workspaces,
+            "organization": organization,
+        },
+    )
 
 
 @login_required
@@ -62,6 +56,10 @@ def create_workspace(request, organization_id):
                 if request.headers.get("HX-Request"):
                     organization = get_organization_by_id(organization_id)
                     workspaces = get_user_workspaces_under_organization(organization_id)
+                    for workspace in workspaces:
+                        workspace.teams_count = get_workspace_teams_by_workspace_id(
+                            workspace.workspace_id
+                        ).count()
                     context = {
                         "workspaces": workspaces,
                         "organization": organization,
@@ -92,6 +90,7 @@ def create_workspace(request, organization_id):
                 return HttpResponse(f"{message_html} {modal_html}")
         except WorkspaceCreationError as e:
             messages.error(request, f"An error occurred: {str(e)}")
+            return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
     else:
         form = WorkspaceForm(request.POST or None, organization=organization)
     context = {
@@ -119,6 +118,10 @@ def edit_workspace(request, organization_id, workspace_id):
                 if form.is_valid():
                     update_workspace_from_form(form=form, workspace=workspace)
                     workspaces = get_user_workspaces_under_organization(organization_id)
+                    for workspace in workspaces:
+                        workspace.teams_count = get_workspace_teams_by_workspace_id(
+                            workspace.workspace_id
+                        ).count()
                     context = {
                         "workspaces": workspaces,
                         "organization": organization,
@@ -177,6 +180,10 @@ def delete_workspace(request, organization_id, workspace_id):
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
             workspaces = get_user_workspaces_under_organization(organization_id)
+            for workspace in workspaces:
+                workspace.teams_count = get_workspace_teams_by_workspace_id(
+                    workspace.workspace_id
+                ).count()
             context = {
                 "workspaces": workspaces,
                 "organization": organization,
@@ -209,9 +216,11 @@ def delete_workspace(request, organization_id, workspace_id):
 def add_team_to_workspace(request, organization_id, workspace_id):
     organization = get_organization_by_id(organization_id)
     workspace = get_workspace_by_id(workspace_id)
-    
+
     if request.method == "POST":
-        form = AddTeamToWorkspaceForm(request.POST, organization=organization, workspace=workspace)
+        form = AddTeamToWorkspaceForm(
+            request.POST, organization=organization, workspace=workspace
+        )
         try:
             if form.is_valid():
                 WorkspaceTeam.objects.create(
@@ -219,6 +228,10 @@ def add_team_to_workspace(request, organization_id, workspace_id):
                     team_id=form.cleaned_data["team"].team_id,
                 )
                 workspaces = get_user_workspaces_under_organization(organization_id)
+                for workspace in workspaces:
+                    workspace.teams_count = get_workspace_teams_by_workspace_id(
+                        workspace.workspace_id
+                    ).count()
                 context = {
                     "workspaces": workspaces,
                     "organization": organization,

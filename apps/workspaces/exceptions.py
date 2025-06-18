@@ -21,6 +21,7 @@ class WorkspaceUpdateError(WorkspaceError):
 
     pass
 
+
 class TeamAlreadyExistsInWorkspaceError(WorkspaceError):
     """Raised when team already exists in workspace."""
 

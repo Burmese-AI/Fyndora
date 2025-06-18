@@ -5,16 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0005_alter_organization_owner'),
-        ('teams', '0003_team_organization'),
+        ("organizations", "0005_alter_organization_owner"),
+        ("teams", "0003_team_organization"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='team',
-            name='organization',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams', to='organizations.organization'),
+            model_name="team",
+            name="organization",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="teams",
+                to="organizations.organization",
+            ),
         ),
     ]

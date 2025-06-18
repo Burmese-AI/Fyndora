@@ -13,7 +13,7 @@ from apps.entries.constants import EntryType
 from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from tests.factories.organization_factories import OrganizationMemberFactory
-from tests.factories.team_factories import TeamMemberFactory
+from tests.factories.team_factories import TeamMemberFactory, TeamFactory
 from tests.factories.workspace_factories import WorkspaceFactory, WorkspaceTeamFactory
 
 
@@ -34,11 +34,21 @@ class EntryFactory(DjangoModelFactory):
     description = factory.Faker("sentence", nb_words=8)
     status = "pending_review"  # Default status
     workspace = factory.LazyAttribute(lambda obj: WorkspaceFactory())
-    workspace_team = factory.LazyAttribute(
-        lambda obj: WorkspaceTeamFactory(
-            workspace=obj.workspace, team=obj.submitter.team
-        )
-    )
+    
+    @factory.lazy_attribute
+    def workspace_team(self):
+        """
+        Create workspace_team based on submitter type.
+        If submitter has a team attribute, use it; otherwise create a new team.
+        """
+        if hasattr(self.submitter, 'team'):
+            team = self.submitter.team
+        else:
+            # Create a team if the submitter doesn't have one (e.g., CustomUser)
+            team = TeamFactory()
+            
+        return WorkspaceTeamFactory(workspace=self.workspace, team=team)
+    
     reviewed_by = None
     review_notes = None
 

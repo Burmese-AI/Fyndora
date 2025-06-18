@@ -1,0 +1,21 @@
+<div class="bg-base-100 text-neutral p-6 rounded-xl shadow-md {{ custom_css }}">
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="text-lg font-semibold mb-2">{{ title }}</h3>
+        
+        <!-- Gradient text for the main value -->
+        <div class="text-4xl font-extrabold mb-1 bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent drop-shadow-sm">
+          {{ value }}
+        </div>
+        
+        {% if subtitle %}
+          <p class="text-sm">{{ subtitle }}</p>
+        {% endif %}
+      </div>
+  
+      {% if icon %}
+        {{ icon }}
+      {% endif %}
+    </div>
+  </div>
+  

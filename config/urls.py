@@ -29,4 +29,5 @@ urlpatterns = [
     path("invitations/", include("apps.invitations.urls")),
     path("teams/", include("apps.teams.urls")),
     path("remittances/", include("apps.remittance.urls")),
+    path("<uuid:organization_id>/", include("apps.entries.urls")),
 ]

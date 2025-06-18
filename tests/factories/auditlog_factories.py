@@ -4,15 +4,17 @@ Factories for auditlog app models.
 
 import uuid
 from datetime import datetime, timezone
-import factory
-from factory.django import DjangoModelFactory
-from factory import SubFactory
 
-from apps.auditlog.models import AuditTrail
+import factory
+from django.contrib.contenttypes.models import ContentType
+from factory import SubFactory
+from factory.django import DjangoModelFactory
+
 from apps.auditlog.constants import (
     AUDIT_ACTION_TYPE_CHOICES,
-    AUDIT_TARGET_ENTITY_TYPE_CHOICES,
 )
+from apps.auditlog.models import AuditTrail
+
 from .user_factories import CustomUserFactory
 
 
@@ -25,9 +27,11 @@ class AuditTrailFactory(DjangoModelFactory):
     audit_id = factory.LazyFunction(uuid.uuid4)
     user = SubFactory(CustomUserFactory)
     action_type = factory.Iterator([choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES])
-    target_entity = factory.LazyFunction(uuid.uuid4)
-    target_entity_type = factory.Iterator(
-        [choice[0] for choice in AUDIT_TARGET_ENTITY_TYPE_CHOICES]
+    # Accept a model instance as target_entity and extract ContentType and PK
+    target_entity = None
+    target_entity_id = factory.LazyAttribute(lambda o: o.target_entity.pk)
+    target_entity_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.target_entity)
     )
     metadata = factory.LazyAttribute(
         lambda obj: {
@@ -42,7 +46,11 @@ class EntryCreatedAuditFactory(AuditTrailFactory):
     """Factory for entry creation audit logs."""
 
     action_type = "entry_created"
-    target_entity_type = "entry"
+    target_entity_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.target_entity)
+        if o.target_entity
+        else ContentType.objects.get(app_label="entries", model="entry")
+    )
     metadata = factory.LazyAttribute(
         lambda obj: {
             "entry_type": "income",
@@ -57,7 +65,9 @@ class StatusChangedAuditFactory(AuditTrailFactory):
     """Factory for status change audit logs."""
 
     action_type = "status_changed"
-    target_entity_type = "entry"
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(model="entry")
+    )
     metadata = factory.LazyAttribute(
         lambda obj: {
             "old_status": "pending",
@@ -85,7 +95,9 @@ class FileUploadedAuditFactory(AuditTrailFactory):
     """Factory for file upload audit logs."""
 
     action_type = "file_uploaded"
-    target_entity_type = "attachment"
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(model="attachment")
+    )
     metadata = factory.LazyAttribute(
         lambda obj: {
             "filename": "document.pdf",
@@ -100,7 +112,8 @@ class SystemAuditFactory(AuditTrailFactory):
     """Factory for system-generated audit logs."""
 
     user = None  # System actions have no user
-    target_entity_type = "system"
+    # There is currently no System model; if one is implemented later, its ContentType can be used here. For now, system actions are not tied to any specific model, so target_entity_type is set to None
+    target_entity_type = None
     metadata = factory.LazyAttribute(
         lambda obj: {
             "system_action": f"Automated {obj.action_type}",
@@ -139,15 +152,35 @@ class BulkAuditTrailFactory(AuditTrailFactory):
     """Factory for creating multiple audit trail entries efficiently."""
 
     @classmethod
-    def create_batch_for_entity(cls, entity_id, entity_type, count=5, **kwargs):
-        """Create multiple audit entries for the same entity."""
+    def create_batch_for_entity(cls, entity, count=5, **kwargs):
+        """Create multiple audit entries for the same entity (model instance preferred)."""
+
+        if hasattr(entity, "pk"):
+            target_entity_id = entity.pk
+            target_entity_type = ContentType.objects.get_for_model(entity)
+        else:
+            # fallback for UUID (legacy)
+            target_entity_id = entity
+            target_entity_type = ContentType.objects.get(model="entry")
         return cls.create_batch(
-            count, target_entity=entity_id, target_entity_type=entity_type, **kwargs
+            count,
+            target_entity=entity,
+            target_entity_id=target_entity_id,
+            target_entity_type=target_entity_type,
+            **kwargs,
         )
 
     @classmethod
-    def create_workflow_sequence(cls, user, entity_id, entity_type="entry"):
-        """Create a sequence of audit logs representing a typical workflow."""
+    def create_workflow_sequence(cls, user, entity, entity_type="entry"):
+        """Create a sequence of audit logs representing a typical workflow (model instance preferred)."""
+
+        if hasattr(entity, "pk"):
+            target_entity_id = entity.pk
+            target_entity_type = ContentType.objects.get_for_model(entity)
+        else:
+            # fallback for UUID (legacy)
+            target_entity_id = entity
+            target_entity_type = ContentType.objects.get(model="entry")
         workflow_steps = [
             {
                 "action_type": "entry_created",
@@ -180,8 +213,9 @@ class BulkAuditTrailFactory(AuditTrailFactory):
         for step in workflow_steps:
             audit_log = cls.create(
                 user=user,
-                target_entity=entity_id,
-                target_entity_type=entity_type,
+                target_entity=entity,
+                target_entity_id=target_entity_id,
+                target_entity_type=target_entity_type,
                 **step,
             )
             audit_logs.append(audit_log)

@@ -5,6 +5,7 @@ import uuid
 from apps.workspaces.constants import StatusChoices
 from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
+from apps.teams.models import Team
 
 
 # Create your models here.
@@ -74,7 +75,7 @@ class WorkspaceTeam(baseModel):
         primary_key=True, default=uuid.uuid4, editable=False
     )
     team = models.ForeignKey(
-        "teams.Team", on_delete=models.CASCADE, related_name="workspace_teams"
+        Team, on_delete=models.CASCADE, related_name="workspace_teams"
     )
     workspace = models.ForeignKey(
         Workspace, on_delete=models.CASCADE, related_name="workspace_teams"

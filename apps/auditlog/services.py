@@ -4,9 +4,7 @@ from apps.core.utils import model_update
 from .models import AuditTrail
 
 
-def audit_create(
-    *, user, action_type, target_entity, metadata=None
-):
+def audit_create(*, user, action_type, target_entity, metadata=None):
     """
     Service to create an audit log entry.
     """

@@ -2,6 +2,7 @@ from django.db import transaction
 from apps.workspaces.models import Workspace
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.core.utils import model_update
+from apps.workspaces.models import WorkspaceTeam
 
 
 @transaction.atomic
@@ -36,3 +37,18 @@ def update_workspace_from_form(*, form, workspace) -> Workspace:
         return workspace
     except Exception as e:
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")
+
+
+def remove_team_from_workspace(workspace_id, team_id):
+    workspace_team = WorkspaceTeam.objects.get(
+        workspace_id=workspace_id, team_id=team_id
+    )
+    workspace_team.delete()
+    return workspace_team
+
+
+def add_team_to_workspace(workspace_id, team_id):
+    workspace_team = WorkspaceTeam.objects.create(
+        workspace_id=workspace_id, team_id=team_id
+    )
+    return workspace_team

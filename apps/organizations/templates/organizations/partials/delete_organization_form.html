@@ -1,9 +1,9 @@
 {% extends "components/new_base_modal.html" %}
 
 {% block modal_content %}
-<form action="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}" method="post" class="space-y-0">
+<form action="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}"  class="modal-box w-4xl bg-white shadow-xl rounded-lg"  method="post" class="space-y-0">
     {% csrf_token %}
-    <div class="modal-box max-w-lg bg-white shadow-2xl rounded-2xl p-8 border border-red-200">
+   
         <div class="flex items-center gap-4 mb-6">
             <div>
                 <h2 class="text-2xl font-bold text-red-700 tracking-tight">Delete Organization</h2>
@@ -33,6 +33,6 @@
                 Delete Organization
             </button>
         </div>
-    </div>
+ 
 </form>
 {% endblock %}

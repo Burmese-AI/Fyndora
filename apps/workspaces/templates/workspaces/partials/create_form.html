@@ -6,7 +6,6 @@
     {% if is_oob %}hx-swap-oob="true"{% endif %}
     id="modal_content_template"
     class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
-    @click.outside="open = false"
     hx-post="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}"
     hx-swap="none">
 {% csrf_token %}

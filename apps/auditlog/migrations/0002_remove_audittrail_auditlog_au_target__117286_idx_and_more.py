@@ -6,30 +6,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('auditlog', '0001_initial'),
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("auditlog", "0001_initial"),
+        ("contenttypes", "0002_remove_content_type_name"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='audittrail',
-            name='auditlog_au_target__117286_idx',
+            model_name="audittrail",
+            name="auditlog_au_target__117286_idx",
         ),
         migrations.RenameField(
-            model_name='audittrail',
-            old_name='target_entity',
-            new_name='target_entity_id',
+            model_name="audittrail",
+            old_name="target_entity",
+            new_name="target_entity_id",
         ),
         migrations.AlterField(
-            model_name='audittrail',
-            name='target_entity_type',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
+            model_name="audittrail",
+            name="target_entity_type",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="contenttypes.contenttype",
+            ),
         ),
         migrations.AddIndex(
-            model_name='audittrail',
-            index=models.Index(fields=['target_entity_type', 'target_entity_id'], name='auditlog_au_target__986f88_idx'),
+            model_name="audittrail",
+            index=models.Index(
+                fields=["target_entity_type", "target_entity_id"],
+                name="auditlog_au_target__986f88_idx",
+            ),
         ),
     ]

@@ -1,9 +1,9 @@
-<div id="modal" class="modal" open>
+<div id="modal" class="modal " open> <!-- Daisy UI Modal -->
     {% block modal_content %}
     
     {% endblock %}
     <!-- background click to close the modal temporariy commented due to low perfomance( figure out later ) -->
-    <!-- <div class="modal-backdrop bg-black/50 backdrop-blur-sm" onclick="this.closest('.modal').removeAttribute('open')"></div> -->
+    <div class="modal-backdrop bg-black/50" onclick="this.closest('.modal').removeAttribute('open')"></div>
 </div>
   
 <!-- plase use this  -->

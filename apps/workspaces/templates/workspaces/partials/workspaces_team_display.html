@@ -6,7 +6,7 @@
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
   {% for workspace_team in workspace_teams %}
     {% with team=workspace_team.team %}
-    <div class="card bg-base-100 shadow-lg hover:shadow-2xl rounded-xl transition-all duration-200 border border-base-200">
+    <div class="card bg-base-100 shadow-lg hover:shadow-2xl rounded-xl transition-all duration-200 border border-base-200 relative" id="team-card-{{ team.team_id }}">
       <div class="card-body p-6">
         <div class="flex items-start justify-between mb-2">
           <div>
@@ -45,6 +45,16 @@
             </span>
           </div>
           {% endif %}
+        </div>
+        <form hx-get="{% url 'remove_team_from_workspace' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" >
+            {% csrf_token %}    
+        <div class="mt-4 flex justify-end">
+          <button
+            type="submit"
+            class="btn btn-error btn-sm">
+            Remove from Workspace
+          </button>
+          </form>
         </div>
       </div>
     </div>

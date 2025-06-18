@@ -12,6 +12,7 @@ from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateEr
 from apps.workspaces.selectors import (
     get_workspace_by_id,
     get_orgMember_by_user_id_and_organization_id,
+    get_team_by_id,
 )
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
@@ -20,7 +21,7 @@ from apps.workspaces.forms import AddTeamToWorkspaceForm
 from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.exceptions import AddTeamToWorkspaceError
 from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
-
+from django.shortcuts import redirect
 
 def get_workspaces(request, organization_id):
     organization = get_organization_by_id(organization_id)
@@ -283,7 +284,40 @@ def get_workspace_teams(request, organization_id, workspace_id):
                 "workspace": workspace,
             }
             return render(request, "workspaces/workspace_teams.html", context) 
-        return HttpResponseClientRedirect( f"/{organization_id}/workspaces/")
+        return redirect(f"/{organization_id}/workspaces/")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+    
+
+def remove_team_from_workspace(request, organization_id, workspace_id, team_id):
+    try:
+        team = get_team_by_id(team_id)
+        workspace = get_workspace_by_id(workspace_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method == "POST":
+            workspace_team = WorkspaceTeam.objects.get(workspace_id=workspace_id, team_id=team_id)
+            workspace_team.delete()
+            messages.success(request, "Team removed from workspace successfully.")
+            workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
+            context = {
+                "workspace_teams": workspace_teams,
+                "workspace": workspace,
+                "organization": organization,
+            }
+            workspace_team_display_html = render_to_string(
+                "workspaces/partials/workspaces_team_display.html",
+                context=context,
+                request=request,
+            )
+            message_html = render_to_string(
+                "includes/message.html", context=context, request=request
+            )
+            response = HttpResponse(f"{message_html} {workspace_team_display_html}")
+            response["HX-trigger"] = "success"
+            return response
+        else:
+            return render(request, "workspaces/partials/workspace_remove_form.html", {"team": team, "workspace": workspace, "organization": organization})
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

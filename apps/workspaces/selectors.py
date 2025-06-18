@@ -84,3 +84,13 @@ def get_workspace_teams_by_workspace_id(workspace_id):
     except Exception as e:
         print(f"Error in get_workspace_teams_by_workspace_id: {str(e)}")
         return None
+
+def get_team_by_id(team_id):
+    """
+    Return a team by its ID.
+    """
+    try:
+        return Team.objects.get(team_id=team_id)
+    except Exception as e:
+        print(f"Error in get_team_by_id: {str(e)}")
+        return None

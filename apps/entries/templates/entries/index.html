@@ -1,11 +1,84 @@
 {% extends "layouts/organization_layout.html" %}
 
 {% block header %}
-    {% include "components/organization_layout_header.html" with title="Organization Finance" subtitle="Manage your organization finances here." %}
+  {% include "components/organization_layout_header.html" with title="Finance Management" subtitle="Manage your organization finances here." %}
 {% endblock %}
 
 {% block content %}
-<!-- Overview -->
-<!-- Table -->
- {% include "entries/partials/table.html" %}
+  <!-- Overview -->
+  {% include "entries/components/stat_section.html" %}
+
+  <!-- Expense Entries -->
+  <div class="py-6 px-4 mt-6">
+
+    <!-- Title Section -->
+    <section class="flex justify-between items-center mb-6">
+        <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
+            Organization Expense Entries
+        </h2>
+      <button class="btn btn-neutral">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+          </svg>
+          
+        <span class="hidden sm:inline">Add Expense Entry</span>
+      </button>
+    </section>
+
+    <!-- Cards Section -->
+    <div class="grid gap-4 grid-cols-1">
+      {% for entry in entries %}
+        {% include "entries/components/expense_card.html" with entry=entry %}
+      {% empty %}
+        <div class="p-6 text-center text-sm">
+          No Expense Entries found
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Dummy Expense Record -->
+<div class="dropdown w-full">
+    <div tabindex="0" role="button" class="w-full p-4 bg-base-100 shadow-md rounded-lg mb-2 cursor-pointer transition-all hover:bg-base-200/20 hover:px-6">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+    
+        <!-- Left section -->
+        <div class="w-full sm:w-4/5">
+        <h3 class="text-lg font-semibold text-base-content truncate" title="Office supplies for Q2 2023">
+            Dummy Entry for Org Expense
+        </h3>
+        <p class="text-sm text-neutral">
+            by John Smith • Jun 15, 2023 02:30 PM
+        </p>
+        </div>
+
+        <!-- Right section -->
+        <div class="text-primary font-bold text-lg text-right w-full sm:w-1/5">
+        $245.50
+        </div>
+    </div>
+    </div>
+
+    <!-- Dropdown -->
+    <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-md">
+        <li>
+            <a href="#" class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+              </svg>
+              Edit
+            </a>
+          </li>
+          <li>
+            <a href="#" class="flex items-center gap-2 text-red-600 hover:text-red-800">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.342.052.682.107 1.022.166m0 0h.918a2.25 2.25 0 012.244 2.077L9.75 8.152a2.25 2.25 0 01-2.244 2.077H5.337A2.25 2.25 0 013.093 8.152L2.03 5.79a48.08 48.08 0 01-.397-1.022V3.25" />
+              </svg>
+              Delete
+            </a>
+          </li>
+    </ul>
+</div>
+
+</div>
 {% endblock %}
+

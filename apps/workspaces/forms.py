@@ -5,6 +5,7 @@ from apps.workspaces.selectors import get_organization_members_by_organization_i
 from apps.teams.models import Team
 from apps.organizations.models import Organization
 from apps.workspaces.models import WorkspaceTeam
+from apps.workspaces.selectors import get_teams_by_organization_id
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(
@@ -13,7 +14,7 @@ class WorkspaceForm(forms.ModelForm):
         label="Select Workspace Admin",
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base "
             }
         ),
     )
@@ -129,7 +130,7 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         label="Select Team",  # Temporary label, will be overwritten in __init__
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mb-4 mt-4",
             }
         ),
     )
@@ -143,7 +144,7 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.organization:
-            self.fields["team"].queryset = Team.objects.filter(organization_id=self.organization.organization_id)
+            self.fields["team"].queryset = get_teams_by_organization_id(self.organization.organization_id)
             self.fields["team"].label = f"Select Team from {self.organization.title}"
 
 

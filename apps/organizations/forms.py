@@ -7,8 +7,8 @@ class OrganizationForm(forms.ModelForm):
     title = forms.CharField(
         widget=forms.TextInput(
             attrs={
-                "class": "input input-bordered w-full",
-                "placeholder": "Contact Name",
+                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                "placeholder": "Enter organization title",
             }
         )
     )
@@ -16,24 +16,33 @@ class OrganizationForm(forms.ModelForm):
     description = forms.CharField(
         widget=forms.Textarea(
             attrs={
-                "class": "textarea textarea-bordered w-full",
-                "placeholder": "Description",
+                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                "placeholder": "Enter organization description (optional)",
+                "rows": 2,
             }
-        )
+        ),
+        required=False,
     )
 
     status = forms.ChoiceField(
         choices=StatusChoices.choices,
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full",
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
             }
         ),
     )
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        if Organization.objects.filter(title=title).exists():
+        # for edit operation, exclude the current instance
+        if self.instance and self.instance.pk:
+            organization_queryset = Organization.objects.filter(title=title).exclude(
+                pk=self.instance.pk
+            )
+        else:
+            organization_queryset = Organization.objects.filter(title=title)
+        if organization_queryset.exists():
             raise forms.ValidationError("Organization with this title already exists.")
         return title
 

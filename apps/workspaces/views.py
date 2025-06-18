@@ -20,6 +20,7 @@ from apps.workspaces.selectors import (
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from apps.workspaces.forms import AddTeamToWorkspaceForm
 
 
 # Create your views here.
@@ -201,3 +202,16 @@ def delete_workspace(request, organization_id, workspace_id):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+
+
+def add_team_to_workspace(request, organization_id, workspace_id):
+    organization = get_organization_by_id(organization_id)
+    if request.method == "POST":
+        print(request.POST)
+        form = AddTeamToWorkspaceForm(request.POST, organization=organization)
+        return render(request, "workspaces/partials/add_team_form.html")
+    else:
+        form = AddTeamToWorkspaceForm(organization=organization)
+        print(organization.teams.all())
+        print(organization_id, workspace_id)
+        return render(request, "workspaces/partials/add_team_form.html", {"form": form})

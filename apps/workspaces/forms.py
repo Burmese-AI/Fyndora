@@ -2,7 +2,9 @@ from django import forms
 from .models import Workspace
 from apps.organizations.models import OrganizationMember
 from apps.workspaces.selectors import get_organization_members_by_organization_id
-
+from apps.teams.models import Team
+from apps.organizations.models import Organization
+from apps.workspaces.models import WorkspaceTeam
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(
@@ -117,3 +119,31 @@ class WorkspaceForm(forms.ModelForm):
             raise forms.ValidationError("End date cannot be earlier than start date.")
 
         return cleaned_data
+
+
+
+class AddTeamToWorkspaceForm(forms.ModelForm):
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.none(),
+        required=True,
+        label="Select Team",  # Temporary label, will be overwritten in __init__
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+            }
+        ),
+    )
+
+    class Meta:
+        model = WorkspaceTeam
+        fields = ["team"]
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["team"].queryset = Team.objects.filter(organization_id=self.organization.organization_id)
+            self.fields["team"].label = f"Select Team from {self.organization.title}"
+
+

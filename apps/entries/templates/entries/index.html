@@ -26,15 +26,7 @@
     </section>
 
     <!-- Cards Section -->
-    <div class="grid gap-4 grid-cols-1">
-      {% for entry in entries %}
-        {% include "entries/components/expense_card.html" with entry=entry %}
-      {% empty %}
-        <div class="p-6 text-center text-sm">
-          No Expense Entries found
-        </div>
-      {% endfor %}
-    </div>
+    {% include "entries/partials/table.html" %}
 
     <!-- Dummy Expense Record -->
 <div class="dropdown w-full">

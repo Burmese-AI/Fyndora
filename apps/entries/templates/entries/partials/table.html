@@ -1,27 +1,13 @@
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto rounded-xl my-3 shadow-md bg-lemonade-50">
-    <table class="table w-full min-w-[600px]">
-      <thead class="bg-lemonade-200 text-lemonade-900 text-sm uppercase font-semibold">
-        <tr>
-          <th class="text-left px-4 py-2">User</th>
-          <th class="text-left px-4 py-2">Amount</th>
-          <th class="text-left px-4 py-2">Date Submitted</th>
-          <th class="text-center px-4 py-2">Details</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in entries %}
-          {% include "entries/partials/row.html" with entry=entry %}
-        {% empty %}
-          <tr>
-            <td colspan="4" class="text-center text-lemonade-700 py-4">
-              No Expense Entry found.
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  
-  {% if is_paginated %}
-    {% include "components/pagination.html" %}
-  {% endif %}
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table"  class="grid gap-4 grid-cols-1">
+  {% for entry in entries %}
+    {% include "entries/components/expense_card.html" with entry=entry %}
+  {% empty %}
+    <div class="p-6 text-center text-sm">
+      No Expense Entries found
+    </div>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+  {% include "components/pagination.html" %}
+{% endif %}

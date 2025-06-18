@@ -6,21 +6,20 @@
     {% if is_oob %}hx-swap-oob="true"{% endif %}
     id="modal_content_template"
     class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
-    hx-post=""
+    hx-post="{% url 'add_team_to_workspace' organization_id=request.resolver_match.kwargs.organization_id workspace_id=request.resolver_match.kwargs.workspace_id %}"
     hx-swap="none">
 {% csrf_token %}
-<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
-    {{ form.as_p }}
+<input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}">
 
-    <div class="flex justify-end space-x-3">
+
+<h1 class="text-2xl font-bold text-gray-800 mb-8">Add Team to Workspace</h1>
+{{ form.as_p }}
+<div class="flex justify-end space-x-3">
     <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
     <button type="submit" class="btn btn-primary w-full sm:w-auto">
         Add Team
     </button>
     </div>
-</div>
 </form>
-
-
 
 {% endblock %}

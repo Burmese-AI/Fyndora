@@ -271,3 +271,12 @@ def add_team_to_workspace(request, organization_id, workspace_id):
     else:
         form = AddTeamToWorkspaceForm(organization=organization)
         return render(request, "workspaces/partials/add_team_form.html", {"form": form})
+
+
+def get_workspace_teams(request, organization_id, workspace_id):
+    print(organization_id, workspace_id)
+    organization = get_organization_by_id(organization_id)
+    workspace = get_workspace_by_id(workspace_id)
+    print(workspace)
+    print(organization)
+    return render(request, "workspaces/test.html")

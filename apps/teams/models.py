@@ -5,10 +5,16 @@ import uuid
 from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.teams.constants import TeamMemberRole
+from apps.organizations.models import Organization
 
 
 class Team(baseModel):
     team_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="teams",
+    )
     title = models.CharField(max_length=255, null=False, blank=False)
     description = models.TextField(blank=True, null=True)
     team_coordinator = models.ForeignKey(

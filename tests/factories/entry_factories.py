@@ -2,12 +2,14 @@
 Factory Boy factories for Entry models.
 """
 
+import uuid
 import factory
 from factory.django import DjangoModelFactory
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 
 from apps.entries.models import Entry
-from apps.entries.constants import ENTRY_TYPE_CHOICES
+from apps.entries.constants import EntryType
 from apps.teams.constants import TeamMemberRole
 from tests.factories.team_factories import (
     TeamMemberFactory,
@@ -23,8 +25,11 @@ class EntryFactory(DjangoModelFactory):
     class Meta:
         model = Entry
 
-    submitted_by = factory.SubFactory(TeamMemberFactory, role=TeamMemberRole.SUBMITTER)
-    entry_type = factory.Iterator([choice[0] for choice in ENTRY_TYPE_CHOICES])
+    entry_id = factory.LazyFunction(uuid.uuid4)
+    submitter = factory.SubFactory(TeamMemberFactory, role=TeamMemberRole.SUBMITTER)
+    submitter_content_type = factory.LazyAttribute(lambda obj: ContentType.objects.get_for_model(obj.submitter))
+    submitter_object_id = factory.LazyAttribute(lambda obj: obj.submitter.pk)
+    entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])
     amount = factory.Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
     description = factory.Faker("sentence", nb_words=8)
     status = "pending_review"  # Default status

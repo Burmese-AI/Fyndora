@@ -1,0 +1,10 @@
+<tr class="hover:bg-lemonade-100 transition-colors duration-150">
+    <td class="px-4 py-2">{{ entry.submitter_user_name }}</td>
+    <td class="px-4 py-2">${{ entry.amount }}</td>
+    <td class="px-4 py-2">{{ entry.submitted_at|date:"M d, Y h:i A" }}</td>
+    <td class="px-4 py-2 text-center">
+        <button class="btn btn-sm btn-outline btn-primary" disabled>
+        View Details
+        </button>
+    </td>
+</tr>

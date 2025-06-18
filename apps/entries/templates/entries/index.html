@@ -1,0 +1,11 @@
+{% extends "layouts/organization_layout.html" %}
+
+{% block header %}
+    {% include "components/organization_layout_header.html" with title="Organization Finance" subtitle="Manage your organization finances here." %}
+{% endblock %}
+
+{% block content %}
+<!-- Overview -->
+<!-- Table -->
+ {% include "entries/partials/table.html" %}
+{% endblock %}

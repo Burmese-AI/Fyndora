@@ -7,20 +7,25 @@ Following the test plan: AuditLog App (apps.auditlog)
 - Large dataset handling
 """
 
-import pytest
-import uuid
 import time
-from datetime import datetime, timezone, timedelta
-from django.test import TestCase
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.test import TestCase
 
 from apps.auditlog.models import AuditTrail
-from apps.auditlog.services import audit_create
 from apps.auditlog.selectors import get_audit_logs_for_workspace_with_filters
+from apps.auditlog.services import audit_create
 from tests.factories import (
-    CustomUserFactory,
     AuditTrailFactory,
     BulkAuditTrailFactory,
+    CustomUserFactory,
+    EntryFactory,
+    OrganizationFactory,
+    WorkspaceFactory,
 )
 
 User = get_user_model()
@@ -34,14 +39,14 @@ class TestAuditLogPerformance(TestCase):
     def test_audit_creation_performance(self):
         """Test performance of audit creation under load."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Measure time for single audit creation
         start_time = time.time()
         audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=uuid.uuid4(),
-            target_entity_type="entry",
+            target_entity=entry,
             metadata={"test": "performance"},
         )
         single_creation_time = time.time() - start_time
@@ -53,17 +58,17 @@ class TestAuditLogPerformance(TestCase):
     def test_bulk_audit_creation_performance(self):
         """Test performance of bulk audit creation."""
         user = CustomUserFactory()
+        entries = [EntryFactory() for _ in range(1000)]
 
         # Measure bulk creation time
         start_time = time.time()
 
         audits = []
-        for i in range(1000):
+        for i, entry in enumerate(entries):
             audit = audit_create(
                 user=user,
                 action_type="entry_created",
-                target_entity=uuid.uuid4(),
-                target_entity_type="entry",
+                target_entity=entry,
                 metadata={"sequence": i, "bulk_test": True},
             )
             audits.append(audit)
@@ -84,9 +89,10 @@ class TestAuditLogPerformance(TestCase):
     def test_audit_querying_performance_small_dataset(self):
         """Test querying performance with small dataset."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create moderate dataset
-        BulkAuditTrailFactory.create_batch(100, user=user)
+        BulkAuditTrailFactory.create_batch(100, user=user, target_entity=entry)
 
         # Test basic query performance
         start_time = time.time()
@@ -101,10 +107,14 @@ class TestAuditLogPerformance(TestCase):
     def test_audit_querying_performance_large_dataset(self):
         """Test querying performance with large dataset."""
         users = CustomUserFactory.create_batch(10)
+        entries = [EntryFactory() for _ in range(5)]
 
         # Create large dataset across multiple users
         for user in users:
-            BulkAuditTrailFactory.create_batch(200, user=user)  # 2000 total audits
+            for entry in entries:
+                BulkAuditTrailFactory.create_batch(
+                    40, user=user, target_entity=entry
+                )  # 2000 total audits (10 users * 5 entries * 40 audits)
 
         # Test filtered query performance
         start_time = time.time()
@@ -121,6 +131,7 @@ class TestAuditLogPerformance(TestCase):
     def test_complex_metadata_search_performance(self):
         """Test performance of metadata search with complex data."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create audits with complex metadata
         for i in range(500):
@@ -143,8 +154,7 @@ class TestAuditLogPerformance(TestCase):
             audit_create(
                 user=user,
                 action_type="entry_created",
-                target_entity=uuid.uuid4(),
-                target_entity_type="entry",
+                target_entity=entry,
                 metadata=complex_metadata,
             )
 
@@ -166,13 +176,14 @@ class TestAuditLogPerformance(TestCase):
     def test_date_range_filtering_performance(self):
         """Test performance of date range filtering."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create audits over time range
         base_time = datetime.now(timezone.utc)
 
         for i in range(300):
             # Create audit with timestamp offset
-            audit = AuditTrailFactory(user=user)
+            audit = AuditTrailFactory(user=user, target_entity=entry)
             # Simulate different creation times by updating timestamp
             audit.timestamp = base_time - timedelta(hours=i)
             audit.save(update_fields=["timestamp"])
@@ -200,18 +211,19 @@ class TestAuditLogPerformance(TestCase):
     def test_concurrent_audit_creation_performance(self):
         """Test performance under concurrent audit creation simulation."""
         users = CustomUserFactory.create_batch(5)
+        entries = [EntryFactory() for _ in range(10)]
 
         # Simulate concurrent creation
         start_time = time.time()
 
         all_audits = []
         for i in range(50):  # 50 rounds
-            for user in users:  # 5 users per round = 250 total
+            for user in users:
+                entry = entries[i % 10]  # Cycle through available entries
                 audit = audit_create(
                     user=user,
                     action_type="status_changed",
-                    target_entity=uuid.uuid4(),
-                    target_entity_type="entry",
+                    target_entity=entry,
                     metadata={
                         "round": i,
                         "user_sequence": user.username,
@@ -241,8 +253,7 @@ class TestAuditLogSystemIntegration(TestCase):
         audit_create(
             user=None,  # System action
             action_type="entry_created",  # Using available action
-            target_entity=user.user_id,
-            target_entity_type="user",
+            target_entity=user,
             metadata={
                 "action": "user_registered",
                 "registration_method": "email",
@@ -251,12 +262,11 @@ class TestAuditLogSystemIntegration(TestCase):
         )
 
         # Step 2: Organization creation (organizations app would log this)
-        org_id = uuid.uuid4()
+        organization = OrganizationFactory()
         audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=org_id,
-            target_entity_type="workspace",  # Using available entity type
+            target_entity=organization,
             metadata={
                 "action": "organization_created",
                 "org_name": "Test Organization",
@@ -264,41 +274,53 @@ class TestAuditLogSystemIntegration(TestCase):
             },
         )
 
-        # Step 3: Entry submission (entries app would log this)
-        entry_id = uuid.uuid4()
+        # Step 3: Workspace creation (workspaces app would log this)
+        workspace = WorkspaceFactory(organization=organization)
         audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=entry_id,
-            target_entity_type="entry",
+            target_entity=workspace,
+            metadata={
+                "action": "workspace_created",
+                "workspace_name": workspace.title,
+                "organization_id": str(organization.organization_id),
+            },
+        )
+
+        # Step 4: Entry submission (entries app would log this)
+        entry = EntryFactory(workspace=workspace)
+        audit_create(
+            user=user,
+            action_type="entry_created",
+            target_entity=entry,
             metadata={
                 "amount": "1500.00",
                 "entry_type": "income",
-                "organization_id": str(org_id),
+                "organization_id": str(organization.organization_id),
+                "workspace_id": str(workspace.workspace_id),
             },
         )
 
-        # Step 4: File attachment (attachments app would log this)
-        file_id = uuid.uuid4()
+        # Step 5: File attachment (attachments app would log this)
+        # For now, we use Entry as a fallback since we don't have a dedicated Attachment model
+        file_entry = EntryFactory(workspace=workspace)
         audit_create(
             user=user,
             action_type="file_uploaded",
-            target_entity=file_id,
-            target_entity_type="attachment",
+            target_entity=file_entry,
             metadata={
                 "filename": "receipt.pdf",
                 "file_size": "2048",
-                "entry_id": str(entry_id),
+                "entry_id": str(entry.entry_id),
             },
         )
 
-        # Step 5: Entry review (entries app would log this)
+        # Step 6: Entry review (entries app would log this)
         reviewer = CustomUserFactory()
         audit_create(
             user=reviewer,
             action_type="status_changed",
-            target_entity=entry_id,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata={
                 "old_status": "submitted",
                 "new_status": "approved",
@@ -309,35 +331,36 @@ class TestAuditLogSystemIntegration(TestCase):
 
         # Verify complete system audit trail
         all_audits = get_audit_logs_for_workspace_with_filters()
-        self.assertEqual(all_audits.count(), 5)
+        self.assertEqual(all_audits.count(), 6)
 
         # Verify workflow relationships
         user_audits = get_audit_logs_for_workspace_with_filters(user_id=user.user_id)
-        self.assertEqual(user_audits.count(), 3)  # User performed 3 actions
+        self.assertEqual(user_audits.count(), 4)  # User performed 4 actions
 
-        entry_audits = get_audit_logs_for_workspace_with_filters(entity_id=entry_id)
+        entry_audits = get_audit_logs_for_workspace_with_filters(
+            target_entity_id=entry.entry_id
+        )
         self.assertEqual(entry_audits.count(), 2)  # Entry had 2 actions
 
     @pytest.mark.django_db
     def test_audit_log_data_integrity_under_stress(self):
         """Test data integrity under stress conditions."""
         users = CustomUserFactory.create_batch(3)
-        entities = [uuid.uuid4() for _ in range(10)]
+        entries = [EntryFactory() for _ in range(10)]
 
         # Create complex interwoven audit trail
         audit_count = 0
         for round_num in range(20):
             for user in users:
-                for entity in entities[:5]:  # Only use first 5 entities
+                for entry in entries[:5]:  # Only use first 5 entities
                     audit_create(
                         user=user,
                         action_type="status_changed",
-                        target_entity=entity,
-                        target_entity_type="entry",
+                        target_entity=entry,
                         metadata={
                             "round": round_num,
                             "user_id": str(user.user_id),
-                            "entity_sequence": str(entity),
+                            "entity_sequence": str(entry.entry_id),
                             "stress_test": True,
                         },
                     )
@@ -358,9 +381,9 @@ class TestAuditLogSystemIntegration(TestCase):
                 user_audit_count, 100
             )  # 5 entities * 20 rounds = 100 per user
 
-        for entity in entities[:5]:
+        for entry in entries[:5]:
             entity_audit_count = get_audit_logs_for_workspace_with_filters(
-                entity_id=entity
+                target_entity_id=entry.entry_id
             ).count()
             self.assertEqual(
                 entity_audit_count, 60
@@ -370,9 +393,10 @@ class TestAuditLogSystemIntegration(TestCase):
     def test_audit_log_database_optimization(self):
         """Test that database queries are optimized."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create test data
-        BulkAuditTrailFactory.create_batch(50, user=user)
+        BulkAuditTrailFactory.create_batch(50, user=user, target_entity=entry)
 
         # Test that selector uses proper optimization
         with self.assertNumQueries(1):  # Should be single query with join
@@ -388,6 +412,7 @@ class TestAuditLogSystemIntegration(TestCase):
     def test_large_metadata_storage_and_retrieval(self):
         """Test storage and retrieval of large metadata objects."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create audit with very large metadata
         large_metadata = {
@@ -416,8 +441,7 @@ class TestAuditLogSystemIntegration(TestCase):
         audit = audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=uuid.uuid4(),
-            target_entity_type="entry",
+            target_entity=entry,
             metadata=large_metadata,
         )
 
@@ -447,9 +471,10 @@ class TestAuditLogScalability(TestCase):
     def test_pagination_performance_large_dataset(self):
         """Test pagination performance with large datasets."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create large dataset
-        BulkAuditTrailFactory.create_batch(1000, user=user)
+        BulkAuditTrailFactory.create_batch(1000, user=user, target_entity=entry)
 
         # Test pagination performance
         page_times = []
@@ -481,9 +506,10 @@ class TestAuditLogScalability(TestCase):
     def test_memory_efficiency_large_queryset(self):
         """Test memory efficiency when handling large querysets."""
         user = CustomUserFactory()
+        entry = EntryFactory()
 
         # Create large dataset
-        BulkAuditTrailFactory.create_batch(500, user=user)
+        BulkAuditTrailFactory.create_batch(500, user=user, target_entity=entry)
 
         # Test that we can iterate through large queryset without loading everything
         result = get_audit_logs_for_workspace_with_filters(user_id=user.user_id)
@@ -508,16 +534,18 @@ class TestAuditLogScalability(TestCase):
     def test_index_effectiveness(self):
         """Test that database indexes are effective."""
         users = CustomUserFactory.create_batch(10)
+        entries = [EntryFactory() for _ in range(3)]
+        content_types = [ContentType.objects.get_for_model(entry) for entry in entries]
 
         # Create data that will test index effectiveness
         for user in users:
             for action_type in ["entry_created", "status_changed", "flagged"]:
-                for entity_type in ["entry", "workspace", "team"]:
+                for i, entry in enumerate(entries):
                     BulkAuditTrailFactory.create_batch(
                         10,
                         user=user,
                         action_type=action_type,
-                        target_entity_type=entity_type,
+                        target_entity=entry,
                     )
 
         # Test queries that should benefit from indexes
@@ -529,10 +557,15 @@ class TestAuditLogScalability(TestCase):
                 action_type="entry_created"
             ),
             # Test entity_type index
-            lambda: get_audit_logs_for_workspace_with_filters(entity_type="entry"),
+            lambda: get_audit_logs_for_workspace_with_filters(
+                target_entity_type=content_types[0]
+            ),
             # Test combined filters (should use multiple indexes)
             lambda: get_audit_logs_for_workspace_with_filters(
-                user_id=users[0].user_id, action_type="entry_created"
+                user_id=users[0].user_id,
+                action_type="entry_created",
+                target_entity_id=entries[0].entry_id,
+                target_entity_type=content_types[0],
             ),
         ]
 

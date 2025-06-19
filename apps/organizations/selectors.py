@@ -53,5 +53,5 @@ def get_user_org_membership(user, organization):
     """
     Returns the user's org member object based on the provided organization
     """
-    return OrganizationMember.objects.filter(user=user, organization=organization)
+    return OrganizationMember.objects.filter(user=user, organization=organization).first()
         

@@ -8,22 +8,17 @@ from apps.teams.constants import TeamMemberRole
 from apps.auditlog.services import audit_create
 
 from .models import Entry
-from .constants import EntryType
-from django.contrib.contenttypes.models import ContentType
-
+from .constants import EntryType, EntryStatus
 
 def create_org_expense_entry(*, org_member, amount, description):
-    entry = Entry(
-        submitter_content_type=ContentType.objects.get_for_model(org_member),
-        submitter_object_id=org_member.pk,
+    print(f"org_member: {org_member}")
+    entry = Entry.objects.create(
         entry_type=EntryType.ORG_EXP,
         amount=amount,
         description=description,
+        submitter=org_member,
+        status=EntryStatus.APPROVED
     )
-    
-    entry.full_clean()
-    entry.save()
-    
     return entry
 
 def entry_create(*, submitted_by, entry_type, amount, description):

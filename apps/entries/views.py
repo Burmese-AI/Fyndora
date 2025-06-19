@@ -13,7 +13,9 @@ from .constants import EntryType, EntryStatus
 from .forms import OrganizationExpenseEntryForm
 from .services import create_org_expense_entry
 from apps.organizations.selectors import get_user_org_membership
-
+from django.contrib import messages
+from django.template.loader import render_to_string
+from django.http import HttpResponse
 
 class OrganizationExpenseListView(LoginRequiredMixin, ListView):
     model = Entry
@@ -83,14 +85,51 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.organization
         kwargs["org_member"] = self.org_member
         return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_oob"] = True
+        context["messages"] = messages.get_messages(self.request)
+        return context
     
     def form_valid(self, form):
         create_org_expense_entry(
             org_member=self.org_member,
             amount=form.cleaned_data["amount"],
-            description=form.cleaned_data["description"],
+            description=form.cleaned_data["description"]
         )
+        messages.success(self.request, "Expense entry submitted successfully")
+        if self.request.htmx:
+            return self._render_htmx_success_response()
         return super().form_valid(form)
     
+    def form_invalid(self, form):
+        messages.error(self.request, "Expense entry submission failed")
+        if self.request.htmx:
+            return self._render_htmx_error_response(form)
+        return super().form_invalid(form)
+    
+    def _render_htmx_success_response(self):
+        context = self.get_context_data()
+        # org_exp_entries =
+        message_html = render_to_string("includes/message.html", context=context, request=self.request)
+        response = HttpResponse(f"{message_html}")
+        response["HX-trigger"] = "success"
+        return response
+    
+    def _render_htmx_error_response(self, form):
+        context = self.get_context_data()
+        context["form"] = form
+        context["organization"] = self.organization
+        message_html = render_to_string(
+            "includes/message.html", context=context, request=self.request
+        )
+        modal_html = render_to_string(
+            "entries/components/create_org_exp_modal.html",
+            context=context,
+            request=self.request,
+        )
+        return HttpResponse(f"{message_html} {modal_html}")

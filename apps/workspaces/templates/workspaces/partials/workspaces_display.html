@@ -5,7 +5,13 @@
             <div class="flex items-start justify-between mb-4">
                 <div>
                     <h2 class="text-xl font-bold mb-1">{{ workspace.title }}</h2>
-                    <span class="badge badge-success badge-sm mr-2">{{ workspace.status|title }}</span>
+                    <span class="badge 
+                        {% if workspace.status == 'active' %}badge-success
+                        {% elif workspace.status == 'archived' %}badge-warning
+                        {% elif workspace.status == 'closed' %}badge-error
+                        {% else %}badge-ghost{% endif %} badge-sm mr-2">
+                        {{ workspace.status|title }}
+                    </span>
                 </div>
                 <div class="flex gap-2">
                     {% include "workspaces/components/edit_dropdown.html" %}

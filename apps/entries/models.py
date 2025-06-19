@@ -77,4 +77,4 @@ class Entry(baseModel):
         ordering = ["-submitted_at"]
 
     def __str__(self):
-        return f"{self.entry_id} - {self.submitter_type} - {self.entry_type} - {self.amount} - {self.status}"
+        return f"{self.entry_id} - {self.entry_type} - {self.amount} - {self.status}"

@@ -16,6 +16,8 @@ from apps.organizations.selectors import get_user_org_membership
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from .selectors import get_org_expenses
+from django.core.paginator import Paginator
 
 class OrganizationExpenseListView(LoginRequiredMixin, ListView):
     model = Entry
@@ -29,35 +31,7 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        # Get content types
-        org_member_type = ContentType.objects.get_for_model(OrganizationMember)
-        team_member_type = ContentType.objects.get_for_model(TeamMember)
-
-        # Subquery: IDs of Organization Members in this organization
-        org_members_subquery = Subquery(
-            OrganizationMember.objects.filter(organization=self.organization).values(
-                "pk"
-            )
-        )
-
-        # Subquery: IDs of TeamMembers whose OrganizationMember belongs to this org
-        team_members_subquery = Subquery(
-            TeamMember.objects.filter(
-                organization_member__organization=self.organization
-            ).values("pk")
-        )
-
-        # Main queryset filtering both submitter types
-        return (
-            Entry.objects.filter(
-                Q(submitter_content_type=org_member_type)
-                & Q(submitter_object_id__in=org_members_subquery)
-                | Q(submitter_content_type=team_member_type)
-                & Q(submitter_object_id__in=team_members_subquery)
-            )
-            .filter(entry_type=EntryType.WORKSPACE_EXP, status=EntryStatus.APPROVED)
-            .select_related("submitter_content_type")
-        )
+        return get_org_expenses(self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -114,9 +88,21 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
     
     def _render_htmx_success_response(self):
         context = self.get_context_data()
-        # org_exp_entries =
+        org_exp_entries = get_org_expenses(self.organization)
+        paginator = Paginator(org_exp_entries, PAGINATION_SIZE)
+        page_obj = paginator.get_page(1)
+        # Merge the existing context dict with the new one
+        context.update(
+            {
+                "page_obj": page_obj,
+                "paginator": paginator,
+                "entries": page_obj.object_list,
+                "is_paginated": paginator.num_pages > 1,
+            }
+        )
+        table_html = render_to_string("entries/partials/table.html", context=context, request=self.request)
         message_html = render_to_string("includes/message.html", context=context, request=self.request)
-        response = HttpResponse(f"{message_html}")
+        response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
     

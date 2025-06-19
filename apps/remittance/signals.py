@@ -5,7 +5,6 @@ from django.dispatch import receiver
 
 from apps.entries.models import Entry
 from apps.remittance.models import Remittance
-from apps.workspaces.models import WorkspaceTeam
 
 
 @receiver(post_save, sender=Entry)
@@ -22,22 +21,12 @@ def calculate_remittance_on_income(sender, instance, created, **kwargs):
     if not created or instance.entry_type != "income":
         return
 
-    # Get the team member who submitted the entry
-    team_member = instance.submitted_by
-
-    # Get the team and workspace through the team member
-    team = team_member.team
-
-    # Find the workspace team relationship
-    try:
-        workspace_team = WorkspaceTeam.objects.get(
-            team=team,
-            workspace__organization=team_member.organization_member.organization,
-        )
-        workspace = workspace_team.workspace
-    except WorkspaceTeam.DoesNotExist:
-        # If no workspace team is found, we can't proceed with remittance calculation
+    workspace_team = instance.workspace_team
+    if not workspace_team:
         return
+
+    team = workspace_team.team
+    workspace = workspace_team.workspace
 
     # Calculate the remittance rate (team's custom rate or workspace default)
     rate = (
@@ -45,6 +34,9 @@ def calculate_remittance_on_income(sender, instance, created, **kwargs):
         if team.custom_remittance_rate is not None
         else workspace.remittance_rate
     )
+    if rate is None:
+        return
+
     remittance_rate = Decimal(str(rate)) / Decimal("100.00")
 
     # Calculate the due amount

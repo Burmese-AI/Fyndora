@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -38,7 +39,7 @@ class Entry(baseModel):
     submitted_at = models.DateTimeField(auto_now_add=True)
     entry_type = models.CharField(max_length=20, choices=EntryType.choices)
     amount = models.DecimalField(
-        max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)]
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))]
     )
     description = models.CharField(max_length=255)
     status = models.CharField(
@@ -135,4 +136,4 @@ class Entry(baseModel):
         ordering = ["-submitted_at"]
 
     def __str__(self):
-        return f"{self.entry_id} - {self.submitter_type} - {self.entry_type} - {self.amount} - {self.status}"
+        return f"{self.entry_id} - {self.entry_type} - {self.amount} - {self.status}"

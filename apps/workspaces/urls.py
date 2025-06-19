@@ -7,6 +7,7 @@ from apps.workspaces.views import (
     add_team_to_workspace_view,
     get_workspace_teams_view,
     remove_team_from_workspace_view,
+    test1_view,
 )
 
 urlpatterns = [
@@ -28,5 +29,10 @@ urlpatterns = [
         "<uuid:workspace_id>/teams/<uuid:team_id>/remove/",
         remove_team_from_workspace_view,
         name="remove_team_from_workspace",
+    ),
+    path(
+        "<uuid:workspace_id>/teams/test1/",
+        test1_view,
+        name="test1",
     ),
 ]

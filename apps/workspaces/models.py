@@ -6,7 +6,7 @@ from apps.workspaces.constants import StatusChoices
 from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.teams.models import Team
-
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 class Workspace(baseModel):
@@ -65,6 +65,10 @@ class Workspace(baseModel):
                 name="unique_workspace_in_organization",
             )
         ]
+    
+    def clean(self):
+        if self.start_date > self.end_date:
+            raise ValidationError("Start date must be before end date.")
 
     def __str__(self):
         return f"{self.title} ({self.organization.title})"

@@ -12,12 +12,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from apps.auditlog.constants import (
-    AUDIT_ACTION_TYPE_CHOICES,
-    AUDIT_TARGET_ENTITY_TYPE_CHOICES,
-)
+from apps.auditlog.constants import AUDIT_ACTION_TYPE_CHOICES
 from apps.auditlog.models import AuditTrail
 from apps.auditlog.selectors import get_audit_logs_for_workspace_with_filters
 from apps.auditlog.services import audit_create
@@ -27,6 +25,8 @@ from tests.factories import (
     CustomUserFactory,
     EntryCreatedAuditFactory,
     StatusChangedAuditFactory,
+    EntryFactory,
+    WorkspaceFactory,
 )
 
 User = get_user_model()
@@ -40,14 +40,13 @@ class TestAuditCreateService(TestCase):
     def test_audit_create_with_user(self):
         """Test creating audit log with user."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
         metadata = {"key": "value", "amount": 1000}
 
         audit = audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=target_entity,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata=metadata,
         )
 
@@ -56,8 +55,10 @@ class TestAuditCreateService(TestCase):
         self.assertIsInstance(audit, AuditTrail)
         self.assertEqual(audit.user, user)
         self.assertEqual(audit.action_type, "entry_created")
-        self.assertEqual(audit.target_entity, target_entity)
-        self.assertEqual(audit.target_entity_type, "entry")
+        self.assertEqual(audit.target_entity, entry)
+        self.assertEqual(
+            audit.target_entity_type, ContentType.objects.get_for_model(entry)
+        )
         self.assertEqual(audit.metadata, metadata)
         self.assertIsNotNone(audit.timestamp)
         self.assertIsNotNone(audit.audit_id)
@@ -65,14 +66,13 @@ class TestAuditCreateService(TestCase):
     @pytest.mark.django_db
     def test_audit_create_without_user(self):
         """Test creating audit log without user (system action)."""
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
         metadata = {"system_action": "automated_cleanup"}
 
         audit = audit_create(
             user=None,
             action_type="status_changed",
-            target_entity=target_entity,
-            target_entity_type="system",
+            target_entity=entry,
             metadata=metadata,
         )
 
@@ -80,21 +80,22 @@ class TestAuditCreateService(TestCase):
         self.assertIsNotNone(audit)
         self.assertIsNone(audit.user)
         self.assertEqual(audit.action_type, "status_changed")
-        self.assertEqual(audit.target_entity, target_entity)
-        self.assertEqual(audit.target_entity_type, "system")
+        self.assertEqual(audit.target_entity, entry)
+        self.assertEqual(
+            audit.target_entity_type, ContentType.objects.get_for_model(entry)
+        )
         self.assertEqual(audit.metadata, metadata)
 
     @pytest.mark.django_db
     def test_audit_create_without_metadata(self):
         """Test creating audit log without metadata."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
 
         audit = audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=target_entity,
-            target_entity_type="entry",
+            target_entity=entry,
         )
 
         # Verify audit was created correctly
@@ -106,13 +107,12 @@ class TestAuditCreateService(TestCase):
     def test_audit_create_with_none_metadata(self):
         """Test creating audit log with explicitly None metadata."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
 
         audit = audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=target_entity,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata=None,
         )
 
@@ -124,7 +124,7 @@ class TestAuditCreateService(TestCase):
     def test_audit_create_with_complex_metadata(self):
         """Test creating audit log with complex metadata structure."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
         complex_metadata = {
             "user_details": {"username": user.username, "role": "admin"},
             "changes": {"old_value": "draft", "new_value": "submitted"},
@@ -138,8 +138,7 @@ class TestAuditCreateService(TestCase):
         audit = audit_create(
             user=user,
             action_type="status_changed",
-            target_entity=target_entity,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata=complex_metadata,
         )
 
@@ -153,7 +152,7 @@ class TestAuditCreateService(TestCase):
     def test_audit_create_persists_to_database(self):
         """Test that audit_create actually persists to database."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
 
         # Count existing audits
         initial_count = AuditTrail.objects.count()
@@ -161,8 +160,7 @@ class TestAuditCreateService(TestCase):
         audit = audit_create(
             user=user,
             action_type="entry_created",
-            target_entity=target_entity,
-            target_entity_type="entry",
+            target_entity=entry,
         )
 
         # Verify it was saved to database
@@ -171,13 +169,13 @@ class TestAuditCreateService(TestCase):
         # Verify we can retrieve it
         retrieved_audit = AuditTrail.objects.get(audit_id=audit.audit_id)
         self.assertEqual(retrieved_audit.user, user)
-        self.assertEqual(retrieved_audit.target_entity, target_entity)
+        self.assertEqual(retrieved_audit.target_entity, entry)
 
     @pytest.mark.django_db
     def test_audit_create_with_all_action_types(self):
         """Test audit_create with all available action types."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
+        entry = EntryFactory()
 
         action_types = [choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES]
 
@@ -185,8 +183,7 @@ class TestAuditCreateService(TestCase):
             audit = audit_create(
                 user=user,
                 action_type=action_type,
-                target_entity=target_entity,
-                target_entity_type="entry",
+                target_entity=entry,
                 metadata={"test": f"test_{action_type}"},
             )
 
@@ -194,24 +191,49 @@ class TestAuditCreateService(TestCase):
             self.assertIsNotNone(audit.audit_id)
 
     @pytest.mark.django_db
-    def test_audit_create_with_all_entity_types(self):
-        """Test audit_create with all available entity types."""
+    def test_audit_create_with_different_entity_types(self):
+        """Test audit_create with different model types as target entities."""
         user = CustomUserFactory()
-        target_entity = uuid.uuid4()
 
-        entity_types = [choice[0] for choice in AUDIT_TARGET_ENTITY_TYPE_CHOICES]
+        # Create different model instances
+        entry = EntryFactory()
+        workspace = WorkspaceFactory()
 
-        for entity_type in entity_types:
-            audit = audit_create(
-                user=user,
-                action_type="entry_created",
-                target_entity=target_entity,
-                target_entity_type=entity_type,
-                metadata={"test": f"test_{entity_type}"},
-            )
+        # Test with entry model
+        entry_audit = audit_create(
+            user=user,
+            action_type="entry_created",
+            target_entity=entry,
+            metadata={"test": "test_entry"},
+        )
 
-            self.assertEqual(audit.target_entity_type, entity_type)
-            self.assertIsNotNone(audit.audit_id)
+        # Test with workspace model
+        workspace_audit = audit_create(
+            user=user,
+            action_type="entry_created",
+            target_entity=workspace,
+            metadata={"test": "test_workspace"},
+        )
+
+        # Test with user model
+        user_audit = audit_create(
+            user=user,
+            action_type="entry_created",
+            target_entity=user,
+            metadata={"test": "test_user"},
+        )
+
+        # Verify different entity types are handled correctly
+        self.assertEqual(
+            entry_audit.target_entity_type, ContentType.objects.get_for_model(entry)
+        )
+        self.assertEqual(
+            workspace_audit.target_entity_type,
+            ContentType.objects.get_for_model(workspace),
+        )
+        self.assertEqual(
+            user_audit.target_entity_type, ContentType.objects.get_for_model(user)
+        )
 
 
 @pytest.mark.unit
@@ -221,10 +243,11 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_no_filters(self):
         """Test getting audit logs without any filters."""
+        entry = EntryFactory()
         # Create test data
-        audit1 = AuditTrailFactory()
-        audit2 = AuditTrailFactory()
-        audit3 = AuditTrailFactory()
+        audit1 = AuditTrailFactory(target_entity=entry)
+        audit2 = AuditTrailFactory(target_entity=entry)
+        audit3 = AuditTrailFactory(target_entity=entry)
 
         # Get all audit logs
         result = get_audit_logs_for_workspace_with_filters()
@@ -239,26 +262,28 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_user_id(self):
         """Test filtering audit logs by user ID."""
+        entry = EntryFactory()
         user1 = CustomUserFactory()
         user2 = CustomUserFactory()
 
-        AuditTrailFactory(user=user1)
-        AuditTrailFactory(user=user2)
+        AuditTrailFactory(user=user1, target_entity=entry)
+        AuditTrailFactory(user=user2, target_entity=entry)
 
         # Filter by user1
         result = get_audit_logs_for_workspace_with_filters(user_id=user1.user_id)
 
         # Should only return audits for user1
-        self.assertEqual(result.count(), 2)
+        self.assertEqual(result.count(), 1)
         for audit in result:
             self.assertEqual(audit.user, user1)
 
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_action_type(self):
         """Test filtering audit logs by action type."""
-        EntryCreatedAuditFactory()
-        StatusChangedAuditFactory()
-        EntryCreatedAuditFactory()
+        entry = EntryFactory()
+        EntryCreatedAuditFactory(target_entity=entry)
+        StatusChangedAuditFactory(target_entity=entry)
+        EntryCreatedAuditFactory(target_entity=entry)
 
         # Filter by entry_created
         result = get_audit_logs_for_workspace_with_filters(action_type="entry_created")
@@ -271,45 +296,58 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_entity_id(self):
         """Test filtering audit logs by target entity ID."""
-        entity_id = uuid.uuid4()
+        entry1 = EntryFactory()
+        entry2 = EntryFactory()
 
-        AuditTrailFactory(target_entity=entity_id)
-        AuditTrailFactory()  # Different entity ID
-        AuditTrailFactory(target_entity=entity_id)
+        AuditTrailFactory(target_entity=entry1)
+        AuditTrailFactory(target_entity=entry2)
+        AuditTrailFactory(target_entity=entry1)
 
         # Filter by entity_id
-        result = get_audit_logs_for_workspace_with_filters(entity_id=entity_id)
+        result = get_audit_logs_for_workspace_with_filters(
+            target_entity_id=entry1.entry_id
+        )
 
         # Should only return audits for specified entity
         self.assertEqual(result.count(), 2)
         for audit in result:
-            self.assertEqual(audit.target_entity, entity_id)
+            self.assertEqual(audit.target_entity, entry1)
 
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_entity_type(self):
         """Test filtering audit logs by target entity type."""
-        AuditTrailFactory(target_entity_type="entry")
-        AuditTrailFactory(target_entity_type="workspace")
-        AuditTrailFactory(target_entity_type="entry")
+        entry = EntryFactory()
+        workspace = WorkspaceFactory()
+
+        # Create audits with different entity types
+        AuditTrailFactory(target_entity=entry)
+        AuditTrailFactory(target_entity=workspace)
+        AuditTrailFactory(target_entity=entry)
+
+        # Get ContentType for Entry
+        entry_content_type = ContentType.objects.get_for_model(entry)
 
         # Filter by entity type
-        result = get_audit_logs_for_workspace_with_filters(entity_type="entry")
+        result = get_audit_logs_for_workspace_with_filters(
+            target_entity_type=entry_content_type
+        )
 
         # Should only return audits for entry type
         self.assertEqual(result.count(), 2)
         for audit in result:
-            self.assertEqual(audit.target_entity_type, "entry")
+            self.assertEqual(audit.target_entity_type, entry_content_type)
 
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_date_range(self):
         """Test filtering audit logs by date range."""
+        entry = EntryFactory()
         # Create audits with different timestamps
         now = datetime.now(timezone.utc)
         yesterday = now - timedelta(days=1)
 
         # Create audits (note: we can't easily control timestamp in factory)
-        AuditTrailFactory()
-        AuditTrailFactory()
+        AuditTrailFactory(target_entity=entry)
+        AuditTrailFactory(target_entity=entry)
 
         # Test start_date filter
         result = get_audit_logs_for_workspace_with_filters(start_date=yesterday)
@@ -330,9 +368,16 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_filter_by_search_query(self):
         """Test filtering audit logs by search query in metadata."""
-        AuditTrailFactory(metadata={"description": "user submitted entry"})
-        AuditTrailFactory(metadata={"description": "entry was approved"})
-        AuditTrailFactory(metadata={"description": "file was uploaded"})
+        entry = EntryFactory()
+        AuditTrailFactory(
+            metadata={"description": "user submitted entry"}, target_entity=entry
+        )
+        AuditTrailFactory(
+            metadata={"description": "entry was approved"}, target_entity=entry
+        )
+        AuditTrailFactory(
+            metadata={"description": "file was uploaded"}, target_entity=entry
+        )
 
         # Search for "entry"
         result = get_audit_logs_for_workspace_with_filters(search_query="entry")
@@ -346,38 +391,36 @@ class TestAuditLogSelectors(TestCase):
     def test_get_audit_logs_multiple_filters(self):
         """Test filtering audit logs with multiple filters combined."""
         user = CustomUserFactory()
-        entity_id = uuid.uuid4()
+        entry = EntryFactory()
+        entry_content_type = ContentType.objects.get_for_model(entry)
 
         # Create various audits
         target_audit = AuditTrailFactory(
             user=user,
             action_type="entry_created",
-            target_entity=entity_id,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata={"description": "user created entry"},
         )
 
         # Different user
         AuditTrailFactory(
             action_type="entry_created",
-            target_entity=entity_id,
-            target_entity_type="entry",
+            target_entity=entry,
         )
 
         # Different action type
         AuditTrailFactory(
             user=user,
             action_type="status_changed",
-            target_entity=entity_id,
-            target_entity_type="entry",
+            target_entity=entry,
         )
 
         # Apply multiple filters
         result = get_audit_logs_for_workspace_with_filters(
             user_id=user.user_id,
             action_type="entry_created",
-            entity_id=entity_id,
-            entity_type="entry",
+            target_entity_id=entry.entry_id,
+            target_entity_type=entry_content_type,
         )
 
         # Should only return the target audit
@@ -387,10 +430,11 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_ordering(self):
         """Test that audit logs are returned in correct order (newest first)."""
+        entry = EntryFactory()
         # Create multiple audits
-        AuditTrailFactory()
-        AuditTrailFactory()
-        AuditTrailFactory()
+        AuditTrailFactory(target_entity=entry)
+        AuditTrailFactory(target_entity=entry)
+        AuditTrailFactory(target_entity=entry)
 
         result = get_audit_logs_for_workspace_with_filters()
 
@@ -401,8 +445,9 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_select_related_optimization(self):
         """Test that selector uses select_related for user optimization."""
+        entry = EntryFactory()
         user = CustomUserFactory()
-        AuditTrailFactory(user=user)
+        AuditTrailFactory(user=user, target_entity=entry)
 
         # This should not cause additional database queries
         with self.assertNumQueries(1):  # Should be just one query with join
@@ -415,7 +460,8 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_empty_result(self):
         """Test selector with filters that match no records."""
-        AuditTrailFactory()
+        entry = EntryFactory()
+        AuditTrailFactory(target_entity=entry)
 
         # Filter by non-existent user
         result = get_audit_logs_for_workspace_with_filters(user_id=uuid.uuid4())
@@ -426,7 +472,8 @@ class TestAuditLogSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_audit_logs_with_none_values(self):
         """Test selector with None filter values."""
-        audit = AuditTrailFactory()
+        entry = EntryFactory()
+        audit = AuditTrailFactory(target_entity=entry)
 
         # None values should be ignored
         result = get_audit_logs_for_workspace_with_filters(
@@ -434,8 +481,8 @@ class TestAuditLogSelectors(TestCase):
             action_type=None,
             start_date=None,
             end_date=None,
-            entity_id=None,
-            entity_type=None,
+            target_entity_id=None,
+            target_entity_type=None,
             search_query=None,
         )
 
@@ -448,15 +495,13 @@ class TestAuditLogSelectors(TestCase):
         """Test selector performance with larger dataset."""
         # Create multiple audits efficiently
         user = CustomUserFactory()
-        entity_id = uuid.uuid4()
+        entry = EntryFactory()
 
-        BulkAuditTrailFactory.create_batch_for_entity(
-            entity_id=entity_id, entity_type="entry", count=20, user=user
-        )
+        BulkAuditTrailFactory.create_batch_for_entity(entity=entry, count=20, user=user)
 
         # Should handle larger datasets efficiently
         result = get_audit_logs_for_workspace_with_filters(
-            user_id=user.user_id, entity_id=entity_id
+            user_id=user.user_id, target_entity_id=entry.entry_id
         )
 
         self.assertEqual(result.count(), 20)

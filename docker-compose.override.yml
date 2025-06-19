@@ -1,15 +1,24 @@
 services:
   web:
-    environment:
-      - DEBUG=${DEBUG:-1}
-      - DJANGO_SETTINGS_MODULE=config.settings
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      cache_from:
+        - fyndora:latest
+        - fyndora:python-deps
+        - fyndora:node-build
+      args:
+        BUILDKIT_INLINE_CACHE: 1
     volumes:
-      - ./apps:/app/apps
-      - ./config:/app/config
-      - ./templates:/app/templates
-    ports:
-      - "8000:8000"
-    command: [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=config.settings
+    command: uv run python manage.py runserver 0.0.0.0:8000
+    stdin_open: true
+    tty: true
 
   db:
     ports:
@@ -18,3 +27,6 @@ services:
   redis:
     ports:
       - "6379:6379"
+
+volumes:
+  node_modules:

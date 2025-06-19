@@ -1,28 +1,74 @@
 services:
   web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      cache_from:
+        - fyndora:latest
+        - fyndora:python-deps
+        - fyndora:node-build
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    image: fyndora:latest
+    container_name: fyndora-web-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
     environment:
-      - DEBUG=0
       - DJANGO_SETTINGS_MODULE=config.settings
+      - DEBUG=0
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
       - POSTGRES_DB=${POSTGRES_DB:-fyndora}
       - POSTGRES_USER=${POSTGRES_USER:-fyndora}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST=${POSTGRES_HOST:-db}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-    restart: unless-stopped
+      - REDIS_URL=${REDIS_URL}
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     depends_on:
       - db
       - redis
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check", "--deploy"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 40s
 
   db:
+    image: postgres:15-alpine
+    container_name: fyndora-db-prod
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-fyndora}
       - POSTGRES_USER=${POSTGRES_USER:-fyndora}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    restart: unless-stopped
-    # Don't expose ports in production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fyndora}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
+    image: redis:7-alpine
+    container_name: fyndora-redis-prod
     restart: unless-stopped
-    # Don't expose ports in production 
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume: 

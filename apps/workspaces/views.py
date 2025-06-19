@@ -261,7 +261,7 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
                 "workspace_teams": workspace_teams,
                 "workspace": workspace,
             }
-            return render(request, "workspaces/workspace_teams.html", context)
+            return render(request, "workspaces/workspace_teams_main.html", context)
         return redirect(f"/{organization_id}/workspaces/")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")

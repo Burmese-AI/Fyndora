@@ -6,8 +6,12 @@
 <div class="divider my-0 mb-5"></div>
 
 {% block content %}
-  <div id="workspace-teams-container">
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold">My Teams under {{ workspace.title }}</h1>
+  <p class="text-base-content/70 mt-2">Manage your project teams</p>
+</div>
+
   {% include "workspaces/partials/workspaces_team_display.html" %}
-  </div>
+
 {% endblock %}
 

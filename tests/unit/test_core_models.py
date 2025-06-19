@@ -8,8 +8,8 @@ Following the test plan: Core App (apps.core)
 """
 
 import pytest
-from django.test import TestCase
-from django.db import models
+from django.test import TestCase, TransactionTestCase
+from django.db import models, connection
 
 from apps.core.models import baseModel
 
@@ -42,6 +42,26 @@ class TestBaseModel(TestCase):
         self.assertIsInstance(updated_field, models.DateTimeField)
         self.assertTrue(created_field.auto_now_add)
         self.assertTrue(updated_field.auto_now)
+
+
+@pytest.mark.unit
+class TestBaseModelTimestamps(TransactionTestCase):
+    """Test baseModel timestamp behavior with dynamic table creation."""
+
+    # Mark as django_db to ensure DB access and create tables for test models
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Create table for test model
+        with connection.schema_editor() as schema_editor:
+            schema_editor.create_model(CoreTestModel)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Drop table for test model
+        with connection.schema_editor() as schema_editor:
+            schema_editor.delete_model(CoreTestModel)
+        super().tearDownClass()
 
     @pytest.mark.django_db
     def test_timestamp_behavior_works(self):

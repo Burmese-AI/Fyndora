@@ -4,7 +4,7 @@
 <div class="drawer lg:drawer-open">
   <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
 
-  <div class="drawer-content flex flex-col min-h-screen">
+  <div class="drawer-content flex flex-col min-h-screen" >
 
     <!-- Top Navbar -->
     <div class="navbar bg-base-100 shadow-sm lg:hidden">
@@ -20,7 +20,7 @@
       {% include "includes/logo.html" %}
     </div>
     <!-- Main Content -->
-    <main class="p-4 flex-1 lg:h-screen lg:overflow-y-auto">
+    <main class="p-4 flex-1 lg:h-screen lg:overflow-y-auto" id="right-side-content-container">
     <!-- Header Block -->
     {% block header %}
 
@@ -28,7 +28,7 @@
     
     <div class="divider my-0 mb-5"></div>
     
-    <div id="right-side-content-container">
+    <div>
       {% block content %}{% endblock %}
     </div>
   </main>
@@ -46,74 +46,84 @@
         {% include "includes/logo.html" %}
       </li>
 
-      <!-- Navigation Links -->
-<li>
-  <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 6a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V6zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-    </svg>
-    <span>Dashboard</span>
-  </a>
-</li>
+            <!-- Navigation Links -->
+      <li>
+        <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V6zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
+          <span>Dashboard</span>
+        </a>
+      </li>
 
-<li>
-  <a href="{% url 'workspace_list' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-    </svg>
-    <span>Workspaces</span>
-  </a>
-</li>
+      <li>
+        <a href="{% url 'organization_expenses' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 opacity-70">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          
+          <span>Finance</span>
+        </a>
+      </li>
 
-<li>
-  <a href="{% url 'organization_member_list' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-    <span>Members</span>
-  </a>
-</li>
+      <li>
+        <a href="{% url 'workspace_list' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span>Workspaces</span>
+        </a>
+      </li>
 
-<li>
-  <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-    <span>Teams</span>
-  </a>
-</li>
+      <li>
+        <a href="{% url 'organization_member_list' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Members</span>
+        </a>
+      </li>
 
-<li>
-  <a href="{% url 'settings' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-    <span>Settings</span>
-  </a>
-</li>
+      <li>
+        <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span>Teams</span>
+        </a>
+      </li>
 
-<li>
-  <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    <span>Logs</span>
-  </a>
-</li>
+      <li>
+        <a href="{% url 'settings' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Settings</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Logs</span>
+        </a>
+      </li>
 
       <!-- Divider -->
       <div class="divider my-2"></div>

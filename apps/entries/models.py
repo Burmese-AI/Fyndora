@@ -54,6 +54,14 @@ class Entry(baseModel):
     )
     review_notes = models.TextField(null=True, blank=True)
 
+    @property
+    def submitter_user_name(self):
+        if isinstance(self.submitter, OrganizationMember):
+            return self.submitter.user.username
+        elif isinstance(self.submitter, TeamMember):
+            return self.submitter.organization_member.user.username
+        return None
+
     def clean(self):
         super().clean()
 

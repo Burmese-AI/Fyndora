@@ -2,6 +2,10 @@ from django import forms
 from .models import Workspace
 from apps.organizations.models import OrganizationMember
 from apps.workspaces.selectors import get_organization_members_by_organization_id
+from apps.teams.models import Team
+from apps.workspaces.models import WorkspaceTeam
+from apps.workspaces.selectors import get_teams_by_organization_id
+from django.core.exceptions import ValidationError
 
 
 class WorkspaceForm(forms.ModelForm):
@@ -11,7 +15,7 @@ class WorkspaceForm(forms.ModelForm):
         label="Select Workspace Admin",
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base "
             }
         ),
     )
@@ -117,3 +121,40 @@ class WorkspaceForm(forms.ModelForm):
             raise forms.ValidationError("End date cannot be earlier than start date.")
 
         return cleaned_data
+
+
+class AddTeamToWorkspaceForm(forms.ModelForm):
+    team = forms.ModelChoiceField(
+        queryset=Team.objects.none(),
+        required=True,
+        label="Select Team",  # Temporary label, will be overwritten in __init__
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mt-4",
+            }
+        ),
+    )
+
+    class Meta:
+        model = WorkspaceTeam
+        fields = ["team"]
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        super().__init__(*args, **kwargs)
+
+        if self.organization:
+            self.fields["team"].queryset = get_teams_by_organization_id(
+                self.organization.organization_id
+            )
+            self.fields["team"].label = f"Select Team from {self.organization.title}"
+
+    def clean_team(self):
+        team = self.cleaned_data.get("team")
+        team_exists = WorkspaceTeam.objects.filter(
+            team=team, workspace_id=self.workspace.workspace_id
+        ).exists()
+        if team_exists:
+            raise ValidationError("Team already exists in this workspace.")
+        return team

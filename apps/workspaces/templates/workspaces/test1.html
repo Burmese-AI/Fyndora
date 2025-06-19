@@ -6,7 +6,7 @@
   <ul>
     <li><a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}">Home</a></li>
     <li><a href="{% url 'workspace_list' organization_id=request.resolver_match.kwargs.organization_id %}">Workspaces</a></li>
-    <li><a href="{% url 'get_workspace_teams' organization_id=request.resolver_match.kwargs.organization_id workspace_id=request.resolver_match.kwargs.workspace_id %}">Workspace Teams</a></li>
+    <li><a href="{% url 'get_workspace_teams' organization_id=request.resolver_match.kwargs.organization_id workspace_id=request.resolver_match.kwargs.workspace_id %}">Workspace Teams Under {{ workspace.title }}</a></li>
   </ul>
 </div>
     {% include "components/organization_layout_header.html" with title="Workspace Teams" subtitle="Manage your Team Under a Workspace" %}

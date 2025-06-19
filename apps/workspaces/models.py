@@ -8,6 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.teams.models import Team
 from django.core.exceptions import ValidationError
 
+
 # Create your models here.
 class Workspace(baseModel):
     workspace_id = models.UUIDField(
@@ -65,7 +66,7 @@ class Workspace(baseModel):
                 name="unique_workspace_in_organization",
             )
         ]
-    
+
     def clean(self):
         if self.start_date > self.end_date:
             raise ValidationError("Start date must be before end date.")

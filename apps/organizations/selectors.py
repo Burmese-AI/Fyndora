@@ -1,7 +1,6 @@
 from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.models import StatusChoices
 from apps.teams.models import Team
-from django.shortcuts import get_object_or_404
 
 
 # get all organizations when user is a member
@@ -48,10 +47,12 @@ def get_teams_count(organization):
         return int(count) if count is not None else 0
     except Exception:
         return 0
-    
+
+
 def get_user_org_membership(user, organization):
     """
     Returns the user's org member object based on the provided organization
     """
-    return OrganizationMember.objects.filter(user=user, organization=organization).first()
-        
+    return OrganizationMember.objects.filter(
+        user=user, organization=organization
+    ).first()

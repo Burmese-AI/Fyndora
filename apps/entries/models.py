@@ -60,7 +60,7 @@ class Entry(baseModel):
         elif isinstance(self.submitter, TeamMember):
             return self.submitter.organization_member.user.username
         return None
-    
+
     def _validate_submitter(self):
         is_team_member = isinstance(self.submitter, TeamMember)
         is_org_member = isinstance(self.submitter, OrganizationMember)
@@ -69,7 +69,7 @@ class Entry(baseModel):
             raise ValidationError(
                 "Submitter must be a TeamMember or OrganizationMember."
             )
-        return;
+        return
 
     class Meta:
         verbose_name = "entry"

@@ -1,9 +1,10 @@
 def percent_change(current: float, previous: float) -> str:
     if previous == 0:
-        return f"0% change"
+        return "0% change"
     change = ((current - previous) / previous) * 100
     symbol = "+" if change >= 0 else "-"
     return f"{symbol}{abs(change):.1f}% from last period"
+
 
 def model_update(
     instance,

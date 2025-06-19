@@ -23,24 +23,34 @@ def get_org_expenses(organization: Organization):
     team_member_ids = TeamMember.objects.filter(
         organization_member__organization=organization
     ).values_list("pk", flat=True)
-    
+
     query = Entry.objects.filter(
-        Q(submitter_content_type=org_member_type, submitter_object_id__in=org_member_ids) | Q(submitter_content_type=team_member_type, submitter_object_id__in=team_member_ids),
+        Q(
+            submitter_content_type=org_member_type,
+            submitter_object_id__in=org_member_ids,
+        )
+        | Q(
+            submitter_content_type=team_member_type,
+            submitter_object_id__in=team_member_ids,
+        ),
         entry_type=EntryType.ORG_EXP,
-        status=EntryStatus.APPROVED
+        status=EntryStatus.APPROVED,
     )
-    
+
     return query
+
 
 def get_total_org_expenses(organization: Organization):
     queryset = get_org_expenses(organization)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
+
 
 def get_this_month_org_expenses(organization: Organization):
     today = now().date()
     start_of_month = today.replace(day=1)
     queryset = get_org_expenses(organization).filter(created_at__gte=start_of_month)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
+
 
 def get_average_monthly_org_expenses(organization: Organization):
     today = now().date()
@@ -51,6 +61,7 @@ def get_average_monthly_org_expenses(organization: Organization):
 
     return total / 12
 
+
 def get_last_month_org_expenses(organization: Organization):
     today = now().date()
     start_of_this_month = today.replace(day=1)
@@ -59,6 +70,6 @@ def get_last_month_org_expenses(organization: Organization):
 
     queryset = get_org_expenses(organization).filter(
         created_at__date__gte=start_of_last_month,
-        created_at__date__lte=end_of_last_month
+        created_at__date__lte=end_of_last_month,
     )
     return queryset.aggregate(total=Sum("amount"))["total"] or 0

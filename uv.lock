@@ -168,6 +168,7 @@ dependencies = [
     { name = "django-htmx" },
     { name = "django-redis" },
     { name = "faker" },
+    { name = "millify" },
     { name = "psycopg2-binary" },
     { name = "pytest-django" },
     { name = "ruff" },
@@ -197,6 +198,7 @@ requires-dist = [
     { name = "django-htmx", specifier = ">=1.23.0" },
     { name = "django-redis", specifier = ">=5.4.0" },
     { name = "faker", specifier = ">=37.3.0" },
+    { name = "millify", specifier = ">=0.1.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pytest-django", specifier = ">=4.11.1" },
     { name = "ruff", specifier = ">=0.11.11" },
@@ -233,6 +235,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/f2/97/ebf4da567aa6827c9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/e1/e6716421ea10d38022b952c159d5161ca1193197fb744506875fbb87ea7b/iniconfig-2.1.0-py3-none-any.whl", hash = "sha256:9deba5723312380e77435581c6bf4935c94cbfab9b1ed33ef8d238ea168eb760", size = 6050, upload-time = "2025-03-19T20:10:01.071Z" },
 ]
+
+[[package]]
+name = "millify"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/60/f81b9440107ac22cd8fa36924e194bb258b01aaa5484b8693eba2b542300/millify-0.1.1.tar.gz", hash = "sha256:619defdc98b6d23f941b5ce4aaf4bf87a0e0f64cd0446ffa299be94486597f1a", size = 1219, upload-time = "2018-01-15T02:19:08.138Z" }
 
 [[package]]
 name = "packaging"

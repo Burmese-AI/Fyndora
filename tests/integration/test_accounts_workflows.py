@@ -329,7 +329,7 @@ class TestUserRelationshipWorkflows(TestCase):
         org_member = OrganizationMemberFactory(user=user, organization=org)
 
         # Create team and add user
-        team = TeamFactory()
+        team = TeamFactory(organization=org)
         team_member = TeamMemberFactory(organization_member=org_member, team=team)
 
         # Verify integration

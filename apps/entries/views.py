@@ -32,9 +32,15 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["organization"] = self.organization
-        context["stats"] = get_org_expense_stats(self.organization)
+        if not self.request.htmx:
+            context["organization"] = self.organization
+            context["stats"] = get_org_expense_stats(self.organization)
         return context
+    
+    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any) -> HttpResponse:
+        if self.request.htmx:
+            return render(self.request, "entries/partials/table.html", context)
+        return super().render_to_response(context, **response_kwargs)
 
 
 class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
@@ -67,7 +73,6 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_oob"] = True
-        context["messages"] = messages.get_messages(self.request)
         return context
 
     def form_valid(self, form):

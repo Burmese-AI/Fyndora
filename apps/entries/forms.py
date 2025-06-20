@@ -1,11 +1,21 @@
 from django import forms
 from .models import Entry
+from apps.core.forms import MultipleFileField, MultipleFileInput
 
 
 class OrganizationExpenseEntryForm(forms.ModelForm):
+    
+    attachment_files = MultipleFileField(
+        label='Attachments',
+        required=True,
+        widget=MultipleFileInput(attrs={
+            'class': 'file-input file-input-neutral w-full text-sm'
+        })
+    )
+    
     class Meta:
         model = Entry
-        fields = ["amount", "description"]
+        fields = ["amount", "description", "attachment_files"]
         widgets = {
             "amount": forms.NumberInput(
                 attrs={

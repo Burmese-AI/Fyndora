@@ -19,3 +19,6 @@ node_modules/
 
 #static files
 static/css/output.css
+
+#Media files (Attachments)
+media/

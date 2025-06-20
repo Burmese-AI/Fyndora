@@ -17,16 +17,29 @@ from .selectors import (
     get_average_monthly_org_expenses,
     get_total_org_expenses,
 )
+from apps.attachments.constants import AttachmentType
+from apps.attachments.models import Attachment
 
-def create_org_expense_entry(*, org_member, amount, description):
-    print(f"org_member: {org_member}")
-    entry = Entry.objects.create(
-        entry_type=EntryType.ORG_EXP,
-        amount=amount,
-        description=description,
-        submitter=org_member,
-        status=EntryStatus.APPROVED,
-    )
+def create_org_expense_entry_with_attachments(*, org_member, amount, description, attachments):
+
+    with transaction.atomic():
+        
+        entry = Entry.objects.create(
+            entry_type=EntryType.ORG_EXP,
+            amount=amount,
+            description=description,
+            submitter=org_member,
+            status=EntryStatus.APPROVED,
+        )
+        
+        for file in attachments:
+            file_type = AttachmentType.get_file_type_by_extension(file.name)
+            Attachment.objects.create(
+                entry=entry,
+                file_url=file,
+                file_type=file_type or AttachmentType.IMAGE
+            )
+            
     return entry
 
 

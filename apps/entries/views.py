@@ -7,7 +7,7 @@ from .models import Entry
 from apps.organizations.models import Organization
 from apps.core.constants import PAGINATION_SIZE
 from .forms import OrganizationExpenseEntryForm
-from .services import create_org_expense_entry, get_org_expense_stats
+from .services import create_org_expense_entry_with_attachments, get_org_expense_stats
 from apps.organizations.selectors import get_user_org_membership
 from django.contrib import messages
 from django.template.loader import render_to_string
@@ -71,10 +71,11 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        create_org_expense_entry(
+        create_org_expense_entry_with_attachments(
             org_member=self.org_member,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
+            attachments=form.cleaned_data["attachment_files"]
         )
         messages.success(self.request, "Expense entry submitted successfully")
         if self.request.htmx:

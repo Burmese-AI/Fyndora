@@ -1,6 +1,7 @@
 from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
+from apps.attachments.utils import validate_uploaded_files
 
 
 class OrganizationExpenseEntryForm(forms.ModelForm):
@@ -9,6 +10,7 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
         label='Attachments',
         required=True,
         widget=MultipleFileInput(attrs={
+            'required': True,
             'class': 'file-input file-input-neutral w-full text-sm'
         })
     )
@@ -52,5 +54,7 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Only the owner of the organization can submit expenses."
             )
+            
+        validate_uploaded_files(cleaned_data.get("attachment_files"))
 
         return cleaned_data

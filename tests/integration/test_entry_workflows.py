@@ -12,17 +12,18 @@ from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from tests.factories import (
+    DisbursementEntryFactory,
+    EntryFactory,
+    FlaggedEntryFactory,
+    IncomeEntryFactory,
+    OrganizationFactory,
+    PendingEntryFactory,
+    RemittanceEntryFactory,
+    TeamCoordinatorFactory,
     TeamFactory,
     TeamMemberFactory,
-    TeamCoordinatorFactory,
     OperationsReviewerFactory,
     WorkspaceAdminMemberFactory,
-    EntryFactory,
-    IncomeEntryFactory,
-    DisbursementEntryFactory,
-    RemittanceEntryFactory,
-    PendingEntryFactory,
-    FlaggedEntryFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
@@ -35,8 +36,9 @@ class TestEntrySubmissionWorkflows:
 
     def test_complete_entry_submission_workflow(self):
         """Test complete entry submission by team member."""
-        # Create fundraising team with field agent
-        team = TeamFactory(title="Regional Fundraising Team")
+        # Create organization and fundraising team with field agent
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org, title="Regional Fundraising Team")
         field_agent = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Submit financial transaction
@@ -110,8 +112,9 @@ class TestEntryReviewWorkflows:
 
     def test_complete_entry_approval_workflow(self):
         """Test complete entry review and approval process."""
-        # Create team with submitter and coordinator
-        team = TeamFactory()
+        # Create organization and team with submitter and coordinator
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
         
@@ -137,8 +140,9 @@ class TestEntryReviewWorkflows:
 
     def test_entry_rejection_workflow(self):
         """Test entry rejection process."""
-        # Create team with submitter and reviewer
-        team = TeamFactory()
+        # Create organization and team with submitter and reviewer
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_reviewer = OperationsReviewerFactory(team=team)
         
@@ -163,8 +167,9 @@ class TestEntryReviewWorkflows:
 
     def test_entry_flagging_workflow(self):
         """Test entry flagging for further investigation."""
-        # Create team with submitter and workspace admin
-        team = TeamFactory()
+        # Create organization and team with submitter and workspace admin
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_admin = WorkspaceAdminMemberFactory(team=team)
         
@@ -193,7 +198,8 @@ class TestEntryReviewWorkflows:
 
     def test_reviewer_authorization_workflow(self):
         """Test that only authorized roles can review entries."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Create reviewers with different authorized roles
@@ -293,7 +299,8 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_approval_workflow(self):
         """Test approving multiple entries in bulk."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
         coordinator = team_coordinator.organization_member
@@ -326,7 +333,8 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_query_workflow(self):
         """Test querying entries by various criteria."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         
@@ -366,7 +374,8 @@ class TestEntryWorkflowIntegration:
     def test_entry_team_integration_workflow(self):
         """Test how entries integrate with team structure."""
         # Create team with multiple members
-        team = TeamFactory(title="Accounting Team")
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org, title="Accounting Team")
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
@@ -432,7 +441,8 @@ class TestEntryWorkflowIntegration:
 
     def test_entry_review_chain_workflow(self):
         """Test complex review chain with multiple reviewers."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_reviewer1 = OperationsReviewerFactory(team=team)
         team_reviewer2 = WorkspaceAdminMemberFactory(team=team)

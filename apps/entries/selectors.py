@@ -35,7 +35,7 @@ def get_org_expenses(organization: Organization):
         ),
         entry_type=EntryType.ORG_EXP,
         status=EntryStatus.APPROVED,
-    )
+    ).prefetch_related("attachments")
 
     return query
 

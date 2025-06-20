@@ -5,8 +5,8 @@ register = template.Library()
 
 
 @register.filter
-def millify_number(value):
+def millify_number(value, precision=1):
     try:
-        return millify(value)
+        return millify(float(value), precision=int(precision))
     except:
         return value

@@ -9,11 +9,33 @@
         <!-- Gradient text for the main value -->
         <!-- Main number with tooltip showing full value -->
         <div 
-          class="cursor-pointer text-4xl font-extrabold mb-1 bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent drop-shadow-sm tooltip tooltip-secondary" 
-          data-tip="${{ value|floatformat:"0"|intcomma }}"
+          x-data="{
+            count: 0,
+            target: {{ value }},
+            display() {
+              if (this.target >= 1_000_000) {
+                return (this.count / 1_000_000).toFixed(2) + 'M';
+              } else if (this.target >= 1_000) {
+                return (this.count / 1_000).toFixed(0) + 'K';
+              } else {
+                return Math.floor(this.count);
+              }
+            }
+          }"
+          x-init="let step = Math.max(1, target / 40);
+                  let interval = setInterval(() => {
+                    count += step;
+                    if (count >= target) {
+                      count = target;
+                      clearInterval(interval);
+                    }
+                  }, 20)"
+          class="cursor-pointer text-4xl font-extrabold mb-1 bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent drop-shadow-sm tooltip tooltip-secondary"
+          data-tip="${{ value|floatformat:'0'|intcomma }}"
         >
-          ${{ value|millify_number }}
+          $<span x-text="display()"></span>
         </div>
+
 
         {% if subtitle %}
           <p class="text-sm">{{ subtitle }}</p>

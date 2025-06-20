@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from apps.teams.models import Team, TeamMember
 from apps.teams.constants import TeamMemberRole
-from tests.factories.organization_factories import OrganizationMemberFactory
+from tests.factories.organization_factories import OrganizationMemberFactory, OrganizationFactory
 
 
 class TeamFactory(DjangoModelFactory):
@@ -17,6 +17,7 @@ class TeamFactory(DjangoModelFactory):
     class Meta:
         model = Team
 
+    organization = factory.SubFactory(OrganizationFactory)
     title = factory.Sequence(lambda n: f"Fundraising Team {n}")
     description = factory.Faker("sentence", nb_words=6)
     custom_remittance_rate = None  # Usually null, can override

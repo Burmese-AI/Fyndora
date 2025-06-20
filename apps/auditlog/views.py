@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import ListView
 
@@ -9,7 +10,7 @@ from .selectors import get_audit_logs_for_workspace_with_filters
 User = get_user_model()
 
 
-class AuditLogListView(ListView):
+class AuditLogListView(LoginRequiredMixin, ListView):
     """
     A view to display a list of audit trail logs with filtering and search capabilities.
     """

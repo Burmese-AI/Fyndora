@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 from apps.core.utils import model_update
 from apps.teams.constants import TeamMemberRole
@@ -17,7 +18,6 @@ from .selectors import (
     get_total_org_expenses,
 )
 
-
 def create_org_expense_entry(*, org_member, amount, description):
     print(f"org_member: {org_member}")
     entry = Entry.objects.create(
@@ -30,7 +30,7 @@ def create_org_expense_entry(*, org_member, amount, description):
     return entry
 
 
-def entry_create(*, submitted_by, entry_type, amount, description):
+def entry_create(*, submitted_by, entry_type, amount, description, workspace=None, workspace_team=None):
     """
     Service to create a new entry.
     """
@@ -41,10 +41,13 @@ def entry_create(*, submitted_by, entry_type, amount, description):
         raise ValidationError("Amount must be greater than zero.")
 
     entry_data = {
-        "submitted_by": submitted_by,
         "entry_type": entry_type,
         "amount": amount,
         "description": description,
+        "submitter_content_type": ContentType.objects.get_for_model(submitted_by),
+        "submitter_object_id": submitted_by.pk,
+        "workspace": workspace,
+        "workspace_team": workspace_team,
     }
 
     entry = Entry()
@@ -57,8 +60,7 @@ def entry_create(*, submitted_by, entry_type, amount, description):
         audit_create(
             user=submitted_by.organization_member.user,
             action_type="entry_created",
-            target_entity=entry.entry_id,
-            target_entity_type="entry",
+            target_entity=entry,
             metadata={
                 "entry_type": entry_type,
                 "amount": str(amount),

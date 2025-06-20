@@ -44,6 +44,7 @@
         <form hx-get="{% url 'remove_team_from_workspace' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" >
             {% csrf_token %}    
         <div class="mt-4 flex justify-end">
+          <a href="{% url 'test1' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id %}" class="btn btn-primary btn-sm">Test</a>
           <button
             type="submit"
             class="btn btn-error btn-sm">

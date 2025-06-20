@@ -62,13 +62,7 @@ class Entry(baseModel):
             return self.submitter.organization_member.user.username
         return None
 
-    def clean(self):
-        super().clean()
-
-        if not self.submitter:
-            raise ValidationError("Submitter is required.")
-
-        # Validate Submitter Relationship
+    def _validate_submitter(self):
         is_team_member = isinstance(self.submitter, TeamMember)
         is_org_member = isinstance(self.submitter, OrganizationMember)
 
@@ -76,59 +70,7 @@ class Entry(baseModel):
             raise ValidationError(
                 "Submitter must be a TeamMember or OrganizationMember."
             )
-
-        # Validate Entry Type
-        if self.entry_type == EntryType.WORKSPACE_EXP:
-            if not is_org_member:
-                raise ValidationError(
-                    "Only Organization Members can submit Workspace Expense entries."
-                )
-            if not self.workspace:
-                raise ValidationError(
-                    "Workspace is required for Workspace Expense entries."
-                )
-            if self.workspace.workspace_admin != self.submitter:
-                raise ValidationError(
-                    "Only the Workspace Admin can submit Workspace Expense entries."
-                )
-            if self.workspace_team:
-                raise ValidationError(
-                    "Workspace Team must be null for Workspace Expense entries."
-                )
-
-        elif self.entry_type == EntryType.ORG_EXP:
-            if not is_org_member:
-                raise ValidationError(
-                    "Only Organization Members can submit Organization Expense entries."
-                )
-            if not self.submitter.is_org_owner:
-                raise ValidationError(
-                    "Only the Organization Owner can submit Organization Expense entries."
-                )
-            if self.workspace or self.workspace_team:
-                raise ValidationError(
-                    "Workspace and Workspace Team must be null for Organization Expense entries."
-                )
-
-        elif self.entry_type in [
-            EntryType.INCOME,
-            EntryType.DISBURSEMENT,
-            EntryType.REMITTANCE,
-        ]:
-            if not is_team_member:
-                raise ValidationError(
-                    f"Only Team Members can submit {self.entry_type} entries."
-                )
-            if not self.workspace_team or not self.workspace:
-                raise ValidationError(
-                    f"Workspace Team and Workspace values are required for {self.entry_type} entries."
-                )
-            if self.submitter.team != self.workspace_team.team:
-                raise ValidationError(
-                    "Submitter must belong to the team linked to this Workspace Team."
-                )
-        else:
-            raise ValidationError("Invalid entry type.")
+        return
 
     class Meta:
         verbose_name = "entry"

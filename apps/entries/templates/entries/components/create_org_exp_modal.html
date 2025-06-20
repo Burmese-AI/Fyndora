@@ -9,12 +9,14 @@
     </h2>
   </div>
 
+  <!-- Add enctype="multipart/form-data" for file uploads -->
   <form
     hx-post="{% url 'organization_expenses_create' organization_id=organization.pk %}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"
     class="space-y-6"
+    enctype="multipart/form-data"
   >
     {% csrf_token %}
 
@@ -40,6 +42,17 @@
         {{ form.description }}
       </div>
       {% include "components/field_error.html" with field=form.description %}
+    </div>
+
+    <!-- 📎 Attachment Upload Field -->
+    <div>
+      <label for="{{ form.attachment_files.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Attachments
+      </label>
+      <div class="mt-2">
+        {{ form.attachment_files }}
+      </div>
+      {% include "components/field_error.html" with field=form.attachment_files %}
     </div>
 
     <!-- Form Actions -->

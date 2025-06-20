@@ -1,5 +1,6 @@
 from django.db import models
 
+CONTEXT_OBJECT_NAME = "entries"
 
 class EntryType(models.TextChoices):
     INCOME = "income", "Income"

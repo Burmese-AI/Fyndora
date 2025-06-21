@@ -210,8 +210,6 @@ def edit_organization_view(request, organization_id):
             if form.is_valid():
                 update_organization_from_form(form=form, organization=organization)
                 organization = get_object_or_404(Organization, pk=organization_id)
-                print(organization)
-                print(f"{organization} newly edited value")
                 owner = organization.owner.user if organization.owner else None
                 messages.success(request, "Organization updated successfully!")
                 context = {
@@ -235,7 +233,6 @@ def edit_organization_view(request, organization_id):
                 return response
             else:
                 messages.error(request, "Please correct the errors below.")
-                print("it good heere and org is ", organization)
                 context = {
                     "form": form,
                     "is_oob": True,

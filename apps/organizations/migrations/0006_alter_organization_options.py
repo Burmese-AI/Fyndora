@@ -4,14 +4,18 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0005_alter_organization_owner'),
+        ("organizations", "0005_alter_organization_owner"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
-            options={'ordering': ['-created_at'], 'permissions': [('edit_organization', 'Can edit organization')], 'verbose_name': 'organization', 'verbose_name_plural': 'organizations'},
+            name="organization",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": [("edit_organization", "Can edit organization")],
+                "verbose_name": "organization",
+                "verbose_name_plural": "organizations",
+            },
         ),
     ]

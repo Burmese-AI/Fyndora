@@ -20,10 +20,11 @@ from .selectors import (
 from apps.attachments.constants import AttachmentType
 from apps.attachments.models import Attachment
 
-def create_org_expense_entry_with_attachments(*, org_member, amount, description, attachments):
 
+def create_org_expense_entry_with_attachments(
+    *, org_member, amount, description, attachments
+):
     with transaction.atomic():
-        
         entry = Entry.objects.create(
             entry_type=EntryType.ORG_EXP,
             amount=amount,
@@ -31,19 +32,25 @@ def create_org_expense_entry_with_attachments(*, org_member, amount, description
             submitter=org_member,
             status=EntryStatus.APPROVED,
         )
-        
+
         for file in attachments:
             file_type = AttachmentType.get_file_type_by_extension(file.name)
             Attachment.objects.create(
-                entry=entry,
-                file_url=file,
-                file_type=file_type or AttachmentType.IMAGE
+                entry=entry, file_url=file, file_type=file_type or AttachmentType.IMAGE
             )
-            
+
     return entry
 
 
-def entry_create(*, submitted_by, entry_type, amount, description, workspace=None, workspace_team=None):
+def entry_create(
+    *,
+    submitted_by,
+    entry_type,
+    amount,
+    description,
+    workspace=None,
+    workspace_team=None,
+):
     """
     Service to create a new entry.
     """

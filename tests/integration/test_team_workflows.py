@@ -64,8 +64,8 @@ class TestTeamCreationWorkflows:
         org = OrganizationFactory()
         team = TeamFactory(
             organization=org,
-            title="Elite Fundraising Unit", 
-            custom_remittance_rate=Decimal("95.00")
+            title="Elite Fundraising Unit",
+            custom_remittance_rate=Decimal("95.00"),
         )
 
         assert team.custom_remittance_rate == Decimal("95.00")

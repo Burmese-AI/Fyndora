@@ -38,7 +38,9 @@ class OrganizationForm(forms.ModelForm):
 
         if self.instance and not self.instance._state.adding:
             print("EDIT MODE")
-            organization_queryset = Organization.objects.filter(title=title).exclude(pk=self.instance.pk)
+            organization_queryset = Organization.objects.filter(title=title).exclude(
+                pk=self.instance.pk
+            )
         else:
             print("CREATE MODE")
             organization_queryset = Organization.objects.filter(title=title)

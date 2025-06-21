@@ -264,7 +264,9 @@ class TestWorkspaceBusinessLogicWorkflows:
         # Create organization, workspace with custom rate
         org = OrganizationFactory()
         workspace = WorkspaceFactory(organization=org, remittance_rate=Decimal("88.00"))
-        team = TeamFactory(organization=org, custom_remittance_rate=None)  # No custom rate
+        team = TeamFactory(
+            organization=org, custom_remittance_rate=None
+        )  # No custom rate
         WorkspaceTeamFactory(workspace=workspace, team=team)
 
         # Team should inherit workspace rate when no custom rate
@@ -272,7 +274,9 @@ class TestWorkspaceBusinessLogicWorkflows:
         assert team.custom_remittance_rate is None
 
         # Team with custom rate should override
-        custom_team = TeamFactory(organization=org, custom_remittance_rate=Decimal("95.00"))
+        custom_team = TeamFactory(
+            organization=org, custom_remittance_rate=Decimal("95.00")
+        )
         WorkspaceTeamFactory(workspace=workspace, team=custom_team)
 
         assert custom_team.custom_remittance_rate == Decimal("95.00")
@@ -356,7 +360,7 @@ class TestWorkspaceQueryWorkflows:
 
         # Get workspace teams with members
         workspace_teams = workspace.workspace_teams.all().select_related("team")
-        
+
         for wt in workspace_teams:
             # Access team members through team
             team_members = wt.team.members.all()

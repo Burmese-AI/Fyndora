@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from apps.entries.services import entry_create
 from apps.teams.constants import TeamMemberRole
 from tests.factories import (
-    TeamMemberFactory, 
+    TeamMemberFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
@@ -23,14 +23,15 @@ from tests.factories import (
 @pytest.mark.django_db
 class TestEntryCreateService:
     """Test entry_create service business logic."""
-    
+
     def setup_method(self, method):
         """Set up test data."""
         self.submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        self.workspace = WorkspaceFactory(organization=self.submitter.organization_member.organization)
+        self.workspace = WorkspaceFactory(
+            organization=self.submitter.organization_member.organization
+        )
         self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace, 
-            team=self.submitter.team
+            workspace=self.workspace, team=self.submitter.team
         )
 
     def test_entry_create_with_valid_submitter(self):
@@ -134,13 +135,13 @@ class TestEntryCreateService:
         entry = entry_create(
             submitted_by=self.submitter,
             entry_type="disbursement",
-            amount=Decimal('0.01'),
+            amount=Decimal("0.01"),
             description="Small expense",
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
 
-        assert entry.amount == Decimal('0.01')
+        assert entry.amount == Decimal("0.01")
 
     def test_entry_create_with_long_description(self):
         """Test entry creation with maximum length description."""

@@ -8,5 +8,5 @@ register = template.Library()
 def millify_number(value, precision=1):
     try:
         return millify(float(value), precision=int(precision))
-    except:
-        return value
+    except Exception as e:
+        print(f"Error in millify_number: {e}")

@@ -77,11 +77,9 @@ def entry_create(
 
     entry = Entry()
 
-    # transaction.atomic ensures all-or-nothing operation
     with transaction.atomic():
         entry = model_update(entry, entry_data)
 
-        # Create audit trail
         audit_create(
             user=submitted_by.organization_member.user,
             action_type="entry_created",
@@ -90,6 +88,157 @@ def entry_create(
                 "entry_type": entry_type,
                 "amount": str(amount),
                 "description": description,
+            },
+        )
+
+    return entry
+
+
+def _validate_review_data(*, status, notes=None):
+    """
+    Helper function to validate review data.
+    """
+    if status not in [EntryStatus.APPROVED, EntryStatus.REJECTED, EntryStatus.FLAGGED]:
+        raise ValidationError(f"Invalid review status: {status}")
+
+    # Require notes for reject and flag operations
+    if status in [EntryStatus.REJECTED, EntryStatus.FLAGGED] and not notes:
+        raise ValidationError(f"Notes are required when {status} an entry")
+
+
+def entry_review(*, entry, reviewer, status, notes=None):
+    """
+    Service to review an entry (approve, reject, flag).
+    """
+    _validate_review_data(status=status, notes=notes)
+
+    if (
+        entry.status != EntryStatus.PENDING_REVIEW
+        and entry.status != EntryStatus.FLAGGED
+    ):
+        raise ValidationError(f"Cannot review entry with status: {entry.status}")
+
+    old_status = entry.status
+
+    entry_data = {
+        "status": status,
+        "reviewed_by": reviewer,
+        "review_notes": notes or "",
+    }
+
+    with transaction.atomic():
+        entry = model_update(entry, entry_data)
+
+        audit_create(
+            user=reviewer.user,
+            action_type="status_changed",
+            target_entity=entry,
+            metadata={
+                "old_status": old_status,
+                "new_status": status,
+                "review_notes": notes or "",
+            },
+        )
+
+    return entry
+
+
+def approve_entry(*, entry, reviewer, notes=None):
+    """
+    Service to approve an entry.
+    """
+    return entry_review(
+        entry=entry, reviewer=reviewer, status=EntryStatus.APPROVED, notes=notes
+    )
+
+
+def reject_entry(*, entry, reviewer, notes):
+    """
+    Service to reject an entry.
+    """
+    return entry_review(
+        entry=entry, reviewer=reviewer, status=EntryStatus.REJECTED, notes=notes
+    )
+
+
+def flag_entry(*, entry, reviewer, notes):
+    """
+    Service to flag an entry for further review.
+    """
+    return entry_review(
+        entry=entry, reviewer=reviewer, status=EntryStatus.FLAGGED, notes=notes
+    )
+
+
+def bulk_review_entries(*, entries, reviewer, status, notes=None):
+    """
+    Service to review multiple entries at once.
+    """
+    _validate_review_data(status=status, notes=notes)
+
+    reviewed_entries = []
+
+    with transaction.atomic():
+        for entry in entries:
+            old_status = entry.status
+
+            if (
+                entry.status != EntryStatus.PENDING_REVIEW
+                and entry.status != EntryStatus.FLAGGED
+            ):
+                continue  # Skip entries that can't be reviewed
+
+            entry_data = {
+                "status": status,
+                "reviewed_by": reviewer,
+                "review_notes": notes or "",
+            }
+
+            entry = model_update(entry, entry_data)
+            reviewed_entries.append(entry)
+
+            audit_create(
+                user=reviewer.user,
+                action_type="status_changed",
+                target_entity=entry,
+                metadata={
+                    "old_status": old_status,
+                    "new_status": status,
+                    "review_notes": notes or "",
+                    "bulk_operation": True,
+                },
+            )
+
+    return reviewed_entries
+
+
+def entry_update(*, entry, updated_by, **fields_to_update):
+    """
+    Service to update an existing entry.
+    """
+    allowed_fields = ["description", "amount", "workspace", "workspace_team"]
+    update_data = {}
+
+    # Filter allowed fields
+    for field, value in fields_to_update.items():
+        if field in allowed_fields:
+            update_data[field] = value
+
+    if not update_data:
+        raise ValidationError("No valid fields to update")
+
+    if entry.status == EntryStatus.APPROVED:
+        raise ValidationError("Cannot update an approved entry")
+
+    with transaction.atomic():
+        entry = model_update(entry, update_data)
+
+        audit_create(
+            user=updated_by,
+            action_type="entry_updated",
+            target_entity=entry,
+            metadata={
+                "updated_fields": list(update_data.keys()),
             },
         )
 

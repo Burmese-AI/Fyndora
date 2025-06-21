@@ -115,8 +115,6 @@ def create_organization_view(request):
                 return response
             else:
                 messages.error(request, "Organization creation failed")
-                print("it good heere")
-                print(form.errors)
                 context = {"form": form, "is_oob": True}
                 form_template = render_to_string(
                     "organizations/partials/create_organization_form.html",
@@ -129,11 +127,12 @@ def create_organization_view(request):
                 response = HttpResponse(f"{message_template} {form_template}")
                 return response
     except Exception as e:
-        print(e)
+        print(f"Exception in create_organization_view: {e}")
         messages.error(
             request,
             "An error occurred while creating organization. Please try again later.",
         )
+        form = OrganizationForm()  # Create a new form instance for the error case
         return render(
             request,
             "organizations/partials/create_organization_form.html",
@@ -204,16 +203,28 @@ def settings_view(request, organization_id):
         return render(request, "organizations/settings.html", {"organization": None})
 
 
+@login_required
 def edit_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, organization_id=organization_id)
+
+        if not request.user.has_perm("edit_organization", organization):
+            messages.error(
+                request, "You do not have permission to edit this organization."
+            )
+            response = render(
+                request,
+                "components/error_page.html",
+                {"message": "You do not have permission to edit this organization."},
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
+
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():
                 update_organization_from_form(form=form, organization=organization)
                 organization = get_object_or_404(Organization, pk=organization_id)
-                print(organization)
-                print(f"{organization} newly edited value")
                 owner = organization.owner.user if organization.owner else None
                 messages.success(request, "Organization updated successfully!")
                 context = {
@@ -237,7 +248,6 @@ def edit_organization_view(request, organization_id):
                 return response
             else:
                 messages.error(request, "Please correct the errors below.")
-                print("it good heere and org is ", organization)
                 context = {
                     "form": form,
                     "is_oob": True,
@@ -274,9 +284,22 @@ def edit_organization_view(request, organization_id):
         )
 
 
+@login_required
 def delete_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
+        if not request.user.has_perm("delete_organization", organization):
+            messages.error(
+                request, "You do not have permission to delete this organization."
+            )
+            response = render(
+                request,
+                "components/error_page.html",
+                {"message": "You do not have permission to delete this organization."},
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
+
         if request.method == "POST":
             # delete organization
             organization.delete()

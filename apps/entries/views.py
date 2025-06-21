@@ -39,8 +39,10 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
             context["organization"] = self.organization
             context["stats"] = get_org_expense_stats(self.organization)
         return context
-    
-    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any) -> HttpResponse:
+
+    def render_to_response(
+        self, context: dict[str, Any], **response_kwargs: Any
+    ) -> HttpResponse:
         if self.request.htmx:
             return render(self.request, "entries/partials/table.html", context)
         return super().render_to_response(context, **response_kwargs)
@@ -80,12 +82,12 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        #Create org exp entry with provided attachments
+        # Create org exp entry with provided attachments
         create_org_expense_entry_with_attachments(
             org_member=self.org_member,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
-            attachments=form.cleaned_data["attachment_files"]
+            attachments=form.cleaned_data["attachment_files"],
         )
         messages.success(self.request, "Expense entry submitted successfully")
         if self.request.htmx:
@@ -100,16 +102,19 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
 
     def _render_htmx_success_response(self):
         base_context = self.get_context_data()
-        
-        stat_context = {**base_context, "stats": get_org_expense_stats(self.organization)}
-                
+
+        stat_context = {
+            **base_context,
+            "stats": get_org_expense_stats(self.organization),
+        }
+
         org_exp_entries = get_org_expenses(self.organization)
         table_context = get_paginated_context(
             queryset=org_exp_entries,
             context=base_context,
-            object_name=CONTEXT_OBJECT_NAME
+            object_name=CONTEXT_OBJECT_NAME,
         )
-        
+
         stat_overview_html = render_to_string(
             "components/stat_section.html", context=stat_context, request=self.request
         )
@@ -125,8 +130,12 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
 
     def _render_htmx_error_response(self, form):
         base_context = self.get_context_data()
-        modal_context = {**base_context, "form": form, "organization": self.organization}
-        
+        modal_context = {
+            **base_context,
+            "form": form,
+            "organization": self.organization,
+        }
+
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )

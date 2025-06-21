@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.invitations",
     "apps.teams",
     "apps.remittance",
+    "guardian",
 ]
 
 SITE_ID = 1
@@ -70,6 +71,7 @@ SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # default
     "allauth.account.auth_backends.AuthenticationBackend",  # allauth
+    "guardian.backends.ObjectPermissionBackend",
 ]
 
 MIDDLEWARE = [

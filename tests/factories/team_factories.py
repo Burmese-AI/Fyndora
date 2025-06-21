@@ -8,7 +8,10 @@ from decimal import Decimal
 
 from apps.teams.models import Team, TeamMember
 from apps.teams.constants import TeamMemberRole
-from tests.factories.organization_factories import OrganizationMemberFactory, OrganizationFactory
+from tests.factories.organization_factories import (
+    OrganizationMemberFactory,
+    OrganizationFactory,
+)
 
 
 class TeamFactory(DjangoModelFactory):

@@ -9,8 +9,8 @@
     hx-post="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}"
     hx-swap="none">
 {% csrf_token %}
-<input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}">
-<div class="p-8">
+<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}">
+<div class="p-8"> -->
     <h2 class="text-2xl font-bold text-gray-800 mb-8">Edit Organization</h2>
 
 

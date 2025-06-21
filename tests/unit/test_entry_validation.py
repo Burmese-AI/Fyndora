@@ -151,7 +151,7 @@ class TestEntryCleanValidation:
         # Create an entry with both submitter and workspace_team issues
         # The submitter belongs to a different team than the workspace_team
         different_team = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        
+
         entry = Entry(
             entry_type="income",
             amount=100.00,
@@ -164,15 +164,17 @@ class TestEntryCleanValidation:
 
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
-        
+
         # The error should be about the team mismatch
-        assert "Submitter must belong to the team linked to this Workspace Team" in str(exc_info.value)
+        assert "Submitter must belong to the team linked to this Workspace Team" in str(
+            exc_info.value
+        )
 
     def test_submitter_validation_when_reviewer_valid(self):
         """Test that submitter validation works with valid reviewer."""
         # Create an entry with valid reviewer but invalid submitter (wrong team)
         different_team = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        
+
         entry = Entry(
             entry_type="income",
             amount=100.00,
@@ -188,9 +190,11 @@ class TestEntryCleanValidation:
 
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
-        
+
         # Even with a valid reviewer, the submitter validation should still fail
-        assert "Submitter must belong to the team linked to this Workspace Team" in str(exc_info.value)
+        assert "Submitter must belong to the team linked to this Workspace Team" in str(
+            exc_info.value
+        )
 
     def test_submitter_and_reviewer_can_be_different_people(self):
         """Test that submitter and reviewer must be different team members."""

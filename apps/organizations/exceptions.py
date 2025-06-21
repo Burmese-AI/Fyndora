@@ -20,3 +20,9 @@ class OrganizationUpdateError(OrganizationError):
     """Raised when organization update fails."""
 
     pass
+
+
+class OrganizationPermissionCreationError(OrganizationError):
+    """Raised when organization permission creation fails."""
+
+    pass

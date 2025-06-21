@@ -5,6 +5,7 @@ from apps.organizations.exceptions import (
     OrganizationUpdateError,
 )
 from apps.core.utils import model_update
+from guardian.shortcuts import assign_perm
 
 
 @transaction.atomic
@@ -36,6 +37,8 @@ def create_organization_with_owner(*, form, user) -> Organization:
         organization = model_update(
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
+        assign_perm("edit_organization", user, organization)
+        assign_perm("delete_organization", user, organization)
 
         return organization
     except Exception as e:

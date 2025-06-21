@@ -8,6 +8,7 @@ from apps.core.utils import model_update
 from django.contrib.auth.models import Permission
 from apps.organizations.exceptions import OrganizationPermissionCreationError
 from django.contrib.auth.models import Group
+from guardian.shortcuts import assign_perm
 
 @transaction.atomic
 def create_organization_with_owner(*, form, user) -> Organization:
@@ -38,17 +39,8 @@ def create_organization_with_owner(*, form, user) -> Organization:
         organization = model_update(
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
-        try:
-            permission = Permission.objects.get(codename="edit_organization")
-            print("permission", permission)
-            owner_member.user.user_permissions.add(permission)
-        except Permission.DoesNotExist:
-            print("Failed to create organization permission")
-            raise OrganizationPermissionCreationError("Failed to create organization permission")
-
-        owner_group, _ = Group.objects.get_or_create(name="Organization Owners")
-        owner_member.user.groups.add(owner_group)
-
+        assign_perm("edit_organization", user, organization)
+        
         return organization
     except Exception as e:
         raise OrganizationCreationError(f"Failed to create organization: {str(e)}")

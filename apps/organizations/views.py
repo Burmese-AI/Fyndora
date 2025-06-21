@@ -23,6 +23,7 @@ from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import PermissionDenied
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -203,10 +204,14 @@ def settings_view(request, organization_id):
         return render(request, "organizations/settings.html", {"organization": None})
 
 @login_required
-@permission_required("organizations.edit_organization", raise_exception=True)
 def edit_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, organization_id=organization_id)
+
+        if not request.user.has_perm("edit_organization", organization):
+            messages.error(request, "You do not have permission to edit this organization.")
+            return redirect("dashboard", organization_id=organization_id)
+
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():

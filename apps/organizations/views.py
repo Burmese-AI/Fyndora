@@ -211,7 +211,7 @@ def edit_organization_view(request, organization_id):
 
         if not request.user.has_perm("edit_organization", organization):
             messages.error(request, "You do not have permission to edit this organization.")
-            response = render(request, "components/error-page.html", {"message": "You do not have permission to edit this organization."})
+            response = render(request, "components/error_page.html", {"message": "You do not have permission to edit this organization."})
             response["HX-Retarget"]= "#right-side-content-container"
             return response
         
@@ -280,10 +280,16 @@ def edit_organization_view(request, organization_id):
             {"form": form},
         )
 
-
+@login_required
 def delete_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
+        if not request.user.has_perm("delete_organization", organization):
+            messages.error(request, "You do not have permission to delete this organization.")
+            response = render(request, "components/error_page.html", {"message": "You do not have permission to delete this organization."})
+            response["HX-Retarget"]= "#right-side-content-container"
+            return response
+        
         if request.method == "POST":
             # delete organization
             organization.delete()

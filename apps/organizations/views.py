@@ -22,7 +22,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
-
+from django.contrib.auth.decorators import permission_required
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -127,11 +127,12 @@ def create_organization_view(request):
                 response = HttpResponse(f"{message_template} {form_template}")
                 return response
     except Exception as e:
-        print(e)
+        print(f"Exception in create_organization_view: {e}")
         messages.error(
             request,
             "An error occurred while creating organization. Please try again later.",
         )
+        form = OrganizationForm()  # Create a new form instance for the error case
         return render(
             request,
             "organizations/partials/create_organization_form.html",
@@ -201,7 +202,8 @@ def settings_view(request, organization_id):
         )
         return render(request, "organizations/settings.html", {"organization": None})
 
-
+@login_required
+@permission_required("organizations.edit_organization", raise_exception=True)
 def edit_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, organization_id=organization_id)

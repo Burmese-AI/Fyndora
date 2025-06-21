@@ -40,6 +40,7 @@ def create_organization_with_owner(*, form, user) -> Organization:
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
         assign_perm("edit_organization", user, organization)
+        assign_perm("delete_organization", user, organization)
         
         return organization
     except Exception as e:

@@ -24,6 +24,7 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseRedirect
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -210,7 +211,11 @@ def edit_organization_view(request, organization_id):
 
         if not request.user.has_perm("edit_organization", organization):
             messages.error(request, "You do not have permission to edit this organization.")
-            return redirect("dashboard", organization_id=organization_id)
+            response = render(request, "components/error-page.html", {"message": "You do not have permission to edit this organization."})
+            response["HX-Retarget"]= "#right-side-content-container"
+            return response
+        
+        
 
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)

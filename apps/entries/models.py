@@ -39,7 +39,7 @@ class Entry(baseModel):
     submitted_at = models.DateTimeField(auto_now_add=True)
     entry_type = models.CharField(max_length=20, choices=EntryType.choices)
     amount = models.DecimalField(
-        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))]
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
     )
     description = models.CharField(max_length=255)
     status = models.CharField(
@@ -71,6 +71,36 @@ class Entry(baseModel):
                 "Submitter must be a TeamMember or OrganizationMember."
             )
         return
+
+    @property
+    def is_workspace_specific(self):
+        return self.entry_type == EntryType.WORKSPACE_EXP or self.workspace is not None
+
+    @property
+    def organization(self):
+        """Get the organization this entry belongs to"""
+        if self.workspace:
+            return self.workspace.organization
+        elif isinstance(self.submitter, OrganizationMember):
+            return self.submitter.organization
+        elif isinstance(self.submitter, TeamMember):
+            return self.submitter.organization_member.organization
+        return None
+
+    def clean(self):
+        super().clean()
+        # Require workspace for workspace-specific entry types
+        if self.entry_type == EntryType.WORKSPACE_EXP and not self.workspace:
+            raise ValidationError("Workspace is required for workspace expense entries")
+
+        # Require workspace_team for team-based entries in workspaces
+        if (
+            self.entry_type
+            in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]
+            and isinstance(self.submitter, TeamMember)
+            and not self.workspace_team
+        ):
+            raise ValidationError("Workspace team is required for team-based entries")
 
     class Meta:
         verbose_name = "entry"

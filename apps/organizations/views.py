@@ -115,8 +115,6 @@ def create_organization_view(request):
                 return response
             else:
                 messages.error(request, "Organization creation failed")
-                print("it good heere")
-                print(form.errors)
                 context = {"form": form, "is_oob": True}
                 form_template = render_to_string(
                     "organizations/partials/create_organization_form.html",

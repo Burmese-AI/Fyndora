@@ -23,6 +23,7 @@ from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
 
+
 # from django.core.exceptions import PermissionDenied
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -132,7 +133,9 @@ def edit_workspace_view(request, organization_id, workspace_id):
         organization = get_organization_by_id(organization_id)
 
         if not request.user.has_perm("change_workspace", workspace):
-            messages.error(request, "You do not have permission to edit this workspace.")
+            messages.error(
+                request, "You do not have permission to edit this workspace."
+            )
             context = {
                 "message": "You do not have permission to edit this workspace.",
                 "return_url": f"/{organization_id}/workspaces/",
@@ -208,7 +211,9 @@ def delete_workspace_view(request, organization_id, workspace_id):
         organization = get_organization_by_id(organization_id)
 
         if not request.user.has_perm("delete_workspace", workspace):
-            messages.error(request, "You do not have permission to delete this workspace.")
+            messages.error(
+                request, "You do not have permission to delete this workspace."
+            )
             context = {
                 "message": "You do not have permission to delete this workspace.",
                 "return_url": f"/{organization_id}/workspaces/",
@@ -222,8 +227,10 @@ def delete_workspace_view(request, organization_id, workspace_id):
             return response
         if request.method == "POST":
             workspace.delete()
-            #delete the permissions group
-            group = Group.objects.get(name=f"Workspace Admins - {workspace.title} - {workspace.organization.title}")
+            # delete the permissions group
+            group = Group.objects.get(
+                name=f"Workspace Admins - {workspace.title} - {workspace.organization.title}"
+            )
             group.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)

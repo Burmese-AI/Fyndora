@@ -101,6 +101,14 @@ class Entry(baseModel):
             and not self.workspace_team
         ):
             raise ValidationError("Workspace team is required for team-based entries")
+            
+        # Validate that submitter belongs to the team linked to the workspace_team
+        if (
+            isinstance(self.submitter, TeamMember)
+            and self.workspace_team
+            and self.submitter.team != self.workspace_team.team
+        ):
+            raise ValidationError("Submitter must belong to the team linked to this Workspace Team")
 
     class Meta:
         verbose_name = "entry"

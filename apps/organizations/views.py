@@ -212,10 +212,14 @@ def edit_organization_view(request, organization_id):
             messages.error(
                 request, "You do not have permission to edit this organization."
             )
+            context = {
+                "message": "You do not have permission to edit this organization.",
+                "return_url": f"/{organization_id}/settings/",
+            }
             response = render(
                 request,
                 "components/error_page.html",
-                {"message": "You do not have permission to edit this organization."},
+                context,
             )
             response["HX-Retarget"] = "#right-side-content-container"
             return response

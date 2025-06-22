@@ -23,6 +23,8 @@ from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 
 
+# from django.core.exceptions import PermissionDenied
+@login_required
 def get_workspaces_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
@@ -47,6 +49,22 @@ def create_workspace_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
+        if not orgMember.is_org_owner:
+            messages.error(
+                request,
+                "You do not have permission to create workspaces in this organization.",
+            )
+            context = {
+                "message": "You do not have permission to create workspaces in this organization.",
+                "return_url": f"/{organization_id}/workspaces/",
+            }
+            response = render(
+                request,
+                "components/error_page.html",
+                context,
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
             try:

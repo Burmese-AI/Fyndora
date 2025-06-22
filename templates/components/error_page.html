@@ -9,7 +9,7 @@
     <h1 class="text-2xl font-bold text-base-content mb-4">Error</h1>
     <p class="text-base-content/70 leading-relaxed">{{ message }}</p>
     <div class="mt-8">
-      <a href="{% url 'settings' organization_id=request.resolver_match.kwargs.organization_id %}" class="btn btn-error">
+      <a href="{{ return_url }}" class="btn btn-error">
         <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>

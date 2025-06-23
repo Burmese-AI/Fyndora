@@ -35,15 +35,19 @@ class OrganizationForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        # for edit operation, exclude the current instance
-        if self.instance and self.instance.pk:
+
+        if self.instance and not self.instance._state.adding:
+            print("EDIT MODE")
             organization_queryset = Organization.objects.filter(title=title).exclude(
                 pk=self.instance.pk
             )
         else:
+            print("CREATE MODE")
             organization_queryset = Organization.objects.filter(title=title)
+
         if organization_queryset.exists():
             raise forms.ValidationError("Organization with this title already exists.")
+
         return title
 
     class Meta:

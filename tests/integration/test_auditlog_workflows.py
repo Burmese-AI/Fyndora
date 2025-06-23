@@ -28,6 +28,7 @@ from tests.factories import (
 )
 from tests.factories.entry_factories import EntryFactory
 from tests.factories.team_factories import TeamFactory
+from tests.factories import OrganizationFactory
 
 User = get_user_model()
 
@@ -229,7 +230,8 @@ class TestAuditLogWorkflows(TestCase):
         )
 
         # Simulate team assignment (would be logged by team app)
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         audit_create(
             user=user,
             action_type="entry_created",  # Using available action type

@@ -12,17 +12,18 @@ from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from tests.factories import (
+    DisbursementEntryFactory,
+    EntryFactory,
+    FlaggedEntryFactory,
+    IncomeEntryFactory,
+    OrganizationFactory,
+    PendingEntryFactory,
+    RemittanceEntryFactory,
+    TeamCoordinatorFactory,
     TeamFactory,
     TeamMemberFactory,
-    TeamCoordinatorFactory,
     OperationsReviewerFactory,
     WorkspaceAdminMemberFactory,
-    EntryFactory,
-    IncomeEntryFactory,
-    DisbursementEntryFactory,
-    RemittanceEntryFactory,
-    PendingEntryFactory,
-    FlaggedEntryFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
@@ -35,8 +36,9 @@ class TestEntrySubmissionWorkflows:
 
     def test_complete_entry_submission_workflow(self):
         """Test complete entry submission by team member."""
-        # Create fundraising team with field agent
-        team = TeamFactory(title="Regional Fundraising Team")
+        # Create organization and fundraising team with field agent
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org, title="Regional Fundraising Team")
         field_agent = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Submit financial transaction
@@ -60,7 +62,7 @@ class TestEntrySubmissionWorkflows:
     def test_multiple_entry_types_submission_workflow(self):
         """Test submitting different types of entries."""
         submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        
+
         # Get content type for TeamMember model (not factory)
         team_member_ct = ContentType.objects.get_for_model(TeamMember)
 
@@ -71,8 +73,7 @@ class TestEntrySubmissionWorkflows:
 
         # Verify all entries using content type and object_id
         entries = Entry.objects.filter(
-            submitter_content_type=team_member_ct,
-            submitter_object_id=submitter.pk
+            submitter_content_type=team_member_ct, submitter_object_id=submitter.pk
         )
         assert entries.count() == 3
 
@@ -88,7 +89,7 @@ class TestEntrySubmissionWorkflows:
         # Create workspace and workspace_team directly
         workspace = WorkspaceFactory()
         workspace_team = WorkspaceTeamFactory(team=submitter.team, workspace=workspace)
-            
+
         valid_entry = EntryFactory(
             submitter=submitter,
             entry_type="income",
@@ -110,11 +111,12 @@ class TestEntryReviewWorkflows:
 
     def test_complete_entry_approval_workflow(self):
         """Test complete entry review and approval process."""
-        # Create team with submitter and coordinator
-        team = TeamFactory()
+        # Create organization and team with submitter and coordinator
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
-        
+
         # Get the organization member associated with the coordinator
         coordinator = team_coordinator.organization_member
 
@@ -137,11 +139,12 @@ class TestEntryReviewWorkflows:
 
     def test_entry_rejection_workflow(self):
         """Test entry rejection process."""
-        # Create team with submitter and reviewer
-        team = TeamFactory()
+        # Create organization and team with submitter and reviewer
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_reviewer = OperationsReviewerFactory(team=team)
-        
+
         # Get the organization member associated with the reviewer
         reviewer = team_reviewer.organization_member
 
@@ -163,19 +166,18 @@ class TestEntryReviewWorkflows:
 
     def test_entry_flagging_workflow(self):
         """Test entry flagging for further investigation."""
-        # Create team with submitter and workspace admin
-        team = TeamFactory()
+        # Create organization and team with submitter and workspace admin
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_admin = WorkspaceAdminMemberFactory(team=team)
-        
+
         # Get the organization member associated with the admin
         admin = team_admin.organization_member
 
         # Submit entry - ensure it's an income entry type
         entry = PendingEntryFactory(
-            submitter=submitter, 
-            amount=Decimal("10000.00"),
-            entry_type="income"
+            submitter=submitter, amount=Decimal("10000.00"), entry_type="income"
         )
 
         # Flag entry for investigation
@@ -193,14 +195,15 @@ class TestEntryReviewWorkflows:
 
     def test_reviewer_authorization_workflow(self):
         """Test that only authorized roles can review entries."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Create reviewers with different authorized roles
         team_coordinator = TeamCoordinatorFactory(team=team)
         team_operations_reviewer = OperationsReviewerFactory(team=team)
         team_workspace_admin = WorkspaceAdminMemberFactory(team=team)
-        
+
         # Get the organization members associated with the team members
         coordinator = team_coordinator.organization_member
         operations_reviewer = team_operations_reviewer.organization_member
@@ -268,7 +271,7 @@ class TestEntryStatusTransitionWorkflows:
         # Create a flagged entry with proper OrganizationMember as reviewer
         team_admin = WorkspaceAdminMemberFactory()
         admin = team_admin.organization_member
-        
+
         entry = FlaggedEntryFactory()
         entry.reviewed_by = admin
         entry.save()
@@ -293,7 +296,8 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_approval_workflow(self):
         """Test approving multiple entries in bulk."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
         coordinator = team_coordinator.organization_member
@@ -311,12 +315,12 @@ class TestEntryBulkOperationWorkflows:
 
         # Get content type for TeamMember model (not factory)
         team_member_ct = ContentType.objects.get_for_model(TeamMember)
-        
+
         # Verify all entries approved
         approved_entries = Entry.objects.filter(
             submitter_content_type=team_member_ct,
             submitter_object_id=submitter.pk,
-            status="approved"
+            status="approved",
         )
         assert approved_entries.count() == 5
 
@@ -326,10 +330,11 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_query_workflow(self):
         """Test querying entries by various criteria."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        
+
         # Get content types for TeamMember model (not factory)
         team_member_ct = ContentType.objects.get_for_model(TeamMember)
 
@@ -346,12 +351,10 @@ class TestEntryBulkOperationWorkflows:
 
         # Query by submitter using content type and object_id
         submitter1_entries = Entry.objects.filter(
-            submitter_content_type=team_member_ct,
-            submitter_object_id=submitter1.pk
+            submitter_content_type=team_member_ct, submitter_object_id=submitter1.pk
         )
         submitter2_entries = Entry.objects.filter(
-            submitter_content_type=team_member_ct,
-            submitter_object_id=submitter2.pk
+            submitter_content_type=team_member_ct, submitter_object_id=submitter2.pk
         )
 
         assert submitter1_entries.count() == 3
@@ -366,7 +369,8 @@ class TestEntryWorkflowIntegration:
     def test_entry_team_integration_workflow(self):
         """Test how entries integrate with team structure."""
         # Create team with multiple members
-        team = TeamFactory(title="Accounting Team")
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org, title="Accounting Team")
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_coordinator = TeamCoordinatorFactory(team=team)
@@ -385,15 +389,14 @@ class TestEntryWorkflowIntegration:
 
         # Get content type for TeamMember model (not factory)
         team_member_ct = ContentType.objects.get_for_model(TeamMember)
-        
+
         # Verify team workflow - using team field on submitter_content_type and submitter_object_id
         team_entries = Entry.objects.filter(
-            submitter_content_type=team_member_ct,
-            status="approved"
+            submitter_content_type=team_member_ct, status="approved"
         ).select_related("reviewed_by")
-        
+
         # Filter entries by team members that belong to this team
-        team_member_ids = team.members.values_list('team_member_id', flat=True)
+        team_member_ids = team.members.values_list("team_member_id", flat=True)
         team_entries = team_entries.filter(submitter_object_id__in=team_member_ids)
 
         assert team_entries.count() == 2
@@ -407,14 +410,8 @@ class TestEntryWorkflowIntegration:
         submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
 
         # Create entries with various amounts
-        [
-            EntryFactory(submitter=submitter, amount=Decimal("100.00"))
-            for _ in range(3)
-        ]
-        [
-            EntryFactory(submitter=submitter, amount=Decimal("5000.00"))
-            for _ in range(2)
-        ]
+        [EntryFactory(submitter=submitter, amount=Decimal("100.00")) for _ in range(3)]
+        [EntryFactory(submitter=submitter, amount=Decimal("5000.00")) for _ in range(2)]
 
         # Query by amount ranges
         small_amount_entries = Entry.objects.filter(amount__lt=Decimal("1000.00"))
@@ -432,11 +429,12 @@ class TestEntryWorkflowIntegration:
 
     def test_entry_review_chain_workflow(self):
         """Test complex review chain with multiple reviewers."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         team_reviewer1 = OperationsReviewerFactory(team=team)
         team_reviewer2 = WorkspaceAdminMemberFactory(team=team)
-        
+
         # Get the organization members
         reviewer1 = team_reviewer1.organization_member
         reviewer2 = team_reviewer2.organization_member

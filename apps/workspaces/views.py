@@ -21,8 +21,11 @@ from apps.workspaces.exceptions import AddTeamToWorkspaceError
 from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
+from django.contrib.auth.models import Group
 
 
+# from django.core.exceptions import PermissionDenied
+@login_required
 def get_workspaces_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
@@ -47,6 +50,22 @@ def create_workspace_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
+        if not orgMember.is_org_owner:
+            messages.error(
+                request,
+                "You do not have permission to create workspaces in this organization.",
+            )
+            context = {
+                "message": "You do not have permission to create workspaces in this organization.",
+                "return_url": f"/{organization_id}/workspaces/",
+            }
+            response = render(
+                request,
+                "components/error_page.html",
+                context,
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
             try:
@@ -113,6 +132,22 @@ def edit_workspace_view(request, organization_id, workspace_id):
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
 
+        if not request.user.has_perm("change_workspace", workspace):
+            messages.error(
+                request, "You do not have permission to edit this workspace."
+            )
+            context = {
+                "message": "You do not have permission to edit this workspace.",
+                "return_url": f"/{organization_id}/workspaces/",
+            }
+            response = render(
+                request,
+                "components/error_page.html",
+                context,
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
+
         if request.method == "POST":
             form = WorkspaceForm(
                 request.POST, instance=workspace, organization=organization
@@ -174,8 +209,29 @@ def delete_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
+
+        if not request.user.has_perm("delete_workspace", workspace):
+            messages.error(
+                request, "You do not have permission to delete this workspace."
+            )
+            context = {
+                "message": "You do not have permission to delete this workspace.",
+                "return_url": f"/{organization_id}/workspaces/",
+            }
+            response = render(
+                request,
+                "components/error_page.html",
+                context,
+            )
+            response["HX-Retarget"] = "#right-side-content-container"
+            return response
         if request.method == "POST":
             workspace.delete()
+            # delete the permissions group
+            group = Group.objects.get(
+                name=f"Workspace Admins - {workspace.title} - {workspace.organization.title}"
+            )
+            group.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
             workspaces = get_workspaces_with_team_counts(organization_id)

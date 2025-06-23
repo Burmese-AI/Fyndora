@@ -35,6 +35,7 @@ class TestTeamCreationWorkflows:
 
         # Create fundraising team with coordinator
         team = TeamFactory(
+            organization=org,
             title="Downtown Fundraising Team",
             description="Urban fundraising and outreach team",
             team_coordinator=coordinator_member,
@@ -46,6 +47,7 @@ class TestTeamCreationWorkflows:
         assert team.team_coordinator == coordinator_member
         assert team.created_by == coordinator_member
         assert team.team_coordinator.organization == org
+        assert team.organization == org
 
         # Create team member entry for coordinator
         team_member = TeamCoordinatorFactory(
@@ -59,20 +61,25 @@ class TestTeamCreationWorkflows:
 
     def test_team_with_custom_remittance_rate_workflow(self):
         """Test team creation with custom remittance rate."""
+        org = OrganizationFactory()
         team = TeamFactory(
-            title="Elite Fundraising Unit", custom_remittance_rate=Decimal("95.00")
+            organization=org,
+            title="Elite Fundraising Unit",
+            custom_remittance_rate=Decimal("95.00"),
         )
 
         assert team.custom_remittance_rate == Decimal("95.00")
         assert team.title == "Elite Fundraising Unit"
+        assert team.organization == org
 
     def test_team_unique_title_constraint(self):
         """Test that fundraising team titles must be unique across all teams."""
-        TeamFactory(title="North Valley Fundraising Team")
+        org = OrganizationFactory()
+        TeamFactory(organization=org, title="North Valley Fundraising Team")
 
         # Attempting to create another team with same title should fail
         with pytest.raises(IntegrityError):
-            TeamFactory(title="North Valley Fundraising Team")
+            TeamFactory(organization=org, title="North Valley Fundraising Team")
 
 
 @pytest.mark.integration
@@ -84,7 +91,7 @@ class TestTeamMembershipWorkflows:
         """Test adding multiple members with different roles to a team."""
         # Setup
         org = OrganizationFactory()
-        team = TeamFactory()
+        team = TeamFactory(organization=org)
 
         # Create organization members
         coord_org_member = OrganizationMemberFactory(organization=org)
@@ -122,8 +129,9 @@ class TestTeamMembershipWorkflows:
 
     def test_team_member_unique_constraint_workflow(self):
         """Test that organization member can only be added once per team."""
-        team = TeamFactory()
-        org_member = OrganizationMemberFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
+        org_member = OrganizationMemberFactory(organization=org)
 
         # Add member first time - should succeed
         TeamMemberFactory(team=team, organization_member=org_member)
@@ -134,9 +142,10 @@ class TestTeamMembershipWorkflows:
 
     def test_organization_member_multiple_teams_workflow(self):
         """Test that organization member can be in multiple different teams."""
-        org_member = OrganizationMemberFactory()
-        team1 = TeamFactory(title="West Coast Fundraising")
-        team2 = TeamFactory(title="East Coast Operations")
+        org = OrganizationFactory()
+        org_member = OrganizationMemberFactory(organization=org)
+        team1 = TeamFactory(organization=org, title="West Coast Fundraising")
+        team2 = TeamFactory(organization=org, title="East Coast Operations")
 
         # Add same org member to different teams
         member1 = TeamMemberFactory(
@@ -161,7 +170,7 @@ class TestTeamHierarchyWorkflows:
     def test_team_coordinator_assignment_workflow(self):
         """Test assigning and reassigning team coordinators."""
         org = OrganizationFactory()
-        team = TeamFactory()
+        team = TeamFactory(organization=org)
 
         # Create two potential coordinators
         coord1_org_member = OrganizationMemberFactory(organization=org)
@@ -191,7 +200,8 @@ class TestTeamHierarchyWorkflows:
 
     def test_reviewer_hierarchy_workflow(self):
         """Test that reviewers can review submissions from submitters."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
 
         # Create reviewer and submitter
         reviewer = OperationsReviewerFactory(team=team)
@@ -219,9 +229,9 @@ class TestTeamQueryWorkflows:
         coordinator_member = OrganizationMemberFactory(organization=org)
 
         # Create teams with this coordinator
-        team1 = TeamFactory(team_coordinator=coordinator_member)
-        team2 = TeamFactory(team_coordinator=coordinator_member)
-        team3 = TeamFactory()  # Different coordinator
+        team1 = TeamFactory(organization=org, team_coordinator=coordinator_member)
+        team2 = TeamFactory(organization=org, team_coordinator=coordinator_member)
+        team3 = TeamFactory(organization=org)  # Different coordinator
 
         # Query teams by coordinator
         coordinated_teams = Team.objects.filter(team_coordinator=coordinator_member)
@@ -233,7 +243,8 @@ class TestTeamQueryWorkflows:
 
     def test_get_team_members_by_role_workflow(self):
         """Test getting team members filtered by role."""
-        team = TeamFactory()
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org)
 
         # Add members with different roles
         coord = TeamCoordinatorFactory(team=team)
@@ -258,12 +269,13 @@ class TestTeamQueryWorkflows:
 
     def test_get_organization_member_teams_workflow(self):
         """Test getting all teams for a specific organization member."""
-        org_member = OrganizationMemberFactory()
+        org = OrganizationFactory()
+        org_member = OrganizationMemberFactory(organization=org)
 
         # Add to multiple teams with different roles
-        team1 = TeamFactory()
-        team2 = TeamFactory()
-        team3 = TeamFactory()
+        team1 = TeamFactory(organization=org)
+        team2 = TeamFactory(organization=org)
+        team3 = TeamFactory(organization=org)
 
         TeamMemberFactory(
             team=team1, organization_member=org_member, role=TeamMemberRole.SUBMITTER

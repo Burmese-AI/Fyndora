@@ -9,6 +9,7 @@ from decimal import Decimal
 from datetime import date, timedelta
 from django.db import IntegrityError
 
+from apps.teams.constants import TeamMemberRole
 from apps.workspaces.models import Workspace
 from apps.workspaces.constants import StatusChoices
 from tests.factories import (
@@ -21,6 +22,7 @@ from tests.factories import (
     WorkspaceTeamFactory,
     TeamFactory,
     TeamMemberFactory,
+    TeamCoordinatorFactory,
 )
 
 
@@ -105,11 +107,12 @@ class TestWorkspaceTeamManagementWorkflows:
 
     def test_add_multiple_teams_to_workspace_workflow(self):
         """Test adding multiple teams to a workspace."""
-        # Create campaign workspace and fundraising teams
-        workspace = WorkspaceFactory(title="Holiday Campaign 2024")
-        team1 = TeamFactory(title="Door-to-Door Fundraising")
-        team2 = TeamFactory(title="Digital Outreach Team")
-        team3 = TeamFactory(title="Corporate Partnership Team")
+        # Create organization, campaign workspace and fundraising teams
+        org = OrganizationFactory()
+        workspace = WorkspaceFactory(title="Holiday Campaign 2024", organization=org)
+        team1 = TeamFactory(organization=org, title="Door-to-Door Fundraising")
+        team2 = TeamFactory(organization=org, title="Digital Outreach Team")
+        team3 = TeamFactory(organization=org, title="Corporate Partnership Team")
 
         # Add teams to workspace
         WorkspaceTeamFactory(workspace=workspace, team=team1)
@@ -132,9 +135,10 @@ class TestWorkspaceTeamManagementWorkflows:
 
     def test_team_multiple_workspaces_workflow(self):
         """Test that a team can be assigned to multiple workspaces."""
-        team = TeamFactory(title="Shared Team")
-        workspace1 = WorkspaceFactory(title="Workspace Alpha")
-        workspace2 = WorkspaceFactory(title="Workspace Beta")
+        org = OrganizationFactory()
+        team = TeamFactory(organization=org, title="Shared Team")
+        workspace1 = WorkspaceFactory(title="Workspace Alpha", organization=org)
+        workspace2 = WorkspaceFactory(title="Workspace Beta", organization=org)
 
         # Add same team to different workspaces
         wt1 = WorkspaceTeamFactory(workspace=workspace1, team=team)
@@ -155,8 +159,9 @@ class TestWorkspaceTeamManagementWorkflows:
 
     def test_workspace_team_unique_constraint_workflow(self):
         """Test that team can only be added once per workspace."""
-        workspace = WorkspaceFactory()
-        team = TeamFactory()
+        org = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=org)
+        team = TeamFactory(organization=org)
 
         # Add team first time - should succeed
         WorkspaceTeamFactory(workspace=workspace, team=team)
@@ -167,8 +172,9 @@ class TestWorkspaceTeamManagementWorkflows:
 
     def test_remove_team_from_workspace_workflow(self):
         """Test removing team from workspace."""
-        workspace = WorkspaceFactory()
-        team = TeamFactory()
+        org = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=org)
+        team = TeamFactory(organization=org)
         workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
 
         # Verify team is in workspace
@@ -255,9 +261,12 @@ class TestWorkspaceBusinessLogicWorkflows:
 
     def test_workspace_remittance_rate_inheritance_workflow(self):
         """Test remittance rate inheritance from workspace to teams."""
-        # Create workspace with custom rate
-        workspace = WorkspaceFactory(remittance_rate=Decimal("88.00"))
-        team = TeamFactory(custom_remittance_rate=None)  # No custom rate
+        # Create organization, workspace with custom rate
+        org = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=org, remittance_rate=Decimal("88.00"))
+        team = TeamFactory(
+            organization=org, custom_remittance_rate=None
+        )  # No custom rate
         WorkspaceTeamFactory(workspace=workspace, team=team)
 
         # Team should inherit workspace rate when no custom rate
@@ -265,7 +274,9 @@ class TestWorkspaceBusinessLogicWorkflows:
         assert team.custom_remittance_rate is None
 
         # Team with custom rate should override
-        custom_team = TeamFactory(custom_remittance_rate=Decimal("95.00"))
+        custom_team = TeamFactory(
+            organization=org, custom_remittance_rate=Decimal("95.00")
+        )
         WorkspaceTeamFactory(workspace=workspace, team=custom_team)
 
         assert custom_team.custom_remittance_rate == Decimal("95.00")
@@ -338,21 +349,27 @@ class TestWorkspaceQueryWorkflows:
 
     def test_get_workspace_teams_with_members_workflow(self):
         """Test getting workspace teams with their members."""
-        workspace = WorkspaceFactory()
-        team = TeamFactory()
+        org = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=org)
+        team = TeamFactory(organization=org)
         WorkspaceTeamFactory(workspace=workspace, team=team)
 
         # Add members to team
-        member1 = TeamMemberFactory(team=team)
-        member2 = TeamMemberFactory(team=team)
+        TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
+        TeamCoordinatorFactory(team=team)
 
-        # Query workspace teams with members
-        workspace_teams = workspace.workspace_teams.select_related("team").all()
+        # Get workspace teams with members
+        workspace_teams = workspace.workspace_teams.all().select_related("team")
 
         for wt in workspace_teams:
+            # Access team members through team
             team_members = wt.team.members.all()
-            assert member1 in team_members
-            assert member2 in team_members
+            assert team_members.count() == 2
+
+            # Should have different roles
+            roles = [tm.role for tm in team_members]
+            assert TeamMemberRole.SUBMITTER in roles
+            assert TeamMemberRole.TEAM_COORDINATOR in roles
 
     def test_get_admin_workspaces_workflow(self):
         """Test getting all workspaces administered by a member."""

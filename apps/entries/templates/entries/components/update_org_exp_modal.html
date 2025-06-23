@@ -17,7 +17,7 @@
   <!-- Form -->
   <form
     {% if form.instance.pk %}
-      hx-post="{% url 'home' %}"
+      hx-post="{% url 'organization_expense_update' organization_id=organization.pk pk=entry.pk %}"
     {% else %}
       hx-post="{% url 'organization_expenses_create' organization_id=organization.pk %}"
     {% endif %}

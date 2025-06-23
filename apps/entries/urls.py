@@ -13,7 +13,7 @@ urlpatterns = [
         name="organization_expenses_create",
     ),
     path(
-        "expenses/<uuid:organization_expense_entry_id>/",
+        "expenses/<uuid:pk>/",
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update"
     )

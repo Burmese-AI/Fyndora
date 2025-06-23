@@ -10,7 +10,6 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
         required=True,
         widget=MultipleFileInput(
             attrs={
-                "required": True,
                 "class": "file-input file-input-neutral w-full text-sm",
             }
         ),
@@ -37,11 +36,14 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        print("Full kwargs received:", kwargs)  # 👈 Debugging line
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         self.is_update = kwargs.pop("is_update", False)
         super().__init__(*args, **kwargs)
         self.fields["attachment_files"].required = not self.is_update
+        print(f"Is Update Mode: {self.is_update}")
+        print(f"Attachment Required: {self.fields['attachment_files'].required}")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -58,8 +60,6 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
                 "Only the owner of the organization can submit expenses."
             )
             
-        validate_uploaded_files(cleaned_data.get("attachment_files"))
-
         validate_uploaded_files(cleaned_data.get("attachment_files"))
 
         return cleaned_data

@@ -43,7 +43,7 @@
       </li>
       <li>
         <a 
-          hx-get="{% url 'organization_expense_update' organization_id=organization.pk organization_expense_entry_id=entry.pk %}"
+          hx-get="{% url 'organization_expense_update' organization_id=organization.pk pk=entry.pk %}"
           hx-target="#modal-placeholder"
           hx-swap="innerHTML"
           class="flex items-center gap-2"

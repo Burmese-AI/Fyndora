@@ -21,3 +21,26 @@ def assign_workspace_permissions(workspace):
 
     # Give permission to the organization owner
     group.user_set.add(workspace.organization.owner.user)
+
+
+
+
+def update_workspace_admin_group(workspace, previous_admin, new_admin):
+    """
+    Updates the workspace admin group membership.
+
+    Args:
+        workspace (Workspace): The workspace instance.
+        previous_admin (UserProfile or None): The previous admin.
+        new_admin (UserProfile or None): The new admin.
+    """
+    if previous_admin == new_admin:
+        return  # No change
+
+    group_name = f"Workspace Admins - {workspace.workspace_id}"
+    group, _ = Group.objects.get_or_create(name=group_name)
+
+    if previous_admin:
+        group.user_set.remove(previous_admin.user)
+    if new_admin:
+        group.user_set.add(new_admin.user)

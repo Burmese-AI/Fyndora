@@ -48,9 +48,6 @@ def update_workspace_admin_group(workspace, previous_admin, new_admin):
         group.user_set.add(new_admin.user)
 
 
-
-
-
 def check_org_owner_permission(request, org_member, organization_id):
     """
     Checks if the user is the organization owner. If not, returns an error response.
@@ -67,7 +64,9 @@ def check_org_owner_permission(request, org_member, organization_id):
         error_msg = "You do not have permission to do action in this organization."
         messages.error(request, error_msg)
 
-        return_url = reverse("workspace_list", kwargs={"organization_id": organization_id})
+        return_url = reverse(
+            "workspace_list", kwargs={"organization_id": organization_id}
+        )
         context = {
             "message": error_msg,
             "return_url": return_url,

@@ -22,6 +22,8 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
+from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
+from apps.workspaces.permissions import check_org_owner_permission
 
 
 # Create your views here.
@@ -189,7 +191,12 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
-        print(organization)
+        orgMember = get_orgMember_by_user_id_and_organization_id(
+            request.user.user_id, organization_id
+        )
+        response = check_org_owner_permission(request, orgMember, organization_id)
+        if response:
+            return response
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,

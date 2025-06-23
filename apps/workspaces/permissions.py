@@ -1,8 +1,6 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
-from django.contrib import messages
-from django.shortcuts import render
-from django.urls import reverse
+from django.core.exceptions import PermissionDenied
 
 
 def assign_workspace_permissions(workspace):
@@ -62,18 +60,6 @@ def check_org_owner_permission(request, org_member, organization_id):
     """
     if not org_member.is_org_owner:
         error_msg = "You do not have permission to do action in this organization."
-        messages.error(request, error_msg)
-
-        return_url = reverse(
-            "workspace_list", kwargs={"organization_id": organization_id}
-        )
-        context = {
-            "message": error_msg,
-            "return_url": return_url,
-        }
-
-        response = render(request, "components/error_page.html", context)
-        response["HX-Retarget"] = "#right-side-content-container"
-        return response
+        raise PermissionDenied(error_msg)
 
     return None

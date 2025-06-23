@@ -25,9 +25,7 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
         workspace.created_by = orgMember
         workspace.save()
 
-        group_name = (
-            f"Workspace Admins - {workspace.workspace_id}"
-        )
+        group_name = f"Workspace Admins - {workspace.workspace_id}"
         group, _ = Group.objects.get_or_create(name=group_name)
         print("this is the group", group.name)
 
@@ -45,34 +43,31 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
 
 
 @transaction.atomic
-def update_workspace_from_form(*, form, workspace, previous_workspace_admin) -> Workspace:
+def update_workspace_from_form(
+    *, form, workspace, previous_workspace_admin
+) -> Workspace:
     """
     Updates a workspace from a form.
     """
     try:
-
         workspace = model_update(workspace, form.cleaned_data)
         previous_workspace_admin = previous_workspace_admin
         new_workspace_admin = form.cleaned_data.get("workspace_admin")
         if previous_workspace_admin != new_workspace_admin:
-            group_name = (
-                f"Workspace Admins - {workspace.workspace_id}"
-            )
-            print("this is the group name", group_name)
+            group_name = f"Workspace Admins - {workspace.workspace_id}"
             group, _ = Group.objects.get_or_create(name=group_name)
-            
+
             # Add new workspace admin if not None
             if new_workspace_admin is not None:
                 group.user_set.add(new_workspace_admin.user)
-            
+
             # Remove previous workspace admin if not None
             if previous_workspace_admin is not None:
                 group.user_set.remove(previous_workspace_admin.user)
-                
+
         return workspace
     except Exception as e:
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")
-
 
 
 def remove_team_from_workspace(workspace_id, team_id):

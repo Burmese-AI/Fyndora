@@ -74,7 +74,9 @@ class TestEntryCreateService:
                 workspace_team=self.workspace_team,
             )
 
-        assert "Ensure this value is greater than or equal to 0.01" in str(exc_info.value)  
+        assert "Ensure this value is greater than or equal to 0.01" in str(
+            exc_info.value
+        )
 
     def test_entry_create_fails_with_negative_amount(self):
         """Test entry creation fails with negative amount."""
@@ -88,7 +90,9 @@ class TestEntryCreateService:
                 workspace_team=self.workspace_team,
             )
 
-        assert "Ensure this value is greater than or equal to 0.01" in str(exc_info.value)
+        assert "Ensure this value is greater than or equal to 0.01" in str(
+            exc_info.value
+        )
 
     def test_entry_create_with_different_entry_types(self):
         """Test entry creation with different entry types."""
@@ -187,7 +191,9 @@ class TestEntryCreateService:
                 workspace_team=self.workspace_team,
             )
 
-        assert "Workspace is required for workspace expense entries" in str(exc_info.value)
+        assert "Workspace is required for workspace expense entries" in str(
+            exc_info.value
+        )
 
     def test_entry_create_fails_without_workspace_team_for_team_entries(self):
         with pytest.raises(ValidationError) as exc_info:
@@ -199,7 +205,9 @@ class TestEntryCreateService:
                 workspace=self.workspace,
             )
 
-        assert "Workspace team is required for team-based entries" in str(exc_info.value)
+        assert "Workspace team is required for team-based entries" in str(
+            exc_info.value
+        )
 
 
 @pytest.mark.unit
@@ -550,27 +558,29 @@ class TestEntryUpdateService:
 @pytest.mark.django_db
 class TestCreateOrgExpenseEntryService:
     """Test create_org_expense_entry_with_attachments service."""
-    
+
     def setup_method(self, method):
         """Set up test data."""
         self.org_member = OrganizationMemberFactory()
-    
+
     @patch("apps.entries.services.Attachment.objects.create")
     @patch("apps.attachments.constants.AttachmentType.get_file_type_by_extension")
-    def test_create_org_expense_entry_with_attachments(self, mock_get_file_type, mock_attachment_create):
+    def test_create_org_expense_entry_with_attachments(
+        self, mock_get_file_type, mock_attachment_create
+    ):
         """Test creating an org expense entry with attachments."""
         from apps.attachments.constants import AttachmentType
-        
+
         # Create mock files
         mock_file1 = MagicMock()
         mock_file1.name = "receipt.pdf"
         mock_file2 = MagicMock()
         mock_file2.name = "invoice.jpg"
-        
+
         # Setup mock return values
         mock_get_file_type.side_effect = [AttachmentType.PDF, AttachmentType.IMAGE]
         mock_attachment_create.return_value = MagicMock()
-        
+
         # Call the service function
         entry = create_org_expense_entry_with_attachments(
             org_member=self.org_member,
@@ -578,21 +588,17 @@ class TestCreateOrgExpenseEntryService:
             description="Office supplies",
             attachments=[mock_file1, mock_file2],
         )
-        
+
         # Verify entry was created correctly
         assert entry.entry_type == EntryType.ORG_EXP
         assert entry.amount == Decimal("200.00")
         assert entry.status == EntryStatus.APPROVED
-        
+
         # Verify attachment creation was called
         assert mock_attachment_create.call_count == 2
         mock_attachment_create.assert_any_call(
-            entry=entry, 
-            file_url=mock_file1, 
-            file_type=AttachmentType.PDF
+            entry=entry, file_url=mock_file1, file_type=AttachmentType.PDF
         )
         mock_attachment_create.assert_any_call(
-            entry=entry, 
-            file_url=mock_file2, 
-            file_type=AttachmentType.IMAGE
+            entry=entry, file_url=mock_file2, file_type=AttachmentType.IMAGE
         )

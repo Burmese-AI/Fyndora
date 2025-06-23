@@ -155,7 +155,11 @@ def edit_workspace_view(request, organization_id, workspace_id):
             )
             try:
                 if form.is_valid():
-                    update_workspace_from_form(form=form, workspace=workspace, previous_workspace_admin=previous_workspace_admin)
+                    update_workspace_from_form(
+                        form=form,
+                        workspace=workspace,
+                        previous_workspace_admin=previous_workspace_admin,
+                    )
                     workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
                         "workspaces": workspaces,
@@ -227,9 +231,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
             response["HX-Retarget"] = "#right-side-content-container"
             return response
         if request.method == "POST":
-            group_name = (
-            f"Workspace Admins - {workspace_id}"
-        )
+            group_name = f"Workspace Admins - {workspace_id}"
             group = Group.objects.filter(name=group_name).first()
             group.delete()
             workspace.delete()

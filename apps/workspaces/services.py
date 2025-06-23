@@ -26,9 +26,10 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
         workspace.save()
 
         group_name = (
-            f"Workspace Admins - {workspace.title} - {workspace.organization.title}"
+            f"Workspace Admins - {workspace.workspace_id}"
         )
         group, _ = Group.objects.get_or_create(name=group_name)
+        print("this is the group", group.name)
 
         assign_perm("change_workspace", group, workspace)
         assign_perm("delete_workspace", group, workspace)

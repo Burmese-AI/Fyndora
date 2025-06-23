@@ -226,12 +226,12 @@ def delete_workspace_view(request, organization_id, workspace_id):
             response["HX-Retarget"] = "#right-side-content-container"
             return response
         if request.method == "POST":
-            workspace.delete()
-            # delete the permissions group
-            group = Group.objects.get(
-                name=f"Workspace Admins - {workspace.title} - {workspace.organization.title}"
-            )
+            group_name = (
+            f"Workspace Admins - {workspace_id}"
+        )
+            group = Group.objects.filter(name=group_name).first()
             group.delete()
+            workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
             workspaces = get_workspaces_with_team_counts(organization_id)

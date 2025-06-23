@@ -3,8 +3,10 @@ from apps.workspaces.models import Workspace
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.core.utils import model_update
 from apps.workspaces.models import WorkspaceTeam
-from django.contrib.auth.models import Group
-from apps.workspaces.permissions import assign_workspace_permissions, update_workspace_admin_group
+from apps.workspaces.permissions import (
+    assign_workspace_permissions,
+    update_workspace_admin_group,
+)
 
 
 @transaction.atomic
@@ -41,7 +43,9 @@ def update_workspace_from_form(
     try:
         workspace = model_update(workspace, form.cleaned_data)
         new_workspace_admin = form.cleaned_data.get("workspace_admin")
-        update_workspace_admin_group(workspace, previous_workspace_admin, new_workspace_admin)
+        update_workspace_admin_group(
+            workspace, previous_workspace_admin, new_workspace_admin
+        )
 
         return workspace
     except Exception as e:

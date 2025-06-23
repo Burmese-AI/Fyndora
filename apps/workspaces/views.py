@@ -22,7 +22,6 @@ from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
-from apps.workspaces.permissions import assign_workspace_permissions
 
 
 # from django.core.exceptions import PermissionDenied

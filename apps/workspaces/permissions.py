@@ -1,6 +1,7 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
 
+
 def assign_workspace_permissions(workspace):
     """
     Assigns the necessary permissions to the group for the workspace.
@@ -21,8 +22,6 @@ def assign_workspace_permissions(workspace):
 
     # Give permission to the organization owner
     group.user_set.add(workspace.organization.owner.user)
-
-
 
 
 def update_workspace_admin_group(workspace, previous_admin, new_admin):

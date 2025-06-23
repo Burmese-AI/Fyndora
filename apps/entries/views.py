@@ -40,11 +40,6 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
             context["organization"] = self.organization
             context["stats"] = get_org_expense_stats(self.organization)
         return context
-    
-    def render_to_response(self, context: dict[str, Any], **response_kwargs: Any) -> HttpResponse:
-        if self.request.htmx:
-            return render(self.request, "entries/partials/table.html", context)
-        return super().render_to_response(context, **response_kwargs)
 
     def render_to_response(
         self, context: dict[str, Any], **response_kwargs: Any
@@ -52,7 +47,6 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
         if self.request.htmx:
             return render(self.request, "entries/partials/table.html", context)
         return super().render_to_response(context, **response_kwargs)
-
 
 class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
     model = Entry
@@ -69,7 +63,7 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        form = OrganizationExpenseEntryForm()
+        form = self.get_form()
         context = {"form": form, "organization": self.organization}
         return render(
             request, "entries/components/create_org_exp_modal.html", context=context
@@ -155,7 +149,6 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
 class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
     model = Entry
     form_class = OrganizationExpenseEntryForm
-    template_name = ""
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         organization_id = self.kwargs["organization_id"]
@@ -206,12 +199,7 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
         )
         messages.success(self.request, "Expense entry updated successfully")
         if self.request.htmx:
-            base_context = self.get_context_data()
-            message_html = render_to_string(
-                "includes/message.html", context=base_context, request=self.request
-            )
-            return HttpResponse(f"{message_html}")
-            # return self._render_htmx_success_response()
+            return self._render_htmx_success_response()
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -227,24 +215,25 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
             **base_context,
             "stats": get_org_expense_stats(self.organization),
         }
-
-        org_exp_entries = get_org_expenses(self.organization)
-        table_context = get_paginated_context(
-            queryset=org_exp_entries,
-            context=base_context,
-            object_name=CONTEXT_OBJECT_NAME,
-        )
+        
+        row_context = {
+            **base_context,
+            "organization": self.organization,
+            "entry": self.org_exp_entry
+        }
 
         stat_overview_html = render_to_string(
             "components/stat_section.html", context=stat_context, request=self.request
         )
-        table_html = render_to_string(
-            "entries/partials/table.html", context=table_context, request=self.request
+        
+        row_html = render_to_string(
+            "entries/partials/row.html", context=row_context, request=self.request
         )
+
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{table_html}{stat_overview_html}")
+        response = HttpResponse(f"{message_html}{row_html}{stat_overview_html}")
         response["HX-trigger"] = "success"
         return response
     

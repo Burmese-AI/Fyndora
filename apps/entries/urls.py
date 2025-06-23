@@ -10,7 +10,7 @@ urlpatterns = [
     path(
         "expenses/create/",
         OrganizationExpenseCreateView.as_view(),
-        name="organization_expenses_create",
+        name="organization_expense_create",
     ),
     path(
         "expenses/<uuid:pk>/",

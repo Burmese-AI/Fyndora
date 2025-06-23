@@ -11,7 +11,7 @@
 
   <!-- Add enctype="multipart/form-data" for file uploads -->
   <form
-    hx-post="{% url 'organization_expenses_create' organization_id=organization.pk %}"
+    hx-post="{% url 'organization_expense_create' organization_id=organization.pk %}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"

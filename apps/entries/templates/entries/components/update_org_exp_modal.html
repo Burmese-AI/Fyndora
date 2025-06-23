@@ -6,21 +6,13 @@
 
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-base-content">
-      {% if form.instance.pk %}
-        Edit Expense
-      {% else %}
-        Add Organization Expense
-      {% endif %}
+      Edit Expense
     </h2>
   </div>
 
   <!-- Form -->
   <form
-    {% if form.instance.pk %}
-      hx-post="{% url 'organization_expense_update' organization_id=organization.pk pk=entry.pk %}"
-    {% else %}
-      hx-post="{% url 'organization_expenses_create' organization_id=organization.pk %}"
-    {% endif %}
+    hx-post="{% url 'organization_expense_update' organization_id=organization.pk pk=entry.pk %}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"
@@ -55,57 +47,49 @@
 
     <!-- 📎 Attachment Upload Field -->
     <div>
-        <label for="{{ form.attachment_files.id_for_label }}" class="block text-sm font-medium text-base-content">
-            Attachments
-        </label>
-        <p class="text-xs text-gray-500 mt-1">
-            {% if form.instance.pk %}
-              Upload new files to replace existing ones.
+      <label for="{{ form.attachment_files.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Attachments
+      </label>
+      <p class="text-xs text-gray-500 mt-1">
+        Upload new files to replace existing ones.
+      </p>
+      <div class="mt-2">
+        {{ form.attachment_files }}
+      </div>
+
+      <!-- Show existing attachments only in edit mode -->
+      {% if attachments %}
+        <div class="mt-4">
+          <label class="font-medium">Uploaded Documents:</label>
+          <div class="mt-2 space-y-2">
+            {% if not attachments %}
+              <p class="text-gray-500 text-sm">No files uploaded yet.</p>
             {% else %}
-              Select one or more files to attach.
+              {% include "entries/partials/uploaded_file_display.html" %}
             {% endif %}
-        </p>
-        <div class="mt-2">
-            {{ form.attachment_files }}
+          </div>
         </div>
-
-        <!-- Show existing attachments only in edit mode -->
-        {% if form.instance.pk and attachments %}
-  <div class="mt-4">
-    <label class="font-medium">Uploaded Documents:</label>
-    <div class="mt-2 space-y-2">
-      {% if not attachments %}
-        <p class="text-gray-500 text-sm">No files uploaded yet.</p>
-      {% else %}
-        {% include "entries/partials/uploaded_file_display.html" %}
       {% endif %}
-    </div>
-  </div>
-{% endif %}
 
-    {% include "components/field_error.html" with field=form.attachment_files %}
-  </div>
+      {% include "components/field_error.html" with field=form.attachment_files %}
+    </div>
 
     <!-- Form Actions -->
     <div class="flex justify-end space-x-2 pt-4">
-        <button
-            type="button"
-            onclick="this.closest('.modal').removeAttribute('open')"
-            class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        >
-            Cancel
-        </button>
-        <button
-            type="submit"
-            class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        >
-            {% if form.instance.pk %}
-            Update
-            {% else %}
-            Save
-            {% endif %}
-        </button>
-        </div>
-    </form>
+      <button
+        type="button"
+        onclick="this.closest('.modal').removeAttribute('open')"
+        class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Update
+      </button>
     </div>
+  </form>
+</div>
 {% endblock modal_content %}

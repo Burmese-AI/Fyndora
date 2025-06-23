@@ -45,12 +45,20 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
 
 
 @transaction.atomic
-def update_workspace_from_form(*, form, workspace) -> Workspace:
+def update_workspace_from_form(*, form, workspace, previous_workspace_admin) -> Workspace:
     """
     Updates a workspace from a form.
     """
     try:
+        previous_workspace_admin = previous_workspace_admin
         workspace = model_update(workspace, form.cleaned_data)
+        new_workspace_admin = form.cleaned_data.get("workspace_admin")
+        if previous_workspace_admin != new_workspace_admin:
+            group_name = (
+                f"Workspace Admins - {workspace.workspace_id}"
+            )
+            group = Group.objects.filter(name=group_name).first()
+            group.user_set.add(new_workspace_admin.user)
         return workspace
     except Exception as e:
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")

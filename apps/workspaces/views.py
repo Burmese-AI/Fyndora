@@ -131,6 +131,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
+        previous_workspace_admin = workspace.workspace_admin
 
         if not request.user.has_perm("change_workspace", workspace):
             messages.error(
@@ -154,7 +155,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
             )
             try:
                 if form.is_valid():
-                    update_workspace_from_form(form=form, workspace=workspace)
+                    update_workspace_from_form(form=form, workspace=workspace, previous_workspace_admin=previous_workspace_admin)
                     workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
                         "workspaces": workspaces,

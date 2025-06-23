@@ -39,7 +39,9 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
+        self.is_update = kwargs.pop("is_update", False)
         super().__init__(*args, **kwargs)
+        self.fields["attachment_files"].required = not self.is_update
 
     def clean(self):
         cleaned_data = super().clean()

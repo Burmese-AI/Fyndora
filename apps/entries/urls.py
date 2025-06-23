@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import OrganizationExpenseListView, OrganizationExpenseCreateView
+from .views import OrganizationExpenseListView, OrganizationExpenseCreateView, OrganizationExpenseUpdateView
 
 urlpatterns = [
     path(
@@ -12,4 +12,9 @@ urlpatterns = [
         OrganizationExpenseCreateView.as_view(),
         name="organization_expenses_create",
     ),
+    path(
+        "expenses/<uuid:organization_expense_entry_id>/",
+        OrganizationExpenseUpdateView.as_view(),
+        name="organization_expense_update"
+    )
 ]

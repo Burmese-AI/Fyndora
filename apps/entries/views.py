@@ -1,11 +1,12 @@
 from typing import Any
 
-from django.views.generic import ListView, CreateView
+from django.db.models.query import QuerySet
+from django.views.generic import ListView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
 from django.template.loader import render_to_string
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 
 from apps.organizations.models import Organization
 from apps.core.constants import PAGINATION_SIZE
@@ -150,3 +151,43 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
             request=self.request,
         )
         return HttpResponse(f"{message_html} {modal_html}")
+
+class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
+    model = Entry
+    form_class = OrganizationExpenseEntryForm
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        organization_id = self.kwargs["organization_id"]
+        org_exp_entry_id = self.kwargs["organization_expense_entry_id"]
+        self.organization = get_object_or_404(Organization, pk=organization_id)
+        self.org_member = get_user_org_membership(self.request.user, self.organization)
+        self.org_exp_entry = get_object_or_404(Entry, pk=org_exp_entry_id)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_org_expenses(self.organization)
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.organization
+        kwargs["org_member"] = self.org_member
+        kwargs["is_update"] = True
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.htmx:
+            context["is_oob"] = True
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        form = OrganizationExpenseEntryForm(instance=self.org_exp_entry)
+        attachments = self.org_exp_entry.attachments.all()
+        context = {
+            "form": form, 
+            "organization": self.organization,
+            "attachments": attachments
+            }
+        return render(
+            request, "entries/components/update_org_exp_modal.html", context=context
+        )

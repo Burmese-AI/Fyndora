@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (
+from .views.organizatin_expense import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (
+from .views.organizatin_expense import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
@@ -21,4 +21,9 @@ urlpatterns = [
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update",
     ),
+    path(
+        "expenses/<uuid:pk>/",
+        OrganizationExpenseUpdateView.as_view(),
+        name="organization_expense_update"
+    )
 ]

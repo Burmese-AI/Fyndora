@@ -36,8 +36,8 @@ class OrganizationExpenseListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         # When rendering partially, these contexts are not required
+        context["organization"] = self.organization
         if not self.request.htmx:
-            context["organization"] = self.organization
             context["stats"] = get_org_expense_stats(self.organization)
         return context
 
@@ -114,6 +114,7 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
             context=base_context,
             object_name=CONTEXT_OBJECT_NAME,
         )
+        table_context['organization'] = self.organization
 
         stat_overview_html = render_to_string(
             "components/stat_section.html", context=stat_context, request=self.request

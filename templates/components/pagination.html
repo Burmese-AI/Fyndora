@@ -11,7 +11,6 @@
         hx-get="?page={{ page_obj.previous_page_number }}"
         hx-target="#content-container"
         hx-swap="innerHTML"
-        hx-indicator=".htmx-indicator"
       >
         « Previous
       </a>
@@ -29,7 +28,6 @@
           hx-get="?page={{ num }}"
           hx-target="#content-container"
           hx-swap="innerHTML"
-          hx-indicator=".htmx-indicator"
         >
           {{ num }}
         </a>
@@ -43,7 +41,6 @@
         hx-get="?page={{ page_obj.next_page_number }}"
         hx-target="#content-container"
         hx-swap="innerHTML"
-        hx-indicator=".htmx-indicator"
       >
         Next »
       </a>

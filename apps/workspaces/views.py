@@ -22,6 +22,7 @@ from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
+from apps.workspaces.permissions import check_org_owner_permission
 
 
 # from django.core.exceptions import PermissionDenied
@@ -50,22 +51,10 @@ def create_workspace_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        if not orgMember.is_org_owner:
-            messages.error(
-                request,
-                "You do not have permission to create workspaces in this organization.",
-            )
-            context = {
-                "message": "You do not have permission to create workspaces in this organization.",
-                "return_url": f"/{organization_id}/workspaces/",
-            }
-            response = render(
-                request,
-                "components/error_page.html",
-                context,
-            )
-            response["HX-Retarget"] = "#right-side-content-container"
+        response = check_org_owner_permission(request, orgMember, organization_id)
+        if response:
             return response
+
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
             try:
@@ -131,6 +120,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
+        previous_workspace_admin = workspace.workspace_admin
 
         if not request.user.has_perm("change_workspace", workspace):
             messages.error(
@@ -154,7 +144,11 @@ def edit_workspace_view(request, organization_id, workspace_id):
             )
             try:
                 if form.is_valid():
-                    update_workspace_from_form(form=form, workspace=workspace)
+                    update_workspace_from_form(
+                        form=form,
+                        workspace=workspace,
+                        previous_workspace_admin=previous_workspace_admin,
+                    )
                     workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
                         "workspaces": workspaces,
@@ -226,12 +220,10 @@ def delete_workspace_view(request, organization_id, workspace_id):
             response["HX-Retarget"] = "#right-side-content-container"
             return response
         if request.method == "POST":
-            workspace.delete()
-            # delete the permissions group
-            group = Group.objects.get(
-                name=f"Workspace Admins - {workspace.title} - {workspace.organization.title}"
-            )
+            group_name = f"Workspace Admins - {workspace_id}"
+            group = Group.objects.filter(name=group_name).first()
             group.delete()
+            workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
             workspaces = get_workspaces_with_team_counts(organization_id)

@@ -2,7 +2,7 @@ from django import forms
 from django.utils import timezone
 from .models import Invitation
 from .selectors import is_user_organization_member
-from apps.core.selectors import get_user_by_email
+from .selectors import get_user_by_email
 
 
 class InvitationCreateForm(forms.ModelForm):

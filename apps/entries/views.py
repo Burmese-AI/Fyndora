@@ -15,7 +15,11 @@ from apps.core.utils import get_paginated_context
 from .models import Entry
 from .constants import CONTEXT_OBJECT_NAME
 from .forms import OrganizationExpenseEntryForm
-from .services import create_org_expense_entry_with_attachments, update_org_expense_entry_with_attachments, get_org_expense_stats
+from .services import (
+    create_org_expense_entry_with_attachments,
+    update_org_expense_entry_with_attachments,
+    get_org_expense_stats,
+)
 from .selectors import get_org_expenses
 
 
@@ -114,7 +118,7 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
             context=base_context,
             object_name=CONTEXT_OBJECT_NAME,
         )
-        table_context['organization'] = self.organization
+        table_context["organization"] = self.organization
 
         stat_overview_html = render_to_string(
             "components/stat_section.html", context=stat_context, request=self.request
@@ -147,10 +151,11 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, CreateView):
         )
         return HttpResponse(f"{message_html} {modal_html}")
 
+
 class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
     model = Entry
     form_class = OrganizationExpenseEntryForm
-    
+
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         organization_id = self.kwargs["organization_id"]
         org_exp_entry_id = self.kwargs["pk"]
@@ -159,10 +164,10 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
         self.org_exp_entry = get_object_or_404(Entry, pk=org_exp_entry_id)
         self.attachments = self.org_exp_entry.attachments.all()
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
-    
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
@@ -176,27 +181,27 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
         if self.request.htmx:
             context["is_oob"] = True
         return context
-    
+
     def get(self, request, *args, **kwargs):
         form = self.get_form()
-        
+
         context = {
-            "form": form, 
+            "form": form,
             "organization": self.organization,
             "entry": self.org_exp_entry,
-            "attachments": self.attachments
-            }
+            "attachments": self.attachments,
+        }
         return render(
             request, "entries/components/update_org_exp_modal.html", context=context
         )
-        
+
     def form_valid(self, form):
         # Update org exp entry along with attachements if provided
         update_org_expense_entry_with_attachments(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
-            attachments=form.cleaned_data["attachment_files"]
+            attachments=form.cleaned_data["attachment_files"],
         )
         messages.success(self.request, "Expense entry updated successfully")
         if self.request.htmx:
@@ -208,7 +213,7 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
         if self.request.htmx:
             return self._render_htmx_error_response(form)
         return super().form_invalid(form)
-    
+
     def _render_htmx_success_response(self):
         base_context = self.get_context_data()
 
@@ -216,17 +221,17 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
             **base_context,
             "stats": get_org_expense_stats(self.organization),
         }
-        
+
         row_context = {
             **base_context,
             "organization": self.organization,
-            "entry": self.org_exp_entry
+            "entry": self.org_exp_entry,
         }
 
         stat_overview_html = render_to_string(
             "components/stat_section.html", context=stat_context, request=self.request
         )
-        
+
         row_html = render_to_string(
             "entries/partials/row.html", context=row_context, request=self.request
         )
@@ -237,7 +242,7 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
         response = HttpResponse(f"{message_html}{row_html}{stat_overview_html}")
         response["HX-trigger"] = "success"
         return response
-    
+
     def _render_htmx_error_response(self, form):
         base_context = self.get_context_data()
         modal_context = {
@@ -245,7 +250,7 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, UpdateView):
             "form": form,
             "organization": self.organization,
             "entry": self.org_exp_entry,
-            "attachments": self.attachments
+            "attachments": self.attachments,
         }
 
         message_html = render_to_string(

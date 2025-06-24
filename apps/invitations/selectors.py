@@ -2,6 +2,8 @@ from typing import Tuple, Optional
 from .models import Invitation
 from apps.organizations.models import OrganizationMember, Organization
 
+from django.contrib.auth import get_user_model
+
 
 def is_user_organization_member(user, organization: Organization) -> bool:
     """Check if the user is a member of the organization"""
@@ -61,3 +63,11 @@ def is_invitation_valid(invitation: Invitation) -> Tuple[bool, str]:
 def invitation_exists(pk: str) -> bool:
     """Check if an invitation with the given pk exists."""
     return Invitation.objects.filter(pk=pk).exists()
+
+
+User = get_user_model()
+
+
+def get_user_by_email(email: str) -> Optional[User]:
+    """Get user by email"""
+    return User.objects.filter(email=email).first()

@@ -46,21 +46,21 @@ class TestWorkspaceEntrySelectors:
         """Set up test data."""
         self.organization = OrganizationFactory()
         self.workspace = WorkspaceFactory(organization=self.organization)
-        
+
         # Create org member, team, and team member
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.team = TeamFactory(organization=self.organization)
-        
+
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.team
         )
-        
+
         self.submitter = TeamMemberFactory(
             team=self.team,
             organization_member=self.org_member,
             role=TeamMemberRole.SUBMITTER,
         )
-        
+
         # Create entries with different statuses
         self.pending_entry = EntryFactory(
             submitter=self.submitter,
@@ -70,7 +70,7 @@ class TestWorkspaceEntrySelectors:
             status=EntryStatus.PENDING_REVIEW,
             amount=Decimal("100.00"),
         )
-        
+
         self.approved_entry = EntryFactory(
             submitter=self.submitter,
             workspace=self.workspace,
@@ -79,7 +79,7 @@ class TestWorkspaceEntrySelectors:
             status=EntryStatus.APPROVED,
             amount=Decimal("200.00"),
         )
-        
+
         self.rejected_entry = EntryFactory(
             submitter=self.submitter,
             workspace=self.workspace,
@@ -121,7 +121,7 @@ class TestWorkspaceEntrySelectors:
         today = timezone.now().date()
         tomorrow = today + datetime.timedelta(days=1)
         yesterday = today - datetime.timedelta(days=2)
-        
+
         # Create an entry with a past date
         old_entry = EntryFactory(
             submitter=self.submitter,
@@ -131,20 +131,19 @@ class TestWorkspaceEntrySelectors:
             status=EntryStatus.PENDING_REVIEW,
             amount=Decimal("400.00"),
         )
-        
+
         # Manually set the created_at to yesterday
         old_entry.created_at = timezone.datetime.combine(
-            yesterday, 
-            timezone.datetime.min.time()
+            yesterday, timezone.datetime.min.time()
         ).replace(tzinfo=timezone.get_current_timezone())
         old_entry.save(update_fields=["created_at"])
-            
+
         entries = get_workspace_entries_by_date_range(
-            workspace=self.workspace, 
+            workspace=self.workspace,
             start_date=today,
             end_date=tomorrow,
         )
-        
+
         assert entries.count() >= 3  # At least our original 3 entries
         assert self.pending_entry in entries
         assert self.approved_entry in entries
@@ -160,7 +159,7 @@ class TestWorkspaceEntrySelectors:
             team=self.team,
             role=TeamMemberRole.SUBMITTER,
         )
-        
+
         # Create an entry by the other member
         other_entry = EntryFactory(
             submitter=other_team_member,
@@ -240,10 +239,10 @@ class TestOrgExpenseSelectors:
         """Set up test data."""
         self.organization = OrganizationFactory()
         self.workspace = WorkspaceFactory(organization=self.organization)
-        
+
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.team = TeamFactory(organization=self.organization)
-        
+
         # Create some org expense entries
         self.today = timezone.now().date()
         self.start_of_month = self.today.replace(day=1)
@@ -258,7 +257,7 @@ class TestOrgExpenseSelectors:
             status=EntryStatus.APPROVED,
             amount=Decimal("100.00"),
         )
-        
+
         # Manually set created_at for last month's expense
         self.last_month_expense = EntryFactory(
             submitter=self.org_member,
@@ -268,11 +267,10 @@ class TestOrgExpenseSelectors:
         )
         # Update the created_at timestamp manually
         self.last_month_expense.created_at = timezone.datetime.combine(
-            self.last_month_day, 
-            timezone.datetime.min.time()
+            self.last_month_day, timezone.datetime.min.time()
         ).replace(tzinfo=timezone.get_current_timezone())
         self.last_month_expense.save(update_fields=["created_at"])
-        
+
         # Manually set created_at for old expense
         self.old_expense = EntryFactory(
             submitter=self.org_member,
@@ -282,8 +280,7 @@ class TestOrgExpenseSelectors:
         )
         # Update the created_at timestamp manually
         self.old_expense.created_at = timezone.datetime.combine(
-            self.two_months_ago_day, 
-            timezone.datetime.min.time()
+            self.two_months_ago_day, timezone.datetime.min.time()
         ).replace(tzinfo=timezone.get_current_timezone())
         self.old_expense.save(update_fields=["created_at"])
 

@@ -30,4 +30,5 @@ urlpatterns = [
     path("teams/", include("apps.teams.urls")),
     path("remittances/", include("apps.remittance.urls")),
     path("<uuid:organization_id>/", include("apps.entries.urls")),
+    path("403/", include("apps.core.urls")),
 ]

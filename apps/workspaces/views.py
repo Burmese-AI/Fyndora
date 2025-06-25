@@ -126,17 +126,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
             messages.error(
                 request, "You do not have permission to edit this workspace."
             )
-            context = {
-                "message": "You do not have permission to edit this workspace.",
-                "return_url": f"/{organization_id}/workspaces/",
-            }
-            response = render(
-                request,
-                "components/error_page.html",
-                context,
-            )
-            response["HX-Retarget"] = "#right-side-content-container"
-            return response
+            return HttpResponseClientRedirect(f"/403")
 
         if request.method == "POST":
             form = WorkspaceForm(

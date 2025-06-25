@@ -1,6 +1,5 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
-from django.core.exceptions import PermissionDenied
 
 
 def assign_workspace_permissions(workspace):
@@ -46,20 +45,18 @@ def update_workspace_admin_group(workspace, previous_admin, new_admin):
         group.user_set.add(new_admin.user)
 
 
-def check_org_owner_permission(request, org_member, organization_id):
-    """
-    Checks if the user is the organization owner. If not, returns an error response.
+# def check_org_owner_permission(request, org_member, organization_id):
+#     """
+#     Checks if the user is the organization owner. If not, returns an error response.
 
-    Args:
-        request: Django request object.
-        org_member: OrganizationMember instance.
-        organization_id: UUID or str of the organization.
+#     Args:
+#         request: Django request object.
+#         org_member: OrganizationMember instance.
+#         organization_id: UUID or str of the organization.
 
-    Returns:
-        HttpResponse (rendered error page) if permission denied, otherwise None.
-    """
-    if not org_member.is_org_owner:
-        error_msg = "You do not have permission to do action in this organization."
-        raise PermissionDenied(error_msg)
-
-    return None
+#     Returns:
+#         HttpResponse (rendered error page) if permission denied, otherwise None.
+#     """
+#     if not org_member.is_org_owner:
+#         messages.error(request, "You do not have permission to do action in this organization.")
+#         return HttpResponseClientRedirect(f"/403")

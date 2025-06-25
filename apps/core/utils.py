@@ -1,6 +1,7 @@
 from django.core.paginator import Paginator
 from .constants import PAGINATION_SIZE
 
+
 def percent_change(current: float, previous: float) -> str:
     if previous == 0:
         return "0% change"
@@ -8,13 +9,9 @@ def percent_change(current: float, previous: float) -> str:
     symbol = "+" if change >= 0 else "-"
     return f"{symbol}{abs(change):.1f}% from last period"
 
+
 def get_paginated_context(
-    *,
-    queryset,
-    context={},
-    object_name,
-    page_size=PAGINATION_SIZE,
-    page_no=1
+    *, queryset, context={}, object_name, page_size=PAGINATION_SIZE, page_no=1
 ):
     paginator = Paginator(queryset, page_size)
     page_obj = paginator.get_page(page_no)

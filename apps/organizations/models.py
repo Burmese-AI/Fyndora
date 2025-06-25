@@ -44,9 +44,6 @@ class Organization(baseModel):
                 name="unique_organization",
             )
         ]
-        permissions = [
-            ("edit_organization", "Can edit organization"),
-        ]
 
     def __str__(self):
         return self.title

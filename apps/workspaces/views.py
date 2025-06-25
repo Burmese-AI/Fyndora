@@ -50,8 +50,11 @@ def create_workspace_view(request, organization_id):
             request.user.user_id, organization_id
         )
         if not orgMember.is_org_owner:
-            messages.error(request, "You do not have permission to create a workspace in this organization.")
-            return HttpResponseClientRedirect(f"/403")
+            messages.error(
+                request,
+                "You do not have permission to create a workspace in this organization.",
+            )
+            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
@@ -124,7 +127,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
             messages.error(
                 request, "You do not have permission to edit this workspace."
             )
-            return HttpResponseClientRedirect(f"/403")
+            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = WorkspaceForm(
@@ -196,7 +199,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
             messages.error(
                 request, "You do not have permission to delete this workspace."
             )
-            return HttpResponseClientRedirect(f"/403")
+            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             group_name = f"Workspace Admins - {workspace_id}"

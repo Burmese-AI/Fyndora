@@ -195,8 +195,10 @@ def settings_view(request, organization_id):
             request.user.user_id, organization_id
         )
         if not orgMember.is_org_owner:
-            messages.error(request, "You do not have permission to access this organization.")
-            return HttpResponseClientRedirect(f"/403")
+            messages.error(
+                request, "You do not have permission to access this organization."
+            )
+            return HttpResponseClientRedirect("/403")
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -215,9 +217,11 @@ def edit_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, organization_id=organization_id)
 
-        if not request.user.has_perm("edit_organization", organization):
-            messages.error(request, "You do not have permission to edit this organization.")
-            return HttpResponseClientRedirect(f"/403")
+        if not request.user.has_perm("change_organization", organization):
+            messages.error(
+                request, "You do not have permission to edit this organization."
+            )
+            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
@@ -288,8 +292,10 @@ def delete_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
         if not request.user.has_perm("delete_organization", organization):
-            messages.error(request, "You do not have permission to delete this organization.")
-            return HttpResponseClientRedirect(f"/403")
+            messages.error(
+                request, "You do not have permission to delete this organization."
+            )
+            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             # delete organization

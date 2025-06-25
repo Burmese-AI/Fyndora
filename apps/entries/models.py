@@ -116,6 +116,11 @@ class Entry(baseModel):
         verbose_name = "entry"
         verbose_name_plural = "entries"
         ordering = ["-submitted_at"]
+        permissions = [
+            ("upload_attachments", "Can upload attachments to entries"),
+            ("review_entries", "Can review and approve entries"),
+            ("flag_entries", "Can flag or comment on entries"),
+        ]
 
     def __str__(self):
         return f"{self.entry_id} - {self.entry_type} - {self.amount} - {self.status}"

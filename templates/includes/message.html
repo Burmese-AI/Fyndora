@@ -8,7 +8,6 @@
       x-data="{ show: true }"
       x-show="show"
       x-init="setTimeout(() => show = false, 3000)"
-      x-transition
       class="flex items-center justify-between gap-4 relative px-6 py-4 mb-4 rounded-xl shadow
         {% if 'success' in message.tags %}bg-green-100 text-green-800 border border-green-300
         {% elif 'error' in message.tags %}bg-red-100 text-red-800 border border-red-300
@@ -19,7 +18,7 @@
     >
       <span>{{ message }}</span>
       <button
-        @click="show = false"
+        @click.prevent="show = false"
         class="text-xl font-bold text-inherit hover:text-black focus:outline-none"
         aria-label="Close"
       >&times;</button>

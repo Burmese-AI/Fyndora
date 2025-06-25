@@ -23,7 +23,7 @@ from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
-from apps.workspaces.permissions import check_org_owner_permission
+from django_htmx.http import HttpResponseClientRedirect
 
 
 # Create your views here.
@@ -194,9 +194,9 @@ def settings_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        response = check_org_owner_permission(request, orgMember, organization_id)
-        if response:
-            return response
+        if not orgMember.is_org_owner:
+            messages.error(request, "You do not have permission to access this organization.")
+            return HttpResponseClientRedirect(f"/403")
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -216,20 +216,8 @@ def edit_organization_view(request, organization_id):
         organization = get_object_or_404(Organization, organization_id=organization_id)
 
         if not request.user.has_perm("edit_organization", organization):
-            messages.error(
-                request, "You do not have permission to edit this organization."
-            )
-            context = {
-                "message": "You do not have permission to edit this organization.",
-                "return_url": f"/{organization_id}/settings/",
-            }
-            response = render(
-                request,
-                "components/error_page.html",
-                context,
-            )
-            response["HX-Retarget"] = "#right-side-content-container"
-            return response
+            messages.error(request, "You do not have permission to edit this organization.")
+            return HttpResponseClientRedirect(f"/403")
 
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
@@ -300,16 +288,8 @@ def delete_organization_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
         if not request.user.has_perm("delete_organization", organization):
-            messages.error(
-                request, "You do not have permission to delete this organization."
-            )
-            response = render(
-                request,
-                "components/error_page.html",
-                {"message": "You do not have permission to delete this organization."},
-            )
-            response["HX-Retarget"] = "#right-side-content-container"
-            return response
+            messages.error(request, "You do not have permission to delete this organization.")
+            return HttpResponseClientRedirect(f"/403")
 
         if request.method == "POST":
             # delete organization

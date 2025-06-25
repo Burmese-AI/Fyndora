@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count
+from django.contrib.contenttypes.prefetch import GenericPrefetch
 from django.utils.timezone import now
 
 from apps.organizations.models import Organization, OrganizationMember
@@ -94,36 +95,43 @@ def get_workspace_team_entries(*, workspace_team, status=None, entry_type=None):
 
     return queryset
 
-
 def get_org_expenses(organization: Organization):
-    # Get content types
+    """
+    Returns all organization expense entries submitted by members of the given organization,
+    annotated with attachment count and optimized to avoid N+1 queries using prefetching.
+    """
+    
+    # Get the ContentType for OrganizationMember model.
     org_member_type = ContentType.objects.get_for_model(OrganizationMember)
-    team_member_type = ContentType.objects.get_for_model(TeamMember)
 
-    # IDs of Organization Members in this organization
+    # Get all OrganizationMember IDs that belong to the given organization 
+    # Because org exp entries can only be submitted by org members
     org_member_ids = OrganizationMember.objects.filter(
         organization=organization
     ).values_list("pk", flat=True)
+    
+    # Prepare the querysets for prefetching
+    org_member_queryset = OrganizationMember.objects.select_related('user')
 
-    # IDs of Team Members whose Organization Member belongs to this organization
-    team_member_ids = TeamMember.objects.filter(
-        organization_member__organization=organization
-    ).values_list("pk", flat=True)
+    # Use GenericPrefetch to tell Django how to prefetch 'submitter'
+    generic_prefetch = GenericPrefetch("submitter", [org_member_queryset])
 
-    query = Entry.objects.filter(
+    # Fetch all org exp entries with those org members ids as submitter obj id
+    entries = Entry.objects.filter(
         Q(
             submitter_content_type=org_member_type,
             submitter_object_id__in=org_member_ids,
-        )
-        | Q(
-            submitter_content_type=team_member_type,
-            submitter_object_id__in=team_member_ids,
         ),
         entry_type=EntryType.ORG_EXP,
-        status=EntryStatus.APPROVED,
-    ).prefetch_related("attachments")
+    ).annotate(
+        # Count how many attachments each entry has
+        attachment_count=Count("attachments")
+    )
 
-    return query
+    # Apply generic prefetch
+    entries = entries.prefetch_related(generic_prefetch)
+
+    return entries
 
 
 def get_total_org_expenses(organization: Organization):

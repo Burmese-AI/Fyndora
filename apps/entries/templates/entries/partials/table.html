@@ -1,13 +1,35 @@
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table"  class="grid gap-4 grid-cols-1">
-  {% for entry in entries %}
-    {% include "entries/partials/row.html" with entry=entry %}
-  {% empty %}
-    <div class="p-6 text-center text-sm">
-      No Expense Entries found
-    </div>
-  {% endfor %}
-</div>
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto w-full">
+  <table class="table table-zebra w-full">
+    <thead>
+      <tr>
+        <th>
+          <label>
+            <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />
+          </label>
+        </th>
+        <th>Description</th>
+        <th>Submitter</th>
+        <th>Submitted</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th class="text-center">Amount</th>
+        <th class="text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+        {% include "entries/partials/row.html" with entry=entry %}
+      {% empty %}
+        <tr>
+          <td colspan="8" class="text-center p-4 text-sm text-neutral">
+            No Expense Entries found
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-{% if is_paginated %}
-  {% include "components/pagination.html" %}
-{% endif %}
+  {% if is_paginated %}
+    {% include "components/pagination.html" %}
+  {% endif %}
+</div>

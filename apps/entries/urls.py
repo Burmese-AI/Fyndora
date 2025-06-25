@@ -3,6 +3,7 @@ from .views.organizatin_expense import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
+    OrganizationExpenseDetailView,
 )
 
 urlpatterns = [
@@ -25,5 +26,10 @@ urlpatterns = [
         "expenses/<uuid:pk>/",
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update"
-    )
+    ),
+    path(
+        "expenses/<uuid:pk>/view",
+        OrganizationExpenseDetailView.as_view(),
+        name="organization_expense_detail",
+    ),
 ]

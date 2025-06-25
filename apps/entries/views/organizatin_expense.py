@@ -3,13 +3,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.contrib import messages
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
-from ..constants import CONTEXT_OBJECT_NAME
+from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
 from ..selectors import get_org_expenses
 from ..services import get_org_expense_stats
 from ..forms import OrganizationExpenseEntryForm
@@ -223,3 +223,17 @@ class OrganizationExpenseUpdateView(
             request=self.request,
         )
         return HttpResponse(f"{message_html} {modal_html}")
+
+class OrganizationExpenseDetailView(
+    LoginRequiredMixin,
+    OrganizationExpenseEntryRequiredMixin,
+    OrganizationContextMixin,
+    DetailView
+):
+    
+    model = Entry
+    template_name = "entries/components/detail_modal.html"
+    context_object_name = DETAIL_CONTEXT_OBJECT_NAME
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_org_expenses(self.organization)

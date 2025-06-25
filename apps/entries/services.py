@@ -27,7 +27,6 @@ def create_org_expense_entry_with_attachments(
             amount=amount,
             description=description,
             submitter=org_member,
-            status=EntryStatus.APPROVED,
         )
 
         for file in attachments:

@@ -120,7 +120,6 @@ def get_org_expenses(organization: Organization):
             submitter_object_id__in=team_member_ids,
         ),
         entry_type=EntryType.ORG_EXP,
-        status=EntryStatus.APPROVED,
     ).prefetch_related("attachments")
 
     return query

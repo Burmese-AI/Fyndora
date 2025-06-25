@@ -18,6 +18,7 @@ from apps.attachments.constants import AttachmentType
 from apps.attachments.models import Attachment
 from apps.teams.models import TeamMember
 
+
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):
@@ -36,6 +37,7 @@ def create_org_expense_entry_with_attachments(
             )
 
     return entry
+
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments
@@ -58,7 +60,7 @@ def update_org_expense_entry_with_attachments(
                 )
 
     return entry
-    
+
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments

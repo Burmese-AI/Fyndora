@@ -59,7 +59,7 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Only the owner of the organization can submit expenses."
             )
-            
+
         validate_uploaded_files(cleaned_data.get("attachment_files"))
 
         return cleaned_data

@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+
+{% block body %}
 {% include 'includes/message.html' %}
 <div class="min-h-screen flex items-center justify-center bg-base-100">
   <div class="max-w-md w-full bg-base-200 shadow-lg rounded-lg p-8 text-center">
@@ -7,9 +10,9 @@
       </svg>
     </div>
     <h1 class="text-2xl font-bold text-base-content mb-4">Error</h1>
-    <p class="text-base-content/70 leading-relaxed">{{ message }}</p>
+    <p class="text-base-content/70 leading-relaxed">You do not have permission to access this page.</p>
     <div class="mt-8">
-      <a href="{{ return_url }}" class="btn btn-error">
+      <a href="javascript:history.back()" class="btn btn-error">
         <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -18,3 +21,4 @@
     </div>
   </div>
 </div>
+{% endblock %}

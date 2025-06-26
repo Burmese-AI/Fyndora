@@ -18,7 +18,10 @@ from .base import (
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
     OrganizationExpenseEntryRequiredMixin,
+<<<<<<< feature/entry_details_view
     OrganizationContextMixin,
+=======
+>>>>>>> main
 )
 
 
@@ -34,6 +37,24 @@ class OrganizationExpenseFormMixin:
         )  # Pass exp entry instance if it exists
         kwargs["is_update"] = bool(getattr(self, "org_exp_entry", False))
         return kwargs
+
+<<<<<<< feature/entry_details_view
+=======
+
+class OrganizationContextMixin:
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        if hasattr(self, "organization"):
+            # To create a new org_exp entry, organization is required in the form template
+            context["organization"] = self.organization
+        if hasattr(self, "org_member"):
+            context["org_member"] = self.org_member
+        if hasattr(self, "org_exp_entry"):
+            context["entry"] = self.org_exp_entry
+        if hasattr(self, "attachments"):
+            context["attachments"] = self.attachments
+        return context
+>>>>>>> main
 
 
 class OrganizationExpenseListView(

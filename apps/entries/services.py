@@ -1,22 +1,24 @@
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from guardian.shortcuts import assign_perm
 
-from apps.core.utils import model_update
-from apps.auditlog.services import audit_create
-
-from .models import Entry
-from .constants import EntryType, EntryStatus
-from apps.core.utils import percent_change
-from .selectors import (
-    get_this_month_org_expenses,
-    get_last_month_org_expenses,
-    get_average_monthly_org_expenses,
-    get_total_org_expenses,
-)
 from apps.attachments.constants import AttachmentType
 from apps.attachments.models import Attachment
+from apps.auditlog.services import audit_create
+from apps.core.utils import model_update, percent_change
 from apps.teams.models import TeamMember
+
+from .constants import EntryStatus, EntryType
+from .models import Entry
+from .selectors import (
+    get_average_monthly_org_expenses,
+    get_last_month_org_expenses,
+    get_this_month_org_expenses,
+    get_total_org_expenses,
+)
+
+
 
 
 def create_org_expense_entry_with_attachments(
@@ -37,7 +39,11 @@ def create_org_expense_entry_with_attachments(
             )
 
     return entry
+<<<<<<< feature/entry_details_view
 
+=======
+  
+>>>>>>> main
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments
@@ -102,8 +108,18 @@ def entry_create(
     with transaction.atomic():
         entry = model_update(entry, entry_data)
 
+        user = (
+            submitted_by.organization_member.user
+            if isinstance(submitted_by, TeamMember)
+            else submitted_by.user
+        )
+
+        assign_perm("entries.change_entry", user, entry)
+        assign_perm("entries.delete_entry", user, entry)
+        assign_perm("entries.upload_attachments", user, entry)
+
         audit_create(
-            user=submitted_by.organization_member.user,
+            user=user,
             action_type="entry_created",
             target_entity=entry,
             metadata={
@@ -132,6 +148,9 @@ def entry_review(*, entry, reviewer, status, notes=None):
     """
     Service to review an entry (approve, reject, flag).
     """
+    if not reviewer.user.has_perm("entries.review_entries", entry):
+        raise PermissionDenied("You do not have permission to review this entry.")
+
     _validate_review_data(status=status, notes=notes)
 
     if (

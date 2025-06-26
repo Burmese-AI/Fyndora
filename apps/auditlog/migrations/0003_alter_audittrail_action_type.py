@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('auditlog', '0002_remove_audittrail_auditlog_au_target__117286_idx_and_more'),
+        ("auditlog", "0002_remove_audittrail_auditlog_au_target__117286_idx_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='audittrail',
-            name='action_type',
-            field=models.CharField(choices=[('entry_created', 'Entry Created'), ('entry_updated', 'Entry Updated'), ('status_changed', 'Status Changed'), ('flagged', 'Flagged'), ('file_uploaded', 'File Uploaded')], max_length=100),
+            model_name="audittrail",
+            name="action_type",
+            field=models.CharField(
+                choices=[
+                    ("entry_created", "Entry Created"),
+                    ("entry_updated", "Entry Updated"),
+                    ("status_changed", "Status Changed"),
+                    ("flagged", "Flagged"),
+                    ("file_uploaded", "File Uploaded"),
+                ],
+                max_length=100,
+            ),
         ),
     ]

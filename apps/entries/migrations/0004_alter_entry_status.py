@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('entries', '0003_alter_entry_amount'),
+        ("entries", "0003_alter_entry_amount"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='entry',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('approved', 'Approved'), ('flagged', 'Flagged'), ('rejected', 'Rejected')], default='pending', max_length=20),
+            model_name="entry",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("approved", "Approved"),
+                    ("flagged", "Flagged"),
+                    ("rejected", "Rejected"),
+                ],
+                default="pending",
+                max_length=20,
+            ),
         ),
     ]

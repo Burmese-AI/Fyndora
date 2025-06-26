@@ -3,6 +3,7 @@ from django.db import models
 CONTEXT_OBJECT_NAME = "entries"
 DETAIL_CONTEXT_OBJECT_NAME = "entry"
 
+
 class EntryType(models.TextChoices):
     INCOME = "income", "Income"
     DISBURSEMENT = "disbursement", "Disbursement"

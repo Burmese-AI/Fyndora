@@ -18,6 +18,7 @@ from apps.attachments.constants import AttachmentType
 from apps.attachments.models import Attachment
 from apps.teams.models import TeamMember
 
+
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):
@@ -37,28 +38,6 @@ def create_org_expense_entry_with_attachments(
 
     return entry
 
-def update_org_expense_entry_with_attachments(
-    *, entry, amount, description, attachments
-):
-    with transaction.atomic():
-        # Update basic fields
-        entry.amount = amount
-        entry.description = description
-        entry.save(update_fields=["amount", "description"])
-
-        # Replace attachments only if new ones were uploaded
-        if attachments:
-            entry.attachments.all().delete()
-            for file in attachments:
-                file_type = AttachmentType.get_file_type_by_extension(file.name)
-                Attachment.objects.create(
-                    entry=entry,
-                    file_url=file,
-                    file_type=file_type or AttachmentType.OTHER,
-                )
-
-    return entry
-    
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments

@@ -3,6 +3,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def entry_status_color(status):
     return {
@@ -11,6 +12,7 @@ def entry_status_color(status):
         "flagged": "badge-secondary",
         "rejected": "badge-error",
     }.get(status, "badge-neutral")
+
 
 @register.filter
 def entry_type_color(entry_type):

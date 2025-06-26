@@ -43,7 +43,7 @@ def team_member_add(
         user=added_by,
         action_type="team_member_added",
         target_entity=team_member,
-        metadata={"role": role, "team": team.name},
+        metadata={"role": role, "team": team.title},
     )
 
     return team_member

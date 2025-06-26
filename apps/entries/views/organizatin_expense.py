@@ -18,6 +18,10 @@ from .base import (
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
     OrganizationExpenseEntryRequiredMixin,
+<<<<<<< feature/entry_details_view
+    OrganizationContextMixin,
+=======
+>>>>>>> main
 )
 
 
@@ -34,6 +38,8 @@ class OrganizationExpenseFormMixin:
         kwargs["is_update"] = bool(getattr(self, "org_exp_entry", False))
         return kwargs
 
+<<<<<<< feature/entry_details_view
+=======
 
 class OrganizationContextMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -48,6 +54,7 @@ class OrganizationContextMixin:
         if hasattr(self, "attachments"):
             context["attachments"] = self.attachments
         return context
+>>>>>>> main
 
 
 class OrganizationExpenseListView(

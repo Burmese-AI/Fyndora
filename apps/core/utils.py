@@ -9,8 +9,6 @@ def percent_change(current: float, previous: float) -> str:
     symbol = "+" if change >= 0 else "-"
     return f"{symbol}{abs(change):.1f}% from last period"
 
-<<<<<<< feature/entry_details_view
-=======
 
 def get_paginated_context(
     *, queryset, context={}, object_name, page_size=PAGINATION_SIZE, page_no=1
@@ -27,7 +25,6 @@ def get_paginated_context(
     )
     return context
 
->>>>>>> main
 
 def get_paginated_context(
     *, queryset, context={}, object_name, page_size=PAGINATION_SIZE, page_no=1

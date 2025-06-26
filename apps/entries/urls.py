@@ -27,12 +27,9 @@ urlpatterns = [
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update",
     ),
-<<<<<<< feature/entry_details_view
     path(
         "entries/<uuid:pk>/detail",
         EntryDetailView.as_view(),
         name="entry_detail",
     ),
-=======
->>>>>>> main
 ]

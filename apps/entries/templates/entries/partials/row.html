@@ -48,7 +48,7 @@
     <div class="flex justify-center gap-2">
       <!-- View -->
       <a
-        hx-get="{% url 'organization_expense_detail' organization_id=organization.pk pk=entry.pk %}"
+        hx-get="{% url 'entry_detail' organization_id=organization.pk pk=entry.pk %}"
         hx-target="#modal-placeholder"
         hx-swap="innerHTML"
         title="View" 

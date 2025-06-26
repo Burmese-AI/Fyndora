@@ -3,17 +3,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView
 from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.contrib import messages
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
-from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
+from ..constants import CONTEXT_OBJECT_NAME
 from ..selectors import get_org_expenses
 from ..services import get_org_expense_stats
 from ..forms import OrganizationExpenseEntryForm
-from .base import OrganizationRequiredMixin, HtmxOobResponseMixin, OrganizationMemberRequiredMixin, OrganizationExpenseEntryRequiredMixin
+from .base import OrganizationRequiredMixin, HtmxOobResponseMixin, OrganizationMemberRequiredMixin, OrganizationExpenseEntryRequiredMixin, OrganizationContextMixin
 
 
 class OrganizationExpenseFormMixin:
@@ -26,20 +26,6 @@ class OrganizationExpenseFormMixin:
         kwargs["instance"] = getattr(self, "org_exp_entry", None) #Pass exp entry instance if it exists
         kwargs["is_update"] = bool(getattr(self, "org_exp_entry", False))
         return kwargs
-
-class OrganizationContextMixin:
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        if hasattr(self, 'organization'):
-            #To create a new org_exp entry, organization is required in the form template
-            context['organization'] = self.organization
-        if hasattr(self, 'org_member'):
-            context['org_member'] = self.org_member
-        if hasattr(self, 'org_exp_entry'):
-            context['entry'] = self.org_exp_entry
-        if hasattr(self, 'attachments'):
-            context['attachments'] = self.attachments
-        return context
 
 class OrganizationExpenseListView(
     LoginRequiredMixin,
@@ -223,17 +209,3 @@ class OrganizationExpenseUpdateView(
             request=self.request,
         )
         return HttpResponse(f"{message_html} {modal_html}")
-
-class OrganizationExpenseDetailView(
-    LoginRequiredMixin,
-    OrganizationExpenseEntryRequiredMixin,
-    OrganizationContextMixin,
-    DetailView
-):
-    
-    model = Entry
-    template_name = "entries/components/detail_modal.html"
-    context_object_name = DETAIL_CONTEXT_OBJECT_NAME
-    
-    def get_queryset(self) -> QuerySet[Any]:
-        return get_org_expenses(self.organization)

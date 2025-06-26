@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Sum, Count, Prefetch
 from django.contrib.contenttypes.prefetch import GenericPrefetch
 from django.utils.timezone import now
 
@@ -133,6 +133,97 @@ def get_org_expenses(organization: Organization):
 
     return entries
 
+def get_org_entries(
+    organization: Organization,
+    *,
+    entry_types: list[EntryType] = list(EntryType),
+    statuses: list[EntryStatus] = list(EntryStatus),
+    submitter_types: list[str] = ['org_member', 'team_member'],
+    sort_by: str = None,
+    prefetch_attachments: bool = False,
+    annotate_attachment_count: bool = False,
+):
+    """
+    Get organization entries with flexible filtering options.
+    
+    Args:
+        organization: Organization to query
+        entry_types: Which entry types to include (default: all)
+        statuses: Which statuses to include (default: all)
+        submitter_types: ['org_member', 'team_member'] or one of them
+        sort_by: Field to sort by (e.g., 'created_at' or '-amount')
+        prefetch_attachments: Load attachments in same query
+        annotate_attachment_count: Add attachment_count annotation
+
+    Returns:
+        Filtered and optimized Entry queryset
+    """
+    
+    # Prepare content types and IDs for filtering
+    filters = Q()
+    
+    if 'org_member' in submitter_types:
+        org_member_type = ContentType.objects.get_for_model(OrganizationMember)
+        org_member_ids = OrganizationMember.objects.filter(
+            organization=organization
+        ).values_list("pk", flat=True)
+        filters |= Q(
+            submitter_content_type=org_member_type,
+            submitter_object_id__in=org_member_ids,
+        )
+    
+    if 'team_member' in submitter_types:
+        team_member_type = ContentType.objects.get_for_model(TeamMember)
+        team_member_ids = TeamMember.objects.filter(
+            organization_member__organization=organization
+        ).values_list("pk", flat=True)
+        filters |= Q(
+            submitter_content_type=team_member_type,
+            submitter_object_id__in=team_member_ids,
+        )
+    
+    # Build the base queryset
+    queryset = Entry.objects.filter(
+        filters,
+        entry_type__in=entry_types,
+        status__in=statuses,
+    )
+    
+    # Prepare prefetch queries
+    generic_prefetch_queries = []
+    generic_prefetch = None
+        
+    # Prefetch organization members with users
+    if 'org_member' in submitter_types:
+        org_member_queryset = OrganizationMember.objects.select_related('user')
+        generic_prefetch_queries.append(org_member_queryset)
+    
+    # Prefetch team members with related data
+    if 'team_member' in submitter_types:
+        team_member_queryset = TeamMember.objects.select_related('organization_member', 'team')
+        generic_prefetch_queries.append(team_member_queryset)
+    
+    # Apply prefetches
+    if generic_prefetch_queries:
+        generic_prefetch = GenericPrefetch("submitter", generic_prefetch_queries)
+        
+    if generic_prefetch:
+        queryset = queryset.prefetch_related(generic_prefetch)
+    
+    # Optionally prefetch attachments
+    if prefetch_attachments:
+        queryset = queryset.prefetch_related('attachments')
+    
+    # Optionally annotate with attachment count
+    if annotate_attachment_count:
+        queryset = queryset.annotate(attachment_count=Count('attachments'))
+    
+    # Apply sorting if specified
+    if sort_by:
+        queryset = queryset.order_by(sort_by)
+    
+    return queryset
+    
 
 def get_total_org_expenses(organization: Organization):
     queryset = get_org_expenses(organization)

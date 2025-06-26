@@ -11,13 +11,13 @@ from apps.teams.models import TeamMember
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
+from .permissions import EntryPermissions
 from .selectors import (
     get_average_monthly_org_expenses,
     get_last_month_org_expenses,
     get_this_month_org_expenses,
     get_total_org_expenses,
 )
-
 
 
 def create_org_expense_entry_with_attachments(
@@ -38,7 +38,7 @@ def create_org_expense_entry_with_attachments(
             )
 
     return entry
-  
+
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments
@@ -109,9 +109,9 @@ def entry_create(
             else submitted_by.user
         )
 
-        assign_perm("entries.change_entry", user, entry)
-        assign_perm("entries.delete_entry", user, entry)
-        assign_perm("entries.upload_attachments", user, entry)
+        assign_perm(EntryPermissions.CHANGE_ENTRY, user, entry)
+        assign_perm(EntryPermissions.DELETE_ENTRY, user, entry)
+        assign_perm(EntryPermissions.UPLOAD_ATTACHMENTS, user, entry)
 
         audit_create(
             user=user,
@@ -143,7 +143,7 @@ def entry_review(*, entry, reviewer, status, notes=None):
     """
     Service to review an entry (approve, reject, flag).
     """
-    if not reviewer.user.has_perm("entries.review_entries", entry):
+    if not reviewer.user.has_perm(EntryPermissions.REVIEW_ENTRY, entry):
         raise PermissionDenied("You do not have permission to review this entry.")
 
     _validate_review_data(status=status, notes=notes)

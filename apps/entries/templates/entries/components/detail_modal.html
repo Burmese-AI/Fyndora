@@ -9,9 +9,13 @@
   <div class="flex justify-between items-start">
     <div>
       <h2 class="text-xl font-bold text-base-content">Entry Details</h2>
-      <p class="text-sm text-neutral">Approved Entry</p>
     </div>
-    <span class="badge badge-neutral badge-lg">{{ entry.get_status_display }}</span>
+    <span class="badge badge-neutral md:badge-sm xl:badge-md capitalize
+      {% if entry.status == 'approved' %}bg-green-300 text-neutral
+      {% elif entry.status == 'pending' %}bg-yellow-300 text-neutral
+      {% elif entry.status == 'rejected' %}bg-red-500 text-neutral
+      {% elif entry.status == 'flagged' %}badge-neutral
+      {% else %}bg-ghost text-ghost-content{% endif %}">{{ entry.get_status_display }}</span>
   </div>
 
   <!-- Grid Section -->
@@ -25,7 +29,7 @@
         </svg>
         Expense Information
       </h3>
-      <p class="text-sm"><span class="font-medium text-neutral">Description:</span> {{ entry.description }}</p>
+      <p class="text-sm tracking-tighter indent-8 italic text-xs md:text-sm">{{ entry.description }}</p>
       <p class="text-sm"><span class="font-medium text-neutral">Amount:</span> <span class="">${{ entry.amount|intcomma }}</span></p>
       <p class="text-sm"><span class="font-medium text-neutral">Entry Type:</span> {{ entry.get_entry_type_display }}</p>
     </div>

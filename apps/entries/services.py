@@ -8,6 +8,7 @@ from apps.attachments.models import Attachment
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.teams.models import TeamMember
+from apps.teams.constants import TeamMemberRole
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -18,6 +19,56 @@ from .selectors import (
     get_this_month_org_expenses,
     get_total_org_expenses,
 )
+
+
+def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
+    """
+    A helper function to centralize permission checking for entry services.
+    """
+    user = (
+        actor.organization_member.user if isinstance(actor, TeamMember) else actor.user
+    )
+
+    # For create, an entry object doesn't exist yet, so a workspace is passed.
+    # For update/review, an entry object exists, and we get the workspace from it.
+    perm_object = workspace
+    if entry:
+        perm_object = entry.workspace
+
+    # 1. Base permission check
+    has_perm = False
+    if perm_object and user.has_perm(permission_to_check, perm_object):
+        has_perm = True
+    elif not perm_object and user.has_perm(permission_to_check):  # Global perm check
+        has_perm = True
+
+    if not has_perm:
+        raise PermissionDenied("You do not have permission to perform this action.")
+
+    # 2. Role-specific checks (only for existing entries)
+    if entry and isinstance(actor, TeamMember):
+        entry_team = entry.workspace_team.team if entry.workspace_team else None
+
+        if permission_to_check == EntryPermissions.REVIEW_ENTRY:
+            if (
+                actor.role == TeamMemberRole.TEAM_COORDINATOR
+                and actor.team != entry_team
+            ):
+                raise PermissionDenied(
+                    "Team Coordinators can only review entries from their own team."
+                )
+
+        if permission_to_check == EntryPermissions.CHANGE_ENTRY:
+            if (
+                actor.role == TeamMemberRole.TEAM_COORDINATOR
+                and actor.team != entry_team
+            ):
+                raise PermissionDenied(
+                    "Team Coordinators can only edit entries from their own team."
+                )
+
+            if actor.role == TeamMemberRole.SUBMITTER and entry.submitter != actor:
+                raise PermissionDenied("You can only edit your own entries.")
 
 
 def create_org_expense_entry_with_attachments(
@@ -75,6 +126,15 @@ def entry_create(
     """
     Service to create a new entry.
     """
+    # Get workspace from workspace_team if workspace is not provided
+    workspace = workspace or (workspace_team.workspace if workspace_team else None)
+
+    _check_entry_permissions(
+        actor=submitted_by,
+        workspace=workspace,
+        permission_to_check=EntryPermissions.ADD_ENTRY,
+    )
+
     # Validate workspace requirements based on entry type
     if entry_type == EntryType.WORKSPACE_EXP and not workspace:
         raise ValidationError("Workspace is required for workspace expense entries")
@@ -143,8 +203,9 @@ def entry_review(*, entry, reviewer, status, notes=None):
     """
     Service to review an entry (approve, reject, flag).
     """
-    if not reviewer.user.has_perm(EntryPermissions.REVIEW_ENTRY, entry):
-        raise PermissionDenied("You do not have permission to review this entry.")
+    _check_entry_permissions(
+        actor=reviewer, entry=entry, permission_to_check=EntryPermissions.REVIEW_ENTRY
+    )
 
     _validate_review_data(status=status, notes=notes)
 
@@ -166,7 +227,7 @@ def entry_review(*, entry, reviewer, status, notes=None):
         entry = model_update(entry, entry_data)
 
         audit_create(
-            user=reviewer.user,
+            user=reviewer.organization_member.user,
             action_type="status_changed",
             target_entity=entry,
             metadata={
@@ -234,7 +295,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
             reviewed_entries.append(entry)
 
             audit_create(
-                user=reviewer.user,
+                user=reviewer.organization_member.user,
                 action_type="status_changed",
                 target_entity=entry,
                 metadata={
@@ -252,6 +313,10 @@ def entry_update(*, entry, updated_by, **fields_to_update):
     """
     Service to update an existing entry.
     """
+    _check_entry_permissions(
+        actor=updated_by, entry=entry, permission_to_check=EntryPermissions.CHANGE_ENTRY
+    )
+
     allowed_fields = ["description", "amount", "workspace", "workspace_team"]
     update_data = {}
 
@@ -266,11 +331,17 @@ def entry_update(*, entry, updated_by, **fields_to_update):
     if entry.status == EntryStatus.APPROVED:
         raise ValidationError("Cannot update an approved entry")
 
+    user = (
+        updated_by.organization_member.user
+        if isinstance(updated_by, TeamMember)
+        else updated_by.user
+    )
+
     with transaction.atomic():
         entry = model_update(entry, update_data)
 
         audit_create(
-            user=updated_by,
+            user=user,
             action_type="entry_updated",
             target_entity=entry,
             metadata={

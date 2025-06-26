@@ -1,11 +1,11 @@
 from django.db import models
 from apps.entries.models import Entry
 from uuid import uuid4
-from apps.core.models import baseModel
+from apps.core.models import baseModel, SoftDeleteModel
 from .constants import AttachmentType
 
 
-class Attachment(baseModel):
+class Attachment(baseModel, SoftDeleteModel):
     attachment_id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     entry = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="attachments"

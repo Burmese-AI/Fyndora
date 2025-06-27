@@ -11,14 +11,5 @@
             New Team
         </a>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {% for team in teams %}
-            <div class="card bg-base-100 shadow-md">
-                <div class="card-body">
-                    <h2 class="card-title">{{ team.title }}</h2>
-                    <p class="text-sm text-base-content/70">{{ team.description }}</p>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+    {% include "teams/partials/teams_display.html" %}
 </div>

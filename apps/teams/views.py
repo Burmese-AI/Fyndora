@@ -3,15 +3,21 @@ from apps.teams.selectors import get_all_team_members
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from apps.teams.models import Team
-from apps.workspaces.selectors import get_organization_by_id
+from apps.core.services.organizations import get_organization_by_id
+from django.shortcuts import redirect
+from django.contrib import messages
+from django_htmx.http import HttpResponseClientRedirect
 
 # Create your views here.
 def teams_view(request, organization_id):
-    print(organization_id)
-    teams = Team.objects.filter(organization_id=organization_id)
-    organization = get_organization_by_id(organization_id)
-    context = {
-        "teams": teams,
-        "organization": organization
-    }
-    return render(request, "teams/index.html", context)
+    try:
+        teams = Team.objects.filter(organization_id=organization_id)
+        organization = get_organization_by_id(organization_id)
+        context = {
+            "teams": teams,
+            "organization": organization
+        }
+        return render(request, "teams/index.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")

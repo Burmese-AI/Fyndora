@@ -1,0 +1,67 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+
+<form
+    {% if is_oob %}hx-swap-oob="true"{% endif %}
+    id="modal_content_template"
+    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
+    hx-post=""
+    hx-swap="none">
+{% csrf_token %}
+<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
+<div class="p-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-8">Create Team in {{ organization.title }}</h2>
+
+    <div id="form-errors" class="mb-4">
+    {% if form.non_field_errors %}
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            </div>
+            <div class="ml-3">
+            <p class="text-sm text-red-700">
+                {{ form.non_field_errors|join:", " }}
+            </p>
+            </div>
+        </div>
+        </div>
+    {% endif %}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_title" class="block text-lg font-medium text-gray-700 mb-2">Title</label>
+    {{ form.title.errors }}
+    {{ form.title }}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_description" class="block text-lg font-medium text-gray-700 mb-2">Description</label>
+    {{ form.description.errors }}
+    {{ form.description }}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_team_coordinator" class="block text-lg font-medium text-gray-700 mb-2">Team Coordinator</label>
+    {{ form.team_coordinator.errors }}
+    {{ form.team_coordinator }}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-2">Custom Remittance Rate (%)</label>
+    {{ form.custom_remittance_rate.errors }}
+    {{ form.custom_remittance_rate }}
+    </div>
+    <div class="flex justify-end space-x-3">
+    <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
+    <button type="submit" class="btn btn-primary w-full sm:w-auto">
+        Create Team
+    </button>
+    </div>
+</div>
+</form>
+
+{% endblock %}

@@ -12,7 +12,7 @@ from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME
 from ..selectors import get_org_expenses
 from ..services import get_org_expense_stats
-from ..forms import OrganizationExpenseEntryForm
+from ..forms import EntryForm
 from .base import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
@@ -22,8 +22,8 @@ from .base import (
 )
 
 
-class OrganizationExpenseFormMixin:
-    form_class = OrganizationExpenseEntryForm
+class EntryFormMixin:
+    form_class = EntryForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -64,7 +64,7 @@ class OrganizationExpenseListView(
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
-    OrganizationExpenseFormMixin,
+    EntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
     CreateView,
@@ -150,7 +150,7 @@ class OrganizationExpenseCreateView(
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
     OrganizationExpenseEntryRequiredMixin,
-    OrganizationExpenseFormMixin,
+    EntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
     UpdateView,

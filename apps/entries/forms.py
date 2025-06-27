@@ -4,7 +4,7 @@ from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 
 
-class OrganizationExpenseEntryForm(forms.ModelForm):
+class EntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
         label="Attachments",
         required=False,

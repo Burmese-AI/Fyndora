@@ -9,7 +9,7 @@ from apps.teams.selectors import get_teams_by_organization_id
 from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-
+from apps.teams.exceptions import TeamCreationError
 
 # Create your views here.
 def teams_view(request, organization_id):
@@ -64,8 +64,17 @@ def create_team_view(request, organization_id):
                     return response
                 return HttpResponseClientRedirect(f"/{organization_id}/teams/")
             else:
-                messages.error(request, "Invalid form submission")
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+                messages.error(request, "Invalid form data.")
+                context = {"form": form, "is_oob": True}
+                message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                modal_html = render_to_string(
+                        "teams/partials/create_team_form.html",
+                        context=context,
+                        request=request,
+                    )
+                return HttpResponse(f"{message_html} {modal_html}")
         else:
             form = TeamForm(organization=organization)
             context = {

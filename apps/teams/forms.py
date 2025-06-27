@@ -2,6 +2,7 @@ from django import forms
 from .models import Team
 from apps.organizations.models import OrganizationMember
 from apps.workspaces.selectors import get_organization_members_by_organization_id
+from apps.workspaces.models import WorkspaceTeam
 
 
 class TeamForm(forms.ModelForm):
@@ -46,11 +47,25 @@ class TeamForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        organization = kwargs.pop("organization", None)
+        self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
-        if organization:
+        if self.organization:
             self.fields[
                 "team_coordinator"
             ].queryset = get_organization_members_by_organization_id(
-                organization.organization_id
+                self.organization.organization_id
             )
+
+    def clean_title(self):
+        title = self.cleaned_data.get("title")
+        # Use the organization from the form instance if available, otherwise use the one passed to __init__
+        organization = getattr(self.instance, 'organization', None) or self.organization
+        
+        if not organization:
+            raise forms.ValidationError("Organization is required for team creation")
+            
+        if Team.objects.filter(title=title, organization=organization).exists():
+            raise forms.ValidationError(
+                "Team with this title already exists in this organization"
+            )
+        return title

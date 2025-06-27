@@ -46,7 +46,11 @@ class Team(baseModel):
         verbose_name = "team"
         verbose_name_plural = "teams"
         ordering = ["-created_at"]
-        constraints = [models.UniqueConstraint(fields=["title"], name="unique_team")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["title", "organization"], name="unique_team"
+            )
+        ]
 
     def __str__(self):
         return f"{self.title}"

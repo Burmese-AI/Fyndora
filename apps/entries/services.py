@@ -19,8 +19,6 @@ from .selectors import (
 )
 
 
-
-
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):
@@ -39,29 +37,62 @@ def create_org_expense_entry_with_attachments(
             )
 
     return entry
-  
 
-def update_org_expense_entry_with_attachments(
-    *, entry, amount, description, attachments
-):
+
+def update_entry_with_attachments(
+    *,
+    entry,
+    amount,
+    description,
+    attachments,
+    replace_attachments: bool,
+) -> Entry:
     with transaction.atomic():
         # Update basic fields
-        entry.amount = amount
-        entry.description = description
-        entry.save(update_fields=["amount", "description"])
+        update_entry_basic_fields(
+            entry=entry,
+            amount=amount,
+            description=description,
+        )
 
-        # Replace attachments only if new ones were uploaded
+        # If new attachments were provided, replace existing ones or append the new ones
         if attachments:
-            entry.attachments.all().delete()
-            for file in attachments:
-                file_type = AttachmentType.get_file_type_by_extension(file.name)
-                Attachment.objects.create(
-                    entry=entry,
-                    file_url=file,
-                    file_type=file_type or AttachmentType.OTHER,
-                )
-
+            replace_or_append_attachments(
+                entry=entry,
+                attachments=attachments,
+                replace_attachments=replace_attachments,
+            )
     return entry
+
+
+def update_entry_basic_fields(
+    *,
+    entry,
+    amount,
+    description,
+):
+    entry.amount = amount
+    entry.description = description
+    entry.save(update_fields=["amount", "description"])
+
+
+def replace_or_append_attachments(
+    *,
+    entry,
+    attachments,
+    replace_attachments: bool,
+):
+    if replace_attachments:
+        # Soft delete all existing attachments
+        entry.attachments.all().delete()
+    # Create New Attachments linked to the Entry
+    for file in attachments:
+        file_type = AttachmentType.get_file_type_by_extension(file.name)
+        Attachment.objects.create(
+            entry=entry,
+            file_url=file,
+            file_type=file_type or AttachmentType.OTHER,
+        )
 
 
 def entry_create(

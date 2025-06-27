@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('attachments', '0001_initial'),
+        ("attachments", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='attachment',
-            name='deleted_at',
+            model_name="attachment",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

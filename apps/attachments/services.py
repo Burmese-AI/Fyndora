@@ -1,7 +1,6 @@
 from django.contrib import messages
 from .models import Attachment
 
-
 def delete_attachment(attachment_id, request):
     try:
         attachment = Attachment.objects.select_related("entry").get(pk=attachment_id)

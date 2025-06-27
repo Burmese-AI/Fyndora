@@ -31,7 +31,6 @@ def delete_attachment(request, attachment_id):
 
     return response
 
-
 class AttachmentDeleteView(DeleteView):
     model = Attachment
     template_name = "attachments/delete_attachment.html"

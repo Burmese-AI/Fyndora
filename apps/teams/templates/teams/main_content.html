@@ -1,8 +1,24 @@
-<h1>Teams</h1>
-{% if teams %}
-{% for team in teams %}
-    <h2>{{ team.title }}</h2>
-{% endfor %}
-{% else %}
-    <p>No teams found</p>
-{% endif %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">My Teams under {{ organization.title }}</h1>
+            <p class="text-base-content/70 mt-2">Manage your project teams</p>
+        </div>
+        <a href="#" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            New Team
+        </a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for team in teams %}
+            <div class="card bg-base-100 shadow-md">
+                <div class="card-body">
+                    <h2 class="card-title">{{ team.title }}</h2>
+                    <p class="text-sm text-base-content/70">{{ team.description }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

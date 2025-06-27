@@ -6,7 +6,7 @@ from django_htmx.http import HttpResponseClientRedirect
 from apps.workspaces.models import WorkspaceTeam
 from apps.teams.forms import TeamForm
 from apps.teams.selectors import get_teams_by_organization_id
-
+from apps.teams.services import create_team_from_form
 
 # Create your views here.
 def teams_view(request, organization_id):
@@ -31,9 +31,13 @@ def create_team_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
         if request.method == "POST":
-            form = TeamForm(request.POST)
+            form = TeamForm(request.POST, organization=organization)
             if form.is_valid():
-                form.save()
+                create_team_from_form(form, organization=organization)
+                messages.success(request, "Team created successfully")
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+            else:
+                messages.error(request, "Invalid form submission")
                 return HttpResponseClientRedirect(f"/{organization_id}/teams/")
         else:
             form = TeamForm(organization=organization)
@@ -43,5 +47,6 @@ def create_team_view(request, organization_id):
             }
             return render(request, "teams/partials/create_team_form.html", context)
     except Exception as e:
+        print(e)
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")

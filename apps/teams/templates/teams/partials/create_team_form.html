@@ -6,7 +6,7 @@
     {% if is_oob %}hx-swap-oob="true"{% endif %}
     id="modal_content_template"
     class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
-    hx-post=""
+    hx-post="{% url 'create_team' organization_id=request.resolver_match.kwargs.organization_id %}"
     hx-swap="none">
 {% csrf_token %}
 <!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->

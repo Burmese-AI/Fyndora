@@ -1,0 +1,7 @@
+<div class="mt-2 space-y-2">
+{% if not attachments %}
+    <p class="text-gray-500 text-sm">No files uploaded yet.</p>
+{% else %}
+    {% include "attachments/partials/table.html" %}
+{% endif %}
+</div>

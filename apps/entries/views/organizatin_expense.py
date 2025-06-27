@@ -170,15 +170,19 @@ class OrganizationExpenseUpdateView(
 
     def form_valid(self, form):
         # Update org exp entry along with attachements if provided
-        from ..services import update_org_expense_entry_with_attachments
+        from ..services import update_entry_with_attachments
 
-        update_org_expense_entry_with_attachments(
+        update_entry_with_attachments(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
+            replace_attachments=form.cleaned_data["replace_attachments"],
         )
-        messages.success(self.request, "Expense entry updated successfully")
+
+        messages.success(
+            self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully"
+        )
         return self._render_htmx_success_response()
 
     def form_invalid(self, form):
@@ -204,7 +208,7 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{row_html}{stat_overview_html}")
+        response = HttpResponse(f"{message_html}{stat_overview_html}{row_html}")
         response["HX-trigger"] = "success"
         return response
 

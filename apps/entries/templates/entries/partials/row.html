@@ -1,6 +1,6 @@
 {% load humanize %}
 
-<tr id="row-{{ entry.pk }}">
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.pk }}">
   <td>
     <label>
       <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />

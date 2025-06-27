@@ -206,7 +206,7 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{row_html}{stat_overview_html}")
+        response = HttpResponse(f"{message_html}{stat_overview_html}{row_html}")
         response["HX-trigger"] = "success"
         return response
 

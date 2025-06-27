@@ -42,15 +42,23 @@ def create_team_view(request, organization_id):
                     teams = get_teams_by_organization_id(organization_id)
                     attached_workspaces = []  # Initialize the variable
                     for team in teams:
-                        attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
+                        attached_workspaces = WorkspaceTeam.objects.filter(
+                            team_id=team.team_id
+                        )
                         team.attached_workspaces = attached_workspaces
                     context = {
                         "teams": teams,
                         "organization": organization,
                         "is_oob": True,
                     }
-                    team_display_html = render_to_string("teams/partials/teams_display.html", context=context, request=request)
-                    message_html = render_to_string("includes/message.html", context=context, request=request)
+                    team_display_html = render_to_string(
+                        "teams/partials/teams_display.html",
+                        context=context,
+                        request=request,
+                    )
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
                     response = HttpResponse(f"{message_html} {team_display_html}")
                     response["HX-trigger"] = "success"
                     return response

@@ -1,0 +1,8 @@
+<h1>Teams</h1>
+{% if teams %}
+{% for team in teams %}
+    <h2>{{ team.title }}</h2>
+{% endfor %}
+{% else %}
+    <p>No teams found</p>
+{% endif %}

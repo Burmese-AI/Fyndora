@@ -1,11 +1,25 @@
 from django import forms
 from .models import Team
+from apps.organizations.models import OrganizationMember
+from apps.workspaces.selectors import get_organization_members_by_organization_id
+
 
 class TeamForm(forms.ModelForm):
+    team_coordinator = forms.ModelChoiceField(
+        queryset=OrganizationMember.objects.none(),  # Will be initialized in __init__
+        required=False,  # allow for null values and can also be assigned later
+        label="Select Team Coordinator",
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base "
+            }
+        ),
+    )
+
     class Meta:
         model = Team
-        fields = ['title', 'description', 'team_coordinator', 'custom_remittance_rate']
-        
+        fields = ["title", "description", "team_coordinator", "custom_remittance_rate"]
+
         widgets = {
             "title": forms.TextInput(
                 attrs={
@@ -20,11 +34,6 @@ class TeamForm(forms.ModelForm):
                     "placeholder": "Describe your team (optional)",
                 }
             ),
-            "team_coordinator": forms.Select(
-                attrs={
-                    "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                }
-            ),
             "custom_remittance_rate": forms.NumberInput(
                 attrs={
                     "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
@@ -35,5 +44,13 @@ class TeamForm(forms.ModelForm):
                 }
             ),
         }
-    
-    
+
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields[
+                "team_coordinator"
+            ].queryset = get_organization_members_by_organization_id(
+                organization.organization_id
+            )

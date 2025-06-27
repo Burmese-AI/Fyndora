@@ -19,8 +19,6 @@ from .selectors import (
 )
 
 
-
-
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):
@@ -39,7 +37,7 @@ def create_org_expense_entry_with_attachments(
             )
 
     return entry
-  
+
 
 def update_org_expense_entry_with_attachments(
     *, entry, amount, description, attachments

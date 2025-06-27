@@ -40,6 +40,7 @@ class OrganizationExpenseEntryRequiredMixin(OrganizationMemberRequiredMixin):
         self.org_exp_entry = get_object_or_404(Entry, pk=org_exp_entry_id)
         self.attachments = self.org_exp_entry.attachments.all()
 
+
 class EntryRequiredMixin(OrganizationMemberRequiredMixin):
     entry = None
     attachments = None
@@ -50,12 +51,14 @@ class EntryRequiredMixin(OrganizationMemberRequiredMixin):
         self.entry = get_object_or_404(Entry, pk=entry_id)
         self.attachments = self.entry.attachments.all()
 
+
 class HtmxOobResponseMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         if self.request.htmx:
             context["is_oob"] = True
         return context
+
 
 class OrganizationContextMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:

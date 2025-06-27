@@ -76,11 +76,8 @@
       Attachments ({{ entry.attachments.count }})
     </h3>
 
-    {% if not attachments %}
-        <p class="text-gray-500 text-sm">No files uploaded yet.</p>
-    {% else %}
-        {% include "entries/partials/uploaded_file_display.html" %}
-    {% endif %}
+    {% include "attachments/index.html" %}
+    
   </div>
 
    <!-- Form Actions -->

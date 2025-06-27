@@ -7,7 +7,7 @@ from apps.attachments.utils import validate_uploaded_files
 class OrganizationExpenseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
         label="Attachments",
-        required=True,
+        required=False,
         widget=MultipleFileInput(
             attrs={
                 "class": "file-input file-input-neutral w-full text-sm",
@@ -51,8 +51,6 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
         self.is_update = kwargs.pop("is_update", False)
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
-        # If not update mode, make attachment_files field input not required
-        self.fields["attachment_files"].required = not self.is_update
         # Only show replace_checkbox input in update mode
         if not self.is_update:
             self.fields.pop("replace_attachments")

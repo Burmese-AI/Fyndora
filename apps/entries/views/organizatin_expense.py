@@ -82,13 +82,15 @@ class OrganizationExpenseCreateView(
         return render(request, self.modal_template, context)
 
     def form_valid(self, form):
-        from ..services import create_org_expense_entry_with_attachments
+        from ..services import create_entry_with_attachments
+        from ..constants import EntryType
 
-        create_org_expense_entry_with_attachments(
-            org_member=self.org_member,
+        create_entry_with_attachments(
+            submitter=self.org_member,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
+            entry_type=EntryType.ORG_EXP
         )
         messages.success(self.request, "Expense entry submitted successfully")
         return self._render_htmx_success_response()

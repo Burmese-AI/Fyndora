@@ -1,13 +1,14 @@
+from guardian.shortcuts import assign_perm
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from guardian.shortcuts import assign_perm
 
 from apps.attachments.constants import AttachmentType
 from apps.attachments.models import Attachment
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.teams.models import TeamMember
+from apps.attachments.services import replace_or_append_attachments, create_attachments
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -18,25 +19,39 @@ from .selectors import (
     get_total_org_expenses,
 )
 
-
-def create_org_expense_entry_with_attachments(
-    *, org_member, amount, description, attachments
-):
+def create_entry_with_attachments(
+    *,
+    submitter,
+    amount,
+    description,
+    attachments,
+    entry_type: EntryType,
+) -> Entry:
+    
+    """
+    Service to create a new entry with attachments.
+    """
+    
+    is_attachment_provided = True if attachments else False 
     with transaction.atomic():
+        
+        # Create the Entry
         entry = Entry.objects.create(
-            entry_type=EntryType.ORG_EXP,
+            entry_type=entry_type,
             amount=amount,
             description=description,
-            submitter=org_member,
+            submitter=submitter,
+            status=EntryStatus.PENDING_REVIEW if is_attachment_provided else EntryStatus.FLAGGED,
         )
-
-        for file in attachments:
-            file_type = AttachmentType.get_file_type_by_extension(file.name)
-            Attachment.objects.create(
-                entry=entry, file_url=file, file_type=file_type or AttachmentType.IMAGE
+        
+        # Create the Attachments if any were provided
+        if is_attachment_provided:
+            create_attachments(
+                entry=entry,
+                attachments=attachments,
             )
-
-    return entry
+            
+    return entry    
 
 
 def update_entry_with_attachments(
@@ -47,6 +62,11 @@ def update_entry_with_attachments(
     attachments,
     replace_attachments: bool,
 ) -> Entry:
+    
+    """
+    Service to update an existing entry with attachments.
+    """
+    
     with transaction.atomic():
         # Update basic fields
         update_entry_basic_fields(
@@ -74,26 +94,6 @@ def update_entry_basic_fields(
     entry.amount = amount
     entry.description = description
     entry.save(update_fields=["amount", "description"])
-
-
-def replace_or_append_attachments(
-    *,
-    entry,
-    attachments,
-    replace_attachments: bool,
-):
-    if replace_attachments:
-        # Soft delete all existing attachments
-        entry.attachments.all().delete()
-    # Create New Attachments linked to the Entry
-    for file in attachments:
-        file_type = AttachmentType.get_file_type_by_extension(file.name)
-        Attachment.objects.create(
-            entry=entry,
-            file_url=file,
-            file_type=file_type or AttachmentType.OTHER,
-        )
-
 
 def entry_create(
     *,

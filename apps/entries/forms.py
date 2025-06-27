@@ -14,12 +14,14 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
             }
         ),
     )
-    
+
     replace_attachments = forms.BooleanField(
         label="Replace existing attachments",
         required=False,
         initial=False,
-        widget=forms.CheckboxInput(attrs={"class": "checkbox checkbox-neutral checkbox-xs"})
+        widget=forms.CheckboxInput(
+            attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
+        ),
     )
 
     class Meta:
@@ -52,10 +54,8 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
         # If not update mode, make attachment_files field input not required
         self.fields["attachment_files"].required = not self.is_update
         # Only show replace_checkbox input in update mode
-        if not self.is_update: self.fields.pop("replace_attachments")
-        print(f"Is Update Mode: {self.is_update}")
-        print(f"Attachment Required: {self.fields['attachment_files'].required}")
-  
+        if not self.is_update:
+            self.fields.pop("replace_attachments")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -73,7 +73,5 @@ class OrganizationExpenseEntryForm(forms.ModelForm):
             )
 
         validate_uploaded_files(cleaned_data.get("attachment_files"))
-        
-        print(f"Replace Attachments: {cleaned_data.get('replace_attachments')}")
 
         return cleaned_data

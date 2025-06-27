@@ -171,7 +171,7 @@ class OrganizationExpenseUpdateView(
     def form_valid(self, form):
         # Update org exp entry along with attachements if provided
         from ..services import update_entry_with_attachments
-        
+
         update_entry_with_attachments(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
@@ -179,8 +179,10 @@ class OrganizationExpenseUpdateView(
             attachments=form.cleaned_data["attachment_files"],
             replace_attachments=form.cleaned_data["replace_attachments"],
         )
-        
-        messages.success(self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully")
+
+        messages.success(
+            self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully"
+        )
         return self._render_htmx_success_response()
 
     def form_invalid(self, form):

@@ -19,8 +19,6 @@ from .selectors import (
 )
 
 
-
-
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):
@@ -40,6 +38,7 @@ def create_org_expense_entry_with_attachments(
 
     return entry
 
+
 def update_entry_with_attachments(
     *,
     entry,
@@ -55,7 +54,7 @@ def update_entry_with_attachments(
             amount=amount,
             description=description,
         )
-        
+
         # If new attachments were provided, replace existing ones or append the new ones
         if attachments:
             replace_or_append_attachments(
@@ -64,6 +63,7 @@ def update_entry_with_attachments(
                 replace_attachments=replace_attachments,
             )
     return entry
+
 
 def update_entry_basic_fields(
     *,
@@ -75,13 +75,13 @@ def update_entry_basic_fields(
     entry.description = description
     entry.save(update_fields=["amount", "description"])
 
+
 def replace_or_append_attachments(
     *,
     entry,
     attachments,
     replace_attachments: bool,
 ):
-    
     if replace_attachments:
         # Soft delete all existing attachments
         entry.attachments.all().delete()
@@ -92,7 +92,8 @@ def replace_or_append_attachments(
             entry=entry,
             file_url=file,
             file_type=file_type or AttachmentType.OTHER,
-        )        
+        )
+
 
 def entry_create(
     *,

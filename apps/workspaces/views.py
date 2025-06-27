@@ -302,10 +302,18 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
 def get_workspace_teams_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
+        organization = get_organization_by_id(organization_id)
         workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
+        
+        # Debug: Print to identify duplicate calls
+        print(f"DEBUG: get_workspace_teams_view called for workspace_id: {workspace_id}")
+        print(f"DEBUG: workspace_teams count: {workspace_teams.count() if workspace_teams else 0}")
+        
         context = {
             "workspace_teams": workspace_teams,
             "workspace": workspace,
+            "organization": organization,
+
         }
         return render(request, "workspaces/workspace_teams_main.html", context)
     except Exception as e:

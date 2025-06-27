@@ -7,15 +7,21 @@ from apps.core.services.organizations import get_organization_by_id
 from django.shortcuts import redirect
 from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
+from apps.workspaces.models import WorkspaceTeam
+
 
 # Create your views here.
 def teams_view(request, organization_id):
     try:
         teams = Team.objects.filter(organization_id=organization_id)
+        for team in teams:
+            attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
+            team.attached_workspaces = attached_workspaces
+        print(attached_workspaces)
         organization = get_organization_by_id(organization_id)
         context = {
             "teams": teams,
-            "organization": organization
+            "organization": organization,
         }
         return render(request, "teams/index.html", context)
     except Exception as e:

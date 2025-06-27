@@ -15,6 +15,12 @@
             </p>
             <div class="flex flex-col gap-3 text-xs mb-4">
                 <span>
+                    <strong>Workspaces Joined:</strong>
+                    {% for workspace in team.attached_workspaces %}
+                        {{ workspace.workspace.title }},
+                    {% endfor %}
+                </span>
+                <span>
                     <strong>Coordinator:</strong>
                     {% if team.team_coordinator %}
                         {{ team.team_coordinator.user.username }}
@@ -40,7 +46,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    Add Members
+                    Members
                 </a>
             </div>
         </div>

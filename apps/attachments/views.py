@@ -5,12 +5,12 @@ from .models import Attachment
 from django.template.loader import render_to_string
 from django.contrib.messages import get_messages
 
-from .services import delete_attachment_logic
+from .services import delete_attachment
 
 
 @require_http_methods(["DELETE"])
 def delete_attachment(request, attachment_id):
-    success, attachments = delete_attachment_logic(attachment_id, request)
+    success, attachments = delete_attachment(attachment_id, request)
     context = {"is_oob": True, "messages": get_messages(request)}
     attachment_html = ""
 

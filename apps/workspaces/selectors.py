@@ -80,7 +80,9 @@ def get_workspace_teams_by_workspace_id(workspace_id):
     Return workspace teams by workspace ID.
     """
     try:
-        return WorkspaceTeam.objects.filter(workspace_id=workspace_id)
+        return WorkspaceTeam.objects.filter(workspace_id=workspace_id).select_related(
+            "team", "workspace"
+        )
     except Exception as e:
         print(f"Error in get_workspace_teams_by_workspace_id: {str(e)}")
         return None

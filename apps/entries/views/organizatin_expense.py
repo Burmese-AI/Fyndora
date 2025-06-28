@@ -18,6 +18,7 @@ from .base import (
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
     OrganizationExpenseEntryRequiredMixin,
+    OrganizationContextMixin,
 )
 
 
@@ -33,21 +34,6 @@ class OrganizationExpenseFormMixin:
         )  # Pass exp entry instance if it exists
         kwargs["is_update"] = bool(getattr(self, "org_exp_entry", False))
         return kwargs
-
-
-class OrganizationContextMixin:
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        if hasattr(self, "organization"):
-            # To create a new org_exp entry, organization is required in the form template
-            context["organization"] = self.organization
-        if hasattr(self, "org_member"):
-            context["org_member"] = self.org_member
-        if hasattr(self, "org_exp_entry"):
-            context["entry"] = self.org_exp_entry
-        if hasattr(self, "attachments"):
-            context["attachments"] = self.attachments
-        return context
 
 
 class OrganizationExpenseListView(
@@ -184,15 +170,19 @@ class OrganizationExpenseUpdateView(
 
     def form_valid(self, form):
         # Update org exp entry along with attachements if provided
-        from ..services import update_org_expense_entry_with_attachments
+        from ..services import update_entry_with_attachments
 
-        update_org_expense_entry_with_attachments(
+        update_entry_with_attachments(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
+            replace_attachments=form.cleaned_data["replace_attachments"],
         )
-        messages.success(self.request, "Expense entry updated successfully")
+
+        messages.success(
+            self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully"
+        )
         return self._render_htmx_success_response()
 
     def form_invalid(self, form):
@@ -218,7 +208,7 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{row_html}{stat_overview_html}")
+        response = HttpResponse(f"{message_html}{stat_overview_html}{row_html}")
         response["HX-trigger"] = "success"
         return response
 

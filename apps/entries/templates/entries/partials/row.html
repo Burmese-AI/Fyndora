@@ -1,6 +1,6 @@
 {% load humanize %}
 
-<tr id="row-{{ entry.pk }}">
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.pk }}">
   <td>
     <label>
       <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />
@@ -19,35 +19,54 @@
       </div>
     {% endif %}
   </td>
-  <td>
+  <td class="capitalize">
     {{ entry.submitter_user_name }}
   </td>
   <td>
     {{ entry.submitted_at|naturaltime }}
   </td>
-  <td>
-    <span class="badge badge-outline badge-sm capitalize">
-      {{ entry.get_entry_type_display }}
-    </span>
+  <!-- Entry Type -->
+  <td class="max-w-xs">
+    <div class="tooltip" data-tip="{{ entry.get_entry_type_display }}">
+      <span class="badge badge-xs md:badge-sm xl:badge-md capitalize truncate
+        {% if entry.entry_type == 'income' %}bg-green-700 text-green-200
+        {% elif entry.entry_type == 'disbursement' %}bg-red-700 text-red-200
+        {% elif entry.entry_type == 'remittance' %}badge-neutral
+        {% elif entry.entry_type == 'workspace_exp' %}badge-accent
+        {% elif entry.entry_type == 'org_exp' %}badge-secondary
+        {% else %}badge-ghost{% endif %}
+      ">
+        {{ entry.get_entry_type_display }}
+      </span>
+    </div>
   </td>
-  <td>
-    <span class="badge badge-sm 
-      {% if entry.status == 'approved' %}badge-success
-      {% elif entry.status == 'pending_review' %}badge-warning
-      {% elif entry.status == 'rejected' %}badge-error
-      {% elif entry.status == 'flagged' %}badge-secondary
-      {% else %}badge-ghost{% endif %}
-    ">
-      {{ entry.get_status_display }}
-    </span>
+
+  <!-- Entry Status -->
+  <td class="text-center">
+    <div class="tooltip tooltip-neutral" data-tip="{{ entry.get_status_display }}">
+      
+      <button class="status md:status-md xl:status-lg animate-pulse
+      {% if entry.status == 'approved' %}bg-green-300
+      {% elif entry.status == 'pending' %}bg-yellow-500
+      {% elif entry.status == 'rejected' %}bg-red-700
+      {% elif entry.status == 'flagged' %}status-neutral
+      {% else %}status-ghost{% endif %}"></button>
+    </div>
   </td>
   <td class="text-right">
     ${{ entry.amount|intcomma }}
   </td>
   <td class="text-center">
+
     <div class="flex justify-center gap-2">
       <!-- View -->
-      <a href="#" title="View" class="btn btn-xs btn-ghost">
+      <a
+        hx-get="{% url 'entry_detail' organization_id=organization.pk pk=entry.pk %}"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+        title="View" 
+        class="btn btn-xs btn-ghost"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />

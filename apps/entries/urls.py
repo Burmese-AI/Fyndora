@@ -4,6 +4,7 @@ from .views.organizatin_expense import (
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
 )
+from .views.base import EntryDetailView
 
 urlpatterns = [
     path(
@@ -25,5 +26,10 @@ urlpatterns = [
         "expenses/<uuid:pk>/",
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update",
+    ),
+    path(
+        "entries/<uuid:pk>/detail",
+        EntryDetailView.as_view(),
+        name="entry_detail",
     ),
 ]

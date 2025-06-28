@@ -26,21 +26,6 @@ def get_paginated_context(
     return context
 
 
-def get_paginated_context(
-    *, queryset, context={}, object_name, page_size=PAGINATION_SIZE, page_no=1
-):
-    paginator = Paginator(queryset, page_size)
-    page_obj = paginator.get_page(page_no)
-    context.update(
-        {
-            "page_obj": page_obj,
-            "paginator": paginator,
-            object_name: page_obj.object_list,
-            "is_paginated": paginator.num_pages > 1,
-        }
-    )
-    return context
-
 
 # def get_paginated_context(
 #     *, queryset, context={}, object_name, page_size=PAGINATION_SIZE, page_no=1
@@ -56,8 +41,6 @@ def get_paginated_context(
 #         }
 #     )
 #     return context
-
-
 def model_update(
     instance,
     data,

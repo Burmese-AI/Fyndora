@@ -6,6 +6,7 @@ from apps.organizations.exceptions import (
 )
 from apps.core.utils import model_update
 from guardian.shortcuts import assign_perm
+from .permissions import OrganizationPermissions
 
 
 @transaction.atomic
@@ -37,8 +38,9 @@ def create_organization_with_owner(*, form, user) -> Organization:
         organization = model_update(
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
-        assign_perm("change_organization", user, organization)
-        assign_perm("delete_organization", user, organization)
+        assign_perm(OrganizationPermissions.CHANGE_ORGANIZATION, user, organization)
+        assign_perm(OrganizationPermissions.DELETE_ORGANIZATION, user, organization)
+        assign_perm(OrganizationPermissions.VIEW_ORGANIZATION, user, organization)
         print(f"Assigned permissions to {user} for {organization}")
 
         return organization

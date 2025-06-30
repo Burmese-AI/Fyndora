@@ -221,7 +221,9 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{stat_overview_html}{row_html}")
+        
+        # Added table tag to the response to fix the issue of the row not being rendered
+        response = HttpResponse(f"{message_html}{stat_overview_html}<table>{row_html}</table>")
         response["HX-trigger"] = "success"
         return response
 

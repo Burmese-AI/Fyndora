@@ -4,7 +4,7 @@ from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus
 
-class EntryForm(forms.ModelForm):
+class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
         label="Attachments",
         required=False,
@@ -14,19 +14,10 @@ class EntryForm(forms.ModelForm):
             }
         ),
     )
-
-    replace_attachments = forms.BooleanField(
-        label="Replace existing attachments",
-        required=False,
-        initial=False,
-        widget=forms.CheckboxInput(
-            attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
-        ),
-    )
-
+    
     class Meta:
         model = Entry
-        fields = ["amount", "description", "status", "review_notes"]
+        fields = ["amount", "description"]
         widgets = {
             "amount": forms.NumberInput(
                 attrs={
@@ -42,37 +33,16 @@ class EntryForm(forms.ModelForm):
                     "placeholder": "Brief description of the expense",
                 }
             ),
-            "status": forms.Select(
-                attrs={
-                    "class": "select select-bordered w-full",
-                    "placeholder": "Select status",
-                    "choices": EntryStatus.choices,
-                }
-            ),
-            "review_notes": forms.Textarea(
-                attrs={
-                    "class": "textarea textarea-bordered w-full",
-                    "placeholder": "Leave notes for the status update",
-                }
-            ),
         }
-
+        
     def __init__(self, *args, **kwargs):
-        print("Full kwargs received:", kwargs)  # 👈 Debugging line
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
-        self.is_update = kwargs.pop("is_update", False)
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
-        # Only show replace_checkbox input in update mode
-        if not self.is_update:
-            self.fields.pop("replace_attachments")
-
+        
     def clean(self):
         cleaned_data = super().clean()
-        
-        print(f"debugging: {cleaned_data}")
-        raise forms.ValidationError("test")
 
         # If org member is None, raise validation error
         if not self.org_member:
@@ -89,3 +59,35 @@ class EntryForm(forms.ModelForm):
         validate_uploaded_files(cleaned_data.get("attachment_files"))
 
         return cleaned_data
+    
+class CreateEntryForm(BaseEntryForm):
+    pass
+
+class UpdateEntryForm(BaseEntryForm):
+    replace_attachments = forms.BooleanField(
+        label="Replace existing attachments",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(
+            attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
+        ),
+    )
+    
+    class Meta(BaseEntryForm.Meta):
+        fields = BaseEntryForm.Meta.fields + ["status", "review_notes"]
+        widgets = {
+            **BaseEntryForm.Meta.widgets,
+            "status": forms.Select(
+                attrs={
+                    "class": "select select-bordered w-full",
+                    "placeholder": "Select status",
+                    "choices": EntryStatus.choices,
+                }
+            ),
+            "review_notes": forms.Textarea(
+                attrs={
+                    "class": "textarea textarea-bordered w-full",
+                    "placeholder": "Leave notes for the status update",
+                }
+            ),
+        }

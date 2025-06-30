@@ -41,7 +41,7 @@ def create_entry_with_attachments(
             amount=amount,
             description=description,
             submitter=submitter,
-            is_flagged=True if is_attachment_provided else False,
+            is_flagged= not is_attachment_provided,
         )
         
         # Create the Attachments if any were provided

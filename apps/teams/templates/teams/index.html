@@ -1,0 +1,10 @@
+{% extends "layouts/organization_layout.html" %}
+
+
+{% block header %}
+    {% include "components/organization_layout_header.html" with title="Teams" subtitle="Manage your project teams" %}
+{% endblock %}
+
+{% block content %}
+  {% include "teams/main_content.html" %}
+{% endblock %}

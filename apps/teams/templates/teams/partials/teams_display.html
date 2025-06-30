@@ -1,0 +1,75 @@
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="teams_display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for team in teams %}
+    <div class="card bg-base-100 shadow-lg hover:shadow-2xl rounded-2xl border border-base-200 transition-all duration-200 group">
+        <div class="card-body p-6 flex flex-col h-full">
+            <div class="flex items-center justify-between ">
+                <div>
+                    <h2 class="text-xl font-bold mb-1">{{ team.title }}</h2>
+                </div>
+                <div class="flex gap-2">
+                    {% include "teams/components/edit_dropdown.html" %}
+                </div>
+            </div>
+            <p class="text-base-content/70 text-sm mb-4 line-clamp-2">
+                {{ team.description|default:"No description provided" }}
+            </p>
+            <div class="flex flex-col gap-3 text-xs mb-4">
+                <span>
+                    <strong>Workspaces Joined:</strong>
+                    {% for workspace in team.attached_workspaces %}
+                        {{ workspace.workspace.title }},
+                    {% endfor %}
+                </span>
+                <span>
+                    <strong>Coordinator:</strong>
+                    {% if team.team_coordinator %}
+                        {{ team.team_coordinator.user.username }}
+                    {% else %}
+                        Not Assigned
+                    {% endif %}
+                </span>
+                <span>
+                    <strong>Members:</strong> {{ team.members.count }}
+                </span>
+                <span>
+                    <strong>Remittance Rate:</strong>
+                    {% if team.custom_remittance_rate %}
+                        {{ team.custom_remittance_rate }}%
+                    {% else %}
+                        Default
+                    {% endif %}
+                </span>
+            </div>
+            <div class="mt-auto flex gap-2">
+                <a href="#" class="btn btn-primary flex-1">View Details</a>
+                <a href="#" class="btn btn-outline btn-primary flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Members
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full">
+        <div class="hero bg-base-200 rounded-box">
+            <div class="hero-content text-center py-12">
+                <div class="max-w-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h3 class="text-xl font-medium mb-2">No Teams Yet</h3>
+                    <p class="text-base-content/70 mb-6">Create your first team to start collaborating with your organization members</p>
+                    <a href="#" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Create Team
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

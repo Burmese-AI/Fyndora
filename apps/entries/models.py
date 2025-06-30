@@ -57,6 +57,7 @@ class Entry(baseModel):
 
     @property
     def submitter_user_name(self):
+        """Get the username of the submitter"""
         if isinstance(self.submitter, OrganizationMember):
             return self.submitter.user.username
         elif isinstance(self.submitter, TeamMember):

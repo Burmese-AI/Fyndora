@@ -1,5 +1,20 @@
+from django.db import models
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
+
+
+class WorkspacePermissions(models.TextChoices):
+    """
+    Permissions for the Workspace model.
+    """
+    ADD_WORKSPACE = "workspaces.add_workspace", "Can add workspace"
+    CHANGE_WORKSPACE = "workspaces.change_workspace", "Can change workspace"
+    DELETE_WORKSPACE = "workspaces.delete_workspace", "Can delete workspace"
+    VIEW_WORKSPACE = "workspaces.view_workspace", "Can view workspace"
+    ASSIGN_TEAMS = "workspaces.assign_teams", "Can assign teams to workspace"
+    LOCK_WORKSPACE = "workspaces.lock_workspace", "Can lock workspace"
+    VIEW_DASHBOARD = "workspaces.view_dashboard", "Can view dashboard reports"
+    EXPORT_REPORT = "workspaces.export_report", "Can export reports"
 
 
 def assign_workspace_permissions(workspace):
@@ -13,8 +28,8 @@ def assign_workspace_permissions(workspace):
 
     group_name = f"Workspace Admins - {workspace.workspace_id}"
     group, _ = Group.objects.get_or_create(name=group_name)
-    assign_perm("change_workspace", group, workspace)
-    assign_perm("delete_workspace", group, workspace)
+    assign_perm(WorkspacePermissions.CHANGE_WORKSPACE, group, workspace)
+    assign_perm(WorkspacePermissions.DELETE_WORKSPACE, group, workspace)
 
     # if workspace admin is not None, add it to the group
     if workspace.workspace_admin is not None:

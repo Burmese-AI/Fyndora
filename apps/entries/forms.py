@@ -91,3 +91,22 @@ class UpdateEntryForm(BaseEntryForm):
                 }
             ),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
+        
+    def get_allowed_statuses(self, current_status):
+        transitions = {
+            EntryStatus.PENDING_REVIEW: [EntryStatus.PENDING_REVIEW, EntryStatus.REVIEWED, EntryStatus.REJECTED],
+            EntryStatus.REVIEWED: [EntryStatus.REVIEWED, EntryStatus.APPROVED, EntryStatus.REJECTED],
+            EntryStatus.REJECTED: [EntryStatus.REJECTED, EntryStatus.PENDING_REVIEW, EntryStatus.REVIEWED],
+            EntryStatus.APPROVED: [EntryStatus.APPROVED, EntryStatus.REJECTED],
+        }
+
+        allowed_statuses = transitions.get(current_status, [])
+
+        # Convert codes into (value, label) tuples using EntryStatus.labels
+        return [
+            (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
+        ]

@@ -10,7 +10,7 @@ def create_team_from_form(form, organization):
         return team
     except Exception as e:
         raise TeamCreationError(f"An error occurred while creating team: {str(e)}")
-=======
+    
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import transaction

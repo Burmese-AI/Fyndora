@@ -2,7 +2,6 @@ from django import forms
 from .models import Team
 from apps.organizations.models import OrganizationMember
 from apps.workspaces.selectors import get_organization_members_by_organization_id
-from apps.workspaces.models import WorkspaceTeam
 
 
 class TeamForm(forms.ModelForm):

@@ -9,7 +9,7 @@ from apps.teams.selectors import get_teams_by_organization_id, get_team_by_id
 from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-
+from apps.teams.models import TeamMember    
 
 # Create your views here.
 def teams_view(request, organization_id):
@@ -84,10 +84,12 @@ def get_team_members_view(request, organization_id, team_id):
         # Get the team and organization for context
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+        team_members = TeamMember.objects.filter(team=team)
         
         context = {
             "team": team,
             "organization": organization,
+            "team_members": team_members,
         }
         return render(request, "teams/teamMembers_index.html", context)
     except Exception as e:

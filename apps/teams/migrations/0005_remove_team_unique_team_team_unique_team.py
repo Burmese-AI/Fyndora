@@ -4,19 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0007_alter_organization_options'),
-        ('teams', '0004_alter_team_organization'),
+        ("organizations", "0007_alter_organization_options"),
+        ("teams", "0004_alter_team_organization"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='team',
-            name='unique_team',
+            model_name="team",
+            name="unique_team",
         ),
         migrations.AddConstraint(
-            model_name='team',
-            constraint=models.UniqueConstraint(fields=('title', 'organization'), name='unique_team'),
+            model_name="team",
+            constraint=models.UniqueConstraint(
+                fields=("title", "organization"), name="unique_team"
+            ),
         ),
     ]

@@ -70,7 +70,7 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
             if actor.role == TeamMemberRole.SUBMITTER and entry.submitter != actor:
                 raise PermissionDenied("You can only edit your own entries.")
 
-                
+
 def create_org_expense_entry_with_attachments(
     *, org_member, amount, description, attachments
 ):

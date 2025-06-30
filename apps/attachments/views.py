@@ -5,7 +5,7 @@ from .models import Attachment
 from django.template.loader import render_to_string
 from django.contrib.messages import get_messages
 
-from .services import delete_attachment
+# from .services import delete_attachment
 
 
 @require_http_methods(["DELETE"])
@@ -30,6 +30,7 @@ def delete_attachment(request, attachment_id):
     response = HttpResponse(f"{message_html}{attachment_html}")
 
     return response
+
 
 class AttachmentDeleteView(DeleteView):
     model = Attachment

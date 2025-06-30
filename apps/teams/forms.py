@@ -60,11 +60,11 @@ class TeamForm(forms.ModelForm):
     def clean_title(self):
         title = self.cleaned_data.get("title")
         # Use the organization from the form instance if available, otherwise use the one passed to __init__
-        organization = getattr(self.instance, 'organization', None) or self.organization
-        
+        organization = getattr(self.instance, "organization", None) or self.organization
+
         if not organization:
             raise forms.ValidationError("Organization is required for team creation")
-            
+
         if Team.objects.filter(title=title, organization=organization).exists():
             raise forms.ValidationError(
                 "Team with this title already exists in this organization"
@@ -102,28 +102,24 @@ class TeamMemberForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         self.team = kwargs.pop("team", None)
         super().__init__(*args, **kwargs)
-        
+
         if self.organization:
-            self.fields["organization_member"].queryset = get_organization_members_by_organization_id(
+            self.fields[
+                "organization_member"
+            ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
 
     def clean(self):
         cleaned_data = super().clean()
         organization_member = cleaned_data.get("organization_member")
-        team = self.team or getattr(self.instance, 'team', None)
-        
+        team = self.team or getattr(self.instance, "team", None)
+
         if organization_member and team:
             # Check if this member is already in the team
             if TeamMember.objects.filter(
-                team=team, 
-                organization_member=organization_member
+                team=team, organization_member=organization_member
             ).exists():
-                raise forms.ValidationError(
-                    "This member is already part of this team"
-                )
-        
+                raise forms.ValidationError("This member is already part of this team")
+
         return cleaned_data
-
-
-

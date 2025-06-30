@@ -9,5 +9,6 @@ class TeamUpdateError(Exception):
 class TeamDeletionError(Exception):
     pass
 
+
 class TeamMemberCreationError(Exception):
     pass

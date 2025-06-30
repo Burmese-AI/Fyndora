@@ -7,6 +7,7 @@ class WorkspacePermissions(models.TextChoices):
     """
     Permissions for the Workspace model.
     """
+
     ADD_WORKSPACE = "workspaces.add_workspace", "Can add workspace"
     CHANGE_WORKSPACE = "workspaces.change_workspace", "Can change workspace"
     DELETE_WORKSPACE = "workspaces.delete_workspace", "Can delete workspace"

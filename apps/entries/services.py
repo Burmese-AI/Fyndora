@@ -86,6 +86,12 @@ def update_entry_with_attachments(
                 attachments=attachments,
                 replace_attachments=replace_attachments,
             )
+            
+            # If the entry was flagged, unflag it
+            if entry.is_flagged:
+                entry.is_flagged = False
+                entry.save(update_fields=["is_flagged"])
+                
     return entry
 
 

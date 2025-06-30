@@ -1,6 +1,7 @@
 STATUS_CHOICES = (
     ("pending", "Pending"),
-    ("partial", "Partial"),
+    ("partial", "Partially Paid"),
     ("paid", "Paid"),
     ("overdue", "Overdue"),
+    ("canceled", "Canceled"),
 )

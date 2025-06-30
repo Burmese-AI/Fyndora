@@ -56,6 +56,7 @@ class Entry(baseModel):
 
     @property
     def submitter_user_name(self):
+        """Get the username of the submitter"""
         if isinstance(self.submitter, OrganizationMember):
             return self.submitter.user.username
         elif isinstance(self.submitter, TeamMember):
@@ -106,11 +107,6 @@ class Entry(baseModel):
         verbose_name = "entry"
         verbose_name_plural = "entries"
         ordering = ["-submitted_at"]
-        permissions = [
-            ("upload_attachments", "Can upload attachments to entries"),
-            ("review_entries", "Can review and approve entries"),
-            ("flag_entries", "Can flag or comment on entries"),
-        ]
 
     def __str__(self):
         return f"{self.entry_id} - {self.entry_type} - {self.amount} - {self.status}"

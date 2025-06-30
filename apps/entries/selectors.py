@@ -230,14 +230,14 @@ def get_org_entries(
 
 
 def get_total_org_expenses(organization: Organization):
-    queryset = get_org_expenses(organization)
+    queryset = get_org_expenses(organization).filter(status=EntryStatus.APPROVED)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
 
 
 def get_this_month_org_expenses(organization: Organization):
     today = now().date()
     start_of_month = today.replace(day=1)
-    queryset = get_org_expenses(organization).filter(created_at__gte=start_of_month)
+    queryset = get_org_expenses(organization).filter(created_at__gte=start_of_month, status=EntryStatus.APPROVED)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
 
 
@@ -245,7 +245,7 @@ def get_average_monthly_org_expenses(organization: Organization):
     today = now().date()
     one_year_ago = today - timedelta(days=365)
 
-    qs = get_org_expenses(organization).filter(created_at__date__gte=one_year_ago)
+    qs = get_org_expenses(organization).filter(created_at__date__gte=one_year_ago, status=EntryStatus.APPROVED)
     total = qs.aggregate(total=Sum("amount"))["total"] or 0
 
     return total / 12
@@ -260,5 +260,6 @@ def get_last_month_org_expenses(organization: Organization):
     queryset = get_org_expenses(organization).filter(
         created_at__date__gte=start_of_last_month,
         created_at__date__lte=end_of_last_month,
+        status=EntryStatus.APPROVED,
     )
     return queryset.aggregate(total=Sum("amount"))["total"] or 0

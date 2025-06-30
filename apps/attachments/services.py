@@ -2,6 +2,7 @@ from django.contrib import messages
 from .models import Attachment
 from .constants import AttachmentType
 
+
 def delete_attachment(attachment_id, request):
     try:
         attachment = Attachment.objects.select_related("entry").get(pk=attachment_id)
@@ -26,6 +27,7 @@ def delete_attachment(attachment_id, request):
 
     return True, attachments
 
+
 def replace_or_append_attachments(
     *,
     entry,
@@ -43,20 +45,21 @@ def replace_or_append_attachments(
             file_url=file,
             file_type=file_type or AttachmentType.OTHER,
         )
-        
-def create_attachments(
-    *,
-    entry,
-    attachments
-):
+
+
+def create_attachments(*, entry, attachments):
     # Create New Attachments linked to the Entry
-    prepared_attachments = [Attachment(
-        entry=entry,
-        file_url=attachment,
-        file_type=AttachmentType.get_file_type_by_extension(attachment.name) or AttachmentType.OTHER,
-    ) for attachment in attachments]
-    
+    prepared_attachments = [
+        Attachment(
+            entry=entry,
+            file_url=attachment,
+            file_type=AttachmentType.get_file_type_by_extension(attachment.name)
+            or AttachmentType.OTHER,
+        )
+        for attachment in attachments
+    ]
+
     # Bulk Create the Attachments
     Attachment.objects.bulk_create(prepared_attachments)
-    
+
     return prepared_attachments

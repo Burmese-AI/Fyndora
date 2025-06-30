@@ -4,14 +4,22 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('entries', '0006_entry_is_flagged_alter_entry_status'),
+        ("entries", "0006_entry_is_flagged_alter_entry_status"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='entry',
-            options={'ordering': ['-submitted_at', '-created_at'], 'permissions': [('upload_attachments', 'Can upload attachments to entries'), ('review_entries', 'Can review and approve entries'), ('flag_entries', 'Can flag or comment on entries')], 'verbose_name': 'entry', 'verbose_name_plural': 'entries'},
+            name="entry",
+            options={
+                "ordering": ["-submitted_at", "-created_at"],
+                "permissions": [
+                    ("upload_attachments", "Can upload attachments to entries"),
+                    ("review_entries", "Can review and approve entries"),
+                    ("flag_entries", "Can flag or comment on entries"),
+                ],
+                "verbose_name": "entry",
+                "verbose_name_plural": "entries",
+            },
         ),
     ]

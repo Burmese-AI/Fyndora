@@ -3,8 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
-from apps.attachments.constants import AttachmentType
-from apps.attachments.models import Attachment
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.teams.models import TeamMember
@@ -19,6 +17,7 @@ from .selectors import (
     get_total_org_expenses,
 )
 
+
 def create_entry_with_attachments(
     *,
     submitter,
@@ -27,31 +26,29 @@ def create_entry_with_attachments(
     attachments,
     entry_type: EntryType,
 ) -> Entry:
-    
     """
     Service to create a new entry with attachments.
     """
-    
-    is_attachment_provided = True if attachments else False 
+
+    is_attachment_provided = True if attachments else False
     with transaction.atomic():
-        
         # Create the Entry
         entry = Entry.objects.create(
             entry_type=entry_type,
             amount=amount,
             description=description,
             submitter=submitter,
-            is_flagged= not is_attachment_provided,
+            is_flagged=not is_attachment_provided,
         )
-        
+
         # Create the Attachments if any were provided
         if is_attachment_provided:
             create_attachments(
                 entry=entry,
                 attachments=attachments,
             )
-            
-    return entry    
+
+    return entry
 
 
 def update_entry_with_attachments(
@@ -64,11 +61,10 @@ def update_entry_with_attachments(
     attachments,
     replace_attachments: bool,
 ) -> Entry:
-    
     """
     Service to update an existing entry with attachments.
     """
-    
+
     with transaction.atomic():
         # Update basic fields
         update_entry(
@@ -86,12 +82,12 @@ def update_entry_with_attachments(
                 attachments=attachments,
                 replace_attachments=replace_attachments,
             )
-            
+
             # If the entry was flagged, unflag it
             if entry.is_flagged:
                 entry.is_flagged = False
                 entry.save(update_fields=["is_flagged"])
-                
+
     return entry
 
 
@@ -106,13 +102,13 @@ def update_entry(
     """
     Service to update an existing entry.
     """
-    
+
     entry.amount = amount
     entry.description = description
     entry.status = status
     entry.review_notes = review_notes
     entry.save(update_fields=["amount", "description", "status", "review_notes"])
-    
+
 
 def entry_create(
     *,

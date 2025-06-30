@@ -30,18 +30,18 @@ class BaseEntryFormMixin:
         kwargs["organization"] = self.organization
         kwargs["org_member"] = self.org_member
         return kwargs
-    
+
+
 class CreateEntryFormMixin(BaseEntryFormMixin):
     form_class = CreateEntryForm
-    
+
+
 class UpdateEntryFormMixin(BaseEntryFormMixin):
     form_class = UpdateEntryForm
-    
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["instance"] = getattr(
-            self, "org_exp_entry", None
-        )
+        kwargs["instance"] = getattr(self, "org_exp_entry", None)
         return kwargs
 
 
@@ -99,7 +99,7 @@ class OrganizationExpenseCreateView(
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
-            entry_type=EntryType.ORG_EXP
+            entry_type=EntryType.ORG_EXP,
         )
         messages.success(self.request, "Expense entry submitted successfully")
         return self._render_htmx_success_response()
@@ -221,9 +221,11 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        
+
         # Added table tag to the response to fix the issue of the row not being rendered
-        response = HttpResponse(f"{message_html}{stat_overview_html}<table>{row_html}</table>")
+        response = HttpResponse(
+            f"{message_html}{stat_overview_html}<table>{row_html}</table>"
+        )
         response["HX-trigger"] = "success"
         return response
 

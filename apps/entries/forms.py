@@ -3,7 +3,7 @@ from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus
-from pprint import pprint
+
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -15,7 +15,7 @@ class BaseEntryForm(forms.ModelForm):
             }
         ),
     )
-    
+
     class Meta:
         model = Entry
         fields = ["amount", "description"]
@@ -35,13 +35,13 @@ class BaseEntryForm(forms.ModelForm):
                 }
             ),
         }
-        
+
     def __init__(self, *args, **kwargs):
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
-        
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -56,7 +56,7 @@ class BaseEntryForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Only the owner of the organization can submit expenses."
             )
-            
+
         print(f"debugging: {cleaned_data}")
 
         attachment_files = cleaned_data.get("attachment_files")
@@ -64,9 +64,11 @@ class BaseEntryForm(forms.ModelForm):
             validate_uploaded_files(attachment_files)
 
         return cleaned_data
-    
+
+
 class CreateEntryForm(BaseEntryForm):
     pass
+
 
 class UpdateEntryForm(BaseEntryForm):
     replace_attachments = forms.BooleanField(
@@ -77,7 +79,7 @@ class UpdateEntryForm(BaseEntryForm):
             attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
         ),
     )
-    
+
     class Meta(BaseEntryForm.Meta):
         fields = BaseEntryForm.Meta.fields + ["status", "review_notes"]
         widgets = {
@@ -96,7 +98,7 @@ class UpdateEntryForm(BaseEntryForm):
                 }
             ),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
@@ -107,12 +109,23 @@ class UpdateEntryForm(BaseEntryForm):
             self.fields["attachment_files"].disabled = True
             self.fields["replace_attachments"].disabled = True
 
-        
     def get_allowed_statuses(self, current_status):
         transitions = {
-            EntryStatus.PENDING_REVIEW: [EntryStatus.PENDING_REVIEW, EntryStatus.REVIEWED, EntryStatus.REJECTED],
-            EntryStatus.REVIEWED: [EntryStatus.REVIEWED, EntryStatus.APPROVED, EntryStatus.REJECTED],
-            EntryStatus.REJECTED: [EntryStatus.REJECTED, EntryStatus.PENDING_REVIEW, EntryStatus.REVIEWED],
+            EntryStatus.PENDING_REVIEW: [
+                EntryStatus.PENDING_REVIEW,
+                EntryStatus.REVIEWED,
+                EntryStatus.REJECTED,
+            ],
+            EntryStatus.REVIEWED: [
+                EntryStatus.REVIEWED,
+                EntryStatus.APPROVED,
+                EntryStatus.REJECTED,
+            ],
+            EntryStatus.REJECTED: [
+                EntryStatus.REJECTED,
+                EntryStatus.PENDING_REVIEW,
+                EntryStatus.REVIEWED,
+            ],
             EntryStatus.APPROVED: [EntryStatus.APPROVED, EntryStatus.REJECTED],
         }
 
@@ -122,6 +135,3 @@ class UpdateEntryForm(BaseEntryForm):
         return [
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
-        
-    
-                

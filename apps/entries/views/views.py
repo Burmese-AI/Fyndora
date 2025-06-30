@@ -12,7 +12,7 @@ from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME
 from ..selectors import get_org_expenses
 from ..services import get_org_expense_stats
-from ..forms import OrganizationExpenseEntryForm
+from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
 from .base import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
@@ -22,17 +22,26 @@ from .base import (
 )
 
 
-class OrganizationExpenseFormMixin:
-    form_class = OrganizationExpenseEntryForm
+class BaseEntryFormMixin:
+    form_class = BaseEntryForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
         kwargs["org_member"] = self.org_member
-        kwargs["instance"] = getattr(
-            self, "org_exp_entry", None
-        )  # Pass exp entry instance if it exists
-        kwargs["is_update"] = bool(getattr(self, "org_exp_entry", False))
+        return kwargs
+
+
+class CreateEntryFormMixin(BaseEntryFormMixin):
+    form_class = CreateEntryForm
+
+
+class UpdateEntryFormMixin(BaseEntryFormMixin):
+    form_class = UpdateEntryForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = getattr(self, "org_exp_entry", None)
         return kwargs
 
 
@@ -64,12 +73,12 @@ class OrganizationExpenseListView(
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
-    OrganizationExpenseFormMixin,
+    CreateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
     CreateView,
 ):
-    modal_template = "entries/components/create_org_exp_modal.html"
+    modal_template = "entries/components/create_modal.html"
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
@@ -82,13 +91,15 @@ class OrganizationExpenseCreateView(
         return render(request, self.modal_template, context)
 
     def form_valid(self, form):
-        from ..services import create_org_expense_entry_with_attachments
+        from ..services import create_entry_with_attachments
+        from ..constants import EntryType
 
-        create_org_expense_entry_with_attachments(
-            org_member=self.org_member,
+        create_entry_with_attachments(
+            submitter=self.org_member,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
+            entry_type=EntryType.ORG_EXP,
         )
         messages.success(self.request, "Expense entry submitted successfully")
         return self._render_htmx_success_response()
@@ -138,7 +149,7 @@ class OrganizationExpenseCreateView(
             "includes/message.html", context=base_context, request=self.request
         )
         modal_html = render_to_string(
-            "entries/components/create_org_exp_modal.html",
+            "entries/components/create_modal.html",
             context=modal_context,
             request=self.request,
         )
@@ -148,12 +159,12 @@ class OrganizationExpenseCreateView(
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
     OrganizationExpenseEntryRequiredMixin,
-    OrganizationExpenseFormMixin,
+    UpdateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
     UpdateView,
 ):
-    modal_template = "entries/components/update_org_exp_modal.html"
+    modal_template = "entries/components/update_modal.html"
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
@@ -176,6 +187,8 @@ class OrganizationExpenseUpdateView(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
+            status=form.cleaned_data["status"],
+            review_notes=form.cleaned_data["review_notes"],
             attachments=form.cleaned_data["attachment_files"],
             replace_attachments=form.cleaned_data["replace_attachments"],
         )
@@ -208,7 +221,11 @@ class OrganizationExpenseUpdateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}{stat_overview_html}{row_html}")
+
+        # Added table tag to the response to fix the issue of the row not being rendered
+        response = HttpResponse(
+            f"{message_html}{stat_overview_html}<table>{row_html}</table>"
+        )
         response["HX-trigger"] = "success"
         return response
 
@@ -223,7 +240,7 @@ class OrganizationExpenseUpdateView(
             "includes/message.html", context=base_context, request=self.request
         )
         modal_html = render_to_string(
-            "entries/components/update_org_exp_modal.html",
+            "entries/components/update_modal.html",
             context=modal_context,
             request=self.request,
         )

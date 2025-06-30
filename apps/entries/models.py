@@ -38,6 +38,7 @@ class Entry(baseModel):
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     entry_type = models.CharField(max_length=20, choices=EntryType.choices)
+    is_flagged = models.BooleanField(default=False)
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
     )
@@ -106,7 +107,12 @@ class Entry(baseModel):
     class Meta:
         verbose_name = "entry"
         verbose_name_plural = "entries"
-        ordering = ["-submitted_at"]
+        ordering = ["-submitted_at", "-created_at"]
+        permissions = [
+            ("upload_attachments", "Can upload attachments to entries"),
+            ("review_entries", "Can review and approve entries"),
+            ("flag_entries", "Can flag or comment on entries"),
+        ]
 
     def __str__(self):
         return f"{self.entry_id} - {self.entry_type} - {self.amount} - {self.status}"

@@ -9,7 +9,7 @@ from django.contrib.messages import get_messages
 
 
 @require_http_methods(["DELETE"])
-def delete_attachment(request, attachment_id):
+def delete_attachment_view(request, attachment_id):
     success, attachments = delete_attachment(attachment_id, request)
     context = {"is_oob": True, "messages": get_messages(request)}
     attachment_html = ""

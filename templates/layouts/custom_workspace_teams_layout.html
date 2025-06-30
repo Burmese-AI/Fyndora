@@ -1,0 +1,23 @@
+{% extends "layouts/organization_layout.html" %}
+
+
+{% block header %}
+  <div class="breadcrumbs text-sm">
+    <ul>
+      <li><a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}">Home</a></li>
+      <li><a href="{% url 'workspace_list' organization_id=request.resolver_match.kwargs.organization_id %}">Workspaces</a></li>
+      <li><span>{{ workspace.title }}</span></li>
+    </ul>
+  </div>
+  {% include "components/organization_layout_header.html" with title=workspace.title subtitle="Manage your workspace's teams and expenses" %}
+{% endblock %}
+
+{% block content %}
+  <div class="flex flex-row justify-between items-center gap-1 mb-4">
+    {% include "components/navigation_slider_for_workspace_teams.html" %}
+  </div>
+
+  <div id="content-container">
+    {% block secondary_content %}{% endblock %}
+  </div>
+{% endblock %}

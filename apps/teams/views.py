@@ -9,6 +9,7 @@ from apps.teams.selectors import get_teams_by_organization_id, get_team_by_id
 from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from apps.teams.models import TeamMember
 
 # Create your views here.
 def teams_view(request, organization_id):

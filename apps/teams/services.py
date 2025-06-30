@@ -68,3 +68,10 @@ def create_team_from_form(form, organization):
     team.save()
     return team
 
+def create_team_member_from_form(form, team, organization):
+    team_member = form.save(commit=False)
+    team_member.team = team
+    team_member.organization = organization
+    team_member.save()
+    return team_member
+

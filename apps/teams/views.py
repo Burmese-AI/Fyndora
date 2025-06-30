@@ -11,6 +11,9 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.teams.models import TeamMember
 from apps.teams.forms import TeamMemberForm
+from apps.teams.exceptions import TeamCreationError
+from apps.teams.services import create_team_member_from_form
+from apps.teams.exceptions import TeamMemberCreationError
 
 
 # Create your views here.
@@ -112,10 +115,51 @@ def add_team_member_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
         if request.method == "POST":
-            form = TeamMemberForm(request.POST)
+            try:
+                form = TeamMemberForm(request.POST, team=team, organization=organization)
+                if form.is_valid():
+                    create_team_member_from_form(form, team=team, organization=organization)
+                    messages.success(request, "Team member added successfully.")
+                    team_members = TeamMember.objects.filter(team=team)
+                    context = {
+                        "team": team,
+                        "organization": organization,
+                        "team_members": team_members,
+                        "is_oob": True,
+                    }
+                    team_display_html = render_to_string(
+                        "teams/partials/teamMembers_display.html",
+                        context=context,
+                        request=request,
+                    )
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    response = HttpResponse(f"{message_html} {team_display_html}")
+                    response["HX-trigger"] = "success"
+                    return response
+                else:
+                    messages.error(request, "Invalid form data.")
+                    context = {
+                        "form": form,
+                        "team": team,
+                        "organization": organization,
+                        "is_oob": True,
+                    }
+                
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    modal_html = render_to_string(
+                        "teams/partials/add_team_member_form.html",
+                        context=context,
+                        request=request,
+                    )
+                    return HttpResponse(f"{message_html} {modal_html}")
+            except TeamMemberCreationError as e:
+                messages.error(request, f"An error occurred: {str(e)}")
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/team_members/{team_id}/")
         else:
-            print(team)
-            print(organization)
             form = TeamMemberForm(team=team, organization=organization)
             context = {
                 "form": form,

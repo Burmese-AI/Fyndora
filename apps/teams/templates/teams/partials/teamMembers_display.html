@@ -35,19 +35,17 @@
                 
                 <!-- Role -->
                 <td>
-                    <div class="badge badge-outline badge-lg">
-                        {% if member.role == 'workspace_admin' %}
-                            <span class="text-error">Workspace Admin</span>
-                        {% elif member.role == 'operations_reviewer' %}
-                            <span class="text-warning">Operations Reviewer</span>
-                        {% elif member.role == 'team_coordinator' %}
-                            <span class="text-info">Team Coordinator</span>
-                        {% elif member.role == 'auditor' %}
-                            <span class="text-secondary">Auditor</span>
-                        {% else %}
-                            <span class="text-success">Submitter</span>
-                        {% endif %}
-                    </div>
+                    {% if member.role == 'workspace_admin' %}
+                        <span class="badge badge-error badge-sm font-medium">Admin</span>
+                    {% elif member.role == 'operations_reviewer' %}
+                        <span class="badge badge-warning badge-sm font-medium">Reviewer</span>
+                    {% elif member.role == 'team_coordinator' %}
+                        <span class="badge badge-info badge-sm font-medium">Coordinator</span>
+                    {% elif member.role == 'auditor' %}
+                        <span class="badge badge-secondary badge-sm font-medium">Auditor</span>
+                    {% else %}
+                        <span class="badge badge-success badge-sm font-medium">Submitter</span>
+                    {% endif %}
                 </td>
                 
                 <!-- Joined Date -->

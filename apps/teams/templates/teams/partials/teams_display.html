@@ -41,13 +41,13 @@
                 </span>
             </div>
             <div class="mt-auto flex gap-2">
-                <a href="#" class="btn btn-primary flex-1">View Details</a>
-                <a href="#" class="btn btn-outline btn-primary flex-1">
+                <a href="{% url 'team_members' organization_id=organization.organization_id team_id=team.team_id %}" class="btn btn-primary flex-1">Manage Team</a>
+                <!-- <a href="#" class="btn btn-outline btn-primary flex-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     Members
-                </a>
+                </a> -->
             </div>
         </div>
     </div>

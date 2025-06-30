@@ -5,7 +5,7 @@ from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
 from apps.workspaces.models import WorkspaceTeam
 from apps.teams.forms import TeamForm
-from apps.teams.selectors import get_teams_by_organization_id
+from apps.teams.selectors import get_teams_by_organization_id, get_team_by_id
 from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
@@ -27,7 +27,7 @@ def teams_view(request, organization_id):
         return render(request, "teams/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect("teams_view", organization_id=organization_id)
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
 def create_team_view(request, organization_id):
@@ -75,5 +75,21 @@ def create_team_view(request, organization_id):
             return render(request, "teams/partials/create_team_form.html", context)
     except Exception as e:
         print(e)
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+
+def get_team_members_view(request, organization_id, team_id):
+    try:
+        # Get the team and organization for context
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        
+        context = {
+            "team": team,
+            "organization": organization,
+        }
+        return render(request, "teams/teamMembers_index.html", context)
+    except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")

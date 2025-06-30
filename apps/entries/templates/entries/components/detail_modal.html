@@ -12,11 +12,11 @@
     </div>
    <div>
     <span class="badge badge-neutral md:badge-sm xl:badge-md capitalize
-      {% if entry.status == 'approved' %}bg-green-300 text-neutral
-      {% elif entry.status == 'pending' %}bg-yellow-300 text-neutral
-      {% elif entry.status == 'rejected' %}bg-red-500 text-neutral
-      {% elif entry.status == 'flagged' %}badge-neutral
-      {% else %}bg-ghost text-ghost-content{% endif %}">{{ entry.get_status_display }}
+    {% if entry.status == 'approved' %}bg-green-300 text-neutral
+    {% elif entry.status == 'pending' %}bg-yellow-300 text-neutral
+    {% elif entry.status == 'rejected' %}bg-red-700 text-white
+    {% elif entry.status == 'flagged' %}badge-neutral
+    {% else %}bg-ghost text-ghost-content{% endif %}">{{ entry.get_status_display }}
     </span>
     {% if entry.is_flagged %}
       <span class="badge badge-neutral md:badge-sm xl:badge-md capitalize bg-red-700 text-white">
@@ -76,7 +76,7 @@
   {% endif %}
 
   <!-- Attachments -->
-  <div class="bg-base-200 p-4 rounded-lg space-y-3">
+  <div class="p-4 rounded-lg space-y-3">
     <h3 class="font-semibold text-base-content text-sm flex items-center gap-2">
       <svg class="w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12h.008v.008H15V12zM6.75 15.75l10.5-10.5m1.5 1.5a3 3 0 11-4.243 4.243L6.75 19.5a4.5 4.5 0 106.364 6.364l10.94-10.94a6 6 0 10-8.485-8.485L5.25 17.25"/>

@@ -106,7 +106,7 @@ class Entry(baseModel):
     class Meta:
         verbose_name = "entry"
         verbose_name_plural = "entries"
-        ordering = ["-submitted_at"]
+        ordering = ["-submitted_at", "-created_at"]
         permissions = [
             ("upload_attachments", "Can upload attachments to entries"),
             ("review_entries", "Can review and approve entries"),

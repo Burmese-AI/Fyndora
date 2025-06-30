@@ -4,7 +4,7 @@
             <h1 class="text-3xl font-bold">My Team Members under {{ team.title }} Team</h1>
             <p class="text-base-content/70 mt-2">Manage your team members</p>
         </div>
-        <a class="btn btn-primary">
+        <a hx-get="{% url 'add_team_member' organization_id=organization.organization_id team_id=team.team_id %}" hx-target="#modal-placeholder" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>

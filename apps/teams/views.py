@@ -10,6 +10,8 @@ from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.teams.models import TeamMember
+from apps.teams.forms import TeamMemberForm
+
 
 # Create your views here.
 def teams_view(request, organization_id):
@@ -27,7 +29,7 @@ def teams_view(request, organization_id):
         return render(request, "teams/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+        return redirect("teams", organization_id=organization_id)
 
 
 def create_team_view(request, organization_id):
@@ -104,3 +106,23 @@ def get_team_members_view(request, organization_id, team_id):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+    
+def add_team_member_view(request, organization_id, team_id):
+    try:
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method == "POST":
+            form = TeamMemberForm(request.POST)
+        else:
+            print(team)
+            print(organization)
+            form = TeamMemberForm(team=team, organization=organization)
+            context = {
+                "form": form,
+                "team": team,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/add_team_member_form.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return redirect("teams", organization_id=organization_id)

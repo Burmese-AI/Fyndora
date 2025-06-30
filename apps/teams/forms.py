@@ -2,6 +2,8 @@ from django import forms
 from .models import Team
 from apps.organizations.models import OrganizationMember
 from apps.workspaces.selectors import get_organization_members_by_organization_id
+from apps.teams.models import TeamMember
+from apps.teams.constants import TeamMemberRole
 
 
 class TeamForm(forms.ModelForm):
@@ -68,3 +70,69 @@ class TeamForm(forms.ModelForm):
                 "Team with this title already exists in this organization"
             )
         return title
+
+
+class TeamMemberForm(forms.ModelForm):
+    organization_member = forms.ModelChoiceField(
+        queryset=OrganizationMember.objects.none(),
+        required=True,
+        label="Select Organization Member",
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"
+            }
+        ),
+    )
+    role = forms.ChoiceField(
+        choices=TeamMemberRole.choices,
+        required=True,
+        label="Select Role",
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"
+            }
+        ),
+    )
+
+    class Meta:
+        model = TeamMember
+        fields = ["organization_member", "role"]
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        self.team = kwargs.pop("team", None)
+        super().__init__(*args, **kwargs)
+        
+        if self.organization:
+            # Get organization members that are not already in this team
+            all_members = get_organization_members_by_organization_id(
+                self.organization.organization_id
+            )
+            
+            if self.team:
+                # Exclude members who are already in this team
+                existing_member_ids = self.team.members.values_list('organization_member_id', flat=True)
+                available_members = all_members.exclude(organization_member_id__in=existing_member_ids)
+                self.fields["organization_member"].queryset = available_members
+            else:
+                self.fields["organization_member"].queryset = all_members
+
+    def clean(self):
+        cleaned_data = super().clean()
+        organization_member = cleaned_data.get("organization_member")
+        team = self.team or getattr(self.instance, 'team', None)
+        
+        if organization_member and team:
+            # Check if this member is already in the team
+            if TeamMember.objects.filter(
+                team=team, 
+                organization_member=organization_member
+            ).exists():
+                raise forms.ValidationError(
+                    "This member is already part of this team"
+                )
+        
+        return cleaned_data
+
+
+

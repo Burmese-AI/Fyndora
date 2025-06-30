@@ -1,0 +1,53 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+
+<form
+    {% if is_oob %}hx-swap-oob="true"{% endif %}
+    id="modal_content_template"
+    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
+    hx-post="{% url 'add_team_member' organization_id=request.resolver_match.kwargs.organization_id team_id=request.resolver_match.kwargs.team_id %}"
+    hx-swap="none">
+{% csrf_token %}
+<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
+<div class="p-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-8">Add Member to {{ team.title }} Team</h2>
+
+    <div id="form-errors" class="mb-4">
+        {% include "components/non_field_errors.html" %}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_organization_member" class="block text-lg font-medium text-gray-700 mb-2">{{ form.organization_member.label }}</label>
+    {{ form.organization_member }}
+    {% if form.organization_member.errors %}
+        <ul class="mb-2">
+            {% for error in form.organization_member.errors %}
+                <li class="text-red-600 text-sm font-medium">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    </div>
+
+    <div class="mb-6">
+    <label for="id_role" class="block text-lg font-medium text-gray-700 mb-2">{{ form.role.label }}</label>
+    {{ form.role }}
+    {% if form.role.errors %}
+        <ul class="mb-2">
+            {% for error in form.role.errors %}
+                <li class="text-red-600 text-sm font-medium">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    </div>
+
+    <div class="flex justify-end space-x-3">
+    <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
+    <button type="submit" class="btn btn-primary w-full sm:w-auto">
+        Add Member
+    </button>
+    </div>
+</div>
+</form>
+
+{% endblock %}

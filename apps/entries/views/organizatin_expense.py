@@ -187,6 +187,8 @@ class OrganizationExpenseUpdateView(
             entry=self.org_exp_entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
+            status=form.cleaned_data["status"],
+            review_notes=form.cleaned_data["review_notes"],
             attachments=form.cleaned_data["attachment_files"],
             replace_attachments=form.cleaned_data["replace_attachments"],
         )

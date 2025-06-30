@@ -59,6 +59,8 @@ def update_entry_with_attachments(
     entry,
     amount,
     description,
+    status,
+    review_notes,
     attachments,
     replace_attachments: bool,
 ) -> Entry:
@@ -69,10 +71,12 @@ def update_entry_with_attachments(
     
     with transaction.atomic():
         # Update basic fields
-        update_entry_basic_fields(
+        update_entry(
             entry=entry,
             amount=amount,
             description=description,
+            status=status,
+            review_notes=review_notes,
         )
 
         # If new attachments were provided, replace existing ones or append the new ones
@@ -85,15 +89,24 @@ def update_entry_with_attachments(
     return entry
 
 
-def update_entry_basic_fields(
+def update_entry(
     *,
     entry,
     amount,
     description,
+    status,
+    review_notes,
 ):
+    """
+    Service to update an existing entry.
+    """
+    
     entry.amount = amount
     entry.description = description
-    entry.save(update_fields=["amount", "description"])
+    entry.status = status
+    entry.review_notes = review_notes
+    entry.save(update_fields=["amount", "description", "status", "review_notes"])
+    
 
 def entry_create(
     *,

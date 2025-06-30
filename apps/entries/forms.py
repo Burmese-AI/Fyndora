@@ -3,6 +3,7 @@ from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus
+from pprint import pprint
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -55,8 +56,12 @@ class BaseEntryForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Only the owner of the organization can submit expenses."
             )
+            
+        print(f"debugging: {cleaned_data}")
 
-        validate_uploaded_files(cleaned_data.get("attachment_files"))
+        attachment_files = cleaned_data.get("attachment_files")
+        if attachment_files:
+            validate_uploaded_files(attachment_files)
 
         return cleaned_data
     
@@ -95,6 +100,13 @@ class UpdateEntryForm(BaseEntryForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
+        # Don't Allow Amount, Description and Attachments to be changed if the status is not PENDING_REVIEW
+        if self.instance.status != EntryStatus.PENDING_REVIEW:
+            self.fields["amount"].disabled = True
+            self.fields["description"].disabled = True
+            self.fields["attachment_files"].disabled = True
+            self.fields["replace_attachments"].disabled = True
+
         
     def get_allowed_statuses(self, current_status):
         transitions = {
@@ -110,3 +122,6 @@ class UpdateEntryForm(BaseEntryForm):
         return [
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
+        
+    
+                

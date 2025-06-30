@@ -38,6 +38,7 @@ class Entry(baseModel):
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     entry_type = models.CharField(max_length=20, choices=EntryType.choices)
+    is_flagged = models.BooleanField(default=False)
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
     )

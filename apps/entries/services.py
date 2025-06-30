@@ -41,7 +41,7 @@ def create_entry_with_attachments(
             amount=amount,
             description=description,
             submitter=submitter,
-            status=EntryStatus.PENDING_REVIEW if is_attachment_provided else EntryStatus.FLAGGED,
+            is_flagged=True if is_attachment_provided else False,
         )
         
         # Create the Attachments if any were provided

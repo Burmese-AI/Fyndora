@@ -2,7 +2,7 @@ from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
-
+from .constants import EntryStatus
 
 class EntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -26,7 +26,7 @@ class EntryForm(forms.ModelForm):
 
     class Meta:
         model = Entry
-        fields = ["amount", "description", "attachment_files"]
+        fields = ["amount", "description", "status", "review_notes"]
         widgets = {
             "amount": forms.NumberInput(
                 attrs={
@@ -40,6 +40,19 @@ class EntryForm(forms.ModelForm):
                 attrs={
                     "class": "input input-bordered w-full",
                     "placeholder": "Brief description of the expense",
+                }
+            ),
+            "status": forms.Select(
+                attrs={
+                    "class": "select select-bordered w-full",
+                    "placeholder": "Select status",
+                    "choices": EntryStatus.choices,
+                }
+            ),
+            "review_notes": forms.Textarea(
+                attrs={
+                    "class": "textarea textarea-bordered w-full",
+                    "placeholder": "Leave notes for the status update",
                 }
             ),
         }
@@ -57,6 +70,9 @@ class EntryForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        
+        print(f"debugging: {cleaned_data}")
+        raise forms.ValidationError("test")
 
         # If org member is None, raise validation error
         if not self.org_member:

@@ -1,4 +1,12 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.db import transaction
+from guardian.shortcuts import assign_perm
+from apps.auditlog.services import audit_create
+from apps.core.roles import get_permissions_for_role
+from apps.organizations.models import OrganizationMember
 
+from .models import Team, TeamMember
 from apps.teams.exceptions import TeamCreationError
 
 
@@ -10,17 +18,7 @@ def create_team_from_form(form, organization):
         return team
     except Exception as e:
         raise TeamCreationError(f"An error occurred while creating team: {str(e)}")
-    
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.db import transaction
-from guardian.shortcuts import assign_perm
 
-from apps.auditlog.services import audit_create
-from apps.core.roles import get_permissions_for_role
-from apps.organizations.models import OrganizationMember
-
-from .models import Team, TeamMember
 
 User = get_user_model()
 
@@ -61,10 +59,10 @@ def team_member_add(
 
     return team_member
 
-  
-def create_team_from_form(form, organization):
-    team = form.save(commit=False)
-    team.organization = organization
-    team.save()
-    return team
 
+def create_team_member_from_form(form, team, organization):
+    team_member = form.save(commit=False)
+    team_member.team = team
+    team_member.organization = organization
+    team_member.save()
+    return team_member

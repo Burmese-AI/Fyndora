@@ -16,3 +16,15 @@ def get_teams_by_organization_id(organization_id):
         return Team.objects.filter(organization_id=organization_id)
     except Exception:
         return Team.objects.none()
+
+
+def get_team_by_id(team_id):
+    """
+    Get a team by its ID.
+    """
+    try:
+        return Team.objects.get(team_id=team_id)
+    except Team.DoesNotExist:
+        return None
+    except Exception:
+        return None

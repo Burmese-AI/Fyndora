@@ -30,6 +30,7 @@ class Remittance(baseModel):
         related_name="confirmed_remittances",
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
 
     @property
     def workspace(self):
@@ -42,12 +43,8 @@ class Remittance(baseModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
+            models.Index(fields=["due_date"]),
         ]
-
-    @property
-    def due_date(self):
-        """Return the workspace's end_date as the due_date."""
-        return self.workspace.end_date
 
     def update_status(self):
         """

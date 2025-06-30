@@ -78,7 +78,7 @@ class OrganizationExpenseCreateView(
     OrganizationContextMixin,
     CreateView,
 ):
-    modal_template = "entries/components/create_org_exp_modal.html"
+    modal_template = "entries/components/create_modal.html"
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
@@ -149,7 +149,7 @@ class OrganizationExpenseCreateView(
             "includes/message.html", context=base_context, request=self.request
         )
         modal_html = render_to_string(
-            "entries/components/create_org_exp_modal.html",
+            "entries/components/create_modal.html",
             context=modal_context,
             request=self.request,
         )
@@ -164,7 +164,7 @@ class OrganizationExpenseUpdateView(
     OrganizationContextMixin,
     UpdateView,
 ):
-    modal_template = "entries/components/update_org_exp_modal.html"
+    modal_template = "entries/components/update_modal.html"
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
@@ -238,7 +238,7 @@ class OrganizationExpenseUpdateView(
             "includes/message.html", context=base_context, request=self.request
         )
         modal_html = render_to_string(
-            "entries/components/update_org_exp_modal.html",
+            "entries/components/update_modal.html",
             context=modal_context,
             request=self.request,
         )

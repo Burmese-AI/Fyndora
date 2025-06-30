@@ -104,18 +104,9 @@ class TeamMemberForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         if self.organization:
-            # Get organization members that are not already in this team
-            all_members = get_organization_members_by_organization_id(
+            self.fields["organization_member"].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
-            
-            if self.team:
-                # Exclude members who are already in this team
-                existing_member_ids = self.team.members.values_list('organization_member_id', flat=True)
-                available_members = all_members.exclude(organization_member_id__in=existing_member_ids)
-                self.fields["organization_member"].queryset = available_members
-            else:
-                self.fields["organization_member"].queryset = all_members
 
     def clean(self):
         cleaned_data = super().clean()

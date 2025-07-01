@@ -34,5 +34,17 @@ def get_team_member_by_id(team_member_id):
     """
     Get a team member by its ID.
     """
+    try:
+        return TeamMember.objects.get(team_member_id=team_member_id)
+    except TeamMember.DoesNotExist:
+        return None
 
-    return TeamMember.objects.get(team_member_id=team_member_id)
+
+def get_team_members_by_team_id(team_id):
+    """
+    Get all team members by team ID.
+    """
+    try:
+        return TeamMember.objects.filter(team_id=team_id)
+    except Exception:
+        return TeamMember.objects.none()

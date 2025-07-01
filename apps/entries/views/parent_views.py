@@ -58,7 +58,7 @@ class BaseEntryUpdateView(HtmxModalFormInvalidFormResponseMixin, UpdateView):
         from ..services import update_entry_with_attachments
 
         update_entry_with_attachments(
-            entry=self.org_exp_entry,
+            entry=self.entry,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             status=form.cleaned_data["status"],
@@ -68,7 +68,7 @@ class BaseEntryUpdateView(HtmxModalFormInvalidFormResponseMixin, UpdateView):
         )
 
         messages.success(
-            self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully"
+            self.request, f"Expense entry {self.entry.pk} updated successfully"
         )
         return self._render_htmx_success_response()
     
@@ -84,7 +84,7 @@ class BaseEntryUpdateView(HtmxModalFormInvalidFormResponseMixin, UpdateView):
         )
         
         response = HttpResponse(
-            f"{message_html}{row_html}"
+            f"{message_html}<table>{row_html}</table>"
         )
         response["HX-trigger"] = "success"
         return response

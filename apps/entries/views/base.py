@@ -40,18 +40,7 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
         workspace_id = kwargs.get("workspace_id")
         self.workspace = get_object_or_404(Workspace, pk=workspace_id)
 
-class OrganizationExpenseEntryRequiredMixin(OrganizationMemberRequiredMixin):
-    org_exp_entry = None
-    attachments = None
-
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        org_exp_entry_id = kwargs.get("pk")
-        self.org_exp_entry = get_object_or_404(Entry, pk=org_exp_entry_id)
-        self.attachments = self.org_exp_entry.attachments.all()
-
-
-class EntryRequiredMixin(OrganizationMemberRequiredMixin):
+class EntryRequiredMixin():
     entry = None
     attachments = None
 
@@ -111,8 +100,8 @@ class OrganizationContextMixin:
             context["organization"] = self.organization
         if hasattr(self, "org_member"):
             context["org_member"] = self.org_member
-        if hasattr(self, "org_exp_entry"):
-            context["entry"] = self.org_exp_entry
+        if hasattr(self, "entry"):
+            context["entry"] = self.entry
         if hasattr(self, "attachments"):
             context["attachments"] = self.attachments
         return context

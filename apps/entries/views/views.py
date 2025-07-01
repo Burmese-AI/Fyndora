@@ -18,10 +18,10 @@ from .base import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
-    OrganizationExpenseEntryRequiredMixin,
     WorkspaceRequiredMixin,
     OrganizationContextMixin,
     WorkspaceContextMixin,
+    EntryRequiredMixin,
 )
 from .parent_views import BaseEntryListView, BaseEntryCreateView, BaseEntryUpdateView
 
@@ -31,8 +31,10 @@ class BaseEntryFormMixin:
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["organization"] = self.organization
         kwargs["org_member"] = self.org_member
+        kwargs["organization"] = self.organization
+        kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        kwargs["workspace_team"] = self.workspace_team if hasattr(self, "workspace_team") else None
         return kwargs
 
 
@@ -45,7 +47,7 @@ class UpdateEntryFormMixin(BaseEntryFormMixin):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["instance"] = getattr(self, "org_exp_entry", None)
+        kwargs["instance"] = getattr(self, "entry", None)
         return kwargs
 
 
@@ -134,7 +136,9 @@ class OrganizationExpenseCreateView(
 
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
-    OrganizationExpenseEntryRequiredMixin,
+    OrganizationMemberRequiredMixin,
+    OrganizationRequiredMixin,
+    EntryRequiredMixin,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
@@ -145,7 +149,7 @@ class OrganizationExpenseUpdateView(
         return "Organization Expense"
     
     def get_post_url(self) -> str:
-        return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.org_exp_entry.pk})
+        return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
@@ -250,6 +254,7 @@ class WorkspaceExpenseUpdateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
     WorkspaceRequiredMixin,
+    EntryRequiredMixin,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,
     WorkspaceContextMixin,
@@ -259,7 +264,8 @@ class WorkspaceExpenseUpdateView(
         return "Workspace Expense"
     
     def get_post_url(self) -> str:
-        return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "entry_id": self.workspace_exp_entry.pk})
+        return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "pk": self.entry.pk})
     
     def get_queryset(self) -> QuerySet[Any]:
         return get_workspace_expenses(self.workspace)
+    

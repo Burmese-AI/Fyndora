@@ -39,6 +39,8 @@ class BaseEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        self.workspace_team = kwargs.pop("workspace_team", None)
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
 

@@ -138,4 +138,12 @@ class EditTeamMemberRoleForm(forms.ModelForm):
             attrs={"class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"}
         ),
     )
+
+    def clean_role(self):
+        role = self.cleaned_data.get("role")
+        print(role)
+        print(self.instance.role)
+        if role == self.instance.role:
+            raise forms.ValidationError("New role cannot be the same as the current role")
+        return role
     

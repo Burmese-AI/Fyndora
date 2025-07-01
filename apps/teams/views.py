@@ -15,7 +15,7 @@ from apps.teams.services import create_team_member_from_form
 from apps.teams.exceptions import TeamMemberCreationError
 from apps.teams.selectors import get_team_member_by_id
 from apps.teams.forms import EditTeamMemberRoleForm
-
+from apps.teams.services import update_team_member_role
 
 # Create your views here.
 def teams_view(request, organization_id):
@@ -247,9 +247,21 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
         team_member = get_team_member_by_id(team_member_id)
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+
         if request.method == "POST":
+            print("post action")
             form = EditTeamMemberRoleForm(request.POST, instance=team_member)
-            
+            if form.is_valid():
+                update_team_member_role(form=form, team_member=team_member)
+                messages.success(request, "Team member role updated successfully.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+            else:
+                messages.error(request, "Invalid form data.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
         else:
             form = EditTeamMemberRoleForm(instance=team_member)
             context = {

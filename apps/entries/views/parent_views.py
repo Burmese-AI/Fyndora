@@ -14,6 +14,12 @@ class BaseEntryListView(ListView):
     paginate_by = PAGINATION_SIZE
     context_object_name = CONTEXT_OBJECT_NAME
     
+    def render_to_response(
+        self, context: dict[str, Any], **response_kwargs: Any
+    ) -> HttpResponse:
+        if self.request.htmx:
+            return render(self.request, "entries/partials/table.html", context)
+        return super().render_to_response(context, **response_kwargs)
     
 class BaseEntryCreateView(HtmxModalFormInvalidFormResponseMixin, CreateView):
     modal_template_name = "entries/components/create_modal.html"

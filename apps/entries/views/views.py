@@ -68,13 +68,6 @@ class OrganizationExpenseListView(
             context["stats"] = get_org_expense_stats(self.organization)
         return context
 
-    def render_to_response(
-        self, context: dict[str, Any], **response_kwargs: Any
-    ) -> HttpResponse:
-        if self.request.htmx:
-            return render(self.request, "entries/partials/table.html", context)
-        return super().render_to_response(context, **response_kwargs)
-
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,

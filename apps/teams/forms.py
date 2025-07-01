@@ -123,3 +123,19 @@ class TeamMemberForm(forms.ModelForm):
                 raise forms.ValidationError("This member is already part of this team")
 
         return cleaned_data
+
+
+class EditTeamMemberRoleForm(forms.ModelForm):
+    class Meta:
+        model = TeamMember
+        fields = ["role"]
+
+    role = forms.ChoiceField(
+        choices=TeamMemberRole.choices,
+        required=True,
+        label="Select Role",
+        widget=forms.Select(
+            attrs={"class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"}
+        ),
+    )
+    

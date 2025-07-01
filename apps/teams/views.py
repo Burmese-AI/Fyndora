@@ -14,6 +14,7 @@ from apps.teams.forms import TeamMemberForm
 from apps.teams.services import create_team_member_from_form
 from apps.teams.exceptions import TeamMemberCreationError
 from apps.teams.selectors import get_team_member_by_id
+from apps.teams.forms import EditTeamMemberRoleForm
 
 
 # Create your views here.
@@ -234,6 +235,30 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                 return HttpResponseClientRedirect(
                     f"/{organization_id}/teams/team_members/{team_id}/"
                 )
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )
+
+
+def edit_team_member_role_view(request, organization_id, team_id, team_member_id):
+    try:
+        team_member = get_team_member_by_id(team_member_id)
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method == "POST":
+            form = EditTeamMemberRoleForm(request.POST, instance=team_member)
+            
+        else:
+            form = EditTeamMemberRoleForm(instance=team_member)
+            context = {
+                "form": form,
+                "team_member": team_member,
+                "team": team,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/edit_team_member_role_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(

@@ -7,19 +7,23 @@ from django.views.generic import ListView, CreateView, UpdateView
 from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.contrib import messages
+from django.urls import reverse
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME
-from ..selectors import get_org_expenses
+from ..selectors import get_org_expenses, get_workspace_expenses
 from ..services import get_org_expense_stats
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
 from .base import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
-    OrganizationExpenseEntryRequiredMixin,
+    WorkspaceRequiredMixin,
     OrganizationContextMixin,
+    WorkspaceContextMixin,
+    EntryRequiredMixin,
 )
+from .parent_views import BaseEntryListView, BaseEntryCreateView, BaseEntryUpdateView
 
 
 class BaseEntryFormMixin:
@@ -27,8 +31,10 @@ class BaseEntryFormMixin:
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["organization"] = self.organization
         kwargs["org_member"] = self.org_member
+        kwargs["organization"] = self.organization
+        kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        kwargs["workspace_team"] = self.workspace_team if hasattr(self, "workspace_team") else None
         return kwargs
 
 
@@ -41,17 +47,17 @@ class UpdateEntryFormMixin(BaseEntryFormMixin):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["instance"] = getattr(self, "org_exp_entry", None)
+        kwargs["instance"] = getattr(self, "entry", None)
         return kwargs
 
 
 class OrganizationExpenseListView(
-    LoginRequiredMixin, OrganizationRequiredMixin, OrganizationContextMixin, ListView
+    LoginRequiredMixin, 
+    OrganizationRequiredMixin, 
+    OrganizationContextMixin, 
+    BaseEntryListView,
 ):
-    model = Entry
     template_name = "entries/index.html"
-    context_object_name = CONTEXT_OBJECT_NAME
-    paginate_by = PAGINATION_SIZE
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
@@ -62,34 +68,21 @@ class OrganizationExpenseListView(
             context["stats"] = get_org_expense_stats(self.organization)
         return context
 
-    def render_to_response(
-        self, context: dict[str, Any], **response_kwargs: Any
-    ) -> HttpResponse:
-        if self.request.htmx:
-            return render(self.request, "entries/partials/table.html", context)
-        return super().render_to_response(context, **response_kwargs)
-
-
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
-    CreateView,
+    BaseEntryCreateView,
 ):
-    modal_template = "entries/components/create_modal.html"
-
-    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
-        self.object = None
-        form = self.get_form()
-        context = self.get_context_data()
-        context["form"] = form
-        context["is_oob"] = (
-            False  # Overriding the default value from HtmxOobResponseMixin context data
-        )
-        return render(request, self.modal_template, context)
-
+    
+    def get_modal_title(self) -> str:
+        return "Organization Expense"
+    
+    def get_post_url(self) -> str:
+        return reverse("organization_expense_create", kwargs={"organization_id": self.organization.pk})
+    
     def form_valid(self, form):
         from ..services import create_entry_with_attachments
         from ..constants import EntryType
@@ -103,10 +96,6 @@ class OrganizationExpenseCreateView(
         )
         messages.success(self.request, "Expense entry submitted successfully")
         return self._render_htmx_success_response()
-
-    def form_invalid(self, form):
-        messages.error(self.request, "Expense entry submission failed")
-        return self._render_htmx_error_response(form)
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -138,69 +127,25 @@ class OrganizationExpenseCreateView(
         response["HX-trigger"] = "success"
         return response
 
-    def _render_htmx_error_response(self, form) -> HttpResponse:
-        base_context = self.get_context_data()
-        modal_context = {
-            **base_context,
-            "form": form,
-        }
-
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-        modal_html = render_to_string(
-            "entries/components/create_modal.html",
-            context=modal_context,
-            request=self.request,
-        )
-        return HttpResponse(f"{message_html} {modal_html}")
-
-
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
-    OrganizationExpenseEntryRequiredMixin,
+    OrganizationMemberRequiredMixin,
+    OrganizationRequiredMixin,
+    EntryRequiredMixin,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
-    UpdateView,
+    BaseEntryUpdateView,
 ):
-    modal_template = "entries/components/update_modal.html"
+    
+    def get_modal_title(self) -> str:
+        return "Organization Expense"
+    
+    def get_post_url(self) -> str:
+        return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
-
-    def get(self, request, *args, **kwargs):
-        self.object = None
-        form = self.get_form()
-        context = self.get_context_data()
-        context["form"] = form
-        context["is_oob"] = (
-            False  # Overriding the default value from HtmxOobResponseMixin context data
-        )
-        return render(request, self.modal_template, context=context)
-
-    def form_valid(self, form):
-        # Update org exp entry along with attachements if provided
-        from ..services import update_entry_with_attachments
-
-        update_entry_with_attachments(
-            entry=self.org_exp_entry,
-            amount=form.cleaned_data["amount"],
-            description=form.cleaned_data["description"],
-            status=form.cleaned_data["status"],
-            review_notes=form.cleaned_data["review_notes"],
-            attachments=form.cleaned_data["attachment_files"],
-            replace_attachments=form.cleaned_data["replace_attachments"],
-        )
-
-        messages.success(
-            self.request, f"Expense entry {self.org_exp_entry.pk} updated successfully"
-        )
-        return self._render_htmx_success_response()
-
-    def form_invalid(self, form):
-        messages.error(self.request, "Expense entry submission failed")
-        return self._render_htmx_error_response(form)
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -229,19 +174,91 @@ class OrganizationExpenseUpdateView(
         response["HX-trigger"] = "success"
         return response
 
-    def _render_htmx_error_response(self, form) -> HttpResponse:
-        base_context = self.get_context_data()
-        modal_context = {
-            **base_context,
-            "form": form,
-        }
+class WorkspaceExpenseListView(
+    LoginRequiredMixin, 
+    WorkspaceRequiredMixin, 
+    WorkspaceContextMixin, 
+    BaseEntryListView,
+):
+    template_name = "entries/workspace_expense_index.html"
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_workspace_expenses(self.workspace)
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "entries"
+        return context
 
+class WorkspaceExpenseCreateView(
+    LoginRequiredMixin,
+    OrganizationMemberRequiredMixin,
+    WorkspaceRequiredMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    WorkspaceContextMixin,
+    BaseEntryCreateView,
+):
+    def get_modal_title(self) -> str:
+        return "Workspace Expense"
+    
+    def get_post_url(self) -> str:
+        return reverse("workspace_expense_create", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk})
+    
+    def form_valid(self, form):
+        from ..services import create_entry_with_attachments
+        from ..constants import EntryType
+
+        create_entry_with_attachments(
+            submitter=self.org_member,
+            amount=form.cleaned_data["amount"],
+            description=form.cleaned_data["description"],
+            attachments=form.cleaned_data["attachment_files"],
+            entry_type=EntryType.WORKSPACE_EXP,
+            workspace=self.workspace
+        )
+        messages.success(self.request, "Expense entry submitted successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        from apps.core.utils import get_paginated_context
+
+        workspace_exp_entries = get_workspace_expenses(self.workspace)
+        table_context = get_paginated_context(
+            queryset=workspace_exp_entries,
+            context=base_context,
+            object_name=CONTEXT_OBJECT_NAME,
+        )
+
+        table_html = render_to_string(
+            "entries/partials/table.html", context=table_context, request=self.request
+        )
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        modal_html = render_to_string(
-            "entries/components/update_modal.html",
-            context=modal_context,
-            request=self.request,
-        )
-        return HttpResponse(f"{message_html} {modal_html}")
+        
+        response = HttpResponse(f"{message_html}{table_html}")
+        response["HX-trigger"] = "success"
+        return response
+
+class WorkspaceExpenseUpdateView(
+    LoginRequiredMixin,
+    OrganizationMemberRequiredMixin,
+    WorkspaceRequiredMixin,
+    EntryRequiredMixin,
+    UpdateEntryFormMixin,
+    HtmxOobResponseMixin,
+    WorkspaceContextMixin,
+    BaseEntryUpdateView,
+):
+    def get_modal_title(self) -> str:
+        return "Workspace Expense"
+    
+    def get_post_url(self) -> str:
+        return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "pk": self.entry.pk})
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_workspace_expenses(self.workspace)
+    

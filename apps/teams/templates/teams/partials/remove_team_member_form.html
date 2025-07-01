@@ -1,0 +1,16 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+
+<form
+    {% if is_oob %}hx-swap-oob="true"{% endif %}
+    id="modal_content_template"
+    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
+    hx-post="{% url 'remove_team_member' organization_id=request.resolver_match.kwargs.organization_id team_id=request.resolver_match.kwargs.team_id team_member_id=request.resolver_match.kwargs.team_member_id %}"
+    hx-swap="none">
+{% csrf_token %}
+<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
+<h1>Remove Team Member</h1>
+</form>
+
+{% endblock %}

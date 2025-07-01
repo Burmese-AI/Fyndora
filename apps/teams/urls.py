@@ -13,4 +13,9 @@ urlpatterns = [
         views.add_team_member_view,
         name="add_team_member",
     ),
+    path(
+        "remove_team_member/<uuid:team_id>/<uuid:team_member_id>/",
+        views.remove_team_member_view,
+        name="remove_team_member",
+    ),
 ]

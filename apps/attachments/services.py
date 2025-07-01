@@ -3,7 +3,6 @@ from .models import Attachment
 from .constants import AttachmentType
 
 
-
 def delete_attachment(attachment_id, request):
     try:
         attachment = Attachment.objects.select_related("entry").get(pk=attachment_id)
@@ -27,7 +26,6 @@ def delete_attachment(attachment_id, request):
         return False, None
 
     return True, attachments
-
 
 
 def replace_or_append_attachments(
@@ -65,4 +63,3 @@ def create_attachments(*, entry, attachments):
     Attachment.objects.bulk_create(prepared_attachments)
 
     return prepared_attachments
-

@@ -5,21 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0002_remittance_confirmed_at_remittance_confirmed_by'),
-        ('workspaces', '0005_alter_workspace_remittance_rate'),
+        ("remittance", "0002_remittance_confirmed_at_remittance_confirmed_by"),
+        ("workspaces", "0005_alter_workspace_remittance_rate"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='remittance',
-            name='due_date',
+            model_name="remittance",
+            name="due_date",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddIndex(
-            model_name='remittance',
-            index=models.Index(fields=['due_date'], name='remittance__due_dat_b70eef_idx'),
+            model_name="remittance",
+            index=models.Index(
+                fields=["due_date"], name="remittance__due_dat_b70eef_idx"
+            ),
         ),
     ]

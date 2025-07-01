@@ -65,7 +65,8 @@
                         <button hx-get="{% url 'remove_team_member' organization_id=organization.organization_id team_id=team.team_id team_member_id=member.team_member_id %}" hx-target="#modal-placeholder" class="btn btn-ghost btn-sm hover:bg-error hover:text-error-content" title="Remove Member">
                             Remove
                         </button>
-                    </div>
+                    </div> 
+                    
                 </td>
             </tr>
             {% endfor %}

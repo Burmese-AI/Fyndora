@@ -179,18 +179,17 @@ def add_team_member_view(request, organization_id, team_id):
         return redirect("teams", organization_id=organization_id)
 
 
-
 def remove_team_member_view(request, organization_id, team_id, team_member_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
-        
+
         if request.method == "POST":
             try:
                 team_member = get_team_member_by_id(team_member_id)
                 team_member.delete()
                 messages.success(request, "Team member removed successfully.")
-                
+
                 # Get updated team members list
                 team_members = TeamMember.objects.filter(team=team)
                 context = {
@@ -199,7 +198,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                     "team_members": team_members,
                     "is_oob": True,
                 }
-                
+
                 team_display_html = render_to_string(
                     "teams/partials/teamMembers_display.html",
                     context=context,
@@ -211,22 +210,32 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                 response = HttpResponse(f"{message_html} {team_display_html}")
                 response["HX-trigger"] = "success"
                 return response
-                
+
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/team_members/{team_id}/")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
         else:
             try:
-                team_member = TeamMember.objects.get(team_member_id=team_member_id, team=team)
+                team_member = TeamMember.objects.get(
+                    team_member_id=team_member_id, team=team
+                )
                 context = {
                     "team_member": team_member,
                     "team": team,
                     "organization": organization,
                 }
-                return render(request, "teams/partials/remove_team_member_form.html", context)
+                return render(
+                    request, "teams/partials/remove_team_member_form.html", context
+                )
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/team_members/{team_id}/")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/teams/team_members/{team_id}/")
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )

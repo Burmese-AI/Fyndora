@@ -29,11 +29,10 @@ def get_team_by_id(team_id):
     except Exception:
         return None
 
+
 def get_team_member_by_id(team_member_id):
     """
     Get a team member by its ID.
     """
-    
-    return TeamMember.objects.get(team_member_id=team_member_id)
 
-  
+    return TeamMember.objects.get(team_member_id=team_member_id)

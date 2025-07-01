@@ -19,6 +19,7 @@ from .selectors import (
     get_total_org_expenses,
 )
 
+
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
     """
     A helper function to centralize permission checking for entry services.
@@ -69,7 +70,6 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
                 raise PermissionDenied("You can only edit your own entries.")
 
 
-                
 def create_entry_with_attachments(
     *,
     submitter,

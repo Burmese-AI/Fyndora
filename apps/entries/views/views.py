@@ -10,7 +10,7 @@ from django.contrib import messages
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME
-from ..selectors import get_org_expenses
+from ..selectors import get_org_expenses, get_workspace_expenses
 from ..services import get_org_expense_stats
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
 from .base import (
@@ -193,6 +193,9 @@ class WorkspaceExpenseListView(
 ):
     template_name = "entries/workspace_expense_index.html"
     
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_workspace_expenses(self.workspace)
+    
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "entries"
@@ -205,7 +208,56 @@ class WorkspaceExpenseCreateView(
     WorkspaceRequiredMixin,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
-    OrganizationContextMixin,
+    WorkspaceContextMixin,
     BaseEntryCreateView,
 ):
-    pass
+    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+        self.object = None
+        form = self.get_form()
+        context = self.get_context_data()
+        context["form"] = form
+        context["is_oob"] = (
+            False  # Overriding the default value from HtmxOobResponseMixin context data
+        )
+        context["custom_title"] = "Workspace Expense"
+        return render(request, self.modal_template_name, context)
+    
+    def form_valid(self, form):
+        from ..services import create_entry_with_attachments
+        from ..constants import EntryType
+
+        create_entry_with_attachments(
+            submitter=self.org_member,
+            amount=form.cleaned_data["amount"],
+            description=form.cleaned_data["description"],
+            attachments=form.cleaned_data["attachment_files"],
+            entry_type=EntryType.WORKSPACE_EXP,
+            workspace=self.workspace
+        )
+        messages.success(self.request, "Expense entry submitted successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        from apps.core.utils import get_paginated_context
+
+        org_exp_entries = get_org_expenses(self.organization)
+        table_context = get_paginated_context(
+            queryset=org_exp_entries,
+            context=base_context,
+            object_name=CONTEXT_OBJECT_NAME,
+        )
+
+        table_html = render_to_string(
+            "entries/partials/table.html", context=table_context, request=self.request
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+        
+        response = HttpResponse(f"{message_html}{table_html}")
+        response["HX-trigger"] = "success"
+        return response
+    
+    

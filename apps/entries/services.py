@@ -76,6 +76,8 @@ def create_entry_with_attachments(
     description,
     attachments,
     entry_type: EntryType,
+    workspace=None,
+    workspace_team=None,
 ) -> Entry:
     """
     Service to create a new entry with attachments.
@@ -90,6 +92,8 @@ def create_entry_with_attachments(
             description=description,
             submitter=submitter,
             is_flagged=not is_attachment_provided,
+            workspace=workspace or (workspace_team.workspace if workspace_team else None),
+            workspace_team=workspace_team,
         )
 
         # Create the Attachments if any were provided

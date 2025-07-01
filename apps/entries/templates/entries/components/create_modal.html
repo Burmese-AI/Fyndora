@@ -10,7 +10,7 @@
   </div>
   <!-- Add enctype="multipart/form-data" for file uploads -->
   <form
-    hx-post="{% url 'workspace_expense_create' organization_id=organization.pk workspace_id=workspace.pk %}"
+    hx-post="{{ post_url }}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"

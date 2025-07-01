@@ -6,11 +6,11 @@
      class="modal-box w-full max-w-4xl p-6">
 
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-base-content">Edit Expense</h2>
+    <h2 class="text-xl font-semibold text-base-content">Edit {{ custom_title }} Entry</h2>
   </div>
 
   <form
-    hx-post="{% url 'organization_expense_update' organization_id=organization.pk pk=entry.pk %}"
+    hx-post="{{ post_url }}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"

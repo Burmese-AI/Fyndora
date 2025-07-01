@@ -2,15 +2,16 @@
 
 {% block modal_content %}
 
-<form
-    {% if is_oob %}hx-swap-oob="true"{% endif %}
-    id="modal_content_template"
-    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
-    hx-post="{% url 'remove_team_member' organization_id=request.resolver_match.kwargs.organization_id team_id=request.resolver_match.kwargs.team_id team_member_id=request.resolver_match.kwargs.team_member_id %}"
-    hx-swap="none">
-{% csrf_token %}
-<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
-<h1>Remove Team Member</h1>
+<form hx-post="{% url 'remove_team_member' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" class="modal-box w-4xl bg-white shadow-xl rounded-lg p-8 " hx-swap="none" >
+    {% csrf_token %}
+   
+        <h2 class="text-2xl font-bold text-gray-800 mb-8">Remove {{team_member.organization_member.user.username }} from {{ team.title }}?</h2>
+        <p class="text-gray-600 mb-8">Are you sure you want to remove this team member?</p>
+        <div class="flex justify-end gap-4">
+          
+            <button type="button" class="btn btn-base-200" onclick="this.closest('.modal').removeAttribute('open')">Cancel</button>
+            <button type="submit" class="btn btn-error">Delete</button>
+        </div>
+            </div>
 </form>
-
 {% endblock %}

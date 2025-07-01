@@ -13,6 +13,7 @@ from apps.teams.models import TeamMember
 from apps.teams.forms import TeamMemberForm
 from apps.teams.services import create_team_member_from_form
 from apps.teams.exceptions import TeamMemberCreationError
+from apps.teams.selectors import get_team_member_by_id
 
 
 # Create your views here.
@@ -186,7 +187,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
         
         if request.method == "POST":
             try:
-                team_member = TeamMember.objects.get(team_member_id=team_member_id, team=team)
+                team_member = get_team_member_by_id(team_member_id)
                 team_member.delete()
                 messages.success(request, "Team member removed successfully.")
                 

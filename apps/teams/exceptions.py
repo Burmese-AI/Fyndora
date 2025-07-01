@@ -13,5 +13,6 @@ class TeamDeletionError(Exception):
 class TeamMemberCreationError(Exception):
     pass
 
+
 class TeamMemberUpdateError(Exception):
     pass

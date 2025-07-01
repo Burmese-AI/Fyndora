@@ -11,6 +11,7 @@ from .models import Team, TeamMember
 from apps.teams.exceptions import TeamCreationError
 from apps.core.utils import model_update
 
+
 def create_team_from_form(form, organization):
     try:
         team = form.save(commit=False)
@@ -70,9 +71,7 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(
-    *, form, team_member
-) -> TeamMember:
+def update_team_member_role(*, form, team_member) -> TeamMember:
     """
     Updates a team member role from a form.
     """
@@ -81,4 +80,3 @@ def update_team_member_role(
         return team_member
     except Exception as e:
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
-

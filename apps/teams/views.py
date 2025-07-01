@@ -17,6 +17,7 @@ from apps.teams.selectors import get_team_member_by_id
 from apps.teams.forms import EditTeamMemberRoleForm
 from apps.teams.services import update_team_member_role
 
+
 # Create your views here.
 def teams_view(request, organization_id):
     try:
@@ -270,7 +271,9 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
                 "team": team,
                 "organization": organization,
             }
-            return render(request, "teams/partials/edit_team_member_role_form.html", context)
+            return render(
+                request, "teams/partials/edit_team_member_role_form.html", context
+            )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(

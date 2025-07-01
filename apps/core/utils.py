@@ -26,7 +26,6 @@ def get_paginated_context(
     return context
 
 
-
 def model_update(
     instance,
     data,

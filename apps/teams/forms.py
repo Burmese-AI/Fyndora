@@ -135,7 +135,9 @@ class EditTeamMemberRoleForm(forms.ModelForm):
         required=True,
         label="Select Role",
         widget=forms.Select(
-            attrs={"class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"}
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base"
+            }
         ),
     )
 
@@ -144,6 +146,7 @@ class EditTeamMemberRoleForm(forms.ModelForm):
         print(role)
         print(self.instance.role)
         if role == self.instance.role:
-            raise forms.ValidationError("New role cannot be the same as the current role")
+            raise forms.ValidationError(
+                "New role cannot be the same as the current role"
+            )
         return role
-    

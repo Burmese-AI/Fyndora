@@ -12,12 +12,7 @@ from apps.teams.constants import TeamMemberRole
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from .permissions import EntryPermissions
-from .selectors import (
-    get_average_monthly_org_expenses,
-    get_last_month_org_expenses,
-    get_this_month_org_expenses,
-    get_total_org_expenses,
-)
+from .stats import EntryStats
 
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
@@ -93,7 +88,8 @@ def create_entry_with_attachments(
             description=description,
             submitter=submitter,
             is_flagged=not is_attachment_provided,
-            workspace=workspace or (workspace_team.workspace if workspace_team else None),
+            workspace=workspace
+            or (workspace_team.workspace if workspace_team else None),
             workspace_team=workspace_team,
         )
 
@@ -405,10 +401,14 @@ def entry_update(*, entry, updated_by, **fields_to_update):
 
 
 def get_org_expense_stats(organization):
-    total = get_total_org_expenses(organization)
-    this_month = get_this_month_org_expenses(organization)
-    last_month = get_last_month_org_expenses(organization)
-    avg_monthly = get_average_monthly_org_expenses(organization)
+    instance = EntryStats(
+        entry_types=[EntryType.ORG_EXP],
+        organization=organization,
+    )
+    total = instance.total()
+    this_month = instance.this_month()
+    last_month = instance.last_month()
+    avg_monthly = instance.average_monthly()
 
     return [
         {

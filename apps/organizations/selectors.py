@@ -49,10 +49,25 @@ def get_teams_count(organization):
         return 0
 
 
-def get_user_org_membership(user, organization):
+def get_user_org_membership(user, organization, prefetch_user=False):
     """
     Returns the user's org member object based on the provided organization
     """
-    return OrganizationMember.objects.filter(
-        user=user, organization=organization
-    ).first()
+    queryset = OrganizationMember.objects.filter(user=user, organization=organization)
+    if prefetch_user:
+        queryset = queryset.select_related("user")
+    return queryset.first()
+
+
+def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
+    """
+    Returns all members of the given organization.
+    """
+    queryset = OrganizationMember.objects.all()
+    if organization:
+        queryset = queryset.filter(organization=organization)
+    if workspace:
+        queryset = queryset.filter(administered_workspaces=workspace)
+    if prefetch_user:
+        queryset = queryset.select_related("user")
+    return queryset

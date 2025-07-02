@@ -293,8 +293,13 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                 return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
         else:
             form = AddTeamToWorkspaceForm(organization=organization)
+            context = {
+                "form": form,
+                "organization": organization,
+                "workspace": workspace,
+            }
             return render(
-                request, "workspaces/partials/add_team_form.html", {"form": form}
+                request, "workspaces/partials/add_team_form.html", context
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")

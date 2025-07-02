@@ -1,6 +1,18 @@
 from apps.teams.models import TeamMember, Team
 
 
+def get_team_members(team=None, prefetch_user=False):
+    """
+    Returns all team members.
+    """
+    queryset = TeamMember.objects.all()
+    if team:
+        queryset = queryset.filter(team=team)
+    if prefetch_user:
+        queryset = queryset.select_related("organization_member__user")
+    return queryset
+
+
 def get_all_team_members():
     try:
         return TeamMember.objects.all()

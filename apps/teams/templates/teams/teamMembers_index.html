@@ -1,0 +1,10 @@
+{% extends "layouts/organization_layout.html" %}
+
+
+{% block header %}
+    {% include "components/organization_layout_header.html" with title="Team Members" subtitle="Manage your team members" %}
+{% endblock %}
+
+{% block content %}
+  {% include "teams/teamMembers_main_content.html" %}
+{% endblock %}

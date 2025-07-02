@@ -1,0 +1,110 @@
+{% extends "components/new_base_modal.html" %}
+{% load humanize %}
+
+{% block modal_content %}
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template"
+     class="modal-box w-full max-w-4xl p-6">
+
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-base-content">Edit {{ custom_title }} Entry</h2>
+  </div>
+
+  <form
+    hx-post="{{ post_url }}"
+    hx-swap="none"
+    hx-on::after-request="if (event.detail.successful) { this.reset(); }"
+    @click.outside="open = false"
+    class="space-y-6"
+    enctype="multipart/form-data"
+  >
+    {% csrf_token %}
+    {% include "components/non_field_errors.html" %}
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- === Left: Basic Info === -->
+      <div class="space-y-4">
+        <!-- Amount -->
+        <div>
+          <label for="{{ form.amount.id_for_label }}" class="block text-sm font-medium text-base-content mb-1">
+            Amount
+          </label>
+          {{ form.amount }}
+          {% include "components/field_error.html" with field=form.amount %}
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-base-content mb-1">
+            Description
+          </label>
+          {{ form.description }}
+          {% include "components/field_error.html" with field=form.description %}
+        </div>
+
+        <!-- Attachments -->
+        <div>
+          <label for="{{ form.attachment_files.id_for_label }}" class="block text-sm font-medium text-base-content mb-1">
+            Attachments
+          </label>
+          {{ form.attachment_files }}
+          {% include "components/field_error.html" with field=form.attachment_files %}
+        </div>
+
+        <!-- Replace Checkbox -->
+        {% if form.replace_attachments %}
+        <div class="flex items-center gap-2 mt-2">
+          {{ form.replace_attachments }}
+          <label for="{{ form.replace_attachments.id_for_label }}" class="text-sm text-base-content cursor-pointer">
+            {{ form.replace_attachments.label }}
+          </label>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- === Right: Status and Notes === -->
+      <div class="space-y-4">
+        <!-- Status -->
+        <div>
+          <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-base-content mb-1">
+            Status
+          </label>
+          {{ form.status }}
+          {% include "components/field_error.html" with field=form.status %}
+        </div>
+
+        <!-- Review Notes -->
+        <div>
+          <label for="{{ form.review_notes.id_for_label }}" class="block text-sm font-medium text-base-content mb-1">
+            Review Notes
+          </label>
+          {{ form.review_notes }}
+          {% include "components/field_error.html" with field=form.review_notes %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Uploaded Attachments Section -->
+    <div class="mt-6">
+      <label class="block text-sm font-medium text-base-content mb-2">
+        Uploaded Documents
+      </label>
+      {% include "attachments/index.html" %}
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end space-x-2 pt-6">
+      <button type="button"
+              onclick="this.closest('.modal').removeAttribute('open')"
+              class="btn btn-ghost">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-primary">
+        Update
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock modal_content %}

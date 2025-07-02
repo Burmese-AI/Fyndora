@@ -9,7 +9,7 @@ from .services import delete_attachment
 
 
 @require_http_methods(["DELETE"])
-def delete_attachment(request, attachment_id):
+def delete_attachment_view(request, attachment_id):
     success, attachments = delete_attachment(attachment_id, request)
     context = {"is_oob": True, "messages": get_messages(request)}
     attachment_html = ""
@@ -30,6 +30,7 @@ def delete_attachment(request, attachment_id):
     response = HttpResponse(f"{message_html}{attachment_html}")
 
     return response
+
 
 class AttachmentDeleteView(DeleteView):
     model = Attachment

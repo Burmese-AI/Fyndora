@@ -134,6 +134,33 @@ def get_org_expenses(organization: Organization):
 
     return entries
 
+def get_workspace_expenses(workspace: Workspace):
+    """
+    Returns all organization expense entries submitted by members of the given organization,
+    annotated with attachment count and optimized to avoid N+1 queries using prefetching.
+    """
+    
+
+    # Prepare the querysets for prefetching
+    org_member_queryset = OrganizationMember.objects.select_related("user")
+
+    # Use GenericPrefetch to tell Django how to prefetch 'submitter'
+    generic_prefetch = GenericPrefetch("submitter", [org_member_queryset])
+
+    # Fetch all org exp entries with those org members ids as submitter obj id
+    entries = Entry.objects.filter(
+        workspace=workspace,
+        entry_type=EntryType.WORKSPACE_EXP,
+    ).annotate(
+        # Count how many attachments each entry has
+        attachment_count=Count("attachments")
+    )
+
+    # Apply generic prefetch
+    entries = entries.prefetch_related(generic_prefetch)
+
+    return entries
+    
 
 def get_org_entries(
     organization: Organization,
@@ -230,14 +257,16 @@ def get_org_entries(
 
 
 def get_total_org_expenses(organization: Organization):
-    queryset = get_org_expenses(organization)
+    queryset = get_org_expenses(organization).filter(status=EntryStatus.APPROVED)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
 
 
 def get_this_month_org_expenses(organization: Organization):
     today = now().date()
     start_of_month = today.replace(day=1)
-    queryset = get_org_expenses(organization).filter(created_at__gte=start_of_month)
+    queryset = get_org_expenses(organization).filter(
+        created_at__gte=start_of_month, status=EntryStatus.APPROVED
+    )
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
 
 
@@ -245,7 +274,9 @@ def get_average_monthly_org_expenses(organization: Organization):
     today = now().date()
     one_year_ago = today - timedelta(days=365)
 
-    qs = get_org_expenses(organization).filter(created_at__date__gte=one_year_ago)
+    qs = get_org_expenses(organization).filter(
+        created_at__date__gte=one_year_ago, status=EntryStatus.APPROVED
+    )
     total = qs.aggregate(total=Sum("amount"))["total"] or 0
 
     return total / 12
@@ -260,5 +291,6 @@ def get_last_month_org_expenses(organization: Organization):
     queryset = get_org_expenses(organization).filter(
         created_at__date__gte=start_of_last_month,
         created_at__date__lte=end_of_last_month,
+        status=EntryStatus.APPROVED,
     )
     return queryset.aggregate(total=Sum("amount"))["total"] or 0

@@ -5,13 +5,12 @@
 
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-base-content">
-      Add Organization Expense
+      Upload {{ custom_title }} Entry
     </h2>
   </div>
-
   <!-- Add enctype="multipart/form-data" for file uploads -->
   <form
-    hx-post="{% url 'organization_expense_create' organization_id=organization.pk %}"
+    hx-post="{{ post_url }}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"

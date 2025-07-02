@@ -1,8 +1,11 @@
 from django.urls import path
-from .views.organizatin_expense import (
+from .views.views import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
+    WorkspaceExpenseListView,
+    WorkspaceExpenseCreateView,
+    WorkspaceExpenseUpdateView,
 )
 from .views.base import EntryDetailView
 
@@ -31,5 +34,20 @@ urlpatterns = [
         "entries/<uuid:pk>/detail",
         EntryDetailView.as_view(),
         name="entry_detail",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses",
+        WorkspaceExpenseListView.as_view(),
+        name="workspace_expense_list",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/create",
+        WorkspaceExpenseCreateView.as_view(),
+        name="workspace_expense_create",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/",
+        WorkspaceExpenseUpdateView.as_view(),
+        name="workspace_expense_update",
     ),
 ]

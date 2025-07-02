@@ -5,10 +5,18 @@ from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
 from apps.workspaces.models import WorkspaceTeam
 from apps.teams.forms import TeamForm
-from apps.teams.selectors import get_teams_by_organization_id
+from apps.teams.selectors import get_teams_by_organization_id, get_team_by_id
 from apps.teams.services import create_team_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from apps.teams.models import TeamMember
+from apps.teams.forms import TeamMemberForm
+from apps.teams.services import create_team_member_from_form
+from apps.teams.exceptions import TeamMemberCreationError
+from apps.teams.selectors import get_team_member_by_id
+from apps.teams.forms import EditTeamMemberRoleForm
+from apps.teams.services import update_team_member_role
+from apps.teams.selectors import get_team_members_by_team_id
 
 
 # Create your views here.
@@ -27,7 +35,7 @@ def teams_view(request, organization_id):
         return render(request, "teams/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect("teams_view", organization_id=organization_id)
+        return redirect("teams", organization_id=organization_id)
 
 
 def create_team_view(request, organization_id):
@@ -64,8 +72,17 @@ def create_team_view(request, organization_id):
                     return response
                 return HttpResponseClientRedirect(f"/{organization_id}/teams/")
             else:
-                messages.error(request, "Invalid form submission")
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+                messages.error(request, "Invalid form data.")
+                context = {"form": form, "is_oob": True}
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                modal_html = render_to_string(
+                    "teams/partials/create_team_form.html",
+                    context=context,
+                    request=request,
+                )
+                return HttpResponse(f"{message_html} {modal_html}")
         else:
             form = TeamForm(organization=organization)
             context = {
@@ -77,3 +94,220 @@ def create_team_view(request, organization_id):
         print(e)
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+
+def get_team_members_view(request, organization_id, team_id):
+    try:
+        # Get the team and organization for context
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        team_members = get_team_members_by_team_id(team_id)
+
+        context = {
+            "team": team,
+            "organization": organization,
+            "team_members": team_members,
+        }
+        return render(request, "teams/teamMembers_index.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return redirect("teams", organization_id=organization_id)
+
+
+def add_team_member_view(request, organization_id, team_id):
+    try:
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method == "POST":
+            try:
+                form = TeamMemberForm(
+                    request.POST, team=team, organization=organization
+                )
+                if form.is_valid():
+                    create_team_member_from_form(
+                        form, team=team, organization=organization
+                    )
+                    messages.success(request, "Team member added successfully.")
+                    team_members = get_team_members_by_team_id(team_id)
+                    context = {
+                        "team": team,
+                        "organization": organization,
+                        "team_members": team_members,
+                        "is_oob": True,
+                    }
+                    team_display_html = render_to_string(
+                        "teams/partials/teamMembers_display.html",
+                        context=context,
+                        request=request,
+                    )
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    response = HttpResponse(f"{message_html} {team_display_html}")
+                    response["HX-trigger"] = "success"
+                    return response
+                else:
+                    messages.error(request, "Invalid form data.")
+                    context = {
+                        "form": form,
+                        "team": team,
+                        "organization": organization,
+                        "is_oob": True,
+                    }
+
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    modal_html = render_to_string(
+                        "teams/partials/add_team_member_form.html",
+                        context=context,
+                        request=request,
+                    )
+                    return HttpResponse(f"{message_html} {modal_html}")
+            except TeamMemberCreationError as e:
+                messages.error(request, f"An error occurred: {str(e)}")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+        else:
+            form = TeamMemberForm(team=team, organization=organization)
+            context = {
+                "form": form,
+                "team": team,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/add_team_member_form.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return redirect("teams", organization_id=organization_id)
+
+
+def remove_team_member_view(request, organization_id, team_id, team_member_id):
+    try:
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+
+        if request.method == "POST":
+            try:
+                team_member = get_team_member_by_id(team_member_id)
+                team_member.delete()
+                messages.success(request, "Team member removed successfully.")
+
+                # Get updated team members list
+                team_members = TeamMember.objects.filter(team=team)
+                context = {
+                    "team": team,
+                    "organization": organization,
+                    "team_members": team_members,
+                    "is_oob": True,
+                }
+
+                team_display_html = render_to_string(
+                    "teams/partials/teamMembers_display.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                response = HttpResponse(f"{message_html} {team_display_html}")
+                response["HX-trigger"] = "success"
+                return response
+
+            except TeamMember.DoesNotExist:
+                messages.error(request, "Team member not found.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+        else:
+            try:
+                team_member = TeamMember.objects.get(
+                    team_member_id=team_member_id, team=team
+                )
+                context = {
+                    "team_member": team_member,
+                    "team": team,
+                    "organization": organization,
+                }
+                return render(
+                    request, "teams/partials/remove_team_member_form.html", context
+                )
+            except TeamMember.DoesNotExist:
+                messages.error(request, "Team member not found.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )
+
+
+def edit_team_member_role_view(request, organization_id, team_id, team_member_id):
+    try:
+        team_member = get_team_member_by_id(team_member_id)
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+
+        if request.method == "POST":
+            print("post action")
+            form = EditTeamMemberRoleForm(request.POST, instance=team_member)
+            if form.is_valid():
+                update_team_member_role(form=form, team_member=team_member)
+                messages.success(request, "Team member role updated successfully.")
+                team_members = get_team_members_by_team_id(team_id)
+                context = {
+                    "team": team,
+                    "organization": organization,
+                    "team_members": team_members,
+                    "is_oob": True,
+                }
+                teamMembers_display_html = render_to_string(
+                    "teams/partials/teamMembers_display.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                response = HttpResponse(f"{message_html} {teamMembers_display_html}")
+                response["HX-trigger"] = "success"
+                return response
+                # return HttpResponseClientRedirect(
+                #     f"/{organization_id}/teams/team_members/{team_id}/"
+                # )
+            else:
+                messages.error(request, "Invalid form data.")
+                context = {
+                    "form": form,
+                    "team_member": team_member,
+                    "team": team,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                modal_html = render_to_string(
+                    "teams/partials/edit_team_member_role_form.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                return HttpResponse(f"{message_html} {modal_html}")
+        else:
+            form = EditTeamMemberRoleForm(instance=team_member)
+            context = {
+                "form": form,
+                "team_member": team_member,
+                "team": team,
+                "organization": organization,
+            }
+            return render(
+                request, "teams/partials/edit_team_member_role_form.html", context
+            )
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )

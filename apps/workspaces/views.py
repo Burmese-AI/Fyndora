@@ -317,6 +317,7 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
             "workspace_teams": workspace_teams,
             "workspace": workspace,
             "organization": organization,
+            "view": "teams",
         }
         return render(request, "workspaces/workspace_teams_main.html", context)
     except Exception as e:

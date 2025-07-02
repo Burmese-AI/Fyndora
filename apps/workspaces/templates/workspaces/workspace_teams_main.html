@@ -1,23 +1,5 @@
-{% extends "layouts/organization_layout.html" %}
+{% extends "layouts/custom_workspace_teams_layout.html" %}
 
-
-{% block header %}
-<div class="breadcrumbs text-sm">
-  <ul>
-    <li><a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}">Home</a></li>
-    <li><a href="{% url 'workspace_list' organization_id=request.resolver_match.kwargs.organization_id %}">Workspaces</a></li>
-  </ul>
-</div>
-    {% include "components/organization_layout_header.html" with title="Workspace Teams" subtitle="Manage your Team Under a Workspace" %}
-{% endblock %}
-
-{% block content %}
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold">My Teams under {{ workspace.title }}</h1>
-  <p class="text-base-content/70 mt-2">Manage your project teams</p>
-</div>
-
+{% block secondary_content %}
   {% include "workspaces/partials/workspaces_team_display.html" %}
-
 {% endblock %}
-

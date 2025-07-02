@@ -23,7 +23,7 @@ class TeamFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     title = factory.Sequence(lambda n: f"Fundraising Team {n}")
     description = factory.Faker("sentence", nb_words=6)
-    custom_remittance_rate = None  # Usually null, can override
+    # custom_remittance_rate = None  # Usually null, can override .. remove after deleting the column
 
     # created_by and team_coordinator will be set when needed
 
@@ -87,4 +87,4 @@ class TeamWithCustomRateFactory(TeamFactory):
     """Factory for creating fundraising team with custom remittance rate."""
 
     title = factory.Sequence(lambda n: f"Elite Fundraising Unit {n}")
-    custom_remittance_rate = Decimal("95.00")  # Higher remittance rate for elite teams
+    # custom_remittance_rate = Decimal("95.00")  # Higher remittance rate for elite teams Removed after deleting the column..

@@ -31,14 +31,6 @@
                 <span>
                     <strong>Members:</strong> {{ team.members.count }}
                 </span>
-                <span>
-                    <strong>Remittance Rate:</strong>
-                    {% if team.custom_remittance_rate %}
-                        {{ team.custom_remittance_rate }}%
-                    {% else %}
-                        Default
-                    {% endif %}
-                </span>
             </div>
             <div class="mt-auto flex gap-2">
                 <a href="{% url 'team_members' organization_id=organization.organization_id team_id=team.team_id %}" class="btn btn-primary flex-1">Manage Team</a>

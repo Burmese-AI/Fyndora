@@ -53,17 +53,7 @@
     {% endif %}
     </div>
 
-    <div class="mb-6">
-    <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-2">Custom Remittance Rate (%)</label>
-    {{ form.custom_remittance_rate }}
-    {% if form.custom_remittance_rate.errors %}
-        <ul class="mb-2">
-            {% for error in form.custom_remittance_rate.errors %}
-                <li class="text-red-600 text-sm font-medium">{{ error }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    </div>
+    
     <div class="flex justify-end space-x-3">
     <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
     <button type="submit" class="btn btn-primary w-full sm:w-auto">

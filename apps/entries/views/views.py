@@ -1,15 +1,10 @@
 from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.query import QuerySet
-from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
-from django.views.generic import ListView, CreateView, UpdateView
 from django.template.loader import render_to_string
-from django.shortcuts import render
 from django.contrib import messages
 from django.urls import reverse
-from apps.core.constants import PAGINATION_SIZE
-from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME
 from ..selectors import get_org_expenses, get_workspace_expenses
 from ..services import get_org_expense_stats
@@ -34,7 +29,9 @@ class BaseEntryFormMixin:
         kwargs["org_member"] = self.org_member
         kwargs["organization"] = self.organization
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
-        kwargs["workspace_team"] = self.workspace_team if hasattr(self, "workspace_team") else None
+        kwargs["workspace_team"] = (
+            self.workspace_team if hasattr(self, "workspace_team") else None
+        )
         return kwargs
 
 
@@ -52,9 +49,9 @@ class UpdateEntryFormMixin(BaseEntryFormMixin):
 
 
 class OrganizationExpenseListView(
-    LoginRequiredMixin, 
-    OrganizationRequiredMixin, 
-    OrganizationContextMixin, 
+    LoginRequiredMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
     BaseEntryListView,
 ):
     template_name = "entries/index.html"
@@ -68,6 +65,7 @@ class OrganizationExpenseListView(
             context["stats"] = get_org_expense_stats(self.organization)
         return context
 
+
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
@@ -76,13 +74,15 @@ class OrganizationExpenseCreateView(
     OrganizationContextMixin,
     BaseEntryCreateView,
 ):
-    
     def get_modal_title(self) -> str:
         return "Organization Expense"
-    
+
     def get_post_url(self) -> str:
-        return reverse("organization_expense_create", kwargs={"organization_id": self.organization.pk})
-    
+        return reverse(
+            "organization_expense_create",
+            kwargs={"organization_id": self.organization.pk},
+        )
+
     def form_valid(self, form):
         from ..services import create_entry_with_attachments
         from ..constants import EntryType
@@ -127,6 +127,7 @@ class OrganizationExpenseCreateView(
         response["HX-trigger"] = "success"
         return response
 
+
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
     OrganizationMemberRequiredMixin,
@@ -137,12 +138,14 @@ class OrganizationExpenseUpdateView(
     OrganizationContextMixin,
     BaseEntryUpdateView,
 ):
-    
     def get_modal_title(self) -> str:
         return "Organization Expense"
-    
+
     def get_post_url(self) -> str:
-        return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
+        return reverse(
+            "organization_expense_update",
+            kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk},
+        )
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_org_expenses(self.organization)
@@ -174,21 +177,23 @@ class OrganizationExpenseUpdateView(
         response["HX-trigger"] = "success"
         return response
 
+
 class WorkspaceExpenseListView(
-    LoginRequiredMixin, 
-    WorkspaceRequiredMixin, 
-    WorkspaceContextMixin, 
+    LoginRequiredMixin,
+    WorkspaceRequiredMixin,
+    WorkspaceContextMixin,
     BaseEntryListView,
 ):
     template_name = "entries/workspace_expense_index.html"
-    
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_workspace_expenses(self.workspace)
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "entries"
         return context
+
 
 class WorkspaceExpenseCreateView(
     LoginRequiredMixin,
@@ -201,10 +206,16 @@ class WorkspaceExpenseCreateView(
 ):
     def get_modal_title(self) -> str:
         return "Workspace Expense"
-    
+
     def get_post_url(self) -> str:
-        return reverse("workspace_expense_create", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk})
-    
+        return reverse(
+            "workspace_expense_create",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
+        )
+
     def form_valid(self, form):
         from ..services import create_entry_with_attachments
         from ..constants import EntryType
@@ -215,7 +226,7 @@ class WorkspaceExpenseCreateView(
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
             entry_type=EntryType.WORKSPACE_EXP,
-            workspace=self.workspace
+            workspace=self.workspace,
         )
         messages.success(self.request, "Expense entry submitted successfully")
         return self._render_htmx_success_response()
@@ -238,10 +249,11 @@ class WorkspaceExpenseCreateView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        
+
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+
 
 class WorkspaceExpenseUpdateView(
     LoginRequiredMixin,
@@ -255,10 +267,16 @@ class WorkspaceExpenseUpdateView(
 ):
     def get_modal_title(self) -> str:
         return "Workspace Expense"
-    
+
     def get_post_url(self) -> str:
-        return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "pk": self.entry.pk})
-    
+        return reverse(
+            "workspace_expense_update",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "pk": self.entry.pk,
+            },
+        )
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_workspace_expenses(self.workspace)
-    

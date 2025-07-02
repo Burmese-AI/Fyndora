@@ -126,9 +126,7 @@ def remittance_update(*, remittance, user, data):
     return remittance
 
 
-def remittance_create(
-    *, user, workspace_team, due_amount, due_date, status="pending"
-):
+def remittance_create(*, user, workspace_team, due_amount, due_date, status="pending"):
     """
     Manually creates a new remittance record.
     """

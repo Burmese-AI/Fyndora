@@ -134,12 +134,12 @@ def get_org_expenses(organization: Organization):
 
     return entries
 
+
 def get_workspace_expenses(workspace: Workspace):
     """
     Returns all organization expense entries submitted by members of the given organization,
     annotated with attachment count and optimized to avoid N+1 queries using prefetching.
     """
-    
 
     # Prepare the querysets for prefetching
     org_member_queryset = OrganizationMember.objects.select_related("user")
@@ -160,7 +160,7 @@ def get_workspace_expenses(workspace: Workspace):
     entries = entries.prefetch_related(generic_prefetch)
 
     return entries
-    
+
 
 def get_org_entries(
     organization: Organization,

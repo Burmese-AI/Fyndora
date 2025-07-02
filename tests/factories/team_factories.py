@@ -4,7 +4,6 @@ Factory Boy factories for Team models.
 
 import factory
 from factory.django import DjangoModelFactory
-from decimal import Decimal
 
 from apps.teams.models import Team, TeamMember
 from apps.teams.constants import TeamMemberRole

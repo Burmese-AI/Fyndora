@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0005_remove_team_unique_team_team_unique_team'),
+        ("teams", "0005_remove_team_unique_team_team_unique_team"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='team',
-            name='custom_remittance_rate',
+            model_name="team",
+            name="custom_remittance_rate",
         ),
     ]

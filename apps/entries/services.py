@@ -93,7 +93,8 @@ def create_entry_with_attachments(
             description=description,
             submitter=submitter,
             is_flagged=not is_attachment_provided,
-            workspace=workspace or (workspace_team.workspace if workspace_team else None),
+            workspace=workspace
+            or (workspace_team.workspace if workspace_team else None),
             workspace_team=workspace_team,
         )
 

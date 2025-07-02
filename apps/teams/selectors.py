@@ -11,7 +11,7 @@ def get_team_members(team=None, prefetch_user=False):
     if prefetch_user:
         queryset = queryset.select_related("organization_member__user")
     return queryset
-    
+
 
 def get_all_team_members():
     try:

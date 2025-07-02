@@ -53,12 +53,11 @@ def get_user_org_membership(user, organization, prefetch_user=False):
     """
     Returns the user's org member object based on the provided organization
     """
-    queryset = OrganizationMember.objects.filter(
-        user=user, organization=organization
-    )
+    queryset = OrganizationMember.objects.filter(user=user, organization=organization)
     if prefetch_user:
         queryset = queryset.select_related("user")
     return queryset.first()
+
 
 def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
     """
@@ -72,5 +71,3 @@ def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
     if prefetch_user:
         queryset = queryset.select_related("user")
     return queryset
-
-

@@ -1,10 +1,8 @@
-from datetime import timedelta
 from typing import List
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum, Count, QuerySet
+from django.db.models import Q, Count, QuerySet
 from django.contrib.contenttypes.prefetch import GenericPrefetch
-from django.utils.timezone import now
 
 from apps.organizations.models import Organization, OrganizationMember
 from apps.teams.models import TeamMember
@@ -14,6 +12,7 @@ from apps.teams.selectors import get_team_members
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
+
 
 # Selectors for Services and Views
 def get_entries(
@@ -44,7 +43,9 @@ def get_entries(
         raise ValueError("At least one entry type must be provided.")
 
     # --- 1. Split Entry Types ---
-    org_entry_types = [et for et in entry_types if et in (EntryType.ORG_EXP, EntryType.WORKSPACE_EXP)]
+    org_entry_types = [
+        et for et in entry_types if et in (EntryType.ORG_EXP, EntryType.WORKSPACE_EXP)
+    ]
     team_entry_types = [et for et in entry_types if et not in org_entry_types]
 
     filters = Q()
@@ -53,7 +54,9 @@ def get_entries(
     # --- 2. Org Entries (OrganizationMember submitter) ---
     if org_entry_types:
         if not organization and not workspace:
-            raise ValueError("Either organization or workspace is required for organization level entry types.")
+            raise ValueError(
+                "Either organization or workspace is required for organization level entry types."
+            )
 
         submitter_ct = ContentType.objects.get_for_model(OrganizationMember)
         org_members = get_org_members(
@@ -76,7 +79,9 @@ def get_entries(
             raise ValueError("workspace_team is required for team level entry types.")
 
         submitter_ct = ContentType.objects.get_for_model(TeamMember)
-        team_members = get_team_members(workspace_team=workspace_team, prefetch_user=True)
+        team_members = get_team_members(
+            workspace_team=workspace_team, prefetch_user=True
+        )
         team_member_ids = team_members.values_list("pk", flat=True)
 
         filters |= Q(
@@ -109,7 +114,8 @@ def get_entries(
 
     return queryset
 
-#Selectors for Tests
+
+# Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):
     """
     Get all entries for a specific workspace.

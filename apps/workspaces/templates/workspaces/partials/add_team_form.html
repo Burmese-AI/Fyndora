@@ -18,6 +18,10 @@
     {{ form.team }}
 </div>
 <div>
+    <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-4">{{ form.custom_remittance_rate.label }}</label>
+    {{ form.custom_remittance_rate }}
+</div>
+<div>
     {% include "components/field_error.html" with field=form.team %}
 </div>
 

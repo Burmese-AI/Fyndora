@@ -250,7 +250,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
             try:
                 if form.is_valid():
                     add_team_to_workspace(
-                        workspace_id, form.cleaned_data["team"].team_id
+                        workspace_id,
+                        form.cleaned_data["team"].team_id,
+                        form.cleaned_data["custom_remittance_rate"],
                     )
                     workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {

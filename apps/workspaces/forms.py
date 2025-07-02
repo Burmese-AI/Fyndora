@@ -130,14 +130,25 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         label="Select Team",  # Temporary label, will be overwritten in __init__
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mt-4",
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
             }
         ),
     )
 
     class Meta:
         model = WorkspaceTeam
-        fields = ["team"]
+        fields = ["team", "custom_remittance_rate"]
+        widgets = {
+            "custom_remittance_rate": forms.NumberInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter remittance rate (0-100)",
+                    "min": "0",
+                    "max": "100",
+                    "step": "0.01",
+                }
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)

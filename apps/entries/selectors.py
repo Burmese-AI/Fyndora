@@ -7,7 +7,9 @@ from django.utils.timezone import now
 
 from apps.organizations.models import Organization, OrganizationMember
 from apps.teams.models import TeamMember
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTeam
+from apps.organizations.selectors import get_org_members
+from apps.teams.selectors import get_team_members
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -94,73 +96,7 @@ def get_workspace_team_entries(*, workspace_team, status=None, entry_type=None):
         queryset = queryset.filter(entry_type=entry_type)
 
     return queryset
-
-
-def get_org_expenses(organization: Organization):
-    """
-    Returns all organization expense entries submitted by members of the given organization,
-    annotated with attachment count and optimized to avoid N+1 queries using prefetching.
-    """
-
-    # Get the ContentType for OrganizationMember model.
-    org_member_type = ContentType.objects.get_for_model(OrganizationMember)
-
-    # Get all OrganizationMember IDs that belong to the given organization
-    # Because org exp entries can only be submitted by org members
-    org_member_ids = OrganizationMember.objects.filter(
-        organization=organization
-    ).values_list("pk", flat=True)
-
-    # Prepare the querysets for prefetching
-    org_member_queryset = OrganizationMember.objects.select_related("user")
-
-    # Use GenericPrefetch to tell Django how to prefetch 'submitter'
-    generic_prefetch = GenericPrefetch("submitter", [org_member_queryset])
-
-    # Fetch all org exp entries with those org members ids as submitter obj id
-    entries = Entry.objects.filter(
-        Q(
-            submitter_content_type=org_member_type,
-            submitter_object_id__in=org_member_ids,
-        ),
-        entry_type=EntryType.ORG_EXP,
-    ).annotate(
-        # Count how many attachments each entry has
-        attachment_count=Count("attachments")
-    )
-
-    # Apply generic prefetch
-    entries = entries.prefetch_related(generic_prefetch)
-
-    return entries
-
-def get_workspace_expenses(workspace: Workspace):
-    """
-    Returns all organization expense entries submitted by members of the given organization,
-    annotated with attachment count and optimized to avoid N+1 queries using prefetching.
-    """
-    
-
-    # Prepare the querysets for prefetching
-    org_member_queryset = OrganizationMember.objects.select_related("user")
-
-    # Use GenericPrefetch to tell Django how to prefetch 'submitter'
-    generic_prefetch = GenericPrefetch("submitter", [org_member_queryset])
-
-    # Fetch all org exp entries with those org members ids as submitter obj id
-    entries = Entry.objects.filter(
-        workspace=workspace,
-        entry_type=EntryType.WORKSPACE_EXP,
-    ).annotate(
-        # Count how many attachments each entry has
-        attachment_count=Count("attachments")
-    )
-
-    # Apply generic prefetch
-    entries = entries.prefetch_related(generic_prefetch)
-
-    return entries
-    
+  
 
 def get_org_entries(
     organization: Organization,
@@ -256,15 +192,81 @@ def get_org_entries(
     return queryset
 
 
+def get_entries(
+    *,
+    organization: Organization = None,
+    workspace: Workspace = None,
+    workspace_team: WorkspaceTeam = None,
+    entry_type: EntryType,
+    status: EntryStatus = None,
+):
+    """
+    Get entries with flexible filtering options.
+
+    Args:
+        organization: Organization to query
+        workspace: Workspace to query
+        workspace_team: Workspace team to query
+        entry_type: Entry type to query
+        status: Status to query
+    """    
+    
+    generic_prefetch_queries = []
+    submitter_type = None
+    member_ids = []
+    
+    
+    #if organization expense, then organization is required
+    #When getting organization expense, org member needs to be prefetched
+    #if workspace expense, then workspace is required
+    #When getting workspace expense, org member needs to be prefetched
+    if entry_type == EntryType.ORG_EXP or entry_type == EntryType.WORKSPACE_EXP:
+        submitter_type = ContentType.objects.get_for_model(OrganizationMember)
+        org_member_queryset = get_org_members(prefetch_user=True)
+        generic_prefetch_queries.append(org_member_queryset)
+        if entry_type == EntryType.ORG_EXP:
+            #Get all org members of the organization
+            member_ids = get_org_members(organization=organization).values_list("pk", flat=True)
+        else:
+            #Get all org members of the workspace's organization
+            member_ids = get_org_members(workspace=workspace).values_list("pk", flat=True)
+            
+    #if the rest, then workspace_team is required
+    #When getting the rest, team member needs to be prefetched
+    else:
+        submitter_type = ContentType.objects.get_for_model(TeamMember)
+        workspace_member_queryset = get_team_members(prefetch_user=True)
+        generic_prefetch_queries.append(workspace_member_queryset)
+        member_ids = get_team_members(workspace_team).values_list("pk", flat=True)
+
+
+    generic_prefetch = GenericPrefetch("submitter", generic_prefetch_queries)
+
+    # Base queryset
+    queryset = Entry.objects.filter(
+        submitter_content_type=submitter_type,
+        submitter_object_id__in=member_ids,
+        entry_type=entry_type
+    ).annotate(
+        attachment_count=Count("attachments")
+    ).prefetch_related(
+        generic_prefetch
+    )
+
+    if status:
+        queryset = queryset.filter(status=status)
+
+    return queryset
+
 def get_total_org_expenses(organization: Organization):
-    queryset = get_org_expenses(organization).filter(status=EntryStatus.APPROVED)
+    queryset = get_entries(organization=organization, entry_type=EntryType.ORG_EXP, status=EntryStatus.APPROVED)
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
 
 
 def get_this_month_org_expenses(organization: Organization):
     today = now().date()
     start_of_month = today.replace(day=1)
-    queryset = get_org_expenses(organization).filter(
+    queryset = get_entries(organization=organization, entry_type=EntryType.ORG_EXP, status=EntryStatus.APPROVED).filter(
         created_at__gte=start_of_month, status=EntryStatus.APPROVED
     )
     return queryset.aggregate(total=Sum("amount"))["total"] or 0
@@ -274,10 +276,10 @@ def get_average_monthly_org_expenses(organization: Organization):
     today = now().date()
     one_year_ago = today - timedelta(days=365)
 
-    qs = get_org_expenses(organization).filter(
-        created_at__date__gte=one_year_ago, status=EntryStatus.APPROVED
+    queryset = get_entries(organization=organization, entry_type=EntryType.ORG_EXP, status=EntryStatus.APPROVED).filter(
+        created_at__gte=one_year_ago, status=EntryStatus.APPROVED
     )
-    total = qs.aggregate(total=Sum("amount"))["total"] or 0
+    total = queryset.aggregate(total=Sum("amount"))["total"] or 0
 
     return total / 12
 
@@ -288,7 +290,7 @@ def get_last_month_org_expenses(organization: Organization):
     end_of_last_month = start_of_this_month - timedelta(days=1)
     start_of_last_month = end_of_last_month.replace(day=1)
 
-    queryset = get_org_expenses(organization).filter(
+    queryset = get_entries(organization=organization, entry_type=EntryType.ORG_EXP, status=EntryStatus.APPROVED).filter(
         created_at__date__gte=start_of_last_month,
         created_at__date__lte=end_of_last_month,
         status=EntryStatus.APPROVED,

@@ -8,10 +8,8 @@ from django.template.loader import render_to_string
 from django.shortcuts import render
 from django.contrib import messages
 from django.urls import reverse
-from apps.core.constants import PAGINATION_SIZE
-from ..models import Entry
-from ..constants import CONTEXT_OBJECT_NAME
-from ..selectors import get_org_expenses, get_workspace_expenses
+from ..constants import CONTEXT_OBJECT_NAME, EntryType, EntryStatus
+from ..selectors import get_entries
 from ..services import get_org_expense_stats
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
 from .base import (
@@ -60,7 +58,7 @@ class OrganizationExpenseListView(
     template_name = "entries/index.html"
 
     def get_queryset(self) -> QuerySet[Any]:
-        return get_org_expenses(self.organization)
+        return get_entries(organization=self.organization, entry_type=EntryType.ORG_EXP)
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -107,7 +105,7 @@ class OrganizationExpenseCreateView(
 
         from apps.core.utils import get_paginated_context
 
-        org_exp_entries = get_org_expenses(self.organization)
+        org_exp_entries = self.get_queryset()
         table_context = get_paginated_context(
             queryset=org_exp_entries,
             context=base_context,
@@ -145,7 +143,7 @@ class OrganizationExpenseUpdateView(
         return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
 
     def get_queryset(self) -> QuerySet[Any]:
-        return get_org_expenses(self.organization)
+        return get_entries(organization=self.organization, entry_type=EntryType.ORG_EXP)
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -183,7 +181,7 @@ class WorkspaceExpenseListView(
     template_name = "entries/workspace_expense_index.html"
     
     def get_queryset(self) -> QuerySet[Any]:
-        return get_workspace_expenses(self.workspace)
+        return get_entries(workspace=self.workspace, entry_type=EntryType.WORKSPACE_EXP)
     
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -225,7 +223,7 @@ class WorkspaceExpenseCreateView(
 
         from apps.core.utils import get_paginated_context
 
-        workspace_exp_entries = get_workspace_expenses(self.workspace)
+        workspace_exp_entries = self.get_queryset()
         table_context = get_paginated_context(
             queryset=workspace_exp_entries,
             context=base_context,
@@ -253,12 +251,13 @@ class WorkspaceExpenseUpdateView(
     WorkspaceContextMixin,
     BaseEntryUpdateView,
 ):
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(workspace=self.workspace, entry_type=EntryType.WORKSPACE_EXP)
+    
     def get_modal_title(self) -> str:
         return "Workspace Expense"
     
     def get_post_url(self) -> str:
         return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "pk": self.entry.pk})
     
-    def get_queryset(self) -> QuerySet[Any]:
-        return get_workspace_expenses(self.workspace)
     

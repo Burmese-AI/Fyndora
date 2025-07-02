@@ -43,6 +43,14 @@
                         Not Assigned
                     {% endif %}
                 </span>
+                <span>
+                    <strong>Remittance Rate:</strong>
+                    {% if workspace.remittance_rate %}
+                        {{ workspace.remittance_rate }}%
+                    {% else %}
+                        Default
+                    {% endif %}
+                </span>
             </div>
             <div class="mt-auto flex gap-2">
                 <a href="{% url 'get_workspace_teams' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" class="btn btn-primary flex-1">Manage</a>

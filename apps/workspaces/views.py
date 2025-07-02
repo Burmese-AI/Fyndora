@@ -250,7 +250,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
             try:
                 if form.is_valid():
                     add_team_to_workspace(
-                        workspace_id, form.cleaned_data["team"].team_id
+                        workspace_id,
+                        form.cleaned_data["team"].team_id,
+                        form.cleaned_data["custom_remittance_rate"],
                     )
                     workspaces = get_workspaces_with_team_counts(organization_id)
                     context = {
@@ -291,9 +293,12 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                 return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
         else:
             form = AddTeamToWorkspaceForm(organization=organization)
-            return render(
-                request, "workspaces/partials/add_team_form.html", {"form": form}
-            )
+            context = {
+                "form": form,
+                "organization": organization,
+                "workspace": workspace,
+            }
+            return render(request, "workspaces/partials/add_team_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

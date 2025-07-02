@@ -60,8 +60,10 @@ def remove_team_from_workspace(workspace_id, team_id):
     return workspace_team
 
 
-def add_team_to_workspace(workspace_id, team_id):
+def add_team_to_workspace(workspace_id, team_id, custom_remittance_rate):
     workspace_team = WorkspaceTeam.objects.create(
-        workspace_id=workspace_id, team_id=team_id
+        workspace_id=workspace_id,
+        team_id=team_id,
+        custom_remittance_rate=custom_remittance_rate,
     )
     return workspace_team

@@ -12,7 +12,7 @@ from ..constants import CONTEXT_OBJECT_NAME, EntryType, EntryStatus
 from ..selectors import get_entries
 from ..services import get_org_expense_stats
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
-from .base import (
+from .mixins import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
     OrganizationMemberRequiredMixin,
@@ -21,10 +21,13 @@ from .base import (
     WorkspaceContextMixin,
     EntryRequiredMixin,
 )
-from .parent_views import BaseEntryListView, BaseEntryCreateView, BaseEntryUpdateView
+from .base_views import (
+    BaseEntryListView,
+    BaseEntryCreateView,
+    BaseEntryUpdateView,
+)
 
-
-class BaseEntryFormMixin:
+class EntryFormMixin:
     form_class = BaseEntryForm
 
     def get_form_kwargs(self):
@@ -36,11 +39,11 @@ class BaseEntryFormMixin:
         return kwargs
 
 
-class CreateEntryFormMixin(BaseEntryFormMixin):
+class CreateEntryFormMixin(EntryFormMixin):
     form_class = CreateEntryForm
 
 
-class UpdateEntryFormMixin(BaseEntryFormMixin):
+class UpdateEntryFormMixin(EntryFormMixin):
     form_class = UpdateEntryForm
 
     def get_form_kwargs(self):
@@ -49,11 +52,39 @@ class UpdateEntryFormMixin(BaseEntryFormMixin):
         return kwargs
 
 
-class OrganizationExpenseListView(
-    LoginRequiredMixin, 
+class ExpenseListViewBase(
     OrganizationRequiredMixin, 
     OrganizationContextMixin, 
     BaseEntryListView,
+):
+    pass
+
+
+class ExpenseCreateViewBase(
+    OrganizationMemberRequiredMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    OrganizationContextMixin,
+    BaseEntryCreateView,
+):
+    pass
+
+
+class ExpenseUpdateViewBase(
+    OrganizationMemberRequiredMixin,
+    OrganizationRequiredMixin,
+    EntryRequiredMixin,
+    UpdateEntryFormMixin,
+    HtmxOobResponseMixin,
+    OrganizationContextMixin,
+    BaseEntryUpdateView,
+):
+    pass
+
+
+class OrganizationExpenseListView(
+    LoginRequiredMixin, 
+    ExpenseListViewBase,
 ):
     template_name = "entries/index.html"
 
@@ -66,14 +97,14 @@ class OrganizationExpenseListView(
             context["stats"] = get_org_expense_stats(self.organization)
         return context
 
+
 class OrganizationExpenseCreateView(
     LoginRequiredMixin,
-    OrganizationMemberRequiredMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryCreateView,
+    ExpenseCreateViewBase
 ):
+
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(organization=self.organization, entry_types=[EntryType.ORG_EXP])
     
     def get_modal_title(self) -> str:
         return "Organization Expense"
@@ -125,25 +156,20 @@ class OrganizationExpenseCreateView(
         response["HX-trigger"] = "success"
         return response
 
+
 class OrganizationExpenseUpdateView(
     LoginRequiredMixin,
-    OrganizationMemberRequiredMixin,
-    OrganizationRequiredMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryUpdateView,
+    ExpenseUpdateViewBase
 ):
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(organization=self.organization, entry_types=[EntryType.ORG_EXP])
     
     def get_modal_title(self) -> str:
         return "Organization Expense"
     
     def get_post_url(self) -> str:
         return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
-
-    def get_queryset(self) -> QuerySet[Any]:
-        return get_entries(organization=self.organization, entry_types=[EntryType.ORG_EXP])
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -172,11 +198,12 @@ class OrganizationExpenseUpdateView(
         response["HX-trigger"] = "success"
         return response
 
+
 class WorkspaceExpenseListView(
     LoginRequiredMixin, 
+    ExpenseListViewBase,
     WorkspaceRequiredMixin, 
     WorkspaceContextMixin, 
-    BaseEntryListView,
 ):
     template_name = "entries/workspace_expense_index.html"
     
@@ -188,15 +215,17 @@ class WorkspaceExpenseListView(
         context["view"] = "entries"
         return context
 
+
 class WorkspaceExpenseCreateView(
     LoginRequiredMixin,
-    OrganizationMemberRequiredMixin,
+    ExpenseCreateViewBase,
     WorkspaceRequiredMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
     WorkspaceContextMixin,
-    BaseEntryCreateView,
 ):
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP])
+    
     def get_modal_title(self) -> str:
         return "Workspace Expense"
     
@@ -241,15 +270,12 @@ class WorkspaceExpenseCreateView(
         response["HX-trigger"] = "success"
         return response
 
+
 class WorkspaceExpenseUpdateView(
     LoginRequiredMixin,
-    OrganizationMemberRequiredMixin,
+    ExpenseUpdateViewBase,
     WorkspaceRequiredMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
     WorkspaceContextMixin,
-    BaseEntryUpdateView,
 ):
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP])
@@ -259,5 +285,4 @@ class WorkspaceExpenseUpdateView(
     
     def get_post_url(self) -> str:
         return reverse("workspace_expense_update", kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "pk": self.entry.pk})
-    
     

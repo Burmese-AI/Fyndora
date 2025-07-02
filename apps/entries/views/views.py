@@ -58,7 +58,7 @@ class OrganizationExpenseListView(
     template_name = "entries/index.html"
 
     def get_queryset(self) -> QuerySet[Any]:
-        return get_entries(organization=self.organization, entry_type=EntryType.ORG_EXP)
+        return get_entries(organization=self.organization, entry_types=[EntryType.ORG_EXP])
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -143,7 +143,7 @@ class OrganizationExpenseUpdateView(
         return reverse("organization_expense_update", kwargs={"organization_id": self.organization.pk, "pk": self.entry.pk})
 
     def get_queryset(self) -> QuerySet[Any]:
-        return get_entries(organization=self.organization, entry_type=EntryType.ORG_EXP)
+        return get_entries(organization=self.organization, entry_types=[EntryType.ORG_EXP])
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -181,7 +181,7 @@ class WorkspaceExpenseListView(
     template_name = "entries/workspace_expense_index.html"
     
     def get_queryset(self) -> QuerySet[Any]:
-        return get_entries(workspace=self.workspace, entry_type=EntryType.WORKSPACE_EXP)
+        return get_entries(workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP])
     
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -252,7 +252,7 @@ class WorkspaceExpenseUpdateView(
     BaseEntryUpdateView,
 ):
     def get_queryset(self) -> QuerySet[Any]:
-        return get_entries(workspace=self.workspace, entry_type=EntryType.WORKSPACE_EXP)
+        return get_entries(workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP])
     
     def get_modal_title(self) -> str:
         return "Workspace Expense"

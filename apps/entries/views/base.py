@@ -11,8 +11,8 @@ from apps.organizations.selectors import get_user_org_membership
 from apps.organizations.models import Organization
 
 from ..models import Entry
-from ..selectors import get_org_entries
-from ..constants import DETAIL_CONTEXT_OBJECT_NAME
+from ..selectors import get_entries
+from ..constants import DETAIL_CONTEXT_OBJECT_NAME, EntryType
 from apps.workspaces.models import Workspace
 
 
@@ -115,13 +115,15 @@ class WorkspaceContextMixin(OrganizationContextMixin):
 
 
 class EntryDetailView(
-    LoginRequiredMixin, EntryRequiredMixin, OrganizationContextMixin, DetailView
+    LoginRequiredMixin, OrganizationRequiredMixin, EntryRequiredMixin, OrganizationContextMixin, DetailView
 ):
     model = Entry
     template_name = "entries/components/detail_modal.html"
     context_object_name = DETAIL_CONTEXT_OBJECT_NAME
 
     def get_queryset(self) -> QuerySet[Any]:
-        return get_org_entries(
-            organization=self.organization, prefetch_attachments=True
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+            prefetch_attachments=True,
         )

@@ -31,7 +31,7 @@ urlpatterns = [
         name="remove_team_from_workspace",
     ),
     path(
-        "<uuid:workspace_id>/teams/<uuid:team_id>/remittance/",
+        "<uuid:workspace_id>/teams/<uuid:team_id>/remittance/<uuid:workspace_team_id>/",
         change_workspace_team_remittance_rate_view,
         name="change_workspace_team_remittance_rate",
     ),

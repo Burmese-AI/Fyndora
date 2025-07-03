@@ -23,6 +23,7 @@ from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
 from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
+from apps.workspaces.selectors import get_workspace_team_by_workspace_team_id
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -367,11 +368,12 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
-def change_workspace_team_remittance_rate_view(request, organization_id, workspace_id, team_id):
+def change_workspace_team_remittance_rate_view(request, organization_id, workspace_id, team_id, workspace_team_id):
     try:
-        team = get_team_by_id(team_id)
+        workspace_team = get_workspace_team_by_workspace_team_id(workspace_team_id)
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
+        team = get_team_by_id(team_id)
         if request.method == "POST":
                 messages.success(request, "Remittance rate updated successfully.")
         else:
@@ -379,6 +381,7 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
             context = {
                 "form": form,
                 "organization": organization,
+                "workspace_team": workspace_team,
                 "workspace": workspace,
                 "team": team,
             }

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "apps.teams",
     "apps.remittance",
     "guardian",
+    "django_extensions",
 ]
 
 SITE_ID = 1

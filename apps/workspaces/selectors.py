@@ -7,6 +7,13 @@ from apps.teams.models import Team
 from apps.workspaces.models import WorkspaceTeam
 
 
+def get_user_workspace_teams_under_organization(organization_id, user):
+    return WorkspaceTeam.objects.filter(
+        workspace__organization__pk=organization_id,
+        team__members__organization_member__user=user,
+    ).prefetch_related("workspace", "team")
+
+
 def get_user_workspaces_under_organization(organization_id):
     """
     Return workspaces where the user is a member of the organization.

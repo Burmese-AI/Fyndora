@@ -107,6 +107,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-extensions"
+version = "4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/b3/ed0f54ed706ec0b54fd251cc0364a249c6cd6c6ec97f04dc34be5e929eac/django_extensions-4.1.tar.gz", hash = "sha256:7b70a4d28e9b840f44694e3f7feb54f55d495f8b3fa6c5c0e5e12bcb2aa3cdeb", size = 283078, upload-time = "2025-04-11T01:15:39.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/96/d967ca440d6a8e3861120f51985d8e5aec79b9a8bdda16041206adfe7adc/django_extensions-4.1-py3-none-any.whl", hash = "sha256:0699a7af28f2523bf8db309a80278519362cd4b6e1fd0a8cd4bf063e1e023336", size = 232980, upload-time = "2025-04-11T01:15:37.701Z" },
+]
+
+[[package]]
 name = "django-guardian"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -177,6 +189,7 @@ dependencies = [
     { name = "django-allauth" },
     { name = "django-cleanup" },
     { name = "django-environ" },
+    { name = "django-extensions" },
     { name = "django-guardian" },
     { name = "django-htmx" },
     { name = "django-redis" },
@@ -208,6 +221,7 @@ requires-dist = [
     { name = "django-allauth", specifier = ">=65.9.0" },
     { name = "django-cleanup", specifier = ">=9.0.0" },
     { name = "django-environ", specifier = ">=0.12.0" },
+    { name = "django-extensions", specifier = ">=4.1" },
     { name = "django-guardian", specifier = ">=3.0.0" },
     { name = "django-htmx", specifier = ">=1.23.0" },
     { name = "django-redis", specifier = ">=5.4.0" },

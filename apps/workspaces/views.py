@@ -23,11 +23,15 @@ from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
 from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
-from apps.workspaces.selectors import get_workspace_team_by_workspace_team_id, get_user_workspace_teams_under_organization
+from apps.workspaces.selectors import (
+    get_workspace_team_by_workspace_team_id,
+    get_user_workspace_teams_under_organization,
+)
 from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
+
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -451,6 +455,7 @@ def change_workspace_team_remittance_rate_view(
             f"/{organization_id}/workspaces/{workspace_id}/teams"
         )
 
+
 class SubmissionTeamListView(LoginRequiredMixin, ListView):
     model = WorkspaceTeam
     template_name = "dummy_workspace_teams/index.html"
@@ -462,7 +467,7 @@ class SubmissionTeamListView(LoginRequiredMixin, ListView):
         org_id = self.kwargs["organization_id"]
 
         return get_user_workspace_teams_under_organization(org_id, user)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["organization"] = get_organization_by_id(self.kwargs["organization_id"])

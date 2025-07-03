@@ -9,6 +9,7 @@ from .views.expense_views import (
 )
 from .views.base_views import BaseEntryDetailView
 from .views.entry_views import WorkspaceTeamEntryListView
+
 urlpatterns = [
     path(
         "expenses/",
@@ -54,5 +55,5 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
         WorkspaceTeamEntryListView.as_view(),
         name="workspace_team_entry_list",
-    )
+    ),
 ]

@@ -7,6 +7,10 @@
           <div>
             <h2 class="card-title text-lg font-bold mb-1">{{ team.title }}</h2>
           </div>
+
+          <div class="flex gap-2">
+            {% include "workspaces/components/edit_dropdown_workspace_team.html" %}
+        </div>
         </div>
         <p class="text-base-content/70 text-sm mb-3 line-clamp-2">
           {{ team.description|default:"No description provided" }}

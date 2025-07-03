@@ -23,9 +23,9 @@ env = environ.Env(
 )
 
 # Read .env file
-# env_path = BASE_DIR(".env")
+env_path = BASE_DIR(".env")
 # Read .env.local file
-env_path = BASE_DIR(".env.local")
+# env_path = BASE_DIR(".env.local")
 
 env.read_env(env_path, parse_comments=True, overwrite=True)
 
@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.invitations",
     "apps.teams",
     "apps.remittance",
+    "apps.emails",
     "guardian",
 ]
 
@@ -173,6 +174,11 @@ STATICFILES_DIRS = [
     BASE_DIR("static"),
 ]
 
+# Email settings
+# GMAIL_ACCOUNTS should be a JSON string in the format:
+# '[{"user": "user1@gmail.com", "oauth2_file": "/path/to/creds1.json"}, ...]
+GMAIL_ACCOUNTS = env.json("GMAIL_ACCOUNTS", default=[])
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -182,9 +188,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+# allauth settings
+ACCOUNT_ADAPTER = "apps.emails.adapters.CustomAccountAdapter"
+ACCOUNT_LOGIN_METHODS = ('email',)
+ACCOUNT_SIGNUP_FIELDS = ('email*', 'username*', 'password1*', 'password2*')
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_SESSION_REMEMBER = True
 
-ACCOUNT_EMAIL_VERIFICATION = "none"  # can be 'none', 'optional', or 'mandatory'
+# Using dummy backend because we are using our own email service
+EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 
 # Base url to serve media files
 MEDIA_URL = "/media/"

@@ -9,7 +9,7 @@
     hx-post="{% url 'edit_workspace' organization_id=request.resolver_match.kwargs.organization_id workspace_id=request.resolver_match.kwargs.workspace_id %}"
     hx-swap="none">
 {% csrf_token %}
-<input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}">
+<!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
 <div class="p-8">
     <h2 class="text-2xl font-bold text-gray-800 mb-8">Edit Workspace in {{ organization.title }}</h2>
 

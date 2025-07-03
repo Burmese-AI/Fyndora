@@ -106,3 +106,14 @@ def get_workspaces_with_team_counts(organization_id):
             workspace.workspace_id
         ).count()
     return workspaces
+
+
+def get_workspace_team_by_workspace_team_id(workspace_team_id):
+    """
+    Return a workspace team by its ID.
+    """
+    try:
+        return WorkspaceTeam.objects.get(workspace_team_id=workspace_team_id)
+    except Exception as e:
+        print(f"Error in get_workspace_team_by_id: {str(e)}")
+        return None

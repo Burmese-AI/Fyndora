@@ -7,6 +7,10 @@
           <div>
             <h2 class="card-title text-lg font-bold mb-1">{{ team.title }}</h2>
           </div>
+
+          <div class="flex gap-2">
+            {% include "workspaces/components/edit_dropdown_workspace_team.html" %}
+        </div>
         </div>
         <p class="text-base-content/70 text-sm mb-3 line-clamp-2">
           {{ team.description|default:"No description provided" }}
@@ -61,7 +65,6 @@
         <form hx-get="{% url 'remove_team_from_workspace' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" >
             {% csrf_token %}    
         <div class="mt-4 flex justify-end gap-2">
-          <!-- <a href="{% url 'test1' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id %}" class="btn btn-primary btn-sm">Test</a> -->
           <button
             type="submit"
             class="btn btn-error btn-sm">

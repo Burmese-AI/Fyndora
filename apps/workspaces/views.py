@@ -367,13 +367,5 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
-def test1_view(request, organization_id, workspace_id):
-    try:
-        workspace = get_workspace_by_id(workspace_id)
-        context = {
-            "workspace": workspace,
-        }
-        return render(request, "workspaces/test1.html", context)
-    except Exception as e:
-        messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+def change_workspace_team_remittance_rate_view(request, organization_id, workspace_id, team_id):
+    pass

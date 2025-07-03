@@ -9,7 +9,7 @@
       <li><span>{{ workspace.title }}</span></li>
     </ul>
   </div>
-  {% include "components/organization_layout_header.html" with title=workspace.title subtitle="Manage your workspace's teams and expenses" %}
+  {% include "components/organization_layout_header.html" with title="Teams under "|add:workspace.title subtitle="Manage your workspace's teams and expenses" %}
 {% endblock %}
 
 {% block content %}

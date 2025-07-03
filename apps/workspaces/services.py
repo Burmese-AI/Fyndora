@@ -68,6 +68,7 @@ def add_team_to_workspace(workspace_id, team_id, custom_remittance_rate):
     )
     return workspace_team
 
+
 def update_workspace_team_remittance_rate_from_form(
     *, form, workspace_team, workspace
 ) -> WorkspaceTeam:

@@ -107,6 +107,7 @@ def get_workspaces_with_team_counts(organization_id):
         ).count()
     return workspaces
 
+
 def get_workspace_team_by_workspace_team_id(workspace_team_id):
     """
     Return a workspace team by its ID.

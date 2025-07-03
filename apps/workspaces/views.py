@@ -26,6 +26,7 @@ from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 from apps.workspaces.selectors import get_workspace_team_by_workspace_team_id
 from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
 
+
 @login_required
 def get_workspaces_view(request, organization_id):
     try:
@@ -369,16 +370,22 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
-def change_workspace_team_remittance_rate_view(request, organization_id, workspace_id, team_id, workspace_team_id):
+def change_workspace_team_remittance_rate_view(
+    request, organization_id, workspace_id, team_id, workspace_team_id
+):
     try:
         workspace_team = get_workspace_team_by_workspace_team_id(workspace_team_id)
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         team = get_team_by_id(team_id)
         if request.method == "POST":
-            form = ChangeWorkspaceTeamRemittanceRateForm(request.POST, instance=workspace_team)
+            form = ChangeWorkspaceTeamRemittanceRateForm(
+                request.POST, instance=workspace_team
+            )
             if form.is_valid():
-                update_workspace_team_remittance_rate_from_form(form=form, workspace_team=workspace_team,workspace=workspace)
+                update_workspace_team_remittance_rate_from_form(
+                    form=form, workspace_team=workspace_team, workspace=workspace
+                )
                 messages.success(request, "Remittance rate updated successfully.")
                 workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
                 context = {
@@ -393,7 +400,9 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
                     request=request,
                 )
                 message_html = render_to_string(
-                    "includes/message.html", context=context, request=request,
+                    "includes/message.html",
+                    context=context,
+                    request=request,
                 )
                 response = HttpResponse(f"{message_html} {workspace_team_display_html}")
                 response["HX-trigger"] = "success"
@@ -414,7 +423,9 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
                     request=request,
                 )
                 message_html = render_to_string(
-                    "includes/message.html", context=context, request=request,
+                    "includes/message.html",
+                    context=context,
+                    request=request,
                 )
                 response = HttpResponse(f"{message_html} {modal_html}")
                 return response
@@ -427,7 +438,13 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
                 "workspace": workspace,
                 "team": team,
             }
-            return render(request, "workspaces/partials/edit_workspace_team_remittance.html", context)
+            return render(
+                request,
+                "workspaces/partials/edit_workspace_team_remittance.html",
+                context,
+            )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/{workspace_id}/teams")
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/workspaces/{workspace_id}/teams"
+        )

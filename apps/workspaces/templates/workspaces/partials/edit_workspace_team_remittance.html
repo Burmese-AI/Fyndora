@@ -33,13 +33,14 @@
 
    <div class="mb-6">
     <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-2">Remittance Rate</label>
-    {{ form.custom_remittance_rate.errors }}
     {% if workspace_team.custom_remittance_rate %}
         {{ form.custom_remittance_rate }}
     {% else %}
         <input type="number" name="custom_remittance_rate" value="{{ workspace.remittance_rate }}" class="input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base" min="0" max="100" step="0.01" required>
     {% endif %}
-   
+    <div>
+        {% include "components/field_error.html" with field=form.custom_remittance_rate %}
+    </div>
    </div>
    <div class="text-sm text-gray-500 mt-2 mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-primary-200">
     <span class="font-medium text-gray-700">Default Remittance Rate of {{ workspace.title }}:</span> 

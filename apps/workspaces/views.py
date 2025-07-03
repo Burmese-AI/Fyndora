@@ -24,6 +24,7 @@ from apps.workspaces.services import remove_team_from_workspace, add_team_to_wor
 from django.contrib.auth.models import Group
 from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 from apps.workspaces.selectors import get_workspace_team_by_workspace_team_id
+from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -377,11 +378,46 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
         if request.method == "POST":
             form = ChangeWorkspaceTeamRemittanceRateForm(request.POST, instance=workspace_team)
             if form.is_valid():
-                form.save()
+                update_workspace_team_remittance_rate_from_form(form=form, workspace_team=workspace_team,workspace=workspace)
                 messages.success(request, "Remittance rate updated successfully.")
-                return HttpResponseClientRedirect(f"/{organization_id}/workspaces/{workspace_id}/teams")
+                workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
+                context = {
+                    "workspace_teams": workspace_teams,
+                    "workspace": workspace,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                workspace_team_display_html = render_to_string(
+                    "workspaces/partials/workspaces_team_display.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request,
+                )
+                response = HttpResponse(f"{message_html} {workspace_team_display_html}")
+                response["HX-trigger"] = "success"
+                return response
             else:
                 messages.error(request, "Invalid form data.")
+                context = {
+                    "form": form,
+                    "workspace_team": workspace_team,
+                    "organization": organization,
+                    "team": team,
+                    "workspace": workspace,
+                    "is_oob": True,
+                }
+                modal_html = render_to_string(
+                    "workspaces/partials/edit_workspace_team_remittance.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request,
+                )
+                response = HttpResponse(f"{message_html} {modal_html}")
+                return response
         else:
             form = ChangeWorkspaceTeamRemittanceRateForm(instance=workspace_team)
             context = {
@@ -394,4 +430,4 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
             return render(request, "workspaces/partials/edit_workspace_team_remittance.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/{workspace_id}/teams")

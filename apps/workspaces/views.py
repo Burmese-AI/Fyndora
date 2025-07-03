@@ -377,7 +377,7 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
         if request.method == "POST":
                 messages.success(request, "Remittance rate updated successfully.")
         else:
-            form = ChangeWorkspaceTeamRemittanceRateForm()
+            form = ChangeWorkspaceTeamRemittanceRateForm(instance=workspace_team)
             context = {
                 "form": form,
                 "organization": organization,

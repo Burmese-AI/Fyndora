@@ -19,7 +19,12 @@
 
                 <br>
                 <em>Created at:</em> {{ ws_team.created_at }}
-                <button class="btn btn-primary">Go</button>
+                <a 
+                    href="{% url 'workspace_team_entry_list' organization_id=organization.pk workspace_id=ws_team.workspace.pk workspace_team_id=ws_team.pk %}"
+                    class="btn btn-primary" 
+                >
+                    Go
+                </a>
             </li>
             <hr>
         {% endfor %}

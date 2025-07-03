@@ -80,7 +80,7 @@ def get_entries(
 
         submitter_ct = ContentType.objects.get_for_model(TeamMember)
         team_members = get_team_members(
-            workspace_team=workspace_team, prefetch_user=True
+            team=workspace_team.team, prefetch_user=True
         )
         team_member_ids = team_members.values_list("pk", flat=True)
 

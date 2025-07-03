@@ -462,3 +462,8 @@ class SubmissionTeamListView(LoginRequiredMixin, ListView):
         org_id = self.kwargs["organization_id"]
 
         return get_user_workspace_teams_under_organization(org_id, user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["organization"] = get_organization_by_id(self.kwargs["organization_id"])
+        return context

@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.contrib import messages
 
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.selectors import get_user_org_membership
 from apps.organizations.models import Organization
 
@@ -39,7 +39,14 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
         super().setup(request, *args, **kwargs)
         workspace_id = kwargs.get("workspace_id")
         self.workspace = get_object_or_404(Workspace, pk=workspace_id)
+        
+class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
+    workspace_team = None
 
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        workspace_team_id = kwargs.get("workspace_team_id")
+        self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
 
 class EntryRequiredMixin:
     entry = None
@@ -130,4 +137,10 @@ class WorkspaceContextMixin(OrganizationContextMixin):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        return context
+
+class WorkspaceTeamContextMixin(WorkspaceContextMixin):
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["workspace_team"] = self.workspace_team if hasattr(self, "workspace_team") else None
         return context

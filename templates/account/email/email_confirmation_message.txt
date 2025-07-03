@@ -1,0 +1,10 @@
+{% load account %}
+Hello from Fyndora,
+
+Thank you for signing up! To activate your account, please confirm your e-mail address by clicking the link below:
+{{ activate_url }}
+
+If you did not sign up for an account, you can safely ignore this email.
+
+Thank you,
+The Fyndora Team

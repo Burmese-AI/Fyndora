@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email</title>
+    <!--[if mso]>
+    <style type="text/css">
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+    </style>
+    <![endif]-->
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f4; }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333333;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .header h1 {
+            margin: 0;
+            color: #007bff;
+        }
+        .content {
+            padding: 20px;
+            text-align: left;
+        }
+        .button-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .button {
+            background-color: #007bff;
+            color: #ffffff !important;
+            padding: 15px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #888888;
+        }
+    </style>
+</head>
+<body>
+    {% load account %}
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="background-color: #f4f4f4;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="container">
+                    <tr>
+                        <td class="header">
+                            <h1>Welcome to Fyndora!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <p>Hello,</p>
+                            <p>Thank you for signing up! Please confirm your e-mail address to activate your account. Click the button below to proceed.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="button-container">
+                            <a href="{{ activate_url }}" class="button">Confirm Email Address</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <p>If the button above does not work, copy and paste this link into your browser:</p>
+                            <p><a href="{{ activate_url }}">{{ activate_url }}</a></p>
+                            <p>If you did not sign up for an account, you can safely ignore this email.</p>
+                            <br>
+                            <p>Thank you,<br>The Fyndora Team</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>&copy; {% now "Y" %} Fyndora. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

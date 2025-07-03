@@ -189,6 +189,6 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
 
     def clean_custom_remittance_rate(self):
         custom_remittance_rate = self.cleaned_data.get("custom_remittance_rate")
-        if custom_remittance_rate < 0 or custom_remittance_rate > 100:
+        if custom_remittance_rate is not None and (custom_remittance_rate < 0 or custom_remittance_rate > 100):
             raise forms.ValidationError("Remittance rate must be between 0 and 100.")
         return custom_remittance_rate

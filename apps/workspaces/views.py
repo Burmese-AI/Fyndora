@@ -375,7 +375,13 @@ def change_workspace_team_remittance_rate_view(request, organization_id, workspa
         organization = get_organization_by_id(organization_id)
         team = get_team_by_id(team_id)
         if request.method == "POST":
+            form = ChangeWorkspaceTeamRemittanceRateForm(request.POST, instance=workspace_team)
+            if form.is_valid():
+                form.save()
                 messages.success(request, "Remittance rate updated successfully.")
+                return HttpResponseClientRedirect(f"/{organization_id}/workspaces/{workspace_id}/teams")
+            else:
+                messages.error(request, "Invalid form data.")
         else:
             form = ChangeWorkspaceTeamRemittanceRateForm(instance=workspace_team)
             context = {

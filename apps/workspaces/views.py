@@ -22,7 +22,7 @@ from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from apps.workspaces.selectors import get_workspaces_with_team_counts
 from apps.workspaces.services import remove_team_from_workspace, add_team_to_workspace
 from django.contrib.auth.models import Group
-
+from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -368,4 +368,21 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
 
 
 def change_workspace_team_remittance_rate_view(request, organization_id, workspace_id, team_id):
-    pass
+    try:
+        team = get_team_by_id(team_id)
+        workspace = get_workspace_by_id(workspace_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method == "POST":
+                messages.success(request, "Remittance rate updated successfully.")
+        else:
+            form = ChangeWorkspaceTeamRemittanceRateForm()
+            context = {
+                "form": form,
+                "organization": organization,
+                "workspace": workspace,
+                "team": team,
+            }
+            return render(request, "workspaces/partials/edit_workspace_team_remittance.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

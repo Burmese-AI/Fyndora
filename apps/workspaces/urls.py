@@ -30,4 +30,9 @@ urlpatterns = [
         remove_team_from_workspace_view,
         name="remove_team_from_workspace",
     ),
+    path(
+        "<uuid:workspace_id>/teams/<uuid:team_id>/remittance/",
+        change_workspace_team_remittance_rate_view,
+        name="change_workspace_team_remittance_rate",
+    ),
 ]

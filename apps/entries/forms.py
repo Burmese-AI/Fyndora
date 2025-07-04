@@ -2,8 +2,8 @@ from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
-from .constants import EntryStatus
-
+from .constants import EntryStatus, EntryType
+from apps.teams.constants import TeamMemberRole
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -41,6 +41,8 @@ class BaseEntryForm(forms.ModelForm):
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
         self.workspace_team = kwargs.pop("workspace_team", None)
+        self.workspace_team_role = kwargs.pop("workspace_team_role", None)
+        print(f"debugging: {self.workspace_team_role}")
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
 
@@ -53,11 +55,12 @@ class BaseEntryForm(forms.ModelForm):
                 "The current user is not a member of the organization"
             )
 
+        # TODO: Uncomment this when we have already separated children forms for expense and workspace expense and workspace team entry
         # If the org member object is not the same as the owner object of the provided organization, raise validation error
-        if not self.org_member.is_org_owner:
-            raise forms.ValidationError(
-                "Only the owner of the organization can submit expenses."
-            )
+        # if not self.org_member.is_org_owner:
+        #     raise forms.ValidationError(
+        #         "Only the owner of the organization can submit expenses."
+        #     )
 
         print(f"debugging: {cleaned_data}")
 
@@ -70,6 +73,51 @@ class BaseEntryForm(forms.ModelForm):
 
 class CreateEntryForm(BaseEntryForm):
     pass
+
+
+class CreateWorkspaceTeamEntryForm(BaseEntryForm):
+    class Meta(BaseEntryForm.Meta):
+        fields = BaseEntryForm.Meta.fields + ["entry_type"]
+        widgets = {
+            **BaseEntryForm.Meta.widgets,
+            "entry_type": forms.Select(
+                attrs={
+                    "class": "select select-bordered w-full",
+                    "placeholder": "Select entry type",
+                }
+            )
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["entry_type"].choices = self.get_allowed_entry_types()
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # If the workspace team role is not submitter or team coordinator, raise validation error
+        is_submitter = self.workspace_team_role == TeamMemberRole.SUBMITTER
+        is_team_coordinator = self.org_member == self.workspace_team.team.team_coordinator
+        print(f"is_submitter: {is_submitter}")
+        print(f"is_team_coordinator: {is_team_coordinator}")
+        if not is_submitter and not is_team_coordinator:
+            raise forms.ValidationError("You are not authorized to create entries for this workspace team")
+        
+        #If the submitter tries to submit a remittance entry, raise validation error
+        if self.workspace_team_role == TeamMemberRole.SUBMITTER and cleaned_data.get("entry_type") == EntryType.REMITTANCE:
+            raise forms.ValidationError("You are not authorized to create remittance entries for this workspace team")
+        
+        return cleaned_data
+    
+    def get_allowed_entry_types(self):
+        # If submitter, return Income, disbursement
+        if self.workspace_team_role == TeamMemberRole.SUBMITTER:
+            return [(EntryType.INCOME, "Income"), (EntryType.DISBURSEMENT, "Disbursement")]
+        # If team coordinator, return Income, disbursement, remittance
+        elif self.org_member == self.workspace_team.team.team_coordinator:
+            return [(EntryType.INCOME, "Income"), (EntryType.DISBURSEMENT, "Disbursement"), (EntryType.REMITTANCE, "Remittance")]
+        else:
+            return []
 
 
 class UpdateEntryForm(BaseEntryForm):

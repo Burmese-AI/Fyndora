@@ -11,23 +11,17 @@ from apps.organizations.models import Organization
 
 from ..models import Entry
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
+from apps.workspaces.selectors import get_workspace_team_role_by_workspace_team_and_org_member
 
 
 class OrganizationRequiredMixin:
     organization = None
+    org_member = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
-
-
-class OrganizationMemberRequiredMixin:
-    org_member = None
-
-    def setup(self, request, *args, **kwargs):
-        # Ensures organization is set
-        super().setup(request, *args, **kwargs)
         self.org_member = get_user_org_membership(self.request.user, self.organization)
 
 
@@ -43,11 +37,13 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
 
 class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     workspace_team = None
+    workspace_team_role = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
+        self.workspace_team_role = get_workspace_team_role_by_workspace_team_and_org_member(self.workspace_team, self.org_member)
 
 
 class EntryRequiredMixin:
@@ -71,6 +67,9 @@ class EntryFormMixin:
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
         kwargs["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        kwargs["workspace_team_role"] = (
+            self.workspace_team_role if hasattr(self, "workspace_team_role") else None
         )
         return kwargs
 

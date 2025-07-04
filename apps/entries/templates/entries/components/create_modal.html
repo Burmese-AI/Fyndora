@@ -43,6 +43,19 @@
       {% include "components/field_error.html" with field=form.description %}
     </div>
 
+    <!-- Entry Type Field -->
+    {% if form.entry_type %}
+    <div>
+      <label for="{{ form.entry_type.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Entry Type
+      </label>
+      <div class="mt-2">
+        {{ form.entry_type }}
+      </div>
+      {% include "components/field_error.html" with field=form.entry_type %}
+    </div>
+    {% endif %}
+
     <!-- 📎 Attachment Upload Field -->
     <div>
       <label for="{{ form.attachment_files.id_for_label }}" class="block text-sm font-medium text-base-content">

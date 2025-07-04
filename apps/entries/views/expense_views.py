@@ -11,7 +11,6 @@ from ..services import get_org_expense_stats
 from .mixins import (
     OrganizationRequiredMixin,
     HtmxOobResponseMixin,
-    OrganizationMemberRequiredMixin,
     WorkspaceRequiredMixin,
     OrganizationContextMixin,
     WorkspaceContextMixin,
@@ -36,7 +35,6 @@ class ExpenseListViewBase(
 
 class ExpenseCreateViewBase(
     OrganizationRequiredMixin,
-    OrganizationMemberRequiredMixin,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
     OrganizationContextMixin,
@@ -47,7 +45,6 @@ class ExpenseCreateViewBase(
 
 class ExpenseUpdateViewBase(
     OrganizationRequiredMixin,
-    OrganizationMemberRequiredMixin,
     EntryRequiredMixin,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,

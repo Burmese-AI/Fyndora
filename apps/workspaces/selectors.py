@@ -3,11 +3,20 @@
 from apps.workspaces.models import Workspace
 from apps.organizations.models import Organization
 from apps.organizations.models import OrganizationMember
-from apps.teams.models import Team
+from apps.teams.models import Team, TeamMember
 from apps.workspaces.models import WorkspaceTeam
+
+def get_workspace_team_role_by_workspace_team_and_org_member(workspace_team, org_member):
+    """
+    Return the role of the organization member in the workspace team.
+    """
+    return TeamMember.objects.get(organization_member=org_member, team=workspace_team.team).role
 
 
 def get_user_workspace_teams_under_organization(organization_id, user):
+    """
+    Return workspace teams where the user is a member of the organization.
+    """
     return WorkspaceTeam.objects.filter(
         workspace__organization__pk=organization_id,
         team__members__organization_member__user=user,

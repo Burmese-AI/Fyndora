@@ -109,7 +109,6 @@ def get_entries(
 
     if prefetch_attachments:
         queryset = queryset.prefetch_related("attachments")
-
     return queryset
 
 

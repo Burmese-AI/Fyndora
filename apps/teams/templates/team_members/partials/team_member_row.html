@@ -1,0 +1,54 @@
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="team_member_row-{{ member.team_member_id }}" class="hover:bg-base-100 transition-colors">
+    <!-- Member Info -->
+    <td>
+        <div class="flex items-center space-x-3">
+            <div>
+                <div class="font-bold text-base">
+                    {{ member.organization_member.user.get_full_name|default:member.organization_member.user.username }}
+                </div>
+            </div>
+        </div>
+    </td>
+    
+    <!-- Email -->
+    <td>
+        <div class="text-sm">
+            {{ member.organization_member.user.email }}
+        </div>
+    </td>
+    
+    <!-- Role -->
+    <td>
+        {% if member.role == 'workspace_admin' %}
+            <span class="badge badge-error badge-sm font-medium"> Admin</span>
+        {% elif member.role == 'operations_reviewer' %}
+            <span class="badge badge-warning badge-sm font-medium">Reviewer</span>
+        {% elif member.role == 'team_coordinator' %}
+            <span class="badge badge-info badge-sm font-medium">Coordinator</span>
+        {% elif member.role == 'auditor' %}
+            <span class="badge badge-secondary badge-sm font-medium">Auditor</span>
+        {% else %}
+            <span class="badge badge-success badge-sm font-medium">Submitter</span>
+        {% endif %}
+    </td>
+    
+    <!-- Joined Date -->
+    <td>
+        <div class="text-sm opacity-70">
+            {{ member.created_at|date:"M d, Y" }}
+        </div>
+    </td>
+    
+    <!-- Actions -->
+    <td>
+        <div class="flex justify-center space-x-2">
+            <button class="btn btn-ghost btn-sm hover:bg-secondary hover:bg-error hover:text-error-content" title="Edit Role" hx-get="{% url 'edit_team_member_role' organization_id=organization.organization_id team_id=team.team_id team_member_id=member.team_member_id %}" hx-target="#modal-placeholder">
+                Edit
+            </button>
+            <button hx-get="{% url 'remove_team_member' organization_id=organization.organization_id team_id=team.team_id team_member_id=member.team_member_id %}" hx-target="#modal-placeholder" class="btn btn-ghost btn-sm hover:bg-error hover:text-error-content" title="Remove Member">
+                Remove
+            </button>
+        </div> 
+        
+    </td>
+</tr>

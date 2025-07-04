@@ -1,0 +1,46 @@
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="team_members_display">
+{% if team_members %}
+<div class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+        <!-- Table head -->
+        <thead>
+            <tr class="bg-base-200">
+                <th class="text-base font-semibold">Member</th>
+                <th class="text-base font-semibold">Email</th>
+                <th class="text-base font-semibold">Role</th>
+                <th class="text-base font-semibold">Joined</th>
+                <th class="text-base font-semibold text-center">Actions</th>
+            </tr>
+        </thead>
+        <!-- Table body -->
+        <tbody>
+            {% for member in team_members %}
+            {% include "team_members/partials/team_member_row.html" %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% else %}
+<div class="col-span-full">
+    <div class="hero bg-base-200 rounded-box">
+        <div class="hero-content text-center py-12">
+            <div class="max-w-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 class="text-xl font-medium mb-2">No Team Members Yet</h3>
+                <p class="text-base-content/70 mb-6">Add team members to your team from your organization</p>
+                <button class="btn btn-primary" hx-get="{% url 'add_team_member' organization_id=organization.organization_id team_id=team.team_id %}" hx-target="#modal-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Team Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+</div>

@@ -59,7 +59,7 @@ def create_team_view(request, organization_id):
                         "organization": organization,
                         "is_oob": True,
                     }
-                    team_display_html = render_to_string(
+                    teams_grid_html = render_to_string(
                         "teams/partials/teams_grid.html",
                         context=context,
                         request=request,
@@ -67,7 +67,7 @@ def create_team_view(request, organization_id):
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    response = HttpResponse(f"{message_html} {team_display_html}")
+                    response = HttpResponse(f"{message_html} {teams_grid_html}")
                     response["HX-trigger"] = "success"
                     return response
                 return HttpResponseClientRedirect(f"/{organization_id}/teams/")
@@ -108,7 +108,7 @@ def get_team_members_view(request, organization_id, team_id):
             "organization": organization,
             "team_members": team_members,
         }
-        return render(request, "teams/teamMembers_index.html", context)
+        return render(request, "team_members/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return redirect("teams", organization_id=organization_id)
@@ -135,15 +135,15 @@ def add_team_member_view(request, organization_id, team_id):
                         "team_members": team_members,
                         "is_oob": True,
                     }
-                    team_display_html = render_to_string(
-                        "teams/partials/teamMembers_display.html",
+                    team_members_table_html = render_to_string(
+                        "team_members/partials/team_members_table.html",
                         context=context,
                         request=request,
                     )
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    response = HttpResponse(f"{message_html} {team_display_html}")
+                    response = HttpResponse(f"{message_html} {team_members_table_html}")
                     response["HX-trigger"] = "success"
                     return response
                 else:
@@ -202,15 +202,15 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                     "is_oob": True,
                 }
 
-                team_display_html = render_to_string(
-                    "teams/partials/teamMembers_display.html",
+                team_members_table_html = render_to_string(
+                    "team_members/partials/team_members_table.html",
                     context=context,
                     request=request,
                 )
                 message_html = render_to_string(
                     "includes/message.html", context=context, request=request
                 )
-                response = HttpResponse(f"{message_html} {team_display_html}")
+                response = HttpResponse(f"{message_html} {team_members_table_html}")
                 response["HX-trigger"] = "success"
                 return response
 

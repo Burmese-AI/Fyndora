@@ -335,6 +335,7 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
             "workspace": workspace,
             "organization": organization,
             "view": "teams",
+            "hide_management_access": False
         }
         return render(request, "workspace_teams/index.html", context)
     except Exception as e:
@@ -470,7 +471,7 @@ def change_workspace_team_remittance_rate_view(
 
 class SubmissionTeamListView(LoginRequiredMixin, ListView):
     model = WorkspaceTeam
-    template_name = "dummy_workspace_teams/index.html"
+    template_name = "workspace_teams/submitter_workspace_teams_index.html"
     paginate_by = 10
     context_object_name = "workspace_teams"
 
@@ -483,4 +484,5 @@ class SubmissionTeamListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["organization"] = get_organization_by_id(self.kwargs["organization_id"])
+        context["hide_management_access"] = True
         return context

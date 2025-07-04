@@ -277,7 +277,6 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
                 message_html = render_to_string(
                     "includes/message.html", context=context, request=request
                 )
-                print(f"DEBUG: row HTML: {team_members_table_html}")
                 response = HttpResponse(f"{message_html} {team_members_table_html}")
                 response["HX-trigger"] = "success"
                 return response

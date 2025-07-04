@@ -1,10 +1,10 @@
-<tr {% if is_oob %}hx-swap-oob="true"{% endif %}  class="hover:bg-base-100 transition-colors" id="team_member_row-{{ team_member.team_member_id }}">
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} class="hover:bg-base-100 transition-colors" id="team_member_row-{{ team_member.team_member_id }}">
     <!-- Member Info -->
     <td>
         <div class="flex items-center space-x-3">
             <div>
                 <div class="font-bold text-base">
-                    {{ team_member.organization_member.user.get_full_name|default:team_member.organization_member.user.username }}
+                    {{team_member.organization_member.user.username }}
                 </div>
             </div>
         </div>

@@ -35,6 +35,7 @@ class ExpenseListViewBase(
 
 
 class ExpenseCreateViewBase(
+    OrganizationRequiredMixin,
     OrganizationMemberRequiredMixin,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
@@ -45,8 +46,8 @@ class ExpenseCreateViewBase(
 
 
 class ExpenseUpdateViewBase(
-    OrganizationMemberRequiredMixin,
     OrganizationRequiredMixin,
+    OrganizationMemberRequiredMixin,
     EntryRequiredMixin,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,

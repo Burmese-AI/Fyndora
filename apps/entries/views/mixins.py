@@ -22,7 +22,7 @@ class OrganizationRequiredMixin:
         self.organization = get_object_or_404(Organization, pk=organization_id)
 
 
-class OrganizationMemberRequiredMixin(OrganizationRequiredMixin):
+class OrganizationMemberRequiredMixin:
     org_member = None
 
     def setup(self, request, *args, **kwargs):

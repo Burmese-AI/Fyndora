@@ -8,7 +8,10 @@ from .views.expense_views import (
     WorkspaceExpenseUpdateView,
 )
 from .views.base_views import BaseEntryDetailView
-from .views.entry_views import WorkspaceTeamEntryListView
+from .views.entry_views import (
+    WorkspaceTeamEntryListView,
+    WorkspaceTeamEntryCreateView,
+)
 
 urlpatterns = [
     path(
@@ -56,4 +59,9 @@ urlpatterns = [
         WorkspaceTeamEntryListView.as_view(),
         name="workspace_team_entry_list",
     ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/create",
+        WorkspaceTeamEntryCreateView.as_view(),
+        name="workspace_team_entry_create"
+    )
 ]

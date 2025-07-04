@@ -8,6 +8,13 @@ from ..constants import EntryType
 from ..selectors import get_entries
 from django.db.models import QuerySet
 from typing import Any
+from .mixins import (
+    OrganizationMemberRequiredMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+)
+from .base_views import BaseEntryCreateView
+from django.urls import reverse
 
 
 class WorkspaceTeamEntryListView(
@@ -27,4 +34,26 @@ class WorkspaceTeamEntryListView(
                 EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
             ],
+        )
+
+class WorkspaceTeamEntryCreateView(
+    LoginRequiredMixin,
+    WorkspaceTeamRequiredMixin,
+    WorkspaceTeamContextMixin,
+    OrganizationMemberRequiredMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    BaseEntryCreateView,
+):
+    def get_modal_title(self) -> str:
+        return ""
+    
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_team_entry_create",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "workspace_team_id": self.workspace_team.pk,
+            },
         )

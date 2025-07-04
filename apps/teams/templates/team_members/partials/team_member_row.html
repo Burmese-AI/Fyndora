@@ -1,0 +1,50 @@
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} class="hover:bg-base-100 transition-colors" id="team_member_row-{{ team_member.team_member_id }}">
+    <!-- Member Info -->
+    <td>
+        <div class="flex items-center space-x-3">
+            <div>
+                <div class="font-bold text-base">
+                    {{team_member.organization_member.user.username }}
+                </div>
+            </div>
+        </div>
+    </td>
+    
+    <!-- Email -->
+    <td>
+        <div class="text-sm">
+            {{ team_member.organization_member.user.email }}
+        </div>
+    </td>
+    
+    <!-- Role -->
+    <td>
+        {% if team_member.role == 'team_coordinator' %}
+            <span class="badge badge-info badge-sm font-medium">Coordinator</span>
+        {% elif team_member.role == 'auditor' %}
+            <span class="badge badge-secondary badge-sm font-medium">Auditor</span>
+        {% else %}
+            <span class="badge badge-success badge-sm font-medium">Submitter</span>
+        {% endif %}
+    </td>
+    
+    <!-- Joined Date -->
+    <td>
+        <div class="text-sm opacity-70">
+            {{ team_member.created_at|date:"M d, Y" }}
+        </div>
+    </td>
+    
+    <!-- Actions -->
+    <td>
+        <div class="flex justify-center space-x-2">
+            <button class="btn btn-ghost btn-sm hover:bg-secondary hover:bg-error hover:text-error-content" title="Edit Role" hx-get="{% url 'edit_team_member_role' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" hx-target="#modal-placeholder">
+                Edit
+            </button>
+            <button hx-get="{% url 'remove_team_member' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" hx-target="#modal-placeholder" class="btn btn-ghost btn-sm hover:bg-error hover:text-error-content" title="Remove Member">
+                Remove
+            </button>
+        </div> 
+        
+    </td>
+</tr>

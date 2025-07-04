@@ -186,6 +186,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
                     return HttpResponse(f"{message_html} {modal_html}")
             except WorkspaceUpdateError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
+                return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
         else:
             form = WorkspaceForm(instance=workspace, organization=organization)
 

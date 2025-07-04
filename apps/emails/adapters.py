@@ -2,7 +2,7 @@ from allauth.account.adapter import DefaultAccountAdapter
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 
-from .services import send_email
+from .tasks import send_email_task
 
 
 class CustomAccountAdapter(DefaultAccountAdapter):
@@ -24,7 +24,4 @@ class CustomAccountAdapter(DefaultAccountAdapter):
             html_body = None
 
         # Our email service will send the HTML version if it exists,
-        # otherwise it will send the plain text version.
-        contents = html_body if html_body else text_body
-
-        send_email(to=email, subject=subject, contents=contents)
+        send_email_task.delay(to=email, subject=subject, contents=[text_body, html_body])

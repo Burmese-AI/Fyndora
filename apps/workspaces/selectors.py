@@ -114,6 +114,13 @@ def get_workspaces_with_team_counts(organization_id):
         ).count()
     return workspaces
 
+def get_single_workspace_with_team_counts(workspace_id):
+    workspace = get_workspace_by_id(workspace_id)
+    workspace.teams_count = get_workspace_teams_by_workspace_id(
+        workspace.workspace_id
+    ).count()
+    return workspace
+
 
 def get_workspace_team_by_workspace_team_id(workspace_team_id):
     """

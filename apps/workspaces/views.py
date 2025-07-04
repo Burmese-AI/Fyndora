@@ -32,6 +32,7 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
 from django.shortcuts import redirect
+from apps.workspaces.selectors import get_single_workspace_with_team_counts
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -149,9 +150,10 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         workspace=workspace,
                         previous_workspace_admin=previous_workspace_admin,
                     )
-                    workspaces = get_workspaces_with_team_counts(organization_id)
+                    workspace = get_single_workspace_with_team_counts(workspace_id)
+                    print(f"DEBUG: workspace single testing: {workspace}")
                     context = {
-                        "workspaces": workspaces,
+                        "workspace": workspace,
                         "organization": organization,
                         "is_oob": True,
                     }
@@ -160,12 +162,12 @@ def edit_workspace_view(request, organization_id, workspace_id):
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    workspaces_grid_html = render_to_string(
-                        "workspaces/partials/workspaces_grid.html",
+                    workspace_card_html = render_to_string(
+                        "workspaces/partials/workspace_card.html",
                         context=context,
                         request=request,
                     )
-                    response = HttpResponse(f"{message_html} {workspaces_grid_html}")
+                    response = HttpResponse(f"{message_html} {workspace_card_html}")
                     response["HX-trigger"] = "success"
                     return response
                 else:
@@ -266,9 +268,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         form.cleaned_data["team"].team_id,
                         form.cleaned_data["custom_remittance_rate"],
                     )
-                    workspaces = get_workspaces_with_team_counts(organization_id)
+                    workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
-                        "workspaces": workspaces,
+                        "workspace": workspace,
                         "organization": organization,
                         "is_oob": True,
                     }
@@ -276,12 +278,12 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    workspaces_grid_html = render_to_string(
-                        "workspaces/partials/workspaces_grid.html",
+                    workspace_card_html = render_to_string(
+                        "workspaces/partials/workspace_card.html",
                         context=context,
                         request=request,
                     )
-                    response = HttpResponse(f"{workspaces_grid_html} {message_html} ")
+                    response = HttpResponse(f"{workspace_card_html} {message_html} ")
                     response["HX-trigger"] = "success"
                     return response
                 else:

@@ -360,15 +360,15 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
                 "organization": organization,
                 "is_oob": True,
             }
-            workspace_team_display_html = render_to_string(
-                "workspace_teams/partials/workspace_teams_display.html",
+            workspace_team_grid_html = render_to_string(
+                "workspace_teams/partials/workspace_teams_grid.html",
                 context=context,
                 request=request,
             )
             message_html = render_to_string(
                 "includes/message.html", context=context, request=request
             )
-            response = HttpResponse(f"{message_html} {workspace_team_display_html}")
+            response = HttpResponse(f"{message_html} {workspace_team_grid_html}")
             response["HX-trigger"] = "success"
             return response
         else:
@@ -407,8 +407,8 @@ def change_workspace_team_remittance_rate_view(
                     "organization": organization,
                     "is_oob": True,
                 }
-                workspace_team_display_html = render_to_string(
-                    "workspace_teams/partials/workspace_teams_display.html",
+                workspace_teams_grid_html = render_to_string(
+                    "workspace_teams/partials/workspace_teams_grid.html",
                     context=context,
                     request=request,
                 )
@@ -417,7 +417,7 @@ def change_workspace_team_remittance_rate_view(
                     context=context,
                     request=request,
                 )
-                response = HttpResponse(f"{message_html} {workspace_team_display_html}")
+                response = HttpResponse(f"{message_html} {workspace_teams_grid_html}")
                 response["HX-trigger"] = "success"
                 return response
             else:

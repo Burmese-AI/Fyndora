@@ -1,20 +1,33 @@
+import logging
+
 import yagmail
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 
+logger = logging.getLogger("emails")
+
 
 def send_email(to, subject, contents):
     """
     Sends an email using one of the configured Gmail accounts, rotating between them.
+    Logs the outcome using Django's logging framework.
     """
     accounts = settings.GMAIL_ACCOUNTS
     if not accounts:
-        raise ImproperlyConfigured("No Gmail accounts configured in settings.GMAIL_ACCOUNTS")
+        logger.critical(
+            "CRITICAL: No Gmail accounts are configured in settings.GMAIL_ACCOUNTS."
+        )
+        raise ImproperlyConfigured(
+            "No Gmail accounts configured in settings.GMAIL_ACCOUNTS"
+        )
 
-    # Atomically get the next account index to use
-    account_index = cache.get("last_gmail_account_index", -1) + 1
-    cache.set("last_gmail_account_index", account_index)
+    # Atomically increment the account index. `incr` is atomic and avoids race conditions.
+    try:
+        account_index = cache.incr("last_gmail_account_index")
+    except ValueError:
+        cache.set("last_gmail_account_index", 0)
+        account_index = 0
 
     # Round-robin selection
     selected_account = accounts[account_index % len(accounts)]
@@ -28,10 +41,10 @@ def send_email(to, subject, contents):
             subject=subject,
             contents=contents,
         )
-        print(f"Email sent successfully from {gmail_user}")
+        logger.info(f"Email sent successfully to {to} from {gmail_user}.")
         return True
-    except Exception as e:
-        print(f"Error sending email from {gmail_user}: {e}")
+    except Exception:
+        logger.exception(f"Failed to send email to {to} from {gmail_user}.")
         return False
 
 

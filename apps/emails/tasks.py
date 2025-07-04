@@ -24,16 +24,16 @@ def send_email_task(to, subject, contents):
             "No Gmail accounts configured in settings.GMAIL_ACCOUNTS"
         )
 
-    # Atomically increment the account index. `incr` is atomic and avoids race conditions.
+    # Atomically increment a counter to get the next index.
     try:
         account_index = cache.incr("last_gmail_account_index")
     except ValueError:
-        # The key doesn't exist, so `incr` fails. We initialize it to 0.
-        cache.set("last_gmail_account_index", 0)
-        account_index = 0
+        cache.set("last_gmail_account_index", 1)
+        account_index = 1
 
-    # Round-robin selection
-    selected_account = accounts[account_index % len(accounts)]
+    # Perform round-robin selection.
+    selected_account_index = (account_index - 1) % len(accounts)
+    selected_account = accounts[selected_account_index]
     gmail_user = selected_account["user"]
     oauth2_file = selected_account["oauth2_file"]
 

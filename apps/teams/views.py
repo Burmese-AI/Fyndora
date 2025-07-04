@@ -176,7 +176,9 @@ def add_team_member_view(request, organization_id, team_id):
                 "team": team,
                 "organization": organization,
             }
-            return render(request, "team_members/partials/add_team_member_form.html", context)
+            return render(
+                request, "team_members/partials/add_team_member_form.html", context
+            )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return redirect("teams", organization_id=organization_id)
@@ -230,7 +232,9 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                     "organization": organization,
                 }
                 return render(
-                    request, "team_members/partials/remove_team_member_form.html", context
+                    request,
+                    "team_members/partials/remove_team_member_form.html",
+                    context,
                 )
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
@@ -256,25 +260,25 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
             if form.is_valid():
                 update_team_member_role(form=form, team_member=team_member)
                 messages.success(request, "Team member role updated successfully.")
-                
+
                 # Get the updated team member
-                team_member = get_team_member_by_id(team_member_id)
+                team_members = get_team_members_by_team_id(team_id)
                 context = {
                     "team": team,
                     "organization": organization,
-                    "team_member": team_member,
+                    "team_members": team_members,
                     "is_oob": True,
                 }
-                team_member_row_html = render_to_string(
-                    "team_members/partials/team_member_row.html",
+                team_members_table_html = render_to_string(
+                    "team_members/partials/team_members_table.html",
                     context=context,
                     request=request,
                 )
                 message_html = render_to_string(
                     "includes/message.html", context=context, request=request
                 )
-                print(f"DEBUG: row HTML: {team_member_row_html}")
-                response = HttpResponse(f"{message_html} {team_member_row_html}")
+                print(f"DEBUG: row HTML: {team_members_table_html}")
+                response = HttpResponse(f"{message_html} {team_members_table_html}")
                 response["HX-trigger"] = "success"
                 return response
                 # return HttpResponseClientRedirect(
@@ -307,7 +311,9 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
                 "organization": organization,
             }
             return render(
-                request, "team_members/partials/edit_team_member_role_form.html", context
+                request,
+                "team_members/partials/edit_team_member_role_form.html",
+                context,
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")

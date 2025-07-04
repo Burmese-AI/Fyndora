@@ -1,4 +1,4 @@
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="team_members_display">
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="team_members_table">
 {% if team_members %}
 <div class="overflow-x-auto">
     <table class="table table-zebra w-full">
@@ -14,7 +14,7 @@
         </thead>
         <!-- Table body -->
         <tbody>
-            {% for member in team_members %}
+            {% for team_member in team_members %}
             {% include "team_members/partials/team_member_row.html" %}
             {% endfor %}
         </tbody>

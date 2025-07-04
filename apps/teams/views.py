@@ -256,22 +256,24 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
             if form.is_valid():
                 update_team_member_role(form=form, team_member=team_member)
                 messages.success(request, "Team member role updated successfully.")
-                team_members = get_team_members_by_team_id(team_id)
+                
+                # Get the updated team member
+                team_member = get_team_member_by_id(team_member_id)
                 context = {
                     "team": team,
                     "organization": organization,
-                    "team_members": team_members,
+                    "team_member": team_member,
                     "is_oob": True,
                 }
-                teamMembers_display_html = render_to_string(
-                    "teams/partials/teamMembers_display.html",
+                team_member_row_html = render_to_string(
+                    "team_members/partials/team_member_row.html",
                     context=context,
                     request=request,
                 )
                 message_html = render_to_string(
                     "includes/message.html", context=context, request=request
                 )
-                response = HttpResponse(f"{message_html} {teamMembers_display_html}")
+                response = HttpResponse(f"{message_html} {team_member_row_html}")
                 response["HX-trigger"] = "success"
                 return response
                 # return HttpResponseClientRedirect(

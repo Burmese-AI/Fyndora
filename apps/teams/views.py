@@ -60,7 +60,7 @@ def create_team_view(request, organization_id):
                         "is_oob": True,
                     }
                     team_display_html = render_to_string(
-                        "teams/partials/teams_display.html",
+                        "teams/partials/teams_grid.html",
                         context=context,
                         request=request,
                     )

@@ -200,6 +200,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
+@login_required
 def delete_workspace_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
@@ -248,6 +249,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
+@login_required
 def add_team_to_workspace_view(request, organization_id, workspace_id):
     try:
         organization = get_organization_by_id(organization_id)
@@ -314,6 +316,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
 
+@login_required
 def get_workspace_teams_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
@@ -341,6 +344,7 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
         return render(request, "workspace_teams/index.html", context)
 
 
+@login_required
 def remove_team_from_workspace_view(request, organization_id, workspace_id, team_id):
     try:
         team = get_team_by_id(team_id)
@@ -378,6 +382,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         return redirect("get_workspace_teams", organization_id=organization_id, workspace_id=workspace_id)
 
 
+@login_required
 def change_workspace_team_remittance_rate_view(
     request, organization_id, workspace_id, team_id, workspace_team_id
 ):

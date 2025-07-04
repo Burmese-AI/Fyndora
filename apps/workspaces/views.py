@@ -34,6 +34,7 @@ from .models import WorkspaceTeam
 from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
 
+
 @login_required
 def get_workspaces_view(request, organization_id):
     try:
@@ -245,7 +246,9 @@ def delete_workspace_view(request, organization_id, workspace_id):
                 "workspace": workspace,
                 "organization": organization,
             }
-        return render(request, "workspaces/partials/delete_workspace_form.html", context)
+        return render(
+            request, "workspaces/partials/delete_workspace_form.html", context
+        )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
@@ -312,7 +315,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                 "organization": organization,
                 "workspace": workspace,
             }
-            return render(request, "workspaces/partials/add_workspace_team_form.html", context)
+            return render(
+                request, "workspaces/partials/add_workspace_team_form.html", context
+            )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
@@ -373,7 +378,11 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect("get_workspace_teams", organization_id=organization_id, workspace_id=workspace_id)
+        return redirect(
+            "get_workspace_teams",
+            organization_id=organization_id,
+            workspace_id=workspace_id,
+        )
 
 
 @login_required
@@ -394,7 +403,9 @@ def change_workspace_team_remittance_rate_view(
                     form=form, workspace_team=workspace_team, workspace=workspace
                 )
                 messages.success(request, "Remittance rate updated successfully.")
-                workspace_team = get_workspace_team_by_workspace_team_id(workspace_team_id)
+                workspace_team = get_workspace_team_by_workspace_team_id(
+                    workspace_team_id
+                )
                 context = {
                     "workspace_team": workspace_team,
                     "workspace": workspace,

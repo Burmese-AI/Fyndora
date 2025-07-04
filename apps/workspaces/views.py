@@ -31,7 +31,7 @@ from apps.workspaces.services import update_workspace_team_remittance_rate_from_
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
-
+from django.shortcuts import redirect
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -291,7 +291,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         "includes/message.html", context=context, request=request
                     )
                     add_team_form_html = render_to_string(
-                        "workspaces/partials/add_team_form.html",
+                        "workspaces/partials/add_workspace_team_form.html",
                         context=context,
                         request=request,
                     )
@@ -307,7 +307,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                 "organization": organization,
                 "workspace": workspace,
             }
-            return render(request, "workspaces/partials/add_team_form.html", context)
+            return render(request, "workspaces/partials/add_workspace_team_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
@@ -333,10 +333,11 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
             "organization": organization,
             "view": "teams",
         }
-        return render(request, "workspaces/workspace_teams_main.html", context)
+        return render(request, "workspace_teams/index.html", context)
     except Exception as e:
+        print(f"DEBUG: An unexpected error occurred: {str(e)}")
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+        return render(request, "workspace_teams/index.html", context)
 
 
 def remove_team_from_workspace_view(request, organization_id, workspace_id, team_id):
@@ -355,7 +356,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
                 "is_oob": True,
             }
             workspace_team_display_html = render_to_string(
-                "workspaces/partials/workspaces_team_display.html",
+                "workspace_teams/partials/workspace_teams_display.html",
                 context=context,
                 request=request,
             )
@@ -368,12 +369,12 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         else:
             return render(
                 request,
-                "workspaces/partials/workspace_team_remove_form.html",
+                "workspace_teams/partials/remove_workspace_team_form.html",
                 {"team": team, "workspace": workspace, "organization": organization},
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
+        return redirect("get_workspace_teams", organization_id=organization_id, workspace_id=workspace_id)
 
 
 def change_workspace_team_remittance_rate_view(
@@ -401,7 +402,7 @@ def change_workspace_team_remittance_rate_view(
                     "is_oob": True,
                 }
                 workspace_team_display_html = render_to_string(
-                    "workspaces/partials/workspaces_team_display.html",
+                    "workspace_teams/partials/workspace_teams_display.html",
                     context=context,
                     request=request,
                 )
@@ -424,7 +425,7 @@ def change_workspace_team_remittance_rate_view(
                     "is_oob": True,
                 }
                 modal_html = render_to_string(
-                    "workspaces/partials/edit_workspace_team_remittance.html",
+                    "workspace_teams/partials/edit_workspace_team_remittance_form.html",
                     context=context,
                     request=request,
                 )
@@ -446,7 +447,7 @@ def change_workspace_team_remittance_rate_view(
             }
             return render(
                 request,
-                "workspaces/partials/edit_workspace_team_remittance.html",
+                "workspace_teams/partials/edit_workspace_team_remittance_form.html",
                 context,
             )
     except Exception as e:

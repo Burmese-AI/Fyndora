@@ -9,7 +9,7 @@
           </div>
 
           <div class="flex gap-2">
-            {% include "workspaces/components/edit_dropdown_workspace_team.html" %}
+            {% include "workspace_teams/components/edit_dropdown_workspace_team.html" %}
         </div>
         </div>
         <p class="text-base-content/70 text-sm mb-3 line-clamp-2">
@@ -61,16 +61,6 @@
             Remittance Rate: Default ({{ workspace.remittance_rate }}%)
           </span>
           {% endif %}
-        </div>
-        <form hx-get="{% url 'remove_team_from_workspace' organization_id=workspace.organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" >
-            {% csrf_token %}    
-        <div class="mt-4 flex justify-end gap-2">
-          <button
-            type="submit"
-            class="btn btn-error btn-sm">
-            Remove from Workspace
-          </button>
-          </form>
         </div>
       </div>
     </div>

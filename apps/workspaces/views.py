@@ -101,7 +101,7 @@ def create_workspace_view(request, organization_id):
                         "includes/message.html", context=context, request=request
                     )
                     modal_html = render_to_string(
-                        "workspaces/partials/create_form.html",
+                        "workspaces/partials/create_workspace_form.html",
                         context=context,
                         request=request,
                     )
@@ -117,7 +117,7 @@ def create_workspace_view(request, organization_id):
         }
         return render(
             request,
-            "workspaces/partials/create_form.html",
+            "workspaces/partials/create_workspace_form.html",
             context,
         )
     except Exception as e:
@@ -179,7 +179,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         "includes/message.html", context=context, request=request
                     )
                     modal_html = render_to_string(
-                        "workspaces/partials/edit_form.html",
+                        "workspaces/partials/edit_workspace_form.html",
                         context=context,
                         request=request,
                     )
@@ -193,7 +193,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
             "form": form,
             "organization": organization,
         }
-        return render(request, "workspaces/partials/edit_form.html", context)
+        return render(request, "workspaces/partials/edit_workspace_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
@@ -241,7 +241,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
                 "workspace": workspace,
                 "organization": organization,
             }
-        return render(request, "workspaces/partials/delete_form.html", context)
+        return render(request, "workspaces/partials/delete_workspace_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")

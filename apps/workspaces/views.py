@@ -84,13 +84,13 @@ def create_workspace_view(request, organization_id):
                         message_html = render_to_string(
                             "includes/message.html", context=context, request=request
                         )
-                        workspace_display_html = render_to_string(
-                            "workspaces/partials/workspaces_display.html",
+                        workspaces_grid_html = render_to_string(
+                            "workspaces/partials/workspaces_grid.html",
                             context=context,
                             request=request,
                         )
                         response = HttpResponse(
-                            f"{message_html} {workspace_display_html}"
+                            f"{message_html} {workspaces_grid_html}"
                         )
                         response["HX-trigger"] = "success"
                         return response
@@ -160,12 +160,12 @@ def edit_workspace_view(request, organization_id, workspace_id):
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    workspace_display_html = render_to_string(
-                        "workspaces/partials/workspaces_display.html",
+                    workspaces_grid_html = render_to_string(
+                        "workspaces/partials/workspaces_grid.html",
                         context=context,
                         request=request,
                     )
-                    response = HttpResponse(f"{message_html} {workspace_display_html}")
+                    response = HttpResponse(f"{message_html} {workspaces_grid_html}")
                     response["HX-trigger"] = "success"
                     return response
                 else:
@@ -228,13 +228,13 @@ def delete_workspace_view(request, organization_id, workspace_id):
             message_html = render_to_string(
                 "includes/message.html", context=context, request=request
             )
-            workspace_display_html = render_to_string(
-                "workspaces/partials/workspaces_display.html",
+            workspaces_grid_html = render_to_string(
+                "workspaces/partials/workspaces_grid.html",
                 context=context,
                 request=request,
             )
 
-            response = HttpResponse(f"{message_html} {workspace_display_html}")
+            response = HttpResponse(f"{message_html} {workspaces_grid_html}")
             response["HX-trigger"] = "success"
             return response
 

@@ -400,15 +400,15 @@ def change_workspace_team_remittance_rate_view(
                     form=form, workspace_team=workspace_team, workspace=workspace
                 )
                 messages.success(request, "Remittance rate updated successfully.")
-                workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
+                workspace_team = get_workspace_team_by_workspace_team_id(workspace_team_id)
                 context = {
-                    "workspace_teams": workspace_teams,
+                    "workspace_team": workspace_team,
                     "workspace": workspace,
                     "organization": organization,
                     "is_oob": True,
                 }
-                workspace_teams_grid_html = render_to_string(
-                    "workspace_teams/partials/workspace_teams_grid.html",
+                workspace_team_card_html = render_to_string(
+                    "workspace_teams/partials/workspace_team_card.html",
                     context=context,
                     request=request,
                 )
@@ -417,7 +417,7 @@ def change_workspace_team_remittance_rate_view(
                     context=context,
                     request=request,
                 )
-                response = HttpResponse(f"{message_html} {workspace_teams_grid_html}")
+                response = HttpResponse(f"{message_html} {workspace_team_card_html}")
                 response["HX-trigger"] = "success"
                 return response
             else:

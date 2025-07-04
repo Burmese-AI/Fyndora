@@ -276,12 +276,12 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
                     )
-                    workspace_display_html = render_to_string(
-                        "workspaces/partials/workspaces_display.html",
+                    workspaces_grid_html = render_to_string(
+                        "workspaces/partials/workspaces_grid.html",
                         context=context,
                         request=request,
                     )
-                    response = HttpResponse(f"{workspace_display_html} {message_html} ")
+                    response = HttpResponse(f"{workspaces_grid_html} {message_html} ")
                     response["HX-trigger"] = "success"
                     return response
                 else:

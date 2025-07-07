@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView
+from django.views.generic import DetailView, DeleteView
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
@@ -96,6 +96,27 @@ class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
         response["HX-trigger"] = "success"
         return response
 
+class BaseEntryDeleteView(EntryModalFormViewBase, DeleteView):
+    modal_template_name = "entries/components/delete_modal.html"
+    
+    def get_modal_title(self) -> str:
+        return "Entry"
+
+    def form_valid(self, form):
+        from ..services import delete_entry
+        delete_entry(self.entry)
+        messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+        response = HttpResponse(f"{message_html}")
+        response["HX-trigger"] = "success"
+        return response
+    
 
 class BaseEntryDetailView(
     LoginRequiredMixin,

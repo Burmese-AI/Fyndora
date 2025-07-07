@@ -165,6 +165,12 @@ def update_entry(
     entry.reviewed_by = reviewed_by
     entry.save(update_fields=["amount", "description", "status", "review_notes", "reviewed_by"])
 
+def delete_entry(entry):
+    """
+    Service to delete an entry.
+    """
+    entry.delete()
+    return entry
 
 def entry_create(
     *,

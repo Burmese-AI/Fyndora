@@ -119,7 +119,14 @@ class WorkspaceForm(forms.ModelForm):
         title = cleaned_data.get("title")
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
+        workspace_admin = cleaned_data.get("workspace_admin")
+        operation_reviewer = cleaned_data.get("operation_reviewer")
 
+        if workspace_admin and operation_reviewer:
+            if workspace_admin == operation_reviewer:
+                raise forms.ValidationError(
+                    "Workspace admin and operation reviewer cannot be the same person."
+                )
 
         if title and self.organization:
             # Create a queryset excluding the current instance (if editing)

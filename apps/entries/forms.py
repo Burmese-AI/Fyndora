@@ -42,6 +42,7 @@ class BaseEntryForm(forms.ModelForm):
         self.workspace = kwargs.pop("workspace", None)
         self.workspace_team = kwargs.pop("workspace_team", None)
         self.workspace_team_role = kwargs.pop("workspace_team_role", None)
+        self.workspace_team_member = kwargs.pop("workspace_team_member", None)
         print(f"debugging: {self.workspace_team_role}")
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)

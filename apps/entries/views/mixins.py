@@ -11,8 +11,10 @@ from apps.organizations.models import Organization
 
 from ..models import Entry
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
-from apps.workspaces.selectors import get_workspace_team_role_by_workspace_team_and_org_member
-
+from apps.workspaces.selectors import (
+    get_workspace_team_role_by_workspace_team_and_org_member,
+    get_workspace_team_member_by_workspace_team_and_org_member,
+)
 
 class OrganizationRequiredMixin:
     organization = None
@@ -37,14 +39,15 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
 
 class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     workspace_team = None
+    workspace_team_member = None
     workspace_team_role = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
+        self.workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(self.workspace_team, self.org_member)
         self.workspace_team_role = get_workspace_team_role_by_workspace_team_and_org_member(self.workspace_team, self.org_member)
-
 
 class EntryRequiredMixin:
     entry = None
@@ -70,6 +73,9 @@ class EntryFormMixin:
         )
         kwargs["workspace_team_role"] = (
             self.workspace_team_role if hasattr(self, "workspace_team_role") else None
+        )
+        kwargs["workspace_team_member"] = (
+            self.workspace_team_member if hasattr(self, "workspace_team_member") else None
         )
         return kwargs
 
@@ -146,5 +152,8 @@ class WorkspaceTeamContextMixin(WorkspaceContextMixin):
         context = super().get_context_data(**kwargs)
         context["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        context["workspace_team_member"] = (
+            self.workspace_team_member if hasattr(self, "workspace_team_member") else None
         )
         return context

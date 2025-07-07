@@ -78,7 +78,7 @@ class WorkspaceTeamEntryCreateView(
         from ..services import create_entry_with_attachments        
 
         create_entry_with_attachments(
-            submitter=self.org_member,
+            submitter=self.workspace_team_member,
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],

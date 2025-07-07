@@ -70,6 +70,7 @@ class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             status=form.cleaned_data["status"],
+            reviewed_by=self.org_member,
             review_notes=form.cleaned_data["review_notes"],
             attachments=form.cleaned_data["attachment_files"],
             replace_attachments=form.cleaned_data["replace_attachments"],

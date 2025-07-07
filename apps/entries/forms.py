@@ -186,3 +186,5 @@ class UpdateEntryForm(BaseEntryForm):
         return [
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
+
+        

@@ -15,6 +15,7 @@ from apps.workspaces.selectors import (
     get_workspace_team_role_by_workspace_team_and_org_member,
     get_workspace_team_member_by_workspace_team_and_org_member,
 )
+from ..selectors import get_entry_by_scope
 
 class OrganizationRequiredMixin:
     organization = None
@@ -55,8 +56,12 @@ class EntryRequiredMixin:
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        entry_id = kwargs.get("pk")
-        self.entry = get_object_or_404(Entry, pk=entry_id)
+        self.entry = get_entry_by_scope(
+            entry_id=kwargs.get("pk"),
+            organization=getattr(self, "organization", None),
+            workspace=getattr(self, "workspace", None),
+            workspace_team=getattr(self, "workspace_team", None),
+        )
         self.attachments = self.entry.attachments.all()
 
 

@@ -3,12 +3,11 @@ from typing import List
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Count, QuerySet
 from django.contrib.contenttypes.prefetch import GenericPrefetch
+from django.shortcuts import get_object_or_404
 
 from apps.organizations.models import Organization, OrganizationMember
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceTeam
-from apps.organizations.selectors import get_org_members
-from apps.teams.selectors import get_team_members
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -115,6 +114,31 @@ def get_entries(
     )
 
     return queryset
+
+def get_entry_by_scope(
+    *,
+    entry_id,
+    organization: Organization = None,
+    workspace: Workspace = None,
+    workspace_team: WorkspaceTeam = None,
+) -> Entry:
+    """
+    Fetch entry by ID, scoped to the given organization/workspace/team.
+    Raises 404 if not found or not in scope.
+    """
+
+    queryset = Entry.objects.all()
+
+    if organization:
+        queryset = queryset.filter(workspace__organization=organization)
+
+    if workspace:
+        queryset = queryset.filter(workspace=workspace)
+
+    if workspace_team:
+        queryset = queryset.filter(workspace_team=workspace_team)
+
+    return get_object_or_404(queryset, pk=entry_id)
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

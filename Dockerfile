@@ -63,7 +63,8 @@ apt-get install -qyy \
     -o APT::Install-Recommends=false \
     -o APT::Install-Suggests=false \
     python3.13 \
-    libpython3.13
+    libpython3.13 \
+    ca-certificates
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT

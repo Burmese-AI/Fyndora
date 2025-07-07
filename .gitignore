@@ -14,6 +14,9 @@ wheels/
 .env.local
 .env.production
 
+#Logs
+logs/
+
 #node modules
 node_modules/
 
@@ -22,3 +25,6 @@ static/css/output.css
 
 #Media files (Attachments)
 media/
+
+#Credentials
+credentials/

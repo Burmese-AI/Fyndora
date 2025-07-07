@@ -23,9 +23,9 @@ env = environ.Env(
 )
 
 # Read .env file
-# env_path = BASE_DIR(".env")
+env_path = BASE_DIR(".env")
 # Read .env.local file
-env_path = BASE_DIR(".env.local")
+# env_path = BASE_DIR(".env.local")
 
 env.read_env(env_path, parse_comments=True, overwrite=True)
 
@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.invitations",
     "apps.teams",
     "apps.remittance",
+    "apps.emails",
     "guardian",
     "django_extensions",
 ]
@@ -106,6 +107,49 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# LOGGING
+# ------------------------------------------------------------------------------
+# https://docs.djangoproject.com/en/dev/ref/settings/#logging
+# See https://docs.djangoproject.com/en/dev/topics/logging for
+# more details on how to customize your logging configuration.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
+        },
+        "simple": {
+            "format": "%(levelname)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "email_log_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR("logs/emails.log"),
+            "maxBytes": 1024 * 1024 * 5,  # 5 MB
+            "backupCount": 2,
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "emails": {
+            "handlers": ["console", "email_log_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -174,18 +218,38 @@ STATICFILES_DIRS = [
     BASE_DIR("static"),
 ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+# Email settings
+# GMAIL_ACCOUNTS should be a JSON string in the format:
+# '[{"user": "user1@gmail.com", "oauth2_file": "/path/to/creds1.json"}, ...]
+GMAIL_ACCOUNTS = env.json("GMAIL_ACCOUNTS", default=[])
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/dev/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# CELERY
+# ------------------------------------------------------------------------------
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html
+CELERY_BROKER_URL = env("REDIS_URL")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
 
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+# allauth settings
+ACCOUNT_ADAPTER = "apps.emails.adapters.CustomAccountAdapter"
+ACCOUNT_LOGIN_METHODS = ('email',)
+ACCOUNT_SIGNUP_FIELDS = ('email*', 'username*', 'password1*', 'password2*')
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_SESSION_REMEMBER = True
 
-ACCOUNT_EMAIL_VERIFICATION = "none"  # can be 'none', 'optional', or 'mandatory'
+# Using dummy backend because we are using our own email service
+EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 
 # Base url to serve media files
 MEDIA_URL = "/media/"

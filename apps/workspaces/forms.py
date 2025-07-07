@@ -130,14 +130,25 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         label="Select Team",  # Temporary label, will be overwritten in __init__
         widget=forms.Select(
             attrs={
-                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base mt-4",
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
             }
         ),
     )
 
     class Meta:
         model = WorkspaceTeam
-        fields = ["team"]
+        fields = ["team", "custom_remittance_rate"]
+        widgets = {
+            "custom_remittance_rate": forms.NumberInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter remittance rate (0-100)",
+                    "min": "0",
+                    "max": "100",
+                    "step": "0.01",
+                }
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
@@ -158,3 +169,28 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         if team_exists:
             raise ValidationError("Team already exists in this workspace.")
         return team
+
+
+class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
+    class Meta:
+        model = WorkspaceTeam
+        fields = ["custom_remittance_rate"]
+        widgets = {
+            "custom_remittance_rate": forms.NumberInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter remittance rate (0-100) % (optional)",
+                    "min": "0",
+                    "max": "100",
+                    "step": "0.01",
+                }
+            ),
+        }
+
+    def clean_custom_remittance_rate(self):
+        custom_remittance_rate = self.cleaned_data.get("custom_remittance_rate")
+        if custom_remittance_rate is not None and (
+            custom_remittance_rate < 0 or custom_remittance_rate > 100
+        ):
+            raise forms.ValidationError("Remittance rate must be between 0 and 100.")
+        return custom_remittance_rate

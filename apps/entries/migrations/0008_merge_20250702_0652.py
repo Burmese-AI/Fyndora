@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('entries', '0006_alter_entry_options'),
-        ('entries', '0007_alter_entry_options'),
+        ("entries", "0006_alter_entry_options"),
+        ("entries", "0007_alter_entry_options"),
     ]
 
-    operations = [
-    ]
+    operations = []

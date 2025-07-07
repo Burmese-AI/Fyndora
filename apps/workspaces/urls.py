@@ -7,7 +7,7 @@ from apps.workspaces.views import (
     add_team_to_workspace_view,
     get_workspace_teams_view,
     remove_team_from_workspace_view,
-    test1_view,
+    change_workspace_team_remittance_rate_view,
 )
 
 urlpatterns = [
@@ -31,8 +31,8 @@ urlpatterns = [
         name="remove_team_from_workspace",
     ),
     path(
-        "<uuid:workspace_id>/teams/test1/",
-        test1_view,
-        name="test1",
+        "<uuid:workspace_id>/teams/<uuid:team_id>/remittance/<uuid:workspace_team_id>/",
+        change_workspace_team_remittance_rate_view,
+        name="change_workspace_team_remittance_rate",
     ),
 ]

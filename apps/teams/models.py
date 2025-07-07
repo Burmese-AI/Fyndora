@@ -2,8 +2,6 @@ from django.db import models
 from apps.core.models import baseModel
 from apps.organizations.models import OrganizationMember
 import uuid
-from decimal import Decimal
-from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.teams.constants import TeamMemberRole
 from apps.organizations.models import Organization
 
@@ -23,17 +21,6 @@ class Team(baseModel):
         null=True,
         blank=True,
         related_name="coordinated_teams",
-    )
-    custom_remittance_rate = models.DecimalField(
-        max_digits=5,  # 0.00 - 100.00
-        decimal_places=2,
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(Decimal("0.00")),
-            MaxValueValidator(Decimal("100.00")),
-        ],
-        help_text="Overrides workspace default if set (percentage value between 0 and 100)",
     )
     created_by = models.ForeignKey(
         OrganizationMember,

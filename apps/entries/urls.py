@@ -1,5 +1,5 @@
 from django.urls import path
-from .views.views import (
+from .views.expense_views import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
@@ -7,7 +7,8 @@ from .views.views import (
     WorkspaceExpenseCreateView,
     WorkspaceExpenseUpdateView,
 )
-from .views.base import EntryDetailView
+from .views.base_views import BaseEntryDetailView
+from .views.entry_views import WorkspaceTeamEntryListView
 
 urlpatterns = [
     path(
@@ -32,7 +33,7 @@ urlpatterns = [
     ),
     path(
         "entries/<uuid:pk>/detail",
-        EntryDetailView.as_view(),
+        BaseEntryDetailView.as_view(),
         name="entry_detail",
     ),
     path(
@@ -49,5 +50,10 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/",
         WorkspaceExpenseUpdateView.as_view(),
         name="workspace_expense_update",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
+        WorkspaceTeamEntryListView.as_view(),
+        name="workspace_team_entry_list",
     ),
 ]

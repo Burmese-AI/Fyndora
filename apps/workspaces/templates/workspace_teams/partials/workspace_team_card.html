@@ -1,0 +1,63 @@
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} class="card bg-base-100 shadow-lg hover:shadow-2xl rounded-xl transition-all duration-200 border border-base-200 relative" id="team-card-{{ workspace_team.team.team_id }}">
+    <div class="card-body p-6">
+      <div class="flex items-start justify-between mb-2">
+        <div>
+          <h2 class="card-title text-lg font-bold mb-1">{{ workspace_team.team.title }}</h2>
+        </div>
+
+        <div class="flex gap-2">
+          {% include "workspace_teams/components/edit_dropdown_workspace_team.html" %}
+      </div>
+      </div>
+      <p class="text-base-content/70 text-sm mb-3 line-clamp-2">
+        {{ workspace_team.team.description|default:"No description provided" }}
+      </p>
+      <div class="divider my-2"></div>
+      <div class="flex flex-col gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-base-content/60 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Created {{ team.created_at|date:"M d, Y" }}
+          </span>
+
+         
+        </div>
+        {% if workspace_team.team.team_coordinator %}
+        <div class="flex items-center gap-2">
+          <span class="text-base-content/60 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="font-medium">{{ workspace_team.team.team_coordinator.user.username }}</span>
+          </span>
+        </div>
+        {% else %}
+        <div class="flex items-center gap-2">
+          <span class="text-base-content/60 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="font-medium">No Coordinator</span>
+          </span>
+        </div>
+        {% endif %}
+        {% if workspace_team.custom_remittance_rate %}
+        <span class="text-base-content/60 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Remittance Rate: {{ workspace_team.custom_remittance_rate }} %
+        </span>
+        {% else %}
+        <span class="text-base-content/60 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Remittance Rate: Default ({{ workspace.remittance_rate }}%)
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>

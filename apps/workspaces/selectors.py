@@ -7,6 +7,13 @@ from apps.teams.models import Team
 from apps.workspaces.models import WorkspaceTeam
 
 
+def get_user_workspace_teams_under_organization(organization_id, user):
+    return WorkspaceTeam.objects.filter(
+        workspace__organization__pk=organization_id,
+        team__members__organization_member__user=user,
+    ).prefetch_related("workspace", "team")
+
+
 def get_user_workspaces_under_organization(organization_id):
     """
     Return workspaces where the user is a member of the organization.
@@ -106,3 +113,22 @@ def get_workspaces_with_team_counts(organization_id):
             workspace.workspace_id
         ).count()
     return workspaces
+
+
+def get_single_workspace_with_team_counts(workspace_id):
+    workspace = get_workspace_by_id(workspace_id)
+    workspace.teams_count = get_workspace_teams_by_workspace_id(
+        workspace.workspace_id
+    ).count()
+    return workspace
+
+
+def get_workspace_team_by_workspace_team_id(workspace_team_id):
+    """
+    Return a workspace team by its ID.
+    """
+    try:
+        return WorkspaceTeam.objects.get(workspace_team_id=workspace_team_id)
+    except Exception as e:
+        print(f"Error in get_workspace_team_by_id: {str(e)}")
+        return None

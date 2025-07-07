@@ -20,6 +20,20 @@
 <div>
     {% include "components/field_error.html" with field=form.team %}
 </div>
+<div>
+    <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-4">{{ form.custom_remittance_rate.label }}</label>
+    {{ form.custom_remittance_rate }}
+    <div class="text-sm text-gray-500 mt-2 mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-primary-200">
+        <span class="font-medium text-gray-700">Default Remittance Rate of {{ workspace.title }}:</span> 
+        {% if workspace.remittance_rate %}
+            {{ workspace.remittance_rate }}%
+        {% else %}
+            Not set
+        {% endif %}
+        <span class="text-gray-500">(applied if custom rate is not specified)</span>
+    </div>
+</div>
+
 
 <div class="flex justify-end space-x-3 mt-8">
     <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>

@@ -20,6 +20,17 @@ class WorkspaceForm(forms.ModelForm):
         ),
     )
 
+    operation_reviewer = forms.ModelChoiceField(
+        queryset=OrganizationMember.objects.none(),
+        required=False,
+        label="Select Operation Reviewer",
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base "
+            }
+        ),
+    )
+
     class Meta:
         model = Workspace
         fields = [
@@ -84,6 +95,13 @@ class WorkspaceForm(forms.ModelForm):
                 self.organization.organization_id
             )
 
+        if self.organization:
+            self.fields[
+                "operation_reviewer"
+            ].queryset = get_organization_members_by_organization_id(
+                self.organization.organization_id
+            )
+
     def clean_title(self):
         title = self.cleaned_data.get("title")
         if not title or not title.strip():
@@ -101,6 +119,7 @@ class WorkspaceForm(forms.ModelForm):
         title = cleaned_data.get("title")
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
+
 
         if title and self.organization:
             # Create a queryset excluding the current instance (if editing)

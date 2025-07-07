@@ -74,6 +74,12 @@
     {{ form.workspace_admin }}
     </div>
 
+    <div class="mb-8">
+    <label for="id_operation_reviewer" class="block text-lg font-medium text-gray-700 mb-2">Operation Reviewer</label>
+    {{ form.operation_reviewer.errors }}
+    {{ form.operation_reviewer }}
+    </div>
+
     <div class="flex justify-end space-x-3">
     <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
     <button type="submit" class="btn btn-primary w-full sm:w-auto">

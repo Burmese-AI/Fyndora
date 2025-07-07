@@ -13,6 +13,9 @@ from .mixins import (
     EntryRequiredMixin,
     OrganizationContextMixin,
     HtmxModalFormInvalidFormResponseMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    UpdateEntryFormMixin,
 )
 
 
@@ -54,11 +57,22 @@ class EntryModalFormViewBase(HtmxModalFormInvalidFormResponseMixin):
         return render(request, self.modal_template_name, context)
 
 
-class BaseEntryCreateView(EntryModalFormViewBase, CreateView):
+class BaseEntryCreateView(
+    EntryModalFormViewBase,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    CreateView,
+):
     modal_template_name = "entries/components/create_modal.html"
 
 
-class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
+class BaseEntryUpdateView(
+    EntryRequiredMixin,
+    EntryModalFormViewBase, 
+    UpdateEntryFormMixin,
+    HtmxOobResponseMixin,
+    UpdateView,
+):
     modal_template_name = "entries/components/update_modal.html"
 
     def form_valid(self, form):

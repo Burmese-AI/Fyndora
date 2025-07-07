@@ -2,10 +2,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import (
     WorkspaceTeamRequiredMixin,
     WorkspaceTeamContextMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
 )
 from .base_views import BaseEntryListView
 from ..constants import EntryType
@@ -43,8 +39,6 @@ class WorkspaceTeamEntryCreateView(
     LoginRequiredMixin,
     WorkspaceTeamRequiredMixin,
     WorkspaceTeamContextMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
     BaseEntryCreateView,
 ):
     #Override the form class of CreateEntryFormMixin
@@ -114,9 +108,6 @@ class WorkspaceTeamEntryCreateView(
 class WorkspaceTeamEntryUpdateView(
     LoginRequiredMixin,
     WorkspaceTeamRequiredMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
     WorkspaceTeamContextMixin,
     BaseEntryUpdateView,
 ):

@@ -10,13 +10,9 @@ from ..selectors import get_entries
 from ..services import get_org_expense_stats
 from .mixins import (
     OrganizationRequiredMixin,
-    HtmxOobResponseMixin,
     WorkspaceRequiredMixin,
     OrganizationContextMixin,
     WorkspaceContextMixin,
-    EntryRequiredMixin,
-    CreateEntryFormMixin,
-    UpdateEntryFormMixin,
 )
 from .base_views import (
     BaseEntryListView,
@@ -25,38 +21,11 @@ from .base_views import (
 )
 
 
-class ExpenseListViewBase(
+class OrganizationExpenseListView(
+    LoginRequiredMixin,
     OrganizationRequiredMixin,
     OrganizationContextMixin,
     BaseEntryListView,
-):
-    pass
-
-
-class ExpenseCreateViewBase(
-    OrganizationRequiredMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryCreateView,
-):
-    pass
-
-
-class ExpenseUpdateViewBase(
-    OrganizationRequiredMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryUpdateView,
-):
-    pass
-
-
-class OrganizationExpenseListView(
-    LoginRequiredMixin,
-    ExpenseListViewBase,
 ):
     template_name = "entries/index.html"
 
@@ -72,7 +41,12 @@ class OrganizationExpenseListView(
         return context
 
 
-class OrganizationExpenseCreateView(LoginRequiredMixin, ExpenseCreateViewBase):
+class OrganizationExpenseCreateView(
+    LoginRequiredMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryCreateView,
+):
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization, entry_types=[EntryType.ORG_EXP]
@@ -132,7 +106,12 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, ExpenseCreateViewBase):
         return response
 
 
-class OrganizationExpenseUpdateView(LoginRequiredMixin, ExpenseUpdateViewBase):
+class OrganizationExpenseUpdateView(
+    LoginRequiredMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryUpdateView,
+):
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization, entry_types=[EntryType.ORG_EXP]
@@ -177,9 +156,9 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, ExpenseUpdateViewBase):
 
 class WorkspaceExpenseListView(
     LoginRequiredMixin,
-    ExpenseListViewBase,
     WorkspaceRequiredMixin,
     WorkspaceContextMixin,
+    BaseEntryListView
 ):
     template_name = "entries/workspace_expense_index.html"
 
@@ -196,9 +175,9 @@ class WorkspaceExpenseListView(
 
 class WorkspaceExpenseCreateView(
     LoginRequiredMixin,
-    ExpenseCreateViewBase,
     WorkspaceRequiredMixin,
     WorkspaceContextMixin,
+    BaseEntryCreateView,
 ):
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -258,9 +237,9 @@ class WorkspaceExpenseCreateView(
 
 class WorkspaceExpenseUpdateView(
     LoginRequiredMixin,
-    ExpenseUpdateViewBase,
     WorkspaceRequiredMixin,
     WorkspaceContextMixin,
+    BaseEntryUpdateView
 ):
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(

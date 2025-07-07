@@ -41,6 +41,7 @@ class WorkspaceForm(forms.ModelForm):
             "start_date",
             "end_date",
             "workspace_admin",
+            "operation_reviewer",
         ]
         widgets = {
             "title": forms.TextInput(
@@ -72,13 +73,13 @@ class WorkspaceForm(forms.ModelForm):
             ),
             "start_date": forms.DateInput(
                 attrs={
-                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base pr-12",
                     "type": "date",
                 }
             ),
             "end_date": forms.DateInput(
                 attrs={
-                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base pr-12",
                     "type": "date",
                 }
             ),

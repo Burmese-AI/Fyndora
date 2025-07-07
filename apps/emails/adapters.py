@@ -15,7 +15,6 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         # Email subject *must not* contain newlines
         subject = "".join(subject.splitlines())
 
-        # Render text and HTML versions
         text_body = render_to_string(f'{template_prefix}_message.txt', context)
 
         try:
@@ -23,5 +22,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         except TemplateDoesNotExist:
             html_body = None
 
-        # Our email service will send the HTML version if it exists,
-        send_email_task.delay(to=email, subject=subject, contents=[text_body, html_body])
+        # yagmail will auto-generate a plain-text version from the HTML.
+        contents = html_body or text_body
+
+        send_email_task.delay(to=email, subject=subject, contents=contents)

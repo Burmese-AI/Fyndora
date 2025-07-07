@@ -92,6 +92,7 @@ class Entry(baseModel):
             and isinstance(self.submitter, TeamMember)
             and not self.workspace_team
         ):
+            print("Model Level Validation Error")
             raise ValidationError("Workspace team is required for team-based entries")
 
         # Validate that submitter belongs to the team linked to the workspace_team

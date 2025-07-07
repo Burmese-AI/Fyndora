@@ -7,7 +7,15 @@ register = template.Library()
 @register.simple_tag
 def entry_update_url(entry, organization, workspace=None, workspace_team=None):
     if workspace_team:
-        return
+        return reverse(
+            "workspace_team_entry_update",
+            kwargs={
+                "organization_id": organization.pk,
+                "workspace_id": workspace.pk,
+                "workspace_team_id": workspace_team.pk,
+                "pk": entry.pk,
+            }
+        )
     if workspace:
         return reverse(
             "workspace_expense_update",

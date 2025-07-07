@@ -63,6 +63,9 @@
       </span>
     {% endif %}
   </td>
+  <td class="text-center capitalize">
+    {{ entry.reviewed_by.user.username|default:"-" }}
+  </td>
   <td class="text-right">
     ${{ entry.amount|intcomma }}
   </td>

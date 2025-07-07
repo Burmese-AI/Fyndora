@@ -11,15 +11,15 @@ from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
 from .mixins import (
     EntryRequiredMixin,
-    OrganizationContextMixin,
     HtmxModalFormInvalidFormResponseMixin,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
     UpdateEntryFormMixin,
+    EntryUrlIdentifierMixin,
 )
 
 
-class BaseEntryListView(ListView):
+class BaseEntryListView(EntryUrlIdentifierMixin, ListView):
     model = Entry
     paginate_by = PAGINATION_SIZE
     context_object_name = CONTEXT_OBJECT_NAME
@@ -61,6 +61,7 @@ class BaseEntryCreateView(
     EntryModalFormViewBase,
     CreateEntryFormMixin,
     HtmxOobResponseMixin,
+    EntryUrlIdentifierMixin,
     CreateView,
 ):
     modal_template_name = "entries/components/create_modal.html"
@@ -71,6 +72,7 @@ class BaseEntryUpdateView(
     EntryModalFormViewBase, 
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,
+    EntryUrlIdentifierMixin,
     UpdateView,
 ):
     modal_template_name = "entries/components/update_modal.html"
@@ -110,11 +112,15 @@ class BaseEntryUpdateView(
         response["HX-trigger"] = "success"
         return response
 
-class BaseEntryDeleteView(EntryModalFormViewBase, DeleteView):
-    modal_template_name = "entries/components/delete_modal.html"
+
+class BaseEntryDeleteView(
+    EntryRequiredMixin,
+    HtmxOobResponseMixin,
+    DeleteView,
+):
     
-    def get_modal_title(self) -> str:
-        return "Entry"
+    def get_queryset(self):
+        raise NotImplementedError("You must implement get_queryset() in the subclass")
 
     def form_valid(self, form):
         from ..services import delete_entry
@@ -124,18 +130,29 @@ class BaseEntryDeleteView(EntryModalFormViewBase, DeleteView):
     
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
+        from apps.core.utils import get_paginated_context
+        
+        entries = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=entries,
+            context=base_context,
+            object_name=CONTEXT_OBJECT_NAME,
+        )
+        
+        table_html = render_to_string(
+            "entries/partials/table.html", context=table_context, request=self.request
+        )
+        
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        response = HttpResponse(f"{message_html}")
-        response["HX-trigger"] = "success"
+        response = HttpResponse(f"{message_html}{table_html}")
         return response
     
 
 class BaseEntryDetailView(
     LoginRequiredMixin,
     EntryRequiredMixin,
-    OrganizationContextMixin,
     DetailView,
 ):
     model = Entry

@@ -6,12 +6,15 @@ from .views.expense_views import (
     WorkspaceExpenseListView,
     WorkspaceExpenseCreateView,
     WorkspaceExpenseUpdateView,
+    OrganizationExpenseDeleteView,
+    WorkspaceExpenseDeleteView,
 )
 from .views.base_views import BaseEntryDetailView
 from .views.entry_views import (
     WorkspaceTeamEntryListView,
     WorkspaceTeamEntryCreateView,
     WorkspaceTeamEntryUpdateView,
+    WorkspaceTeamEntryDeleteView,
 )
 
 urlpatterns = [
@@ -36,9 +39,9 @@ urlpatterns = [
         name="organization_expense_update",
     ),
     path(
-        "entries/<uuid:pk>/detail",
-        BaseEntryDetailView.as_view(),
-        name="entry_detail",
+        "expenses/<uuid:pk>/delete",
+        OrganizationExpenseDeleteView.as_view(),
+        name="organization_expense_delete",
     ),
     path(
         "workspaces/<uuid:workspace_id>/expenses",
@@ -56,6 +59,11 @@ urlpatterns = [
         name="workspace_expense_update",
     ),
     path(
+        "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/delete",
+        WorkspaceExpenseDeleteView.as_view(),
+        name="workspace_expense_delete",
+    ),
+    path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
         WorkspaceTeamEntryListView.as_view(),
         name="workspace_team_entry_list",
@@ -66,8 +74,18 @@ urlpatterns = [
         name="workspace_team_entry_create"
     ),
     path(
-        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/<uuid:pk>/update",
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/<uuid:pk>",
         WorkspaceTeamEntryUpdateView.as_view(),
         name="workspace_team_entry_update"
-    )
+    ),
+    path(
+        "entries/<uuid:pk>/detail",
+        BaseEntryDetailView.as_view(),
+        name="entry_detail",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/<uuid:pk>/delete",
+        WorkspaceTeamEntryDeleteView.as_view(),
+        name="workspace_team_entry_delete"
+    ),
 ]

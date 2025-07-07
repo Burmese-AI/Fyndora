@@ -8,7 +8,7 @@ from ..constants import EntryType
 from ..selectors import get_entries
 from django.db.models import QuerySet
 from typing import Any
-from .base_views import BaseEntryCreateView, BaseEntryUpdateView
+from .base_views import BaseEntryCreateView, BaseEntryUpdateView, BaseEntryDeleteView
 from django.urls import reverse
 from ..forms import CreateWorkspaceTeamEntryForm
 from django.contrib import messages
@@ -23,6 +23,20 @@ class WorkspaceTeamEntryListView(
     BaseEntryListView,
 ):
     template_name = "entries/team_level_entry.html"
+    
+    def get_entry_type(self):
+        return EntryType.INCOME
+    
+    def get_delete_url(self) -> str:
+        return reverse(
+            "workspace_team_entry_delete",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "workspace_team_id": self.workspace_team.pk,
+                "pk": self.entry.pk,
+            }
+        )
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -43,6 +57,9 @@ class WorkspaceTeamEntryCreateView(
 ):
     #Override the form class of CreateEntryFormMixin
     form_class = CreateWorkspaceTeamEntryForm
+    
+    def get_entry_type(self):
+        return EntryType.INCOME
     
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -111,6 +128,9 @@ class WorkspaceTeamEntryUpdateView(
     WorkspaceTeamContextMixin,
     BaseEntryUpdateView,
 ):
+    def get_entry_type(self):
+        return EntryType.INCOME
+    
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -134,4 +154,21 @@ class WorkspaceTeamEntryUpdateView(
                 "workspace_team_id": self.workspace_team.pk,
                 "pk": self.entry.pk,
             }
+        )
+        
+class WorkspaceTeamEntryDeleteView(
+    LoginRequiredMixin,
+    WorkspaceTeamRequiredMixin,
+    WorkspaceTeamContextMixin,
+    BaseEntryDeleteView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
         )

@@ -157,3 +157,12 @@ class WorkspaceTeamContextMixin(WorkspaceContextMixin):
             self.workspace_team_member if hasattr(self, "workspace_team_member") else None
         )
         return context
+
+class EntryUrlIdentifierMixin:
+    def get_entry_type(self):
+        raise NotImplementedError("You must implement get_entry_type() in the subclass")
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["entry_type"] = self.get_entry_type()
+        return context

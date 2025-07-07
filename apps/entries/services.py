@@ -169,6 +169,13 @@ def delete_entry(entry):
     """
     Service to delete an entry.
     """
+    
+    if entry.reviewed_by:
+        raise ValidationError("Cannot delete an entry that has been reviewed")
+    
+    if entry.status != EntryStatus.PENDING_REVIEW:
+        raise ValidationError("Cannot delete an entry that is not pending review")
+
     entry.delete()
     return entry
 

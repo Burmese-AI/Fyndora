@@ -4,8 +4,11 @@ from ..constants import EntryType
 
 register = template.Library()
 
+
 @register.simple_tag
-def entry_delete_url(entry_type, entry, organization, workspace=None, workspace_team=None):
+def entry_delete_url(
+    entry_type, entry, organization, workspace=None, workspace_team=None
+):
     if entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
         if workspace_team:
             return reverse(
@@ -15,7 +18,7 @@ def entry_delete_url(entry_type, entry, organization, workspace=None, workspace_
                     "workspace_id": workspace.pk,
                     "workspace_team_id": workspace_team.pk,
                     "pk": entry.pk,
-                }
+                },
             )
     elif entry_type == EntryType.ORG_EXP:
         return reverse(
@@ -29,12 +32,15 @@ def entry_delete_url(entry_type, entry, organization, workspace=None, workspace_
                 "organization_id": organization.pk,
                 "workspace_id": workspace.pk,
                 "pk": entry.pk,
-            }
+            },
         )
     return ""
 
+
 @register.simple_tag
-def entry_update_url(entry_type, entry, organization, workspace=None, workspace_team=None):
+def entry_update_url(
+    entry_type, entry, organization, workspace=None, workspace_team=None
+):
     if entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
         return reverse(
             "workspace_team_entry_update",
@@ -43,15 +49,12 @@ def entry_update_url(entry_type, entry, organization, workspace=None, workspace_
                 "workspace_id": workspace.pk,
                 "workspace_team_id": workspace_team.pk,
                 "pk": entry.pk,
-            }
+            },
         )
     elif entry_type == EntryType.ORG_EXP:
         return reverse(
             "organization_expense_update",
-            kwargs={
-                "organization_id": organization.pk, 
-                "pk": entry.pk
-            },
+            kwargs={"organization_id": organization.pk, "pk": entry.pk},
         )
     elif entry_type == EntryType.WORKSPACE_EXP:
         return reverse(
@@ -60,6 +63,6 @@ def entry_update_url(entry_type, entry, organization, workspace=None, workspace_
                 "organization_id": organization.pk,
                 "workspace_id": workspace.pk,
                 "pk": entry.pk,
-            }
+            },
         )
     return ""

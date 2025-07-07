@@ -25,8 +25,6 @@ def get_entries(
     sort_by: str = None,
     annotate_attachment_count: bool = False,
 ) -> QuerySet:
-    
-    
     """
     Get entries for a specific organization, workspace, or workspace team.
 
@@ -40,13 +38,13 @@ def get_entries(
 
     Returns:
         QuerySet: QuerySet of Entry objects
-        
+
     Notes:
         For expense entries, the organization or workspace is required.
         For team level entries, the workspace_team is required.
         At least one entry type must be provided.
     """
-    
+
     if not entry_types:
         raise ValueError("At least one entry type must be provided.")
 
@@ -64,9 +62,13 @@ def get_entries(
         expense_entry_filters = Q(entry_type__in=expense_entry_types)
         # Filter entries based on organization members since org/workspace expense entries are associated with only organization members
         if organization:
-            expense_entry_filters &= Q(organization_member_entries__organization=organization)
+            expense_entry_filters &= Q(
+                organization_member_entries__organization=organization
+            )
         elif workspace:
-            expense_entry_filters &= Q(organization_member_entries__organization=workspace.organization)
+            expense_entry_filters &= Q(
+                organization_member_entries__organization=workspace.organization
+            )
 
         # Add expense entry filters to the main filters
         filters |= expense_entry_filters
@@ -84,7 +86,7 @@ def get_entries(
     # Final Query
     if not filters:
         return Entry.objects.none()
-    
+
     # Apply distinct to remove duplicate entries
     queryset = Entry.objects.filter(filters).distinct()
 
@@ -109,11 +111,15 @@ def get_entries(
     ).prefetch_related(
         GenericPrefetch(
             "submitter",
-            [OrganizationMember.objects.select_related("user"), TeamMember.objects.select_related("organization_member__user")],
+            [
+                OrganizationMember.objects.select_related("user"),
+                TeamMember.objects.select_related("organization_member__user"),
+            ],
         )
     )
 
     return queryset
+
 
 def get_entry_by_scope(
     *,
@@ -139,6 +145,7 @@ def get_entry_by_scope(
         queryset = queryset.filter(workspace_team=workspace_team)
 
     return get_object_or_404(queryset, pk=entry_id)
+
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

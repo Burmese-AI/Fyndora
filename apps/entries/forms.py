@@ -5,6 +5,7 @@ from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
 
+
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
         label="Attachments",
@@ -86,37 +87,53 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
                     "class": "select select-bordered w-full",
                     "placeholder": "Select entry type",
                 }
-            )
+            ),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["entry_type"].choices = self.get_allowed_entry_types()
-        
+
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # If the workspace team role is not submitter or team coordinator, raise validation error
         is_submitter = self.workspace_team_role == TeamMemberRole.SUBMITTER
-        is_team_coordinator = self.org_member == self.workspace_team.team.team_coordinator
+        is_team_coordinator = (
+            self.org_member == self.workspace_team.team.team_coordinator
+        )
         print(f"is_submitter: {is_submitter}")
         print(f"is_team_coordinator: {is_team_coordinator}")
         if not is_submitter and not is_team_coordinator:
-            raise forms.ValidationError("You are not authorized to create entries for this workspace team")
-        
-        #If the submitter tries to submit a remittance entry, raise validation error
-        if self.workspace_team_role == TeamMemberRole.SUBMITTER and cleaned_data.get("entry_type") == EntryType.REMITTANCE:
-            raise forms.ValidationError("You are not authorized to create remittance entries for this workspace team")
-        
+            raise forms.ValidationError(
+                "You are not authorized to create entries for this workspace team"
+            )
+
+        # If the submitter tries to submit a remittance entry, raise validation error
+        if (
+            self.workspace_team_role == TeamMemberRole.SUBMITTER
+            and cleaned_data.get("entry_type") == EntryType.REMITTANCE
+        ):
+            raise forms.ValidationError(
+                "You are not authorized to create remittance entries for this workspace team"
+            )
+
         return cleaned_data
-    
+
     def get_allowed_entry_types(self):
         # If submitter, return Income, disbursement
         if self.workspace_team_role == TeamMemberRole.SUBMITTER:
-            return [(EntryType.INCOME, "Income"), (EntryType.DISBURSEMENT, "Disbursement")]
+            return [
+                (EntryType.INCOME, "Income"),
+                (EntryType.DISBURSEMENT, "Disbursement"),
+            ]
         # If team coordinator, return Income, disbursement, remittance
         elif self.org_member == self.workspace_team.team.team_coordinator:
-            return [(EntryType.INCOME, "Income"), (EntryType.DISBURSEMENT, "Disbursement"), (EntryType.REMITTANCE, "Remittance")]
+            return [
+                (EntryType.INCOME, "Income"),
+                (EntryType.DISBURSEMENT, "Disbursement"),
+                (EntryType.REMITTANCE, "Remittance"),
+            ]
         else:
             return []
 
@@ -186,5 +203,3 @@ class UpdateEntryForm(BaseEntryForm):
         return [
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
-
-        

@@ -69,7 +69,7 @@ class BaseEntryCreateView(
 
 class BaseEntryUpdateView(
     EntryRequiredMixin,
-    EntryModalFormViewBase, 
+    EntryModalFormViewBase,
     UpdateEntryFormMixin,
     HtmxOobResponseMixin,
     EntryUrlIdentifierMixin,
@@ -118,37 +118,37 @@ class BaseEntryDeleteView(
     HtmxOobResponseMixin,
     DeleteView,
 ):
-    
     def get_queryset(self):
         raise NotImplementedError("You must implement get_queryset() in the subclass")
 
     def form_valid(self, form):
         from ..services import delete_entry
+
         delete_entry(self.entry)
         messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
         from apps.core.utils import get_paginated_context
-        
+
         entries = self.get_queryset()
         table_context = get_paginated_context(
             queryset=entries,
             context=base_context,
             object_name=CONTEXT_OBJECT_NAME,
         )
-        
+
         table_html = render_to_string(
             "entries/partials/table.html", context=table_context, request=self.request
         )
-        
+
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
         response = HttpResponse(f"{message_html}{table_html}")
         return response
-    
+
 
 class BaseEntryDetailView(
     LoginRequiredMixin,

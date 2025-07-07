@@ -2,7 +2,6 @@ import uuid
 from decimal import Decimal
 
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey

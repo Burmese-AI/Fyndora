@@ -335,7 +335,7 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
             "workspace": workspace,
             "organization": organization,
             "view": "teams",
-            "hide_management_access": False
+            "hide_management_access": False,
         }
         return render(request, "workspace_teams/index.html", context)
     except Exception as e:

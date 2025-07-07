@@ -9,13 +9,13 @@ from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.selectors import get_user_org_membership
 from apps.organizations.models import Organization
 
-from ..models import Entry
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
 from apps.workspaces.selectors import (
     get_workspace_team_role_by_workspace_team_and_org_member,
     get_workspace_team_member_by_workspace_team_and_org_member,
 )
 from ..selectors import get_entry_by_scope
+
 
 class OrganizationRequiredMixin:
     organization = None
@@ -47,8 +47,17 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
-        self.workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(self.workspace_team, self.org_member)
-        self.workspace_team_role = get_workspace_team_role_by_workspace_team_and_org_member(self.workspace_team, self.org_member)
+        self.workspace_team_member = (
+            get_workspace_team_member_by_workspace_team_and_org_member(
+                self.workspace_team, self.org_member
+            )
+        )
+        self.workspace_team_role = (
+            get_workspace_team_role_by_workspace_team_and_org_member(
+                self.workspace_team, self.org_member
+            )
+        )
+
 
 class EntryRequiredMixin:
     entry = None
@@ -80,7 +89,9 @@ class EntryFormMixin:
             self.workspace_team_role if hasattr(self, "workspace_team_role") else None
         )
         kwargs["workspace_team_member"] = (
-            self.workspace_team_member if hasattr(self, "workspace_team_member") else None
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
         )
         return kwargs
 
@@ -159,14 +170,17 @@ class WorkspaceTeamContextMixin(WorkspaceContextMixin):
             self.workspace_team if hasattr(self, "workspace_team") else None
         )
         context["workspace_team_member"] = (
-            self.workspace_team_member if hasattr(self, "workspace_team_member") else None
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
         )
         return context
+
 
 class EntryUrlIdentifierMixin:
     def get_entry_type(self):
         raise NotImplementedError("You must implement get_entry_type() in the subclass")
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["entry_type"] = self.get_entry_type()

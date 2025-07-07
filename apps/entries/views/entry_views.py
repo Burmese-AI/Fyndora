@@ -16,6 +16,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from ..constants import CONTEXT_OBJECT_NAME
 
+
 class WorkspaceTeamEntryListView(
     LoginRequiredMixin,
     WorkspaceTeamRequiredMixin,
@@ -23,10 +24,10 @@ class WorkspaceTeamEntryListView(
     BaseEntryListView,
 ):
     template_name = "entries/team_level_entry.html"
-    
+
     def get_entry_type(self):
         return EntryType.INCOME
-    
+
     def get_delete_url(self) -> str:
         return reverse(
             "workspace_team_entry_delete",
@@ -35,7 +36,7 @@ class WorkspaceTeamEntryListView(
                 "workspace_id": self.workspace.pk,
                 "workspace_team_id": self.workspace_team.pk,
                 "pk": self.entry.pk,
-            }
+            },
         )
 
     def get_queryset(self) -> QuerySet[Any]:
@@ -48,6 +49,7 @@ class WorkspaceTeamEntryListView(
                 EntryType.REMITTANCE,
             ],
         )
+
 
 class WorkspaceTeamEntryCreateView(
     LoginRequiredMixin,
@@ -55,12 +57,12 @@ class WorkspaceTeamEntryCreateView(
     WorkspaceTeamContextMixin,
     BaseEntryCreateView,
 ):
-    #Override the form class of CreateEntryFormMixin
+    # Override the form class of CreateEntryFormMixin
     form_class = CreateWorkspaceTeamEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.INCOME
-    
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization,
@@ -71,10 +73,10 @@ class WorkspaceTeamEntryCreateView(
                 EntryType.REMITTANCE,
             ],
         )
-    
+
     def get_modal_title(self) -> str:
         return ""
-    
+
     def get_post_url(self) -> str:
         return reverse(
             "workspace_team_entry_create",
@@ -84,9 +86,9 @@ class WorkspaceTeamEntryCreateView(
                 "workspace_team_id": self.workspace_team.pk,
             },
         )
-        
+
     def form_valid(self, form):
-        from ..services import create_entry_with_attachments        
+        from ..services import create_entry_with_attachments
 
         create_entry_with_attachments(
             submitter=self.workspace_team_member,
@@ -95,32 +97,33 @@ class WorkspaceTeamEntryCreateView(
             attachments=form.cleaned_data["attachment_files"],
             entry_type=form.cleaned_data["entry_type"],
         )
-        
+
         messages.success(self.request, "Entry created successfully")
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
-        
+
         from apps.core.utils import get_paginated_context
-        
+
         workspace_team_entries = self.get_queryset()
         table_context = get_paginated_context(
             queryset=workspace_team_entries,
             context=base_context,
             object_name=CONTEXT_OBJECT_NAME,
         )
-        
+
         table_html = render_to_string(
             "entries/partials/table.html", context=table_context, request=self.request
         )
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-        
+
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+
 
 class WorkspaceTeamEntryUpdateView(
     LoginRequiredMixin,
@@ -130,7 +133,7 @@ class WorkspaceTeamEntryUpdateView(
 ):
     def get_entry_type(self):
         return EntryType.INCOME
-    
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -141,10 +144,10 @@ class WorkspaceTeamEntryUpdateView(
                 EntryType.REMITTANCE,
             ],
         )
-    
+
     def get_modal_title(self) -> str:
         return "Workspace Team Entry"
-    
+
     def get_post_url(self) -> str:
         return reverse(
             "workspace_team_entry_update",
@@ -153,9 +156,10 @@ class WorkspaceTeamEntryUpdateView(
                 "workspace_id": self.workspace.pk,
                 "workspace_team_id": self.workspace_team.pk,
                 "pk": self.entry.pk,
-            }
+            },
         )
-        
+
+
 class WorkspaceTeamEntryDeleteView(
     LoginRequiredMixin,
     WorkspaceTeamRequiredMixin,

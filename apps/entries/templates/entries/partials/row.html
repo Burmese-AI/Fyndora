@@ -1,5 +1,5 @@
 {% load humanize %}
-{% load entry_update_url %}
+{% load entry_url_identifier %}
 
 <tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.pk }}">
   <td>
@@ -63,6 +63,9 @@
       </span>
     {% endif %}
   </td>
+  <td class="text-center capitalize">
+    {{ entry.reviewed_by.user.username|default:"-" }}
+  </td>
   <td class="text-right">
     ${{ entry.amount|intcomma }}
   </td>
@@ -85,7 +88,7 @@
 
       <!-- Edit -->
       <a
-        hx-get="{% entry_update_url entry organization workspace %}"
+        hx-get="{% entry_update_url entry_type entry organization workspace workspace_team %}"
         hx-target="#modal-placeholder"
         hx-swap="innerHTML"
         title="Edit"
@@ -97,13 +100,15 @@
       </a>
 
       <!-- Delete -->
+       {% comment %} HTMX requires csrf {% endcomment %}
       <button
         type="button"
         class="btn btn-xs btn-ghost"
         title="Delete"
+        hx-post="{% entry_delete_url entry_type entry organization workspace workspace_team %}"
         hx-confirm="Are you sure you want to delete this entry?"
-        hx-target="#row-{{ entry.pk }}"
-        hx-swap="outerHTML"
+        hx-swap="none"
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />

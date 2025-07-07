@@ -5,18 +5,21 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.template.loader import render_to_string
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView
+from django.views.generic import DetailView, DeleteView
 from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
 from .mixins import (
     EntryRequiredMixin,
-    OrganizationContextMixin,
     HtmxModalFormInvalidFormResponseMixin,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    UpdateEntryFormMixin,
+    EntryUrlIdentifierMixin,
 )
 
 
-class BaseEntryListView(ListView):
+class BaseEntryListView(EntryUrlIdentifierMixin, ListView):
     model = Entry
     paginate_by = PAGINATION_SIZE
     context_object_name = CONTEXT_OBJECT_NAME
@@ -54,11 +57,24 @@ class EntryModalFormViewBase(HtmxModalFormInvalidFormResponseMixin):
         return render(request, self.modal_template_name, context)
 
 
-class BaseEntryCreateView(EntryModalFormViewBase, CreateView):
+class BaseEntryCreateView(
+    EntryModalFormViewBase,
+    CreateEntryFormMixin,
+    HtmxOobResponseMixin,
+    EntryUrlIdentifierMixin,
+    CreateView,
+):
     modal_template_name = "entries/components/create_modal.html"
 
 
-class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
+class BaseEntryUpdateView(
+    EntryRequiredMixin,
+    EntryModalFormViewBase,
+    UpdateEntryFormMixin,
+    HtmxOobResponseMixin,
+    EntryUrlIdentifierMixin,
+    UpdateView,
+):
     modal_template_name = "entries/components/update_modal.html"
 
     def form_valid(self, form):
@@ -70,6 +86,7 @@ class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
             amount=form.cleaned_data["amount"],
             description=form.cleaned_data["description"],
             status=form.cleaned_data["status"],
+            reviewed_by=self.org_member,
             review_notes=form.cleaned_data["review_notes"],
             attachments=form.cleaned_data["attachment_files"],
             replace_attachments=form.cleaned_data["replace_attachments"],
@@ -96,10 +113,46 @@ class BaseEntryUpdateView(EntryModalFormViewBase, UpdateView):
         return response
 
 
+class BaseEntryDeleteView(
+    EntryRequiredMixin,
+    HtmxOobResponseMixin,
+    DeleteView,
+):
+    def get_queryset(self):
+        raise NotImplementedError("You must implement get_queryset() in the subclass")
+
+    def form_valid(self, form):
+        from ..services import delete_entry
+
+        delete_entry(self.entry)
+        messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+        from apps.core.utils import get_paginated_context
+
+        entries = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=entries,
+            context=base_context,
+            object_name=CONTEXT_OBJECT_NAME,
+        )
+
+        table_html = render_to_string(
+            "entries/partials/table.html", context=table_context, request=self.request
+        )
+
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+        response = HttpResponse(f"{message_html}{table_html}")
+        return response
+
+
 class BaseEntryDetailView(
     LoginRequiredMixin,
     EntryRequiredMixin,
-    OrganizationContextMixin,
     DetailView,
 ):
     model = Entry

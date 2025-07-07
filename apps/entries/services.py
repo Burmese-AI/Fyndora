@@ -109,6 +109,7 @@ def update_entry_with_attachments(
     amount,
     description,
     status,
+    reviewed_by,
     review_notes,
     attachments,
     replace_attachments: bool,
@@ -124,6 +125,7 @@ def update_entry_with_attachments(
             amount=amount,
             description=description,
             status=status,
+            reviewed_by=reviewed_by,
             review_notes=review_notes,
         )
 
@@ -150,6 +152,7 @@ def update_entry(
     description,
     status,
     review_notes,
+    reviewed_by,
 ):
     """
     Service to update an existing entry.
@@ -159,7 +162,25 @@ def update_entry(
     entry.description = description
     entry.status = status
     entry.review_notes = review_notes
-    entry.save(update_fields=["amount", "description", "status", "review_notes"])
+    entry.reviewed_by = reviewed_by
+    entry.save(
+        update_fields=["amount", "description", "status", "review_notes", "reviewed_by"]
+    )
+
+
+def delete_entry(entry):
+    """
+    Service to delete an entry.
+    """
+
+    if entry.reviewed_by:
+        raise ValidationError("Cannot delete an entry that has been reviewed")
+
+    if entry.status != EntryStatus.PENDING_REVIEW:
+        raise ValidationError("Cannot delete an entry that is not pending review")
+
+    entry.delete()
+    return entry
 
 
 def entry_create(

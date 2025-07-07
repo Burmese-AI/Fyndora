@@ -2,7 +2,6 @@ import uuid
 from decimal import Decimal
 
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -81,28 +80,6 @@ class Entry(baseModel):
 
     def clean(self):
         super().clean()
-        # Require workspace for workspace-specific entry types
-        if self.entry_type == EntryType.WORKSPACE_EXP and not self.workspace:
-            raise ValidationError("Workspace is required for workspace expense entries")
-
-        # Require workspace_team for team-based entries in workspaces
-        if (
-            self.entry_type
-            in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]
-            and isinstance(self.submitter, TeamMember)
-            and not self.workspace_team
-        ):
-            raise ValidationError("Workspace team is required for team-based entries")
-
-        # Validate that submitter belongs to the team linked to the workspace_team
-        if (
-            isinstance(self.submitter, TeamMember)
-            and self.workspace_team
-            and self.submitter.team != self.workspace_team.team
-        ):
-            raise ValidationError(
-                "Submitter must belong to the team linked to this Workspace Team"
-            )
 
     class Meta:
         verbose_name = "entry"

@@ -4,6 +4,7 @@ from apps.organizations.models import OrganizationMember
 import uuid
 from apps.teams.constants import TeamMemberRole
 from apps.organizations.models import Organization
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Team(baseModel):
@@ -55,6 +56,12 @@ class TeamMember(baseModel):
     team = models.ForeignKey("Team", on_delete=models.CASCADE, related_name="members")
     role = models.CharField(
         max_length=32, choices=TeamMemberRole.choices, default=TeamMemberRole.SUBMITTER
+    )
+    entries = GenericRelation(
+        "entries.Entry",
+        content_type_field="submitter_content_type",
+        object_id_field="submitter_object_id",
+        related_query_name="team_member_entries",
     )
 
     class Meta:

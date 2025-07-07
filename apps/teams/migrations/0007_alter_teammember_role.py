@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0006_remove_team_custom_remittance_rate'),
+        ("teams", "0006_remove_team_custom_remittance_rate"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='teammember',
-            name='role',
-            field=models.CharField(choices=[('submitter', 'Submitter'), ('auditor', 'Auditor')], default='submitter', max_length=32),
+            model_name="teammember",
+            name="role",
+            field=models.CharField(
+                choices=[("submitter", "Submitter"), ("auditor", "Auditor")],
+                default="submitter",
+                max_length=32,
+            ),
         ),
     ]

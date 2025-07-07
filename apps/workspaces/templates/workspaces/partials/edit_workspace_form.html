@@ -5,13 +5,13 @@
 <form
     {% if is_oob %}hx-swap-oob="true"{% endif %}
     id="modal_content_template"
-    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
+    class="modal-box w-5xl bg-white shadow-xl rounded-lg" 
     hx-post="{% url 'edit_workspace' organization_id=request.resolver_match.kwargs.organization_id workspace_id=request.resolver_match.kwargs.workspace_id %}"
     hx-swap="none">
 {% csrf_token %}
 <!-- <input type="hidden" name="organization_id" value="{{ request.resolver_match.kwargs.organization_id }}"> -->
-<div class="p-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-8">Edit Workspace in {{ organization.title }}</h2>
+<div class="p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Workspace in {{ organization.title }}</h2>
 
     <div id="form-errors" class="mb-4">
     {% if form.non_field_errors %}
@@ -32,62 +32,71 @@
     {% endif %}
     </div>
 
+    <!-- Basic Information Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+            <label for="id_title" class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+            {{ form.title.errors }}
+            {{ form.title }}
+        </div>
+        
+        <div>
+            <label for="id_status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            {{ form.status.errors }}
+            {{ form.status }}
+        </div>
+    </div>
+
+    <!-- Description Section -->
     <div class="mb-6">
-    <label for="id_title" class="block text-lg font-medium text-gray-700 mb-2">Title</label>
-    {{ form.title.errors }}
-    {{ form.title }}
+        <label for="id_description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        {{ form.description.errors }}
+        {{ form.description }}
+    </div>
+
+    <!-- Dates Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+            <label for="id_start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+            {{ form.start_date.errors }}
+            {{ form.start_date }}
+        </div>
+        <div>
+            <label for="id_end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date (Optional)</label>
+            {{ form.end_date.errors }}
+            {{ form.end_date }}
+        </div>
     </div>
 
     <div class="mb-6">
-    <label for="id_description" class="block text-lg font-medium text-gray-700 mb-2">Description</label>
-    {{ form.description.errors }}
-    {{ form.description }}
+        <label for="id_remittance_rate" class="block text-sm font-medium text-gray-700 mb-2">Remittance Rate (%)</label>
+        {{ form.remittance_rate.errors }}
+        {{ form.remittance_rate }}
     </div>
 
-    <div class="mb-6">
-    <label for="id_remittance_rate" class="block text-lg font-medium text-gray-700 mb-2">Remittance Rate (%)</label>
-    {{ form.remittance_rate.errors }}
-    {{ form.remittance_rate }}
+    <!-- Team Members Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div>
+            <label for="id_workspace_admin" class="block text-sm font-medium text-gray-700 mb-2">Workspace Admin</label>
+            {{ form.workspace_admin.errors }}
+            {{ form.workspace_admin }}
+        </div>
+        
+        <div>
+            <label for="id_operation_reviewer" class="block text-sm font-medium text-gray-700 mb-2">Operation Reviewer</label>
+            {{ form.operation_reviewer.errors }}
+            {{ form.operation_reviewer }}
+        </div>
     </div>
 
-    <div class="mb-6">
-    <label for="id_start_date" class="block text-lg font-medium text-gray-700 mb-2">Start Date</label>
-    {{ form.start_date.errors }}
-    {{ form.start_date }}
-    </div>
-
-    <div class="mb-6">
-    <label for="id_end_date" class="block text-lg font-medium text-gray-700 mb-2">End Date (Optional)</label>
-    {{ form.end_date.errors }}
-    {{ form.end_date }}
-    </div>
-
-    <div class="mb-8">
-    <label for="id_status" class="block text-lg font-medium text-gray-700 mb-2">Status</label>
-    {{ form.status.errors }}
-    {{ form.status }}
-    </div>
-
-    <div class="mb-8">
-    <label for="id_workspace_admin" class="block text-lg font-medium text-gray-700 mb-2">Workspace Admin</label>
-    {{ form.workspace_admin.errors }}
-    {{ form.workspace_admin }}
-    </div>
-
-    <div class="mb-8">
-    <label for="id_operation_reviewer" class="block text-lg font-medium text-gray-700 mb-2">Operation Reviewer</label>
-    {{ form.operation_reviewer.errors }}
-    {{ form.operation_reviewer }}
-    </div>
-
-    <div class="flex justify-end space-x-3">
-        <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
-    <button type="submit" class="btn btn-primary w-full sm:w-auto">
-        Update Workspace
-    </button>
+    <!-- Action Buttons -->
+    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <button type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
+        <button type="submit" class="btn btn-primary w-full sm:w-auto">
+            Update Workspace
+        </button>
     </div>
 </div>
 </form>
-
 
 {% endblock %}

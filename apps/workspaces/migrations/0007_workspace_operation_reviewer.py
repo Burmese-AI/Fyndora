@@ -5,16 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0007_alter_organization_options'),
-        ('workspaces', '0006_workspaceteam_custom_remittance_rate'),
+        ("organizations", "0007_alter_organization_options"),
+        ("workspaces", "0006_workspaceteam_custom_remittance_rate"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workspace',
-            name='operation_reviewer',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviewed_workspaces', to='organizations.organizationmember'),
+            model_name="workspace",
+            name="operation_reviewer",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviewed_workspaces",
+                to="organizations.organizationmember",
+            ),
         ),
     ]

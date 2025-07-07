@@ -26,77 +26,68 @@ def get_entries(
     sort_by: str = None,
     annotate_attachment_count: bool = False,
 ) -> QuerySet:
+    
+    
     """
-    Get entries with flexible filtering options, supporting multiple entry types.
+    Get entries for a specific organization, workspace, or workspace team.
 
     Args:
-        organization: Organization to query
-        workspace: Workspace to query
-        workspace_team: Workspace team to query
-        entry_types: List of entry types to query
-        status: Status to filter by
-        prefetch_attachments: Whether to prefetch related attachments
-        sort_by: Optional field name to sort results
-        annotate_attachment_count: Whether to annotate attachment count
+        organization: Organization object
+        workspace: Workspace object
+        workspace_team: WorkspaceTeam object
+        entry_types: List of EntryType objects
+        status: EntryStatus object
+        prefetch_attachments: Boolean to prefetch attachments
+
+    Returns:
+        QuerySet: QuerySet of Entry objects
+        
+    Notes:
+        For expense entries, the organization or workspace is required.
+        For team level entries, the workspace_team is required.
+        At least one entry type must be provided.
     """
+    
     if not entry_types:
         raise ValueError("At least one entry type must be provided.")
 
-    # --- 1. Split Entry Types ---
-    org_entry_types = [
+    # Split entry types
+    expense_entry_types = [
         et for et in entry_types if et in (EntryType.ORG_EXP, EntryType.WORKSPACE_EXP)
     ]
-    team_entry_types = [et for et in entry_types if et not in org_entry_types]
+    team_entry_types = [et for et in entry_types if et not in expense_entry_types]
 
     filters = Q()
-    prefetches = []
 
-    # --- 2. Org Entries (OrganizationMember submitter) ---
-    if org_entry_types:
-        if not organization and not workspace:
-            raise ValueError(
-                "Either organization or workspace is required for organization level entry types."
-            )
+    # Org/Workspace Expense Entries
+    if expense_entry_types:
+        # Filter entries based on expense entry types
+        expense_entry_filters = Q(entry_type__in=expense_entry_types)
+        # Filter entries based on organization members since org/workspace expense entries are associated with only organization members
+        if organization:
+            expense_entry_filters &= Q(organization_member_entries__organization=organization)
+        elif workspace:
+            expense_entry_filters &= Q(organization_member_entries__organization=workspace.organization)
 
-        submitter_ct = ContentType.objects.get_for_model(OrganizationMember)
-        org_members = get_org_members(
-            organization=organization if organization else None,
-            workspace=workspace if workspace else None,
-            prefetch_user=True,
-        )
-        org_member_ids = org_members.values_list("pk", flat=True)
+        # Add expense entry filters to the main filters
+        filters |= expense_entry_filters
 
-        filters |= Q(
-            submitter_content_type=submitter_ct,
-            submitter_object_id__in=org_member_ids,
-            entry_type__in=org_entry_types,
-        )
-        prefetches.append(GenericPrefetch("submitter", [org_members]))
-
-    # --- 3. Team Entries (TeamMember submitter) ---
+    # Team Level Entries
     if team_entry_types:
-        if not workspace_team:
-            raise ValueError("workspace_team is required for team level entry types.")
-
-        submitter_ct = ContentType.objects.get_for_model(TeamMember)
-        team_members = get_team_members(team=workspace_team.team, prefetch_user=True)
-        team_member_ids = team_members.values_list("pk", flat=True)
-
-        filters |= Q(
-            submitter_content_type=submitter_ct,
-            submitter_object_id__in=team_member_ids,
+        # Filter entries based on team entry types and workspace team using generic relation (team_member_entries)
+        team_filter = Q(
             entry_type__in=team_entry_types,
+            team_member_entries__team=workspace_team.team,
         )
-        prefetches.append(GenericPrefetch("submitter", [team_members]))
+        # Add team level filters to the main filters
+        filters |= team_filter
 
-    # --- 4. Final Query ---
+    # Final Query
     if not filters:
         return Entry.objects.none()
-
-    queryset = Entry.objects.filter(filters)
-
-    for prefetch in prefetches:
-        queryset = queryset.prefetch_related(prefetch)
+    
+    # Apply distinct to remove duplicate entries
+    queryset = Entry.objects.filter(filters).distinct()
 
     if annotate_attachment_count:
         queryset = queryset.annotate(attachment_count=Count("attachments"))
@@ -109,8 +100,21 @@ def get_entries(
 
     if prefetch_attachments:
         queryset = queryset.prefetch_related("attachments")
-    return queryset
 
+    # Select related and prefetch related to optimize the query
+    queryset = queryset.select_related(
+        "submitter_content_type",
+        "workspace",
+        "workspace_team",
+        "reviewed_by",
+    ).prefetch_related(
+        GenericPrefetch(
+            "submitter",
+            [OrganizationMember.objects.select_related("user"), TeamMember.objects.select_related("organization_member__user")],
+        )
+    )
+
+    return queryset
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

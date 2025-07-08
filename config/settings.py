@@ -245,7 +245,7 @@ ACCOUNT_ADAPTER = "apps.emails.adapters.CustomAccountAdapter"
 ACCOUNT_LOGIN_METHODS = ('email',)
 ACCOUNT_SIGNUP_FIELDS = ('email*', 'username*', 'password1*', 'password2*')
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_SESSION_REMEMBER = True
 
 # Using dummy backend because we are using our own email service

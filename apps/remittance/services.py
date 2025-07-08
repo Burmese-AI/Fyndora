@@ -6,15 +6,16 @@ from django.utils import timezone
 
 from apps.core.utils import model_update
 from apps.entries.models import EntryType
-from apps.entries.permissions import EntryPermissions
+from apps.remittance.permissions import RemittancePermissions
 from apps.remittance.models import Remittance
+from apps.remittance.constants import RemittanceStatus
 
 
 def remittance_confirm_payment(*, remittance, user):
     """
     Confirms a remittance payment.
     """
-    if not user.has_perm(EntryPermissions.REVIEW_ENTRY):
+    if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE):
         raise PermissionDenied("You do not have permission to confirm this remittance.")
 
     if remittance.paid_amount < remittance.due_amount:
@@ -34,19 +35,16 @@ def remittance_confirm_payment(*, remittance, user):
     return updated_remittance
 
 
-def remittance_record_payment(*, remittance, amount, user):
+def remittance_record_payment(*, remittance, user, amount):
     """
     Records a payment against a remittance.
     """
-    if not user.has_perm(EntryPermissions.CHANGE_ENTRY):
+    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE):
         raise PermissionDenied(
             "You do not have permission to record a payment for this remittance."
         )
 
-    if amount <= 0:
-        raise ValidationError("Payment amount must be positive.")
-
-    if remittance.status in ["paid", "canceled"]:
+    if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(
             f"Cannot record a payment for a remittance with status '{remittance.status}'."
         )
@@ -89,48 +87,54 @@ def remittance_create_or_update_from_income_entry(*, entry):
     due_amount_to_add = entry.amount * remittance_rate
 
     with transaction.atomic():
-        remittance, created = Remittance.objects.get_or_create(
-            workspace_team=workspace_team,
-            status="pending",
-            defaults={
-                "due_amount": due_amount_to_add,
-                "due_date": workspace.end_date,
-            },
+        remittance = (
+            Remittance.objects.filter(workspace_team=workspace_team)
+            .exclude(status__in=[RemittanceStatus.PAID, RemittanceStatus.CANCELED])
+            .first()
         )
 
-        if not created:
+        if remittance:
             remittance.due_amount += due_amount_to_add
             remittance.save(update_fields=["due_amount"])
+        else:
+            remittance = Remittance.objects.create(
+                workspace_team=workspace_team,
+                due_amount=due_amount_to_add,
+                due_date=workspace.end_date,
+                status=RemittanceStatus.PENDING,
+            )
 
     return remittance
 
 
-def remittance_update(*, remittance, user, data):
+def remittance_change_due_date(*, remittance, user, due_date):
     """
-    Updates a remittance instance.
+    Updates the due date of a remittance.
     """
-    if not user.has_perm(EntryPermissions.REVIEW_ENTRY):
-        raise PermissionDenied("You do not have permission to update this remittance.")
+    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE):
+        raise PermissionDenied(
+            "You do not have permission to change the due date for this remittance."
+        )
 
-    if remittance.status in ["paid", "canceled"]:
+    if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(
             f"Cannot update a remittance with status '{remittance.status}'."
         )
 
-    for field_name, value in data.items():
-        setattr(remittance, field_name, value)
-
+    remittance.due_date = due_date
     remittance.full_clean()
-    remittance.save()
+    remittance.save(update_fields=["due_date", "status"])
 
     return remittance
 
 
-def remittance_create(*, user, workspace_team, due_amount, due_date, status="pending"):
+def remittance_create(
+    *, user, workspace_team, due_amount, due_date, status=RemittanceStatus.PENDING
+):
     """
     Manually creates a new remittance record.
     """
-    if not user.has_perm(EntryPermissions.REVIEW_ENTRY):
+    if not user.has_perm(RemittancePermissions.ADD_REMITTANCE):
         raise PermissionDenied("You do not have permission to create a remittance.")
 
     if due_amount <= 0:
@@ -153,16 +157,16 @@ def remittance_cancel(*, remittance, user):
     """
     Cancels a remittance.
     """
-    if not user.has_perm(EntryPermissions.DELETE_ENTRY):
+    if not user.has_perm(RemittancePermissions.DELETE_REMITTANCE):
         raise PermissionDenied("You do not have permission to cancel this remittance.")
 
     if remittance.paid_amount > 0:
         raise ValidationError("Cannot cancel a remittance that has payments recorded.")
 
-    if remittance.status == "canceled":
+    if remittance.status == RemittanceStatus.CANCELED:
         return remittance
 
-    remittance.status = "canceled"
+    remittance.status = RemittanceStatus.CANCELED
     remittance.save(update_fields=["status"])
 
     return remittance

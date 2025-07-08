@@ -9,25 +9,22 @@ from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.selectors import get_user_org_membership
 from apps.organizations.models import Organization
 
-from ..models import Entry
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
+from apps.workspaces.selectors import (
+    get_workspace_team_role_by_workspace_team_and_org_member,
+    get_workspace_team_member_by_workspace_team_and_org_member,
+)
+from ..selectors import get_entry_by_scope
 
 
 class OrganizationRequiredMixin:
     organization = None
+    org_member = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
-
-
-class OrganizationMemberRequiredMixin(OrganizationRequiredMixin):
-    org_member = None
-
-    def setup(self, request, *args, **kwargs):
-        # Ensures organization is set
-        super().setup(request, *args, **kwargs)
         self.org_member = get_user_org_membership(self.request.user, self.organization)
 
 
@@ -43,11 +40,23 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
 
 class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     workspace_team = None
+    workspace_team_member = None
+    workspace_team_role = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
+        self.workspace_team_member = (
+            get_workspace_team_member_by_workspace_team_and_org_member(
+                self.workspace_team, self.org_member
+            )
+        )
+        self.workspace_team_role = (
+            get_workspace_team_role_by_workspace_team_and_org_member(
+                self.workspace_team, self.org_member
+            )
+        )
 
 
 class EntryRequiredMixin:
@@ -56,8 +65,12 @@ class EntryRequiredMixin:
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        entry_id = kwargs.get("pk")
-        self.entry = get_object_or_404(Entry, pk=entry_id)
+        self.entry = get_entry_by_scope(
+            entry_id=kwargs.get("pk"),
+            organization=getattr(self, "organization", None),
+            workspace=getattr(self, "workspace", None),
+            workspace_team=getattr(self, "workspace_team", None),
+        )
         self.attachments = self.entry.attachments.all()
 
 
@@ -71,6 +84,14 @@ class EntryFormMixin:
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
         kwargs["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        kwargs["workspace_team_role"] = (
+            self.workspace_team_role if hasattr(self, "workspace_team_role") else None
+        )
+        kwargs["workspace_team_member"] = (
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
         )
         return kwargs
 
@@ -148,4 +169,19 @@ class WorkspaceTeamContextMixin(WorkspaceContextMixin):
         context["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None
         )
+        context["workspace_team_member"] = (
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
+        )
+        return context
+
+
+class EntryUrlIdentifierMixin:
+    def get_entry_type(self):
+        raise NotImplementedError("You must implement get_entry_type() in the subclass")
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["entry_type"] = self.get_entry_type()
         return context

@@ -10,57 +10,28 @@ from ..selectors import get_entries
 from ..services import get_org_expense_stats
 from .mixins import (
     OrganizationRequiredMixin,
-    HtmxOobResponseMixin,
-    OrganizationMemberRequiredMixin,
     WorkspaceRequiredMixin,
     OrganizationContextMixin,
     WorkspaceContextMixin,
-    EntryRequiredMixin,
-    CreateEntryFormMixin,
-    UpdateEntryFormMixin,
 )
 from .base_views import (
     BaseEntryListView,
     BaseEntryCreateView,
     BaseEntryUpdateView,
+    BaseEntryDeleteView,
 )
-
-
-class ExpenseListViewBase(
-    OrganizationRequiredMixin,
-    OrganizationContextMixin,
-    BaseEntryListView,
-):
-    pass
-
-
-class ExpenseCreateViewBase(
-    OrganizationMemberRequiredMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryCreateView,
-):
-    pass
-
-
-class ExpenseUpdateViewBase(
-    OrganizationMemberRequiredMixin,
-    OrganizationRequiredMixin,
-    EntryRequiredMixin,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
-    OrganizationContextMixin,
-    BaseEntryUpdateView,
-):
-    pass
 
 
 class OrganizationExpenseListView(
     LoginRequiredMixin,
-    ExpenseListViewBase,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryListView,
 ):
     template_name = "entries/index.html"
+
+    def get_entry_type(self):
+        return EntryType.ORG_EXP
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -74,7 +45,15 @@ class OrganizationExpenseListView(
         return context
 
 
-class OrganizationExpenseCreateView(LoginRequiredMixin, ExpenseCreateViewBase):
+class OrganizationExpenseCreateView(
+    LoginRequiredMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryCreateView,
+):
+    def get_entry_type(self):
+        return EntryType.ORG_EXP
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization, entry_types=[EntryType.ORG_EXP]
@@ -134,7 +113,15 @@ class OrganizationExpenseCreateView(LoginRequiredMixin, ExpenseCreateViewBase):
         return response
 
 
-class OrganizationExpenseUpdateView(LoginRequiredMixin, ExpenseUpdateViewBase):
+class OrganizationExpenseUpdateView(
+    LoginRequiredMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryUpdateView,
+):
+    def get_entry_type(self):
+        return EntryType.ORG_EXP
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization, entry_types=[EntryType.ORG_EXP]
@@ -177,13 +164,25 @@ class OrganizationExpenseUpdateView(LoginRequiredMixin, ExpenseUpdateViewBase):
         return response
 
 
-class WorkspaceExpenseListView(
+class OrganizationExpenseDeleteView(
     LoginRequiredMixin,
-    ExpenseListViewBase,
-    WorkspaceRequiredMixin,
-    WorkspaceContextMixin,
+    OrganizationRequiredMixin,
+    OrganizationContextMixin,
+    BaseEntryDeleteView,
+):
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(
+            organization=self.organization, entry_types=[EntryType.ORG_EXP]
+        )
+
+
+class WorkspaceExpenseListView(
+    LoginRequiredMixin, WorkspaceRequiredMixin, WorkspaceContextMixin, BaseEntryListView
 ):
     template_name = "entries/workspace_expense_index.html"
+
+    def get_entry_type(self):
+        return EntryType.WORKSPACE_EXP
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -198,10 +197,13 @@ class WorkspaceExpenseListView(
 
 class WorkspaceExpenseCreateView(
     LoginRequiredMixin,
-    ExpenseCreateViewBase,
     WorkspaceRequiredMixin,
     WorkspaceContextMixin,
+    BaseEntryCreateView,
 ):
+    def get_entry_type(self):
+        return EntryType.WORKSPACE_EXP
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP]
@@ -260,10 +262,13 @@ class WorkspaceExpenseCreateView(
 
 class WorkspaceExpenseUpdateView(
     LoginRequiredMixin,
-    ExpenseUpdateViewBase,
     WorkspaceRequiredMixin,
     WorkspaceContextMixin,
+    BaseEntryUpdateView,
 ):
+    def get_entry_type(self):
+        return EntryType.WORKSPACE_EXP
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP]
@@ -280,4 +285,16 @@ class WorkspaceExpenseUpdateView(
                 "workspace_id": self.workspace.pk,
                 "pk": self.entry.pk,
             },
+        )
+
+
+class WorkspaceExpenseDeleteView(
+    LoginRequiredMixin,
+    WorkspaceRequiredMixin,
+    WorkspaceContextMixin,
+    BaseEntryDeleteView,
+):
+    def get_queryset(self) -> QuerySet[Any]:
+        return get_entries(
+            workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP]
         )

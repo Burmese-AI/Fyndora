@@ -23,7 +23,14 @@ class Workspace(baseModel):
         related_name="administered_workspaces",
         null=True,
         blank=True,
-    )  # This is the admin of the workspace, it can be null if the workspace is not yet administered and will be assigned later.
+    )  # This is the workspace admin of the workspace, it can be null if the workspace is not yet administered and will be assigned later.
+    operation_reviewer = models.ForeignKey(
+        OrganizationMember,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_workspaces",
+        null=True,
+        blank=True,
+    )  # This is the operation reviewer of the workspace, it can be null if the workspace is not yet reviewed and will be assigned later.
     title = models.CharField(max_length=255, null=False, blank=False)
     description = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(

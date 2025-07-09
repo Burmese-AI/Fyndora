@@ -27,6 +27,8 @@ class WorkspaceFactory(DjangoModelFactory):
     description = factory.Faker("text", max_nb_chars=200)
     status = StatusChoices.ACTIVE
     remittance_rate = Decimal("90.00")
+    workspace_admin = factory.SubFactory(OrganizationMemberFactory)
+    operation_reviewer = factory.SubFactory(OrganizationMemberFactory)
     start_date = factory.LazyFunction(lambda: date.today())
     end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=365))
     expense = Decimal("0.00")

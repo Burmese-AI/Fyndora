@@ -1,37 +1,54 @@
-<div  {% if is_oob %}hx-swap-oob="true"{% endif %} class="card bg-base-100 shadow-lg hover:shadow-2xl rounded-2xl border border-base-200 transition-all duration-200 group" id="team-card-{{ team.team_id }}">
-    <div class="card-body p-6 flex flex-col h-full">
-        <div class="flex items-center justify-between ">
-            <div>
-                <h2 class="text-xl font-bold mb-1">{{ team.title }}</h2>
-            </div>
-            <div class="flex gap-2">
+<div 
+    {% if is_oob %}hx-swap-oob="true"{% endif %} 
+    id="team-card-{{ team.team_id }}" 
+    class="card bg-base-100 border border-base-200 shadow-md hover:shadow-xl rounded-xl transition-all duration-200 flex flex-col group"
+>
+    <div class="card-body p-6 flex flex-col h-full space-y-4">
+        <!-- Header -->
+        <div class="flex justify-between items-start">
+            <h2 class="text-lg font-bold">{{ team.title }}</h2>
+            <div class="flex gap-1">
                 {% include "teams/components/edit_dropdown_team.html" %}
             </div>
         </div>
-        <p class="text-base-content/70 text-sm mb-4 line-clamp-2">
+
+        <!-- Description -->
+        <p class="text-sm text-base-content/70 line-clamp-3">
             {{ team.description|default:"No description provided" }}
         </p>
-        <div class="flex flex-col gap-3 text-xs mb-4">
-            <span>
-                <strong>Workspaces Joined:</strong>
-                {% for workspace in team.attached_workspaces %}
-                    {{ workspace.workspace.title }},
-                {% endfor %}
-            </span>
-            <span>
-                <strong>Coordinator:</strong>
+
+        <!-- Metadata -->
+        <div class="text-sm space-y-2 text-base-content/70">
+            <div>
+                <span class="font-semibold">Workspaces Joined:</span>
+                {% if team.attached_workspaces %}
+                    {% for workspace in team.attached_workspaces %}
+                        <span class="inline-block">{{ workspace.workspace.title }}{% if not forloop.last %}, {% endif %}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-gray-400">None</span>
+                {% endif %}
+            </div>
+            <div>
+                <span class="font-semibold">Coordinator:</span>
                 {% if team.team_coordinator %}
                     {{ team.team_coordinator.user.username }}
                 {% else %}
-                    Not Assigned
+                    <span class="text-gray-400">Not Assigned</span>
                 {% endif %}
-            </span>
-            <span>
-                <strong>Members:</strong> {{ team.members.count }}
-            </span>
+            </div>
+            <div>
+                <span class="font-semibold">Members:</span> {{ team.members.count }}
+            </div>
         </div>
-        <div class="mt-auto flex gap-2">
-            <a href="{% url 'team_members' organization_id=organization.organization_id team_id=team.team_id %}" class="btn btn-primary flex-1">Manage Team</a>
+
+        <!-- Actions -->
+        <div class="mt-auto pt-2 flex">
+            <a 
+                href="{% url 'team_members' organization_id=organization.organization_id team_id=team.team_id %}" 
+                class="btn btn-soft btn-secondary shadow hover:text-white btn-sm w-full">
+                Manage Team
+            </a>
         </div>
     </div>
 </div>

@@ -10,7 +10,7 @@ from django.db.models import QuerySet
 from typing import Any
 from .base_views import BaseEntryCreateView, BaseEntryUpdateView, BaseEntryDeleteView
 from django.urls import reverse
-from ..forms import CreateWorkspaceTeamEntryForm
+from ..forms import CreateWorkspaceTeamEntryForm, UpdateWorkspaceTeamEntryForm
 from django.contrib import messages
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -131,6 +131,9 @@ class WorkspaceTeamEntryUpdateView(
     WorkspaceTeamContextMixin,
     BaseEntryUpdateView,
 ):
+    
+    form_class = UpdateWorkspaceTeamEntryForm
+    
     def get_entry_type(self):
         return EntryType.INCOME
 

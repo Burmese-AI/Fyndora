@@ -1,44 +1,56 @@
 {% extends "components/new_base_modal.html" %}
 
 {% block modal_content %}
-      <form method="dialog" class="modal-box max-w-lg ">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold">{{ organization.title }}</h2>
-            <div class="badge badge-primary">{{ organization.status }}</div>
-        </div>
-        <div class="mb-2 text-gray-700">
-          <strong>Owner:</strong> {{ organization.owner.user.username }}
-        </div>
-  
-        {% if organization.description %}
-        <div class="mb-2 text-gray-600">
-          <strong>Description:</strong> {{ organization.description }}
-        </div>
-        {% endif %}
-  
-        <div class="mb-2 text-gray-700">
-          <strong>Expense:</strong> ${{ organization.expense }}
-        </div>
+<div class="modal-box max-w-2xl bg-base-100 rounded-xl p-6 space-y-6">
 
-        <!-- Members Section -->
-        <div class="mb-2 text-gray-700">
-          <strong>Members:</strong> {{ members }}
-          <!-- <button class="btn btn-sm btn-outline">View Members</button> -->
-        </div>
-        <div class="mb-2 text-gray-700">
-          <strong>Workspaces:</strong> {{ workspaces }}
-          <!-- <button class="btn btn-sm btn-outline">View Members</button> -->
-        </div>
-        <div class="mb-2 text-gray-700">
-          <strong>Teams:</strong> {{ teams }}
-          <!-- <button class="btn btn-sm btn-outline">View Teams</button> -->
-        </div>
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-bold text-base-content">{{ organization.title }}</h2>
+    <span class="badge 
+      {% if organization.status == 'active' %}badge-success
+      {% elif organization.status == 'archived' %}badge-warning
+      {% elif organization.status == 'closed' %}badge-error
+      {% else %}badge-ghost{% endif %} capitalize">
+      {{ organization.status }}
+    </span>
+  </div>
 
-        <div class="flex justify-end">
-          <button  type="button" class="btn btn-base-200 w-full sm:w-auto" onclick="this.closest('.modal').removeAttribute('open')">Close</button>
-        </div>
-      </form>
-     
-  
+  <!-- Organization Info -->
+  <div class="space-y-2 text-sm">
+    {% if organization.owner %}
+      <p><span class="font-medium text-neutral">Owner:</span> {{ organization.owner.user.username }}</p>
+    {% else %}
+      <p><span class="font-medium text-neutral">Owner:</span> <span class="text-gray-400">Not assigned</span></p>
+    {% endif %}
+
+    {% if organization.description %}
+      <p><span class="font-medium text-neutral">Description:</span> {{ organization.description }}</p>
+    {% endif %}
+
+    <p><span class="font-medium text-neutral">Expense:</span> ${{ organization.expense }}</p>
+  </div>
+
+  <!-- Stats Section -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+    <div class="bg-base-200 p-4 rounded-lg">
+      <span class="font-semibold text-neutral">Total Members</span>
+      <p class="text-xl font-bold text-primary">{{ members }}</p>
+    </div>
+    <div class="bg-base-200 p-4 rounded-lg">
+      <span class="font-semibold text-neutral">Total Workspaces</span>
+      <p class="text-xl font-bold text-primary">{{ workspaces }}</p>
+    </div>
+    <div class="bg-base-200 p-4 rounded-lg">
+      <span class="font-semibold text-neutral">Total Teams</span>
+      <p class="text-xl font-bold text-primary">{{ teams }}</p>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end pt-4">
+    <button type="button" class="btn btn-neutral btn-sm" onclick="this.closest('.modal').removeAttribute('open')">
+      Close
+    </button>
+  </div>
+</div>
 {% endblock %}
-  

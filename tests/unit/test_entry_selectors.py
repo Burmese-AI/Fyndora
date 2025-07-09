@@ -6,18 +6,12 @@ Tests the selector functions in apps/entries/selectors.py
 
 import datetime
 from decimal import Decimal
-from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
 
 from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.selectors import (
-    get_average_monthly_org_expenses,
-    get_last_month_org_expenses,
-    get_org_expenses,
-    get_this_month_org_expenses,
-    get_total_org_expenses,
     get_user_workspace_entries,
     get_workspace_entries,
     get_workspace_entries_by_date_range,
@@ -228,141 +222,3 @@ class TestWorkspaceEntrySelectors:
 
         assert income_entries.count() == 1
         assert self.pending_entry in income_entries
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestOrgExpenseSelectors:
-    """Test selectors for organization expenses."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.organization = OrganizationFactory()
-        self.workspace = WorkspaceFactory(organization=self.organization)
-
-        self.org_member = OrganizationMemberFactory(organization=self.organization)
-        self.team = TeamFactory(organization=self.organization)
-
-        # Create some org expense entries
-        self.today = timezone.now().date()
-        self.start_of_month = self.today.replace(day=1)
-        self.last_month_day = self.start_of_month - datetime.timedelta(days=1)
-        self.start_of_last_month = self.last_month_day.replace(day=1)
-        self.two_months_ago_day = self.start_of_last_month - datetime.timedelta(days=1)
-
-        # Create entries with specific dates for testing
-        self.this_month_expense = EntryFactory(
-            submitter=self.org_member,
-            entry_type=EntryType.ORG_EXP,
-            status=EntryStatus.APPROVED,
-            amount=Decimal("100.00"),
-        )
-
-        # Manually set created_at for last month's expense
-        self.last_month_expense = EntryFactory(
-            submitter=self.org_member,
-            entry_type=EntryType.ORG_EXP,
-            status=EntryStatus.APPROVED,
-            amount=Decimal("200.00"),
-        )
-        # Update the created_at timestamp manually
-        self.last_month_expense.created_at = timezone.datetime.combine(
-            self.last_month_day, timezone.datetime.min.time()
-        ).replace(tzinfo=timezone.get_current_timezone())
-        self.last_month_expense.save(update_fields=["created_at"])
-
-        # Manually set created_at for old expense
-        self.old_expense = EntryFactory(
-            submitter=self.org_member,
-            entry_type=EntryType.ORG_EXP,
-            status=EntryStatus.APPROVED,
-            amount=Decimal("300.00"),
-        )
-        # Update the created_at timestamp manually
-        self.old_expense.created_at = timezone.datetime.combine(
-            self.two_months_ago_day, timezone.datetime.min.time()
-        ).replace(tzinfo=timezone.get_current_timezone())
-        self.old_expense.save(update_fields=["created_at"])
-
-        # Create a pending expense that should be excluded
-        self.pending_expense = EntryFactory(
-            submitter=self.org_member,
-            entry_type=EntryType.ORG_EXP,
-            status=EntryStatus.PENDING_REVIEW,
-            amount=Decimal("400.00"),
-        )
-
-        # Create a non-org expense that should be excluded
-        self.non_org_expense = EntryFactory(
-            submitter=self.org_member,
-            entry_type=EntryType.INCOME,
-            status=EntryStatus.APPROVED,
-            amount=Decimal("500.00"),
-        )
-
-    def test_get_org_expenses(self):
-        """Test retrieving all organization expenses."""
-        expenses = get_org_expenses(organization=self.organization)
-
-        assert expenses.count() == 3
-        assert self.this_month_expense in expenses
-        assert self.last_month_expense in expenses
-        assert self.old_expense in expenses
-        assert self.pending_expense not in expenses
-        assert self.non_org_expense not in expenses
-
-    def test_get_total_org_expenses(self):
-        """Test calculating total organization expenses."""
-        total = get_total_org_expenses(organization=self.organization)
-
-        expected_total = Decimal("100.00") + Decimal("200.00") + Decimal("300.00")
-        assert total == expected_total
-
-    @patch("apps.entries.selectors.now")
-    def test_get_this_month_org_expenses(self, mock_now):
-        """Test calculating organization expenses for the current month."""
-        mock_now.return_value = timezone.datetime(
-            year=self.today.year,
-            month=self.today.month,
-            day=self.today.day,
-            tzinfo=timezone.get_current_timezone(),
-        )
-
-        total = get_this_month_org_expenses(organization=self.organization)
-        assert total == Decimal("100.00")
-
-    @patch("apps.entries.selectors.now")
-    def test_get_last_month_org_expenses(self, mock_now):
-        """Test calculating organization expenses for the last month."""
-        mock_now.return_value = timezone.datetime(
-            year=self.today.year,
-            month=self.today.month,
-            day=self.today.day,
-            tzinfo=timezone.get_current_timezone(),
-        )
-
-        total = get_last_month_org_expenses(organization=self.organization)
-        assert total == Decimal("200.00")
-
-    @patch("apps.entries.selectors.now")
-    def test_get_average_monthly_org_expenses(self, mock_now):
-        """Test calculating average monthly organization expenses."""
-        mock_now.return_value = timezone.datetime(
-            year=self.today.year,
-            month=self.today.month,
-            day=self.today.day,
-            tzinfo=timezone.get_current_timezone(),
-        )
-
-        # Patch the queryset to simulate a year's worth of data
-        with patch("apps.entries.selectors.get_org_expenses") as mock_get_org_expenses:
-            mock_queryset = get_org_expenses(organization=self.organization)
-            mock_get_org_expenses.return_value = mock_queryset
-
-            total = get_average_monthly_org_expenses(organization=self.organization)
-
-            # Total expenses of 600 / 12 months = 50 per month average
-            expected_average = (
-                Decimal("100.00") + Decimal("200.00") + Decimal("300.00")
-            ) / 12
-            assert total == expected_average

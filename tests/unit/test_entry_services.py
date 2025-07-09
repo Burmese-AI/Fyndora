@@ -5,16 +5,17 @@ Tests entry_create service function validation and business rules.
 """
 
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from guardian.shortcuts import assign_perm, remove_perm
 
 from apps.entries.models import EntryStatus, EntryType
+from apps.entries.permissions import EntryPermissions
 from apps.entries.services import (
     approve_entry,
     bulk_review_entries,
-    create_org_expense_entry_with_attachments,
     entry_create,
     entry_review,
     entry_update,
@@ -23,11 +24,15 @@ from apps.entries.services import (
 )
 from apps.teams.constants import TeamMemberRole
 from tests.factories import (
-    OrganizationMemberFactory,
+    EntryFactory,
     TeamMemberFactory,
+)
+from tests.factories.team_factories import TeamFactory
+from tests.factories.workspace_factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
+from tests.factories.organization_factories import OrganizationMemberFactory
 
 
 @pytest.mark.unit
@@ -43,6 +48,11 @@ class TestEntryCreateService:
         )
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.submitter.team
+        )
+        assign_perm(
+            EntryPermissions.ADD_ENTRY,
+            self.submitter.organization_member.user,
+            self.workspace,
         )
 
     def test_entry_create_with_valid_submitter(self):
@@ -60,7 +70,7 @@ class TestEntryCreateService:
         assert entry.entry_type == EntryType.INCOME
         assert entry.amount == Decimal("100.00")
         assert entry.description == "Test donation"
-        assert entry.status == "pending_review"  # Default status
+        assert entry.status == EntryStatus.PENDING_REVIEW  # Default status
 
     def test_entry_create_fails_with_zero_amount(self):
         """Test entry creation fails with zero amount."""
@@ -188,7 +198,6 @@ class TestEntryCreateService:
                 entry_type=EntryType.WORKSPACE_EXP,
                 amount=Decimal("100.00"),
                 description="Test workspace expense",
-                workspace_team=self.workspace_team,
             )
 
         assert "Workspace is required for workspace expense entries" in str(
@@ -218,15 +227,20 @@ class TestEntryReviewService:
     def setup_method(self, method):
         """Set up test data."""
         self.submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        self.reviewer = TeamMemberFactory(
-            role=TeamMemberRole.OPERATIONS_REVIEWER, team=self.submitter.team
-        )
+        self.reviewer = OrganizationMemberFactory()
         self.workspace = WorkspaceFactory(
-            organization=self.submitter.organization_member.organization
+            organization=self.submitter.organization_member.organization,
+            operation_reviewer=self.reviewer,
         )
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.submitter.team
         )
+        assign_perm(
+            EntryPermissions.ADD_ENTRY,
+            self.submitter.organization_member.user,
+            self.workspace,
+        )
+        assign_perm(EntryPermissions.REVIEW_ENTRY, self.reviewer.user, self.workspace)
 
         self.entry = entry_create(
             submitted_by=self.submitter,
@@ -241,12 +255,12 @@ class TestEntryReviewService:
         """Test entry review approval."""
         reviewed_entry = entry_review(
             entry=self.entry,
-            reviewer=self.reviewer.organization_member,
+            reviewer=self.reviewer,
             status=EntryStatus.APPROVED,
         )
 
         assert reviewed_entry.status == EntryStatus.APPROVED
-        assert reviewed_entry.reviewed_by == self.reviewer.organization_member
+        assert reviewed_entry.reviewed_by == self.reviewer
         assert reviewed_entry.review_notes == ""
 
     def test_entry_review_reject_with_notes(self):
@@ -254,13 +268,13 @@ class TestEntryReviewService:
         notes = "Missing receipt"
         reviewed_entry = entry_review(
             entry=self.entry,
-            reviewer=self.reviewer.organization_member,
+            reviewer=self.reviewer,
             status=EntryStatus.REJECTED,
             notes=notes,
         )
 
         assert reviewed_entry.status == EntryStatus.REJECTED
-        assert reviewed_entry.reviewed_by == self.reviewer.organization_member
+        assert reviewed_entry.reviewed_by == self.reviewer
         assert reviewed_entry.review_notes == notes
 
     def test_entry_review_flag_with_notes(self):
@@ -268,13 +282,14 @@ class TestEntryReviewService:
         notes = "Missing receipt"
         reviewed_entry = entry_review(
             entry=self.entry,
-            reviewer=self.reviewer.organization_member,
-            status=EntryStatus.FLAGGED,
+            reviewer=self.reviewer,
+            status=self.entry.status,
+            is_flagged=True,
             notes=notes,
         )
 
-        assert reviewed_entry.status == EntryStatus.FLAGGED
-        assert reviewed_entry.reviewed_by == self.reviewer.organization_member
+        assert reviewed_entry.is_flagged
+        assert reviewed_entry.reviewed_by == self.reviewer
         assert reviewed_entry.review_notes == notes
 
     def test_entry_review_invalid_status(self):
@@ -282,7 +297,7 @@ class TestEntryReviewService:
         with pytest.raises(ValidationError) as exc_info:
             entry_review(
                 entry=self.entry,
-                reviewer=self.reviewer.organization_member,
+                reviewer=self.reviewer,
                 status="invalid_status",
             )
 
@@ -293,7 +308,7 @@ class TestEntryReviewService:
         with pytest.raises(ValidationError) as exc_info:
             entry_review(
                 entry=self.entry,
-                reviewer=self.reviewer.organization_member,
+                reviewer=self.reviewer,
                 status=EntryStatus.REJECTED,
             )
 
@@ -304,24 +319,22 @@ class TestEntryReviewService:
         with pytest.raises(ValidationError) as exc_info:
             entry_review(
                 entry=self.entry,
-                reviewer=self.reviewer.organization_member,
-                status=EntryStatus.FLAGGED,
+                reviewer=self.reviewer,
+                status=self.entry.status,
+                is_flagged=True,
             )
 
-        assert "Notes are required when flagged an entry" in str(exc_info.value)
+        assert "Notes are required when flagging an entry" in str(exc_info.value)
 
     def test_entry_review_already_approved_entry(self):
         """Test entry review fails with already approved entry."""
-        approved_entry = entry_review(
-            entry=self.entry,
-            reviewer=self.reviewer.organization_member,
-            status=EntryStatus.APPROVED,
-        )
+        self.entry.status = EntryStatus.APPROVED
+        self.entry.save()
 
         with pytest.raises(ValidationError) as exc_info:
             entry_review(
-                entry=approved_entry,
-                reviewer=self.reviewer.organization_member,
+                entry=self.entry,
+                reviewer=self.reviewer,
                 status=EntryStatus.REJECTED,
                 notes="Changed my mind",
             )
@@ -333,7 +346,7 @@ class TestEntryReviewService:
         """Test approve_entry calls entry_review with correct params."""
 
         entry = self.entry
-        reviewer = self.reviewer.organization_member
+        reviewer = self.reviewer
 
         approve_entry(entry=entry, reviewer=reviewer)
 
@@ -346,7 +359,7 @@ class TestEntryReviewService:
         """Test reject_entry calls entry_review with correct params."""
 
         entry = self.entry
-        reviewer = self.reviewer.organization_member
+        reviewer = self.reviewer
         notes = "Missing documentation"
 
         reject_entry(entry=entry, reviewer=reviewer, notes=notes)
@@ -360,82 +373,57 @@ class TestEntryReviewService:
         """Test flag_entry calls entry_review with correct params."""
 
         entry = self.entry
-        reviewer = self.reviewer.organization_member
+        reviewer = self.reviewer
         notes = "Needs further review"
 
         flag_entry(entry=entry, reviewer=reviewer, notes=notes)
 
         mock_entry_review.assert_called_once_with(
-            entry=entry, reviewer=reviewer, status=EntryStatus.FLAGGED, notes=notes
+            entry=entry, reviewer=reviewer, status=entry.status, is_flagged=True, notes=notes
         )
 
     def test_bulk_review_entries(self):
         """Test bulk review entries."""
 
-        entries = []
-        for i in range(3):
-            entry = entry_create(
-                submitted_by=self.submitter,
-                entry_type=EntryType.INCOME,
-                amount=Decimal("100.00"),
-                description=f"Test donation {i}",
-                workspace=self.workspace,
-                workspace_team=self.workspace_team,
-            )
-            entries.append(entry)
+        entries = [EntryFactory(workspace=self.workspace) for _ in range(3)]
 
-        approved_entry = entry_create(
-            submitted_by=self.submitter,
-            entry_type=EntryType.INCOME,
-            amount=Decimal("100.00"),
-            description="Test donation",
-            workspace=self.workspace,
-            workspace_team=self.workspace_team,
+        approved_entry = EntryFactory(
+            workspace=self.workspace, status=EntryStatus.APPROVED
         )
-        approved_entry.status = EntryStatus.APPROVED
-        approved_entry.save()
         entries.append(approved_entry)
 
         notes = "Bulk approval"
         reviewed_entries = bulk_review_entries(
             entries=entries,
-            reviewer=self.reviewer.organization_member,
+            reviewer=self.reviewer,
             status=EntryStatus.APPROVED,
             notes=notes,
         )
 
         assert len(reviewed_entries) == 3
         for entry in reviewed_entries:
+            entry.refresh_from_db()
             assert entry.status == EntryStatus.APPROVED
-            assert entry.reviewed_by == self.reviewer.organization_member
+            assert entry.reviewed_by == self.reviewer
             assert entry.review_notes == notes
 
     def test_bulk_review_entries_with_rejection(self):
         """Test bulk rejecting entries."""
-        entries = []
-        for i in range(3):
-            entry = entry_create(
-                submitted_by=self.submitter,
-                entry_type=EntryType.INCOME,
-                amount=Decimal("100.00"),
-                description=f"Test donation {i}",
-                workspace=self.workspace,
-                workspace_team=self.workspace_team,
-            )
-            entries.append(entry)
+        entries = [EntryFactory(workspace=self.workspace) for _ in range(3)]
 
         notes = "Bulk rejection - missing documentation"
         reviewed_entries = bulk_review_entries(
             entries=entries,
-            reviewer=self.reviewer.organization_member,
+            reviewer=self.reviewer,
             status=EntryStatus.REJECTED,
             notes=notes,
         )
 
         assert len(reviewed_entries) == 3
         for entry in reviewed_entries:
+            entry.refresh_from_db()
             assert entry.status == EntryStatus.REJECTED
-            assert entry.reviewed_by == self.reviewer.organization_member
+            assert entry.reviewed_by == self.reviewer
             assert entry.review_notes == notes
 
     def test_bulk_review_entries_reject_without_notes(self):
@@ -445,11 +433,55 @@ class TestEntryReviewService:
         with pytest.raises(ValidationError) as exc_info:
             bulk_review_entries(
                 entries=entries,
-                reviewer=self.reviewer.organization_member,
+                reviewer=self.reviewer,
                 status=EntryStatus.REJECTED,
             )
 
         assert "Notes are required when rejected an entry" in str(exc_info.value)
+
+    def test_coordinator_cannot_review_other_team_entry(self):
+        """A coordinator for one team cannot review an entry from another team."""
+        # Coordinator for a different team
+        other_team = TeamFactory(organization=self.workspace.organization)
+        coordinator = OrganizationMemberFactory(
+            organization=self.workspace.organization
+        )
+        other_team.team_coordinator = coordinator
+        other_team.save()
+
+        assign_perm(EntryPermissions.REVIEW_ENTRY, coordinator.user, self.workspace)
+
+        with pytest.raises(PermissionDenied) as exc_info:
+            entry_review(
+                entry=self.entry, reviewer=coordinator, status=EntryStatus.APPROVED
+            )
+        assert "You can only manage entries for your own team." in str(exc_info.value)
+
+    def test_coordinator_can_review_own_team_entry(self):
+        """A coordinator can review an entry from their own team."""
+        # Coordinator for the entry's team
+        coordinator = OrganizationMemberFactory(
+            organization=self.workspace.organization
+        )
+        self.submitter.team.team_coordinator = coordinator
+        self.submitter.team.save()
+
+        assign_perm(EntryPermissions.REVIEW_ENTRY, coordinator.user, self.workspace)
+
+        reviewed_entry = entry_review(
+            entry=self.entry, reviewer=coordinator, status=EntryStatus.APPROVED
+        )
+        assert reviewed_entry.status == EntryStatus.APPROVED
+        assert reviewed_entry.reviewed_by == coordinator
+
+    def test_non_coordinator_reviewer_can_review_any_entry(self):
+        """A user with review perms who is not a coordinator can review any entry."""
+        # self.reviewer is an OrganizationMember without any team coordination roles
+        reviewed_entry = entry_review(
+            entry=self.entry, reviewer=self.reviewer, status=EntryStatus.APPROVED
+        )
+        assert reviewed_entry.status == EntryStatus.APPROVED
+        assert reviewed_entry.reviewed_by == self.reviewer
 
 
 @pytest.mark.unit
@@ -465,6 +497,16 @@ class TestEntryUpdateService:
         )
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.submitter.team
+        )
+        assign_perm(
+            EntryPermissions.ADD_ENTRY,
+            self.submitter.organization_member.user,
+            self.workspace,
+        )
+        assign_perm(
+            EntryPermissions.CHANGE_ENTRY,
+            self.submitter.organization_member.user,
+            self.workspace,
         )
 
         self.entry = entry_create(
@@ -483,7 +525,7 @@ class TestEntryUpdateService:
 
         updated_entry = entry_update(
             entry=self.entry,
-            updated_by=self.submitter.organization_member.user,
+            updated_by=self.submitter,
             description=new_description,
             amount=new_amount,
         )
@@ -496,7 +538,7 @@ class TestEntryUpdateService:
         with pytest.raises(ValidationError) as exc_info:
             entry_update(
                 entry=self.entry,
-                updated_by=self.submitter.organization_member.user,
+                updated_by=self.submitter,
                 invalid_field="This is an invalid field",
             )
 
@@ -510,18 +552,33 @@ class TestEntryUpdateService:
         with pytest.raises(ValidationError) as exc_info:
             entry_update(
                 entry=self.entry,
-                updated_by=self.submitter.organization_member.user,
+                updated_by=self.submitter,
                 description="Updated description",
             )
 
         assert "Cannot update an approved entry" in str(exc_info.value)
+
+    def test_entry_update_permission_denied(self):
+        """Test entry update fails without correct permission."""
+        remove_perm(
+            EntryPermissions.CHANGE_ENTRY,
+            self.submitter.organization_member.user,
+            self.workspace,
+        )
+
+        with pytest.raises(PermissionDenied):
+            entry_update(
+                entry=self.entry,
+                updated_by=self.submitter,
+                description="This should fail",
+            )
 
     @patch("apps.entries.services.audit_create")
     def test_entry_update_calls_audit_service(self, mock_audit_create):
         """Test that entry_update calls audit service with correct params."""
         updated_entry = entry_update(
             entry=self.entry,
-            updated_by=self.submitter.organization_member.user,
+            updated_by=self.submitter,
             description="Updated description",
         )
 
@@ -543,62 +600,18 @@ class TestEntryUpdateService:
             workspace=new_workspace, team=self.submitter.team
         )
 
+        assign_perm(
+            EntryPermissions.CHANGE_ENTRY,
+            self.submitter.organization_member.user,
+            new_workspace,
+        )
+
         updated_entry = entry_update(
             entry=self.entry,
-            updated_by=self.submitter.organization_member.user,
+            updated_by=self.submitter,
             workspace=new_workspace,
             workspace_team=new_workspace_team,
         )
 
         assert updated_entry.workspace == new_workspace
         assert updated_entry.workspace_team == new_workspace_team
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestCreateOrgExpenseEntryService:
-    """Test create_org_expense_entry_with_attachments service."""
-
-    def setup_method(self, method):
-        """Set up test data."""
-        self.org_member = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.Attachment.objects.create")
-    @patch("apps.attachments.constants.AttachmentType.get_file_type_by_extension")
-    def test_create_org_expense_entry_with_attachments(
-        self, mock_get_file_type, mock_attachment_create
-    ):
-        """Test creating an org expense entry with attachments."""
-        from apps.attachments.constants import AttachmentType
-
-        # Create mock files
-        mock_file1 = MagicMock()
-        mock_file1.name = "receipt.pdf"
-        mock_file2 = MagicMock()
-        mock_file2.name = "invoice.jpg"
-
-        # Setup mock return values
-        mock_get_file_type.side_effect = [AttachmentType.PDF, AttachmentType.IMAGE]
-        mock_attachment_create.return_value = MagicMock()
-
-        # Call the service function
-        entry = create_org_expense_entry_with_attachments(
-            org_member=self.org_member,
-            amount=Decimal("200.00"),
-            description="Office supplies",
-            attachments=[mock_file1, mock_file2],
-        )
-
-        # Verify entry was created correctly
-        assert entry.entry_type == EntryType.ORG_EXP
-        assert entry.amount == Decimal("200.00")
-        assert entry.status == EntryStatus.APPROVED
-
-        # Verify attachment creation was called
-        assert mock_attachment_create.call_count == 2
-        mock_attachment_create.assert_any_call(
-            entry=entry, file_url=mock_file1, file_type=AttachmentType.PDF
-        )
-        mock_attachment_create.assert_any_call(
-            entry=entry, file_url=mock_file2, file_type=AttachmentType.IMAGE
-        )

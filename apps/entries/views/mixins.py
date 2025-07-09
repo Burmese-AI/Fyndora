@@ -9,7 +9,7 @@ from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.teams.models import TeamMember
 from apps.organizations.models import Organization, OrganizationMember
 
-from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
+from ..forms import BaseEntryForm, UpdateEntryForm
 from ..models import Entry
 
 
@@ -49,11 +49,13 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     workspace_team = None
     workspace_team_member = None
     workspace_team_role = None
+    is_team_coordinator = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace)
+        self.is_team_coordinator = self.workspace_team.team.team_coordinator == self.org_member
         self.workspace_team_member = get_object_or_404(TeamMember, team=self.workspace_team.team, organization_member=self.org_member)
         self.workspace_team_role = self.workspace_team_member.role
 
@@ -77,8 +79,9 @@ class EntryFormMixin:
         kwargs["org_member"] = self.org_member
         kwargs["organization"] = self.organization
         kwargs["is_org_admin"] = self.is_org_admin
-        kwargs["is_workspace_admin"] = self.is_workspace_admin
-        kwargs["is_operation_reviewer"] = self.is_operation_reviewer
+        kwargs["is_workspace_admin"] = self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
+        kwargs["is_operation_reviewer"] = self.is_operation_reviewer if hasattr(self, "is_operation_reviewer") else None
+        kwargs["is_team_coordinator"] = self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
         kwargs["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None
@@ -95,7 +98,7 @@ class EntryFormMixin:
 
 
 class CreateEntryFormMixin(EntryFormMixin):
-    form_class = CreateEntryForm
+    form_class = BaseEntryForm
 
 
 class UpdateEntryFormMixin(EntryFormMixin):

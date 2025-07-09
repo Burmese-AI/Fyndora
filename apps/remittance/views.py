@@ -10,7 +10,7 @@ from apps.core.constants import PAGINATION_SIZE
 from apps.teams.models import Team
 from apps.workspaces.models import Workspace
 
-from .constants import STATUS_CHOICES
+from .constants import RemittanceStatus
 from .models import Remittance
 from .selectors import get_remittances_with_filters
 from .services import remittance_confirm_payment
@@ -62,7 +62,7 @@ class RemittanceListView(LoginRequiredMixin, ListView):
         else:
             context["all_teams"] = Team.objects.none()
 
-        context["all_statuses"] = STATUS_CHOICES
+        context["all_statuses"] = RemittanceStatus.choices
 
         # Preserve existing filters for pagination and search query
         context["current_filters"] = self.request.GET.copy()

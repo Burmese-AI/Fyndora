@@ -116,6 +116,7 @@ class BaseEntryUpdateView(
 class BaseEntryDeleteView(
     EntryRequiredMixin,
     HtmxOobResponseMixin,
+    HtmxModalFormInvalidFormResponseMixin,
     DeleteView,
 ):
     def get_queryset(self):
@@ -123,8 +124,11 @@ class BaseEntryDeleteView(
 
     def form_valid(self, form):
         from ..services import delete_entry
-
-        delete_entry(self.entry)
+        try:
+            delete_entry(self.entry)
+        except Exception as e:
+            messages.error(self.request, e)
+            return self._render_htmx_error_response(form)
         messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
         return self._render_htmx_success_response()
 
@@ -149,7 +153,15 @@ class BaseEntryDeleteView(
         response = HttpResponse(f"{message_html}{table_html}")
         return response
 
+    def _render_htmx_error_response(self, form) -> HttpResponse:
+        base_context = self.get_context_data()
 
+        message_html = render_to_string(
+            self.message_template_name, context=base_context, request=self.request
+        )
+
+        return HttpResponse(f"{message_html}")
+    
 class BaseEntryDetailView(
     LoginRequiredMixin,
     EntryRequiredMixin,

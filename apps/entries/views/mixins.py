@@ -123,9 +123,9 @@ class HtmxModalFormInvalidFormResponseMixin:
 
     def form_invalid(self, form):
         messages.error(self.request, "Form submission failed")
-        return self.render_htmx_error_response(form)
+        return self._render_htmx_error_response(form)
 
-    def render_htmx_error_response(self, form) -> HttpResponse:
+    def _render_htmx_error_response(self, form) -> HttpResponse:
         base_context = self.get_context_data()
         modal_context = {
             **base_context,

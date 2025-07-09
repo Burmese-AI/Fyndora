@@ -6,36 +6,43 @@ from django.template.loader import render_to_string
 from django.contrib import messages
 
 from apps.workspaces.models import Workspace, WorkspaceTeam
-from apps.organizations.selectors import get_user_org_membership
-from apps.organizations.models import Organization
+from apps.teams.models import TeamMember
+from apps.organizations.models import Organization, OrganizationMember
 
 from ..forms import BaseEntryForm, CreateEntryForm, UpdateEntryForm
-from apps.workspaces.selectors import (
-    get_workspace_team_role_by_workspace_team_and_org_member,
-    get_workspace_team_member_by_workspace_team_and_org_member,
-)
-from ..selectors import get_entry_by_scope
+from ..models import Entry
 
 
 class OrganizationRequiredMixin:
+    """
+    """
+
     organization = None
     org_member = None
+    is_org_admin = None
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
-        self.org_member = get_user_org_membership(self.request.user, self.organization)
+        self.org_member = get_object_or_404(OrganizationMember, user=self.request.user, organization=self.organization)
+        self.is_org_admin = self.org_member == self.organization.owner
 
 
 class WorkspaceRequiredMixin(OrganizationRequiredMixin):
+    """
+    """
+
     workspace = None
+    is_workspace_admin = None
+    is_operation_reviewer = None
 
     def setup(self, request, *args, **kwargs):
-        # Ensures organization is set
         super().setup(request, *args, **kwargs)
         workspace_id = kwargs.get("workspace_id")
-        self.workspace = get_object_or_404(Workspace, pk=workspace_id)
+        self.workspace = get_object_or_404(Workspace, pk=workspace_id, organization=self.organization)
+        self.is_workspace_admin = self.workspace.workspace_admin == self.org_member
+        self.is_operation_reviewer = self.workspace.operation_reviewer == self.org_member
 
 
 class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
@@ -46,17 +53,9 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
-        self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id)
-        self.workspace_team_member = (
-            get_workspace_team_member_by_workspace_team_and_org_member(
-                self.workspace_team, self.org_member
-            )
-        )
-        self.workspace_team_role = (
-            get_workspace_team_role_by_workspace_team_and_org_member(
-                self.workspace_team, self.org_member
-            )
-        )
+        self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace)
+        self.workspace_team_member = get_object_or_404(TeamMember, team=self.workspace_team.team, organization_member=self.org_member)
+        self.workspace_team_role = self.workspace_team_member.role
 
 
 class EntryRequiredMixin:
@@ -65,12 +64,8 @@ class EntryRequiredMixin:
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
-        self.entry = get_entry_by_scope(
-            entry_id=kwargs.get("pk"),
-            organization=getattr(self, "organization", None),
-            workspace=getattr(self, "workspace", None),
-            workspace_team=getattr(self, "workspace_team", None),
-        )
+        entry_id = kwargs.get("pk")
+        self.entry = get_object_or_404(Entry, pk=entry_id, submitter__organization=self.organization, workspace=self.workspace, workspace_team=self.workspace_team)
         self.attachments = self.entry.attachments.all()
 
 
@@ -81,6 +76,9 @@ class EntryFormMixin:
         kwargs = super().get_form_kwargs()
         kwargs["org_member"] = self.org_member
         kwargs["organization"] = self.organization
+        kwargs["is_org_admin"] = self.is_org_admin
+        kwargs["is_workspace_admin"] = self.is_workspace_admin
+        kwargs["is_operation_reviewer"] = self.is_operation_reviewer
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
         kwargs["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None

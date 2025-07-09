@@ -38,13 +38,16 @@ class BaseEntryForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        print(f"debugging kwags: {kwargs}")
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
         self.workspace_team = kwargs.pop("workspace_team", None)
         self.workspace_team_role = kwargs.pop("workspace_team_role", None)
         self.workspace_team_member = kwargs.pop("workspace_team_member", None)
-        print(f"debugging: {self.workspace_team_role}")
+        self.is_org_admin = kwargs.pop("is_org_admin", None)
+        self.is_workspace_admin = kwargs.pop("is_workspace_admin", None)
+        self.is_operation_reviewer = kwargs.pop("is_operation_reviewer", None)
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
 
@@ -56,15 +59,6 @@ class BaseEntryForm(forms.ModelForm):
             raise forms.ValidationError(
                 "The current user is not a member of the organization"
             )
-
-        # TODO: Uncomment this when we have already separated children forms for expense and workspace expense and workspace team entry
-        # If the org member object is not the same as the owner object of the provided organization, raise validation error
-        # if not self.org_member.is_org_owner:
-        #     raise forms.ValidationError(
-        #         "Only the owner of the organization can submit expenses."
-        #     )
-
-        print(f"debugging: {cleaned_data}")
 
         attachment_files = cleaned_data.get("attachment_files")
         if attachment_files:

@@ -65,7 +65,7 @@ class EntryRequiredMixin:
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         entry_id = kwargs.get("pk")
-        self.entry = get_object_or_404(Entry, pk=entry_id, submitter__organization=self.organization, workspace=self.workspace, workspace_team=self.workspace_team)
+        self.entry = get_object_or_404(Entry, pk=entry_id, workspace=self.workspace, workspace_team=self.workspace_team)
         self.attachments = self.entry.attachments.all()
 
 

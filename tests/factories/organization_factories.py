@@ -34,13 +34,24 @@ class OrganizationWithOwnerFactory(OrganizationFactory):
 
     @factory.post_generation
     def owner(self, create, extracted, **kwargs):
-        """Create an owner for the organization."""
+        """
+        Create an owner for the organization.
+        Accepts a User instance via `extracted` to be set as the owner.
+        """
         if not create:
             return
 
-        # Create a user and make them a member, then set as owner
-        owner_user = CustomUserFactory()
-        member = OrganizationMemberFactory(organization=self, user=owner_user)
+        if extracted:
+            # A user instance was passed in.
+            owner_user = extracted
+        else:
+            # Create a new user.
+            owner_user = CustomUserFactory()
+
+        # Create a member for the user (or get the existing one) and set as owner.
+        member, _ = OrganizationMember.objects.get_or_create(
+            organization=self, user=owner_user
+        )
         self.owner = member
         self.save()
 

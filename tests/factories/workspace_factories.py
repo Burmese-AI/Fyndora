@@ -43,12 +43,24 @@ class WorkspaceWithAdminFactory(WorkspaceFactory):
 
     @factory.post_generation
     def admin(self, create, extracted, **kwargs):
-        """Create an admin for the workspace."""
+        """
+        Create an admin for the workspace.
+        Accepts an OrganizationMember instance via `extracted` to be set as the admin.
+        """
         if not create:
             return
 
-        # Create organization member as admin
-        admin = OrganizationMemberFactory(organization=self.organization)
+        if extracted:
+            # An organization member instance was passed in.
+            admin = extracted
+            if admin.organization != self.organization:
+                raise ValueError(
+                    "The provided admin does not belong to the workspace's organization."
+                )
+        else:
+            # Create a new organization member as admin.
+            admin = OrganizationMemberFactory(organization=self.organization)
+
         self.workspace_admin = admin
         self.created_by = admin
         self.save()
@@ -84,6 +96,7 @@ class WorkspaceTeamFactory(DjangoModelFactory):
 
     workspace = factory.SubFactory(WorkspaceFactory)
     team = factory.SubFactory(TeamFactory)
+    custom_remittance_rate = None
 
 
 class WorkspaceWithTeamsFactory(WorkspaceFactory):
@@ -103,7 +116,7 @@ class WorkspaceWithTeamsFactory(WorkspaceFactory):
         team_count = extracted or 2
 
         for _ in range(team_count):
-            team = TeamFactory()
+            team = TeamFactory(organization=self.organization)
             WorkspaceTeamFactory(workspace=self, team=team)
 
 
@@ -112,3 +125,22 @@ class CustomRateWorkspaceFactory(WorkspaceFactory):
 
     title = factory.Sequence(lambda n: f"Custom Rate Workspace {n}")
     remittance_rate = Decimal("85.00")
+
+
+class WorkspaceAdminMemberFactory(OrganizationMemberFactory):
+    """Factory for creating an OrganizationMember who is also a Workspace admin."""
+
+    @factory.post_generation
+    def assign_as_admin(self, create, extracted, **kwargs):
+        """
+        Assigns the created OrganizationMember as an admin to a Workspace.
+        If a workspace is passed via `extracted`, it will be used.
+        Otherwise, a new workspace is created.
+        """
+        if not create:
+            return
+
+        workspace = extracted or WorkspaceFactory(organization=self.organization)
+        workspace.workspace_admin = self
+        workspace.created_by = self
+        workspace.save()

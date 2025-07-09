@@ -9,7 +9,7 @@ import factory
 from django.contrib.contenttypes.models import ContentType
 from factory.django import DjangoModelFactory
 
-from apps.entries.constants import EntryType
+from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from tests.factories.organization_factories import OrganizationMemberFactory
@@ -32,7 +32,7 @@ class EntryFactory(DjangoModelFactory):
     entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])
     amount = factory.Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
     description = factory.Faker("sentence", nb_words=8)
-    status = "pending_review"  # Default status
+    status = EntryStatus.PENDING_REVIEW  # Default status
     workspace = factory.LazyAttribute(lambda obj: WorkspaceFactory())
 
     @factory.lazy_attribute
@@ -45,7 +45,7 @@ class EntryFactory(DjangoModelFactory):
             team = self.submitter.team
         else:
             # Create a team if the submitter doesn't have one (e.g., CustomUser)
-            team = TeamFactory()
+            team = TeamFactory(organization=self.workspace.organization)
 
         return WorkspaceTeamFactory(workspace=self.workspace, team=team)
 
@@ -56,7 +56,7 @@ class EntryFactory(DjangoModelFactory):
 class IncomeEntryFactory(EntryFactory):
     """Factory for creating donation/contribution entries."""
 
-    entry_type = "income"
+    entry_type = EntryType.INCOME
     description = factory.Sequence(
         lambda n: f"Donation collection from supporters batch {n}"
     )
@@ -65,14 +65,14 @@ class IncomeEntryFactory(EntryFactory):
 class DisbursementEntryFactory(EntryFactory):
     """Factory for creating expense/disbursement entries."""
 
-    entry_type = "disbursement"
+    entry_type = EntryType.DISBURSEMENT
     description = factory.Sequence(lambda n: f"Campaign expense payment {n}")
 
 
 class RemittanceEntryFactory(EntryFactory):
     """Factory for creating remittance payment entries."""
 
-    entry_type = "remittance"
+    entry_type = EntryType.REMITTANCE
     description = factory.Sequence(
         lambda n: f"Remittance payment to central platform {n}"
     )
@@ -81,7 +81,7 @@ class RemittanceEntryFactory(EntryFactory):
 class PendingEntryFactory(EntryFactory):
     """Factory for creating pending review financial transactions."""
 
-    status = "pending_review"
+    status = EntryStatus.PENDING_REVIEW
     description = factory.Sequence(
         lambda n: f"Financial transaction awaiting review {n}"
     )
@@ -90,16 +90,18 @@ class PendingEntryFactory(EntryFactory):
 class ApprovedEntryFactory(EntryFactory):
     """Factory for creating approved financial transactions."""
 
-    status = "approved"
-    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
-    review_notes = factory.Faker("sentence", nb_words=10)
+    status = EntryStatus.APPROVED
     description = factory.Sequence(lambda n: f"Approved financial transaction {n}")
+    reviewed_by = factory.SubFactory(
+        "tests.factories.organization_factories.OrganizationMemberFactory"
+    )
+    review_notes = "This entry has been approved."
 
 
 class RejectedEntryFactory(EntryFactory):
     """Factory for creating rejected financial transactions."""
 
-    status = "rejected"
+    status = EntryStatus.REJECTED
     reviewed_by = factory.SubFactory(OrganizationMemberFactory)
     review_notes = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Rejected financial transaction {n}")
@@ -108,7 +110,7 @@ class RejectedEntryFactory(EntryFactory):
 class FlaggedEntryFactory(EntryFactory):
     """Factory for creating flagged financial transactions."""
 
-    status = "flagged"
+    is_flagged = True
     reviewed_by = factory.SubFactory(OrganizationMemberFactory)
     review_notes = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Flagged financial transaction {n}")
@@ -120,7 +122,7 @@ class LargeAmountEntryFactory(EntryFactory):
     amount = factory.LazyFunction(
         lambda: Decimal("25000.00")
     )  # Realistic large fundraising amount
-    entry_type = "income"
+    entry_type = EntryType.INCOME
     description = factory.Sequence(
         lambda n: f"Major donation from corporate sponsor {n}"
     )
@@ -130,7 +132,7 @@ class SmallAmountEntryFactory(EntryFactory):
     """Factory for creating small amount financial transactions."""
 
     amount = factory.LazyFunction(lambda: Decimal("50.00"))
-    entry_type = "disbursement"
+    entry_type = EntryType.DISBURSEMENT
     description = factory.Sequence(lambda n: f"Small campaign expense {n}")
 
 
@@ -148,12 +150,21 @@ class EntryWithReviewFactory(EntryFactory):
             return
 
         # Default to approved with coordinator review
-        status = extracted or "approved"
-        self.status = status
+        status = extracted or EntryStatus.APPROVED
+
+        if status == "flagged" or kwargs.get("is_flagged") is True:
+            self.is_flagged = True
+            self.status = EntryStatus.PENDING_REVIEW
+        else:
+            self.is_flagged = False
+            self.status = status
 
         # Assign appropriate reviewer based on status
-        if status in ["approved", "rejected", "flagged"]:
+        if self.status in [EntryStatus.APPROVED, EntryStatus.REJECTED] or self.is_flagged:
             # Use OrganizationMember instead of TeamMember
             self.reviewed_by = OrganizationMemberFactory()
-            self.review_notes = f"Financial transaction {status} after review"
+            if self.is_flagged:
+                self.review_notes = "Financial transaction has been flagged for review."
+            else:
+                self.review_notes = f"Financial transaction {self.status} after review."
             self.save()

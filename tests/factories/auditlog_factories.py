@@ -3,7 +3,6 @@ Factories for auditlog app models.
 """
 
 import uuid
-from datetime import datetime, timezone
 
 import factory
 from django.contrib.contenttypes.models import ContentType
@@ -36,7 +35,6 @@ class AuditTrailFactory(DjangoModelFactory):
     metadata = factory.LazyAttribute(
         lambda obj: {
             "action_by": obj.user.username if obj.user else "System",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
             "details": f"Performed {obj.action_type} on {obj.target_entity_type}",
         }
     )
@@ -118,7 +116,6 @@ class SystemAuditFactory(AuditTrailFactory):
         lambda obj: {
             "system_action": f"Automated {obj.action_type}",
             "triggered_by": "system_cron",
-            "execution_time": datetime.now(timezone.utc).isoformat(),
         }
     )
 

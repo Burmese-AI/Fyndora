@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.models import baseModel
-from apps.remittance.constants import STATUS_CHOICES
+from apps.remittance.constants import RemittanceStatus
 
 User = get_user_model()
 
@@ -20,7 +20,7 @@ class Remittance(baseModel):
     )
     due_amount = models.DecimalField(max_digits=10, decimal_places=2)
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=20, choices=RemittanceStatus.choices, default=RemittanceStatus.PENDING)
 
     confirmed_by = models.ForeignKey(
         User,

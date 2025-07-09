@@ -97,15 +97,15 @@ class TestRemittanceSignal:
 
     def test_custom_remittance_rate_is_used(self):
         """Test that the team's custom remittance rate is used if available."""
-        team = TeamFactory(title="Test Team", custom_remittance_rate=15.00)
-        submitter = TeamMemberFactory(team=team)
+        workspace_team = WorkspaceTeamFactory(custom_remittance_rate=Decimal("15.00"))
+
+        submitter = TeamMemberFactory(team=workspace_team.team)
 
         workspace = submitter.organization_member.organization.workspaces.first()
         if not workspace:
             workspace = WorkspaceFactory(
                 organization=submitter.organization_member.organization
             )
-        workspace_team = WorkspaceTeamFactory(team=team, workspace=workspace)
 
         entry_create(
             entry_type="income",

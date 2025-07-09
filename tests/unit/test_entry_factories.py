@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
-from apps.entries.constants import EntryType
+from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
@@ -76,7 +76,7 @@ class TestEntryFactories:
         assert entry.entry_type in [choice[0] for choice in EntryType.choices]
         assert entry.amount > 0
         assert entry.description is not None
-        assert entry.status == "pending_review"
+        assert entry.status == EntryStatus.PENDING_REVIEW
         assert entry.reviewed_by is None
         assert entry.review_notes is None
 
@@ -89,7 +89,7 @@ class TestEntryFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.entry_type == "income"
+        assert entry.entry_type == EntryType.INCOME
         assert entry.description.startswith("Donation collection from supporters batch")
         assert entry.workspace == self.workspace
 
@@ -102,7 +102,7 @@ class TestEntryFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.entry_type == "disbursement"
+        assert entry.entry_type == EntryType.DISBURSEMENT
         assert entry.description.startswith("Campaign expense payment")
         assert entry.workspace == self.workspace
 
@@ -115,7 +115,7 @@ class TestEntryFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.entry_type == "remittance"
+        assert entry.entry_type == EntryType.REMITTANCE
         assert entry.description.startswith("Remittance payment to central platform")
         assert entry.workspace == self.workspace
 
@@ -132,6 +132,7 @@ class TestEntryStatusFactories:
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.team
         )
+        self.coordinator = TeamFactory(organization=self.organization, team_coordinator=OrganizationMemberFactory(organization=self.organization))
 
         # Create submitter (TeamMember)
         self.submitter = TeamMemberFactory(
@@ -139,25 +140,19 @@ class TestEntryStatusFactories:
         )
 
         # Create organization members for reviewers
-        self.coordinator = OrganizationMemberFactory(organization=self.organization)
         self.reviewer = OrganizationMemberFactory(organization=self.organization)
         self.admin = OrganizationMemberFactory(organization=self.organization)
 
         # Create team members for these organization members (for role validation)
-        self.coord_team_member = TeamMemberFactory(
-            organization_member=self.coordinator,
-            team=self.team,
-            role=TeamMemberRole.TEAM_COORDINATOR,
-        )
         self.reviewer_team_member = TeamMemberFactory(
             organization_member=self.reviewer,
             team=self.team,
-            role=TeamMemberRole.OPERATIONS_REVIEWER,
+            role=TeamMemberRole.AUDITOR,
         )
         self.admin_team_member = TeamMemberFactory(
             organization_member=self.admin,
             team=self.team,
-            role=TeamMemberRole.WORKSPACE_ADMIN,
+            role=TeamMemberRole.AUDITOR,
         )
 
     def test_pending_entry_factory(self):
@@ -169,7 +164,7 @@ class TestEntryStatusFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "pending_review"
+        assert entry.status == EntryStatus.PENDING_REVIEW
         assert entry.description.startswith("Financial transaction awaiting review")
         assert entry.reviewed_by is None
         assert entry.review_notes is None
@@ -181,11 +176,11 @@ class TestEntryStatusFactories:
             workspace=self.workspace,
             submitter=self.submitter,
             workspace_team=self.workspace_team,
-            reviewed_by=self.coordinator,
+            reviewed_by=self.reviewer,
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "approved"
+        assert entry.status == EntryStatus.APPROVED
         assert entry.description.startswith("Approved financial transaction")
         assert entry.reviewed_by is not None
         assert entry.reviewed_by.organization == self.organization
@@ -196,7 +191,7 @@ class TestEntryStatusFactories:
         team_member = TeamMember.objects.get(
             organization_member=entry.reviewed_by, team=self.team
         )
-        assert team_member.role == TeamMemberRole.TEAM_COORDINATOR
+        assert team_member.role == TeamMemberRole.AUDITOR
 
     def test_rejected_entry_factory(self):
         """Test RejectedEntryFactory creates rejected entry."""
@@ -208,7 +203,7 @@ class TestEntryStatusFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "rejected"
+        assert entry.status == EntryStatus.REJECTED
         assert entry.description.startswith("Rejected financial transaction")
         assert entry.reviewed_by is not None
         assert entry.reviewed_by.organization == self.organization
@@ -219,7 +214,7 @@ class TestEntryStatusFactories:
         team_member = TeamMember.objects.get(
             organization_member=entry.reviewed_by, team=self.team
         )
-        assert team_member.role == TeamMemberRole.OPERATIONS_REVIEWER
+        assert team_member.role == TeamMemberRole.AUDITOR
 
     def test_flagged_entry_factory(self):
         """Test FlaggedEntryFactory creates flagged entry."""
@@ -231,7 +226,7 @@ class TestEntryStatusFactories:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "flagged"
+        assert entry.is_flagged is True
         assert entry.description.startswith("Flagged financial transaction")
         assert entry.reviewed_by is not None
         assert entry.reviewed_by.organization == self.organization
@@ -242,7 +237,7 @@ class TestEntryStatusFactories:
         team_member = TeamMember.objects.get(
             organization_member=entry.reviewed_by, team=self.team
         )
-        assert team_member.role == TeamMemberRole.WORKSPACE_ADMIN
+        assert team_member.role == TeamMemberRole.AUDITOR
 
 
 @pytest.mark.django_db
@@ -271,7 +266,7 @@ class TestEntryAmountFactories:
 
         assert isinstance(entry, Entry)
         assert entry.amount == Decimal("25000.00")
-        assert entry.entry_type == "income"
+        assert entry.entry_type == EntryType.INCOME
         assert entry.description.startswith("Major donation from corporate sponsor")
         assert entry.workspace == self.workspace
 
@@ -285,7 +280,7 @@ class TestEntryAmountFactories:
 
         assert isinstance(entry, Entry)
         assert entry.amount == Decimal("50.00")
-        assert entry.entry_type == "disbursement"
+        assert entry.entry_type == EntryType.DISBURSEMENT
         assert entry.description.startswith("Small campaign expense")
         assert entry.workspace == self.workspace
 
@@ -315,17 +310,17 @@ class TestEntryWithReviewFactory:
         self.coord_team_member = TeamMemberFactory(
             organization_member=self.coordinator,
             team=self.team,
-            role=TeamMemberRole.TEAM_COORDINATOR,
+            role=TeamMemberRole.AUDITOR,
         )
         self.reviewer_team_member = TeamMemberFactory(
             organization_member=self.reviewer,
             team=self.team,
-            role=TeamMemberRole.OPERATIONS_REVIEWER,
+            role=TeamMemberRole.AUDITOR,
         )
         self.admin_team_member = TeamMemberFactory(
             organization_member=self.admin,
             team=self.team,
-            role=TeamMemberRole.WORKSPACE_ADMIN,
+            role=TeamMemberRole.AUDITOR,
         )
 
     def test_entry_with_review_factory_default(self):
@@ -337,7 +332,7 @@ class TestEntryWithReviewFactory:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "approved"
+        assert entry.status == EntryStatus.APPROVED
         assert entry.reviewed_by is not None
         assert entry.review_notes is not None
         assert "approved" in entry.review_notes.lower()
@@ -353,7 +348,7 @@ class TestEntryWithReviewFactory:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "rejected"
+        assert entry.status == EntryStatus.REJECTED
         assert entry.reviewed_by is not None
         assert entry.review_notes is not None
         assert "rejected" in entry.review_notes.lower()
@@ -369,7 +364,7 @@ class TestEntryWithReviewFactory:
         )
 
         assert isinstance(entry, Entry)
-        assert entry.status == "flagged"
+        assert entry.is_flagged is True
         assert entry.reviewed_by is not None
         assert entry.review_notes is not None
         assert "flagged" in entry.review_notes.lower()
@@ -397,7 +392,7 @@ class TestEntryValidation:
         self.coord_team_member = TeamMemberFactory(
             organization_member=self.coordinator,
             team=self.team,
-            role=TeamMemberRole.TEAM_COORDINATOR,
+            role=TeamMemberRole.AUDITOR,
         )
 
     def test_entry_submitter_role_validation(self):
@@ -437,11 +432,6 @@ class TestEntryValidation:
         team_member = TeamMember.objects.get(
             organization_member=approved_entry.reviewed_by, team=self.team
         )
-        assert team_member.role == TeamMemberRole.TEAM_COORDINATOR
-        assert team_member.role in [
-            TeamMemberRole.WORKSPACE_ADMIN,
-            TeamMemberRole.OPERATIONS_REVIEWER,
-            TeamMemberRole.TEAM_COORDINATOR,
-        ]
+        assert team_member.role == TeamMemberRole.AUDITOR
 
         # Skip full_clean validation

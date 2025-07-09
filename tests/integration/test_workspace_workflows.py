@@ -22,7 +22,6 @@ from tests.factories import (
     WorkspaceTeamFactory,
     TeamFactory,
     TeamMemberFactory,
-    TeamCoordinatorFactory,
 )
 
 
@@ -264,22 +263,23 @@ class TestWorkspaceBusinessLogicWorkflows:
         # Create organization, workspace with custom rate
         org = OrganizationFactory()
         workspace = WorkspaceFactory(organization=org, remittance_rate=Decimal("88.00"))
-        team = TeamFactory(
-            organization=org, custom_remittance_rate=None
-        )  # No custom rate
-        WorkspaceTeamFactory(workspace=workspace, team=team)
+        team = TeamFactory(organization=org)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
 
-        # Team should inherit workspace rate when no custom rate
+        # Verify workspace rate
         assert workspace.remittance_rate == Decimal("88.00")
-        assert team.custom_remittance_rate is None
+        assert workspace_team.custom_remittance_rate is None
 
-        # Team with custom rate should override
-        custom_team = TeamFactory(
-            organization=org, custom_remittance_rate=Decimal("95.00")
+        # WorkspaceTeam with custom rate should override
+        custom_team = TeamFactory(organization=org)
+        custom_workspace_team = WorkspaceTeamFactory(
+            workspace=workspace,
+            team=custom_team,
+            custom_remittance_rate=Decimal("95.00"),
         )
-        WorkspaceTeamFactory(workspace=workspace, team=custom_team)
 
-        assert custom_team.custom_remittance_rate == Decimal("95.00")
+        assert custom_workspace_team.custom_remittance_rate == Decimal("95.00")
+
         # Custom rate overrides workspace default
 
     def test_workspace_expense_calculation_workflow(self):
@@ -356,7 +356,9 @@ class TestWorkspaceQueryWorkflows:
 
         # Add members to team
         TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        TeamCoordinatorFactory(team=team)
+        TeamMemberFactory(
+            team=team, role=TeamMemberRole.AUDITOR
+        )  # Formerly TeamCoordinatorFactory
 
         # Get workspace teams with members
         workspace_teams = workspace.workspace_teams.all().select_related("team")
@@ -369,7 +371,7 @@ class TestWorkspaceQueryWorkflows:
             # Should have different roles
             roles = [tm.role for tm in team_members]
             assert TeamMemberRole.SUBMITTER in roles
-            assert TeamMemberRole.TEAM_COORDINATOR in roles
+            assert TeamMemberRole.AUDITOR in roles
 
     def test_get_admin_workspaces_workflow(self):
         """Test getting all workspaces administered by a member."""
@@ -388,3 +390,4 @@ class TestWorkspaceQueryWorkflows:
         assert ws1 in admin_workspaces
         assert ws2 in admin_workspaces
         assert ws3 not in admin_workspaces
+print("TEST OVERRIDE WORKING")

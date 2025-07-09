@@ -5,7 +5,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
-from .constants import AUDIT_ACTION_TYPE_CHOICES
+from .constants import AuditActionType
 
 
 class AuditTrail(models.Model):
@@ -17,7 +17,7 @@ class AuditTrail(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
-    action_type = models.CharField(max_length=100, choices=AUDIT_ACTION_TYPE_CHOICES)
+    action_type = models.CharField(max_length=100, choices=AuditActionType.choices)
     target_entity_id = models.UUIDField()
     target_entity_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     target_entity = GenericForeignKey("target_entity_type", "target_entity_id")
@@ -41,7 +41,7 @@ class AuditTrail(models.Model):
         if not isinstance(metadata_dict, dict):
             return str(metadata_dict)  # Valid JSON, but not a dictionary
 
-        if self.action_type == "status_changed":
+        if self.action_type == AuditActionType.STATUS_CHANGED:
             old = metadata_dict.get("old_status", "N/A")
             new = metadata_dict.get("new_status", "N/A")
             return f"Status changed from '{old}' to '{new}'."

@@ -227,7 +227,9 @@ class TestEntryReviewService:
     def setup_method(self, method):
         """Set up test data."""
         self.submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
-        self.reviewer = OrganizationMemberFactory()
+        self.reviewer = OrganizationMemberFactory(
+            organization=self.submitter.organization_member.organization
+        )
         self.workspace = WorkspaceFactory(
             organization=self.submitter.organization_member.organization,
             operation_reviewer=self.reviewer,
@@ -385,10 +387,17 @@ class TestEntryReviewService:
     def test_bulk_review_entries(self):
         """Test bulk review entries."""
 
-        entries = [EntryFactory(workspace=self.workspace) for _ in range(3)]
+        entries = [EntryFactory(
+            workspace=self.workspace,
+            submitter=self.submitter,
+            workspace_team=self.workspace_team
+        ) for _ in range(3)]
 
         approved_entry = EntryFactory(
-            workspace=self.workspace, status=EntryStatus.APPROVED
+            workspace=self.workspace,
+            submitter=self.submitter,
+            workspace_team=self.workspace_team,
+            status=EntryStatus.APPROVED
         )
         entries.append(approved_entry)
 
@@ -409,7 +418,11 @@ class TestEntryReviewService:
 
     def test_bulk_review_entries_with_rejection(self):
         """Test bulk rejecting entries."""
-        entries = [EntryFactory(workspace=self.workspace) for _ in range(3)]
+        entries = [EntryFactory(
+            workspace=self.workspace,
+            submitter=self.submitter,
+            workspace_team=self.workspace_team
+        ) for _ in range(3)]
 
         notes = "Bulk rejection - missing documentation"
         reviewed_entries = bulk_review_entries(

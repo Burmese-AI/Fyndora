@@ -7,30 +7,34 @@ from django.utils import timezone
 
 from apps.core.models import baseModel
 from apps.remittance.constants import RemittanceStatus
-
-User = get_user_model()
-
+from apps.organizations.models import OrganizationMember
+from apps.workspaces.models import WorkspaceTeam
+from django.core.validators import MinValueValidator
 
 class Remittance(baseModel):
     remittance_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     workspace_team = models.ForeignKey(
-        "workspaces.WorkspaceTeam", on_delete=models.PROTECT, related_name="remittances"
+        WorkspaceTeam, 
+        on_delete=models.CASCADE, 
+        related_name="remittances",
+        unique=True
     )
-    due_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
+    due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=RemittanceStatus.choices, default=RemittanceStatus.PENDING)
-
     confirmed_by = models.ForeignKey(
-        User,
+        OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="confirmed_remittances",
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
-    due_date = models.DateField(null=True, blank=True)
+    paid_within_deadlines = models.BooleanField(default=True)
+    review_notes = models.TextField(blank=True, null=True)
 
     @property
     def workspace(self):

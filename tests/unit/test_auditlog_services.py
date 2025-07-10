@@ -15,7 +15,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from apps.auditlog.constants import AUDIT_ACTION_TYPE_CHOICES
+from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
 from apps.auditlog.selectors import get_audit_logs_for_workspace_with_filters
 from apps.auditlog.services import audit_create
@@ -177,7 +177,7 @@ class TestAuditCreateService(TestCase):
         user = CustomUserFactory()
         entry = EntryFactory()
 
-        action_types = [choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES]
+        action_types = [choice[0] for choice in AuditActionType.choices]
 
         for action_type in action_types:
             audit = audit_create(

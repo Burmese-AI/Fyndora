@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.contenttypes.models import ContentType
@@ -8,6 +9,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 from apps.core.models import baseModel
 from apps.entries.constants import EntryType, EntryStatus
+from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.models import OrganizationMember
@@ -80,6 +82,40 @@ class Entry(baseModel):
 
     def clean(self):
         super().clean()
+
+        # 1. Reviewer cannot be the same as the submitter
+        if self.reviewed_by and self.submitter:
+            if (
+                isinstance(self.submitter, OrganizationMember)
+                and self.reviewed_by == self.submitter
+            ) or (
+                isinstance(self.submitter, TeamMember)
+                and self.reviewed_by == self.submitter.organization_member
+            ):
+                raise ValidationError(
+                    "Reviewer and submitter cannot be the same person."
+                )
+
+        # 2. Auditors are not allowed to submit entries
+        if isinstance(self.submitter, TeamMember):
+            if self.submitter.role == TeamMemberRole.AUDITOR:
+                raise ValidationError(
+                    "Auditors are not allowed to submit entries."
+                )
+
+        # 3. Reviewer must belong to the same organization as the entry
+        if self.reviewed_by and self.organization:
+            if self.reviewed_by.organization != self.organization:
+                raise ValidationError(
+                    "Reviewer must belong to the same organization as the entry."
+                )
+
+        # 4. Submitter must belong to the team linked to this Workspace Team
+        if isinstance(self.submitter, TeamMember) and self.workspace_team:
+            if self.submitter.team != self.workspace_team.team:
+                raise ValidationError(
+                    "Submitter must belong to the team linked to this Workspace Team"
+                )
 
     class Meta:
         verbose_name = "entry"

@@ -22,8 +22,7 @@ class TeamFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     title = factory.Sequence(lambda n: f"Fundraising Team {n}")
     description = factory.Faker("sentence", nb_words=6)
-    team_coordinator = factory.SubFactory(OrganizationMemberFactory)
-    created_by = factory.SubFactory(OrganizationMemberFactory)
+    # team_coordinator and created_by are None by default
 
 
 class TeamWithCoordinatorFactory(TeamFactory):

@@ -15,7 +15,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
-from apps.auditlog.constants import AUDIT_ACTION_TYPE_CHOICES
+from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
 from tests.factories import (
     AuditTrailFactory,
@@ -73,7 +73,7 @@ class TestAuditTrailModel(TestCase):
     def test_audit_trail_action_type_choices(self):
         """Test that action_type respects the defined choices."""
         entry = EntryFactory()
-        valid_action_types = [choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES]
+        valid_action_types = [choice[0] for choice in AuditActionType.choices]
 
         for action_type in valid_action_types:
             audit = AuditTrailFactory(action_type=action_type, target_entity=entry)
@@ -307,10 +307,10 @@ class TestAuditTrailConstants(TestCase):
 
     def test_audit_action_type_choices_structure(self):
         """Test that action type choices are properly structured."""
-        self.assertIsInstance(AUDIT_ACTION_TYPE_CHOICES, tuple)
-        self.assertGreater(len(AUDIT_ACTION_TYPE_CHOICES), 0)
+        self.assertIsInstance(AuditActionType.choices, list)
+        self.assertGreater(len(AuditActionType.choices), 0)
 
-        for choice in AUDIT_ACTION_TYPE_CHOICES:
+        for choice in AuditActionType.choices:
             self.assertIsInstance(choice, tuple)
             self.assertEqual(len(choice), 2)
             self.assertIsInstance(choice[0], str)  # Value
@@ -324,7 +324,7 @@ class TestAuditTrailConstants(TestCase):
             "flagged",
             "file_uploaded",
         ]
-        action_values = [choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES]
+        action_values = [choice[0] for choice in AuditActionType.choices]
 
         for expected_action in expected_actions:
             self.assertIn(expected_action, action_values)

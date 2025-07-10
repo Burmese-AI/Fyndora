@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import ListView
 
-from .constants import AUDIT_ACTION_TYPE_CHOICES
+from .constants import AuditActionType
 from .models import AuditTrail
 from .selectors import get_audit_logs_for_workspace_with_filters
 
@@ -37,7 +37,7 @@ class AuditLogListView(LoginRequiredMixin, ListView):
 
         # Provide data for filter dropdowns
         context["users"] = User.objects.all().order_by("username")
-        context["action_types"] = AUDIT_ACTION_TYPE_CHOICES
+        context["action_types"] = AuditActionType.choices
         context["entity_types"] = ContentType.objects.all()
 
         # Create a copy of the GET parameters to preserve filters in pagination

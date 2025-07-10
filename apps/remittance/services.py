@@ -72,12 +72,11 @@ def remittance_create_or_update_from_income_entry(*, entry):
     if not workspace_team:
         return None
 
-    team = workspace_team.team
     workspace = workspace_team.workspace
 
     rate = (
-        team.custom_remittance_rate
-        if team.custom_remittance_rate is not None
+        workspace_team.custom_remittance_rate
+        if workspace_team.custom_remittance_rate is not None
         else workspace.remittance_rate
     )
     if rate is None:

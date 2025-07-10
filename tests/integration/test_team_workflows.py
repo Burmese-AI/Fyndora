@@ -5,19 +5,15 @@ Tests how teams work with organizations, members, coordinators, and workspaces.
 """
 
 import pytest
-from decimal import Decimal
 from django.db import IntegrityError
 
-from apps.teams.models import Team, TeamMember
+from apps.teams.models import TeamMember
 from apps.teams.constants import TeamMemberRole
 from tests.factories import (
     OrganizationFactory,
     OrganizationMemberFactory,
     TeamFactory,
     TeamMemberFactory,
-    TeamCoordinatorFactory,
-    OperationsReviewerFactory,
-    WorkspaceAdminMemberFactory,
     AuditorMemberFactory,
 )
 
@@ -50,27 +46,16 @@ class TestTeamCreationWorkflows:
         assert team.organization == org
 
         # Create team member entry for coordinator
-        team_member = TeamCoordinatorFactory(
-            team=team, organization_member=coordinator_member
+        team_member = TeamMemberFactory(
+            team=team,
+            organization_member=coordinator_member,
+            role=TeamMemberRole.AUDITOR,
         )
 
         # Verify coordinator is also a team member
-        assert team_member.role == TeamMemberRole.TEAM_COORDINATOR
+        assert team_member.role == TeamMemberRole.AUDITOR
         assert team_member.team == team
         assert team_member.organization_member == coordinator_member
-
-    def test_team_with_custom_remittance_rate_workflow(self):
-        """Test team creation with custom remittance rate."""
-        org = OrganizationFactory()
-        team = TeamFactory(
-            organization=org,
-            title="Elite Fundraising Unit",
-            custom_remittance_rate=Decimal("95.00"),
-        )
-
-        assert team.custom_remittance_rate == Decimal("95.00")
-        assert team.title == "Elite Fundraising Unit"
-        assert team.organization == org
 
     def test_team_unique_title_constraint(self):
         """Test that fundraising team titles must be unique across all teams."""
@@ -94,34 +79,25 @@ class TestTeamMembershipWorkflows:
         team = TeamFactory(organization=org)
 
         # Create organization members
-        coord_org_member = OrganizationMemberFactory(organization=org)
-        reviewer_org_member = OrganizationMemberFactory(organization=org)
         submitter_org_member = OrganizationMemberFactory(organization=org)
-        admin_org_member = OrganizationMemberFactory(organization=org)
         auditor_org_member = OrganizationMemberFactory(organization=org)
 
         # Add members with different roles
-        TeamCoordinatorFactory(team=team, organization_member=coord_org_member)
-        OperationsReviewerFactory(team=team, organization_member=reviewer_org_member)
         TeamMemberFactory(
             team=team,
             organization_member=submitter_org_member,
             role=TeamMemberRole.SUBMITTER,
         )
-        WorkspaceAdminMemberFactory(team=team, organization_member=admin_org_member)
         AuditorMemberFactory(team=team, organization_member=auditor_org_member)
 
         # Verify all members added correctly
         team_members = team.members.all()
-        assert team_members.count() == 5
+        assert team_members.count() == 2
 
         # Verify roles
         roles = [member.role for member in team_members]
         expected_roles = [
-            TeamMemberRole.TEAM_COORDINATOR,
-            TeamMemberRole.OPERATIONS_REVIEWER,
             TeamMemberRole.SUBMITTER,
-            TeamMemberRole.WORKSPACE_ADMIN,
             TeamMemberRole.AUDITOR,
         ]
         for role in expected_roles:
@@ -151,7 +127,9 @@ class TestTeamMembershipWorkflows:
         member1 = TeamMemberFactory(
             team=team1, organization_member=org_member, role=TeamMemberRole.SUBMITTER
         )
-        member2 = TeamCoordinatorFactory(team=team2, organization_member=org_member)
+        member2 = TeamMemberFactory(
+            team=team2, organization_member=org_member, role=TeamMemberRole.AUDITOR
+        )
 
         # Verify memberships
         assert member1.team == team1
@@ -159,63 +137,7 @@ class TestTeamMembershipWorkflows:
         assert member1.organization_member == org_member
         assert member2.organization_member == org_member
         assert member1.role == TeamMemberRole.SUBMITTER
-        assert member2.role == TeamMemberRole.TEAM_COORDINATOR
-
-
-@pytest.mark.integration
-@pytest.mark.django_db
-class TestTeamHierarchyWorkflows:
-    """Test team hierarchy and role-based workflows."""
-
-    def test_team_coordinator_assignment_workflow(self):
-        """Test assigning and reassigning team coordinators."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
-
-        # Create two potential coordinators
-        coord1_org_member = OrganizationMemberFactory(organization=org)
-        coord2_org_member = OrganizationMemberFactory(organization=org)
-
-        # Assign first coordinator
-        coord1 = TeamCoordinatorFactory(
-            team=team, organization_member=coord1_org_member
-        )
-
-        # Update team to have this coordinator
-        team.team_coordinator = coord1_org_member
-        team.save()
-
-        assert team.team_coordinator == coord1_org_member
-        assert coord1.role == TeamMemberRole.TEAM_COORDINATOR
-
-        # Reassign to new coordinator
-        TeamCoordinatorFactory(team=team, organization_member=coord2_org_member)
-
-        team.team_coordinator = coord2_org_member
-        team.save()
-
-        # Verify reassignment
-        team.refresh_from_db()
-        assert team.team_coordinator == coord2_org_member
-
-    def test_reviewer_hierarchy_workflow(self):
-        """Test that reviewers can review submissions from submitters."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
-
-        # Create reviewer and submitter
-        reviewer = OperationsReviewerFactory(team=team)
-        submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-
-        # Verify hierarchy setup
-        assert reviewer.role == TeamMemberRole.OPERATIONS_REVIEWER
-        assert submitter.role == TeamMemberRole.SUBMITTER
-        assert reviewer.team == submitter.team
-
-        # Both should be in same team but different roles
-        team_roles = team.members.values_list("role", flat=True)
-        assert TeamMemberRole.OPERATIONS_REVIEWER in team_roles
-        assert TeamMemberRole.SUBMITTER in team_roles
+        assert member2.role == TeamMemberRole.AUDITOR
 
 
 @pytest.mark.integration
@@ -223,49 +145,27 @@ class TestTeamHierarchyWorkflows:
 class TestTeamQueryWorkflows:
     """Test team querying and filtering workflows."""
 
-    def test_get_teams_by_coordinator_workflow(self):
-        """Test getting all teams coordinated by a specific member."""
-        org = OrganizationFactory()
-        coordinator_member = OrganizationMemberFactory(organization=org)
-
-        # Create teams with this coordinator
-        team1 = TeamFactory(organization=org, team_coordinator=coordinator_member)
-        team2 = TeamFactory(organization=org, team_coordinator=coordinator_member)
-        team3 = TeamFactory(organization=org)  # Different coordinator
-
-        # Query teams by coordinator
-        coordinated_teams = Team.objects.filter(team_coordinator=coordinator_member)
-
-        assert coordinated_teams.count() == 2
-        assert team1 in coordinated_teams
-        assert team2 in coordinated_teams
-        assert team3 not in coordinated_teams
-
     def test_get_team_members_by_role_workflow(self):
         """Test getting team members filtered by role."""
         org = OrganizationFactory()
         team = TeamFactory(organization=org)
 
         # Add members with different roles
-        coord = TeamCoordinatorFactory(team=team)
+        auditor = TeamMemberFactory(team=team, role=TeamMemberRole.AUDITOR)
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        reviewer = OperationsReviewerFactory(team=team)
 
         # Query by role
         submitters = team.members.filter(role=TeamMemberRole.SUBMITTER)
-        coordinators = team.members.filter(role=TeamMemberRole.TEAM_COORDINATOR)
-        reviewers = team.members.filter(role=TeamMemberRole.OPERATIONS_REVIEWER)
+        auditors = team.members.filter(role=TeamMemberRole.AUDITOR)
 
         # Verify filtering
         assert submitters.count() == 2
-        assert coordinators.count() == 1
-        assert reviewers.count() == 1
+        assert auditors.count() == 1
 
         assert submitter1 in submitters
         assert submitter2 in submitters
-        assert coord in coordinators
-        assert reviewer in reviewers
+        assert auditor in auditors
 
     def test_get_organization_member_teams_workflow(self):
         """Test getting all teams for a specific organization member."""
@@ -280,7 +180,9 @@ class TestTeamQueryWorkflows:
         TeamMemberFactory(
             team=team1, organization_member=org_member, role=TeamMemberRole.SUBMITTER
         )
-        TeamCoordinatorFactory(team=team2, organization_member=org_member)
+        TeamMemberFactory(
+            team=team2, organization_member=org_member, role=TeamMemberRole.AUDITOR
+        )
         # Not in team3
 
         # Query teams for this org member

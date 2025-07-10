@@ -16,6 +16,7 @@ from tests.factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
+from tests.factories.team_factories import TeamFactory
 
 
 @pytest.mark.unit
@@ -29,24 +30,23 @@ class TestEntryCleanValidation:
         self.submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
 
         # Create workspace and workspace_team
+        self.organization = self.submitter.organization_member.organization
+        # Coordinator (set on Team)
+        self.coordinator = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(
+            team_coordinator=self.coordinator, organization=self.organization
+        )
+        # Reviewer and admin (set on Workspace)
+        self.reviewer = OrganizationMemberFactory(organization=self.organization)
+        self.admin = OrganizationMemberFactory(organization=self.organization)
         self.workspace = WorkspaceFactory(
-            organization=self.submitter.organization_member.organization
+            organization=self.organization,
+            operation_reviewer=self.reviewer,
+            workspace_admin=self.admin,
         )
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.submitter.team
         )
-
-        # Create reviewers with different roles
-        self.coordinator = OrganizationMemberFactory(
-            organization=self.submitter.organization_member.organization
-        )
-        self.reviewer = OrganizationMemberFactory(
-            organization=self.submitter.organization_member.organization
-        )
-        self.admin = OrganizationMemberFactory(
-            organization=self.submitter.organization_member.organization
-        )
-
         # Create non-submitter for invalid tests
         self.non_submitter = TeamMemberFactory(role=TeamMemberRole.AUDITOR)
 
@@ -82,11 +82,7 @@ class TestEntryCleanValidation:
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
 
-        # The actual error message is about the team relationship, not the role
-        assert "submitter" in str(exc_info.value).lower()
-        assert "Submitter must belong to the team linked to this Workspace Team" in str(
-            exc_info.value
-        )
+        assert "auditors are not allowed to submit entries" in str(exc_info.value).lower()
 
     def test_valid_reviewer_roles_pass_validation(self):
         """Test that entries with valid reviewer roles pass validation."""
@@ -126,9 +122,12 @@ class TestEntryCleanValidation:
             review_notes="Approved entry",
         )
 
-        # This should pass because the Entry model doesn't validate reviewer roles
-        # The validation for reviewer roles would be in a service layer
-        entry.clean()
+        with pytest.raises(ValidationError) as exc_info:
+            entry.clean()
+
+        assert "Reviewer must belong to the same organization as the entry." in str(
+            exc_info.value
+        )
 
     def test_none_reviewer_passes_validation(self):
         """Test that entries with None reviewer pass validation."""

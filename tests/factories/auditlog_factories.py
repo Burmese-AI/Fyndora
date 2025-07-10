@@ -3,16 +3,13 @@ Factories for auditlog app models.
 """
 
 import uuid
-from datetime import datetime, timezone
 
 import factory
 from django.contrib.contenttypes.models import ContentType
 from factory import SubFactory
 from factory.django import DjangoModelFactory
 
-from apps.auditlog.constants import (
-    AUDIT_ACTION_TYPE_CHOICES,
-)
+from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
 
 from .user_factories import CustomUserFactory
@@ -26,7 +23,7 @@ class AuditTrailFactory(DjangoModelFactory):
 
     audit_id = factory.LazyFunction(uuid.uuid4)
     user = SubFactory(CustomUserFactory)
-    action_type = factory.Iterator([choice[0] for choice in AUDIT_ACTION_TYPE_CHOICES])
+    action_type = factory.Iterator([choice[0] for choice in AuditActionType.choices])
     # Accept a model instance as target_entity and extract ContentType and PK
     target_entity = None
     target_entity_id = factory.LazyAttribute(lambda o: o.target_entity.pk)
@@ -36,7 +33,6 @@ class AuditTrailFactory(DjangoModelFactory):
     metadata = factory.LazyAttribute(
         lambda obj: {
             "action_by": obj.user.username if obj.user else "System",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
             "details": f"Performed {obj.action_type} on {obj.target_entity_type}",
         }
     )
@@ -118,7 +114,6 @@ class SystemAuditFactory(AuditTrailFactory):
         lambda obj: {
             "system_action": f"Automated {obj.action_type}",
             "triggered_by": "system_cron",
-            "execution_time": datetime.now(timezone.utc).isoformat(),
         }
     )
 

@@ -67,6 +67,15 @@ class Workspace(baseModel):
         verbose_name = "workspace"
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
+        permissions = (
+            ("add_entry", "Can add entry to workspace"),
+            ("change_entry", "Can change entry in workspace"),
+            ("delete_entry", "Can delete entry in workspace"),
+            ("view_entry", "Can view entry in workspace"),
+            ("review_entry", "Can review entry in workspace"),
+            ("upload_attachments", "Can upload attachments in workspace"),
+            ("flag_entry", "Can flag entry in workspace"),
+        )
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "title"],

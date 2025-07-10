@@ -3,7 +3,9 @@ from decimal import Decimal
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
+from guardian.shortcuts import assign_perm
 
+from apps.entries.permissions import EntryPermissions
 from apps.entries.services import entry_create
 from apps.remittance.models import Remittance
 from apps.workspaces.models import WorkspaceTeam
@@ -28,6 +30,12 @@ def remittance_test_data():
         )
 
     workspace_team = WorkspaceTeamFactory(team=team, workspace=workspace)
+
+    # Assign required permissions to the submitter's user
+    assign_perm(
+        EntryPermissions.ADD_ENTRY, submitter.organization_member.user, workspace
+    )
+
     return submitter, team, workspace, workspace_team
 
 
@@ -97,15 +105,20 @@ class TestRemittanceSignal:
 
     def test_custom_remittance_rate_is_used(self):
         """Test that the team's custom remittance rate is used if available."""
-        team = TeamFactory(title="Test Team", custom_remittance_rate=15.00)
-        submitter = TeamMemberFactory(team=team)
+        workspace_team = WorkspaceTeamFactory(custom_remittance_rate=Decimal("15.00"))
+
+        submitter = TeamMemberFactory(team=workspace_team.team)
 
         workspace = submitter.organization_member.organization.workspaces.first()
         if not workspace:
             workspace = WorkspaceFactory(
                 organization=submitter.organization_member.organization
             )
-        workspace_team = WorkspaceTeamFactory(team=team, workspace=workspace)
+
+        # Assign required permissions to the submitter's user
+        assign_perm(
+            EntryPermissions.ADD_ENTRY, submitter.organization_member.user, workspace
+        )
 
         entry_create(
             entry_type="income",
@@ -147,11 +160,12 @@ class TestRemittanceSignal:
                     amount, 
                     description, 
                     status, 
+                    is_flagged,
                     submitted_at,
                     created_at,
                     updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), NOW()
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), NOW()
                 )
                 """,
                 [
@@ -163,6 +177,7 @@ class TestRemittanceSignal:
                     Decimal("1000.00"),
                     "Test Income Entry",
                     "pending_review",
+                    False,  # is_flagged
                 ],
             )
 

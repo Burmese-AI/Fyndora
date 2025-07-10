@@ -234,6 +234,8 @@ class TestUserQueryWorkflows(TestCase):
     @pytest.mark.django_db
     def test_get_active_users_workflow(self):
         """Test querying active users."""
+        # Clear all users to ensure a clean slate
+        User.objects.all().delete()
         # Create mix of users
         active_user1 = CustomUserFactory(status=StatusChoices.ACTIVE, is_active=True)
         active_user2 = CustomUserFactory(status=StatusChoices.ACTIVE, is_active=True)

@@ -36,13 +36,9 @@ from .organization_factories import (
 )
 from .team_factories import (
     AuditorMemberFactory,
-    OperationsReviewerFactory,
-    TeamCoordinatorFactory,
     TeamFactory,
     TeamMemberFactory,
     TeamWithCoordinatorFactory,
-    TeamWithCustomRateFactory,
-    WorkspaceAdminMemberFactory,
 )
 from .user_factories import (
     CustomUserFactory,
@@ -55,6 +51,7 @@ from .workspace_factories import (
     ArchivedWorkspaceFactory,
     ClosedWorkspaceFactory,
     CustomRateWorkspaceFactory,
+    WorkspaceAdminMemberFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
     WorkspaceWithAdminFactory,
@@ -77,14 +74,11 @@ __all__ = [
     "TeamFactory",
     "TeamWithCoordinatorFactory",
     "TeamMemberFactory",
-    "TeamCoordinatorFactory",
-    "OperationsReviewerFactory",
-    "WorkspaceAdminMemberFactory",
     "AuditorMemberFactory",
-    "TeamWithCustomRateFactory",
     # Workspace factories
     "WorkspaceFactory",
     "WorkspaceWithAdminFactory",
+    "WorkspaceAdminMemberFactory",
     "ActiveWorkspaceFactory",
     "ArchivedWorkspaceFactory",
     "ClosedWorkspaceFactory",

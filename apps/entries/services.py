@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
+from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.teams.models import TeamMember
@@ -30,39 +31,36 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
         perm_object = entry.workspace
 
     # 1. Base permission check
-    has_perm = False
-    if perm_object and user.has_perm(permission_to_check, perm_object):
-        has_perm = True
-    elif not perm_object and user.has_perm(permission_to_check):  # Global perm check
-        has_perm = True
+    has_perm = user.has_perm(permission_to_check, perm_object)
 
     if not has_perm:
         raise PermissionDenied("You do not have permission to perform this action.")
 
     # 2. Role-specific checks (only for existing entries)
-    if entry and isinstance(actor, TeamMember):
-        entry_team = entry.workspace_team.team if entry.workspace_team else None
+    if entry:
+        actor_org_member = (
+            actor.organization_member if isinstance(actor, TeamMember) else actor
+        )
 
-        if permission_to_check == EntryPermissions.REVIEW_ENTRY:
-            if (
-                actor.role == TeamMemberRole.TEAM_COORDINATOR
-                and actor.team != entry_team
-            ):
+        # Submitter check
+        if (
+            permission_to_check == EntryPermissions.CHANGE_ENTRY
+            and isinstance(actor, TeamMember)
+            and actor.role == TeamMemberRole.SUBMITTER
+            and entry.submitter != actor
+        ):
+            raise PermissionDenied("You can only edit your own entries.")
+
+        # Team Coordinator check
+        # A user who is a coordinator for any team is restricted to their own team's entries.
+        if actor_org_member.coordinated_teams.exists():
+            entry_team = entry.workspace_team.team if entry.workspace_team else None
+            # If the entry is not associated with a team, or if the actor is not the
+            # coordinator for that team, deny permission.
+            if not entry_team or entry_team.team_coordinator != actor_org_member:
                 raise PermissionDenied(
-                    "Team Coordinators can only review entries from their own team."
+                    "You can only manage entries for your own team."
                 )
-
-        if permission_to_check == EntryPermissions.CHANGE_ENTRY:
-            if (
-                actor.role == TeamMemberRole.TEAM_COORDINATOR
-                and actor.team != entry_team
-            ):
-                raise PermissionDenied(
-                    "Team Coordinators can only edit entries from their own team."
-                )
-
-            if actor.role == TeamMemberRole.SUBMITTER and entry.submitter != actor:
-                raise PermissionDenied("You can only edit your own entries.")
 
 
 def create_entry_with_attachments(
@@ -198,15 +196,15 @@ def entry_create(
     # Get workspace from workspace_team if workspace is not provided
     workspace = workspace or (workspace_team.workspace if workspace_team else None)
 
+    # Validate workspace requirements based on entry type
+    if entry_type == EntryType.WORKSPACE_EXP and not workspace:
+        raise ValidationError("Workspace is required for workspace expense entries")
+
     _check_entry_permissions(
         actor=submitted_by,
         workspace=workspace,
         permission_to_check=EntryPermissions.ADD_ENTRY,
     )
-
-    # Validate workspace requirements based on entry type
-    if entry_type == EntryType.WORKSPACE_EXP and not workspace:
-        raise ValidationError("Workspace is required for workspace expense entries")
 
     # If submitter is a team member, validate workspace_team for certain entry types
     if (
@@ -260,51 +258,50 @@ def _validate_review_data(*, status, notes=None):
     """
     Helper function to validate review data.
     """
-    if status not in [EntryStatus.APPROVED, EntryStatus.REJECTED, EntryStatus.FLAGGED]:
+    if status not in [EntryStatus.APPROVED, EntryStatus.REJECTED]:
         raise ValidationError(f"Invalid review status: {status}")
 
     # Require notes for reject and flag operations
-    if status in [EntryStatus.REJECTED, EntryStatus.FLAGGED] and not notes:
+    if status == EntryStatus.REJECTED and not notes:
         raise ValidationError(f"Notes are required when {status} an entry")
 
 
-def entry_review(*, entry, reviewer, status, notes=None):
+def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
     """
     Service to review an entry (approve, reject, flag).
     """
     _check_entry_permissions(
-        actor=reviewer, entry=entry, permission_to_check=EntryPermissions.REVIEW_ENTRY
+        actor=reviewer,
+        entry=entry,
+        permission_to_check=EntryPermissions.REVIEW_ENTRY,
     )
 
-    _validate_review_data(status=status, notes=notes)
+    # Allow flagging with current status
+    if is_flagged:
+        if not notes:
+            raise ValidationError("Notes are required when flagging an entry.")
+    else:
+        _validate_review_data(status=status, notes=notes)
 
-    if (
-        entry.status != EntryStatus.PENDING_REVIEW
-        and entry.status != EntryStatus.FLAGGED
-    ):
+    if not (entry.status == EntryStatus.PENDING_REVIEW or (is_flagged and entry.status == status)):
         raise ValidationError(f"Cannot review entry with status: {entry.status}")
 
-    old_status = entry.status
+    entry.status = status
+    entry.reviewed_by = reviewer
+    entry.review_notes = notes or ""
+    entry.is_flagged = is_flagged
+    entry.save(update_fields=["status", "reviewed_by", "review_notes", "is_flagged"])
 
-    entry_data = {
-        "status": status,
-        "reviewed_by": reviewer,
-        "review_notes": notes or "",
-    }
+    audit_log_message = f"Entry {status.label.lower()} by {reviewer.user.username}"
+    if notes:
+        audit_log_message += f" with notes: {notes}"
 
-    with transaction.atomic():
-        entry = model_update(entry, entry_data)
-
-        audit_create(
-            user=reviewer.organization_member.user,
-            action_type="status_changed",
-            target_entity=entry,
-            metadata={
-                "old_status": old_status,
-                "new_status": status,
-                "review_notes": notes or "",
-            },
-        )
+    audit_create(
+        user=reviewer.user,
+        action_type=AuditActionType.STATUS_CHANGED,
+        target_entity=entry,
+        metadata={"message": audit_log_message},
+    )
 
     return entry
 
@@ -332,7 +329,11 @@ def flag_entry(*, entry, reviewer, notes):
     Service to flag an entry for further review.
     """
     return entry_review(
-        entry=entry, reviewer=reviewer, status=EntryStatus.FLAGGED, notes=notes
+        entry=entry,
+        reviewer=reviewer,
+        status=entry.status,
+        is_flagged=True,
+        notes=notes,
     )
 
 
@@ -350,7 +351,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
 
             if (
                 entry.status != EntryStatus.PENDING_REVIEW
-                and entry.status != EntryStatus.FLAGGED
+                and not entry.is_flagged
             ):
                 continue  # Skip entries that can't be reviewed
 
@@ -363,8 +364,13 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
             entry = model_update(entry, entry_data)
             reviewed_entries.append(entry)
 
+            if hasattr(reviewer, 'organization_member'):
+                audit_user = reviewer.organization_member.user
+            else:
+                audit_user = reviewer.user
+
             audit_create(
-                user=reviewer.organization_member.user,
+                user=audit_user,
                 action_type="status_changed",
                 target_entity=entry,
                 metadata={

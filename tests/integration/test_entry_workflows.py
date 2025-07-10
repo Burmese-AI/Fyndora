@@ -11,22 +11,55 @@ from django.contrib.contenttypes.models import ContentType
 from apps.entries.models import Entry
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
+from apps.entries.constants import EntryStatus, EntryType
 from tests.factories import (
     DisbursementEntryFactory,
     EntryFactory,
     FlaggedEntryFactory,
     IncomeEntryFactory,
     OrganizationFactory,
+    OrganizationMemberFactory,
     PendingEntryFactory,
     RemittanceEntryFactory,
-    TeamCoordinatorFactory,
     TeamFactory,
     TeamMemberFactory,
-    OperationsReviewerFactory,
-    WorkspaceAdminMemberFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
+
+
+@pytest.fixture
+def org_with_workspace_reviewer():
+    """Create organization with workspace and operation_reviewer setup."""
+    org = OrganizationFactory()
+    workspace = WorkspaceFactory(organization=org)
+    reviewer = OrganizationMemberFactory(organization=org)
+    workspace.operation_reviewer = reviewer
+    workspace.save()
+    return {
+        'organization': org,
+        'workspace': workspace,
+        'reviewer': reviewer
+    }
+
+
+@pytest.fixture
+def team_with_workspace(org_with_workspace_reviewer):
+    """Create team with workspace and workspace_team setup."""
+    org = org_with_workspace_reviewer['organization']
+    workspace = org_with_workspace_reviewer['workspace']
+    reviewer = org_with_workspace_reviewer['reviewer']
+    
+    team = TeamFactory(organization=org)
+    workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+    
+    return {
+        'organization': org,
+        'team': team,
+        'workspace': workspace,
+        'workspace_team': workspace_team,
+        'reviewer': reviewer
+    }
 
 
 @pytest.mark.integration
@@ -55,7 +88,7 @@ class TestEntrySubmissionWorkflows:
         assert entry.submitter.team == team
         assert entry.entry_type == "income"
         assert entry.amount == Decimal("1500.00")
-        assert entry.status == "pending_review"
+        assert entry.status == EntryStatus.PENDING_REVIEW
         assert entry.reviewed_by is None
         assert entry.review_notes is None
 
@@ -78,9 +111,9 @@ class TestEntrySubmissionWorkflows:
         assert entries.count() == 3
 
         entry_types = [entry.entry_type for entry in entries]
-        assert "income" in entry_types
-        assert "disbursement" in entry_types
-        assert "remittance" in entry_types
+        assert EntryType.INCOME in entry_types
+        assert EntryType.DISBURSEMENT in entry_types
+        assert EntryType.REMITTANCE in entry_types
 
     def test_entry_submission_validation_workflow(self):
         """Test entry submission validation rules."""
@@ -92,7 +125,7 @@ class TestEntrySubmissionWorkflows:
 
         valid_entry = EntryFactory(
             submitter=submitter,
-            entry_type="income",
+            entry_type=EntryType.INCOME,
             amount=Decimal("100.00"),
             description="Valid entry",
             workspace=workspace,
@@ -109,120 +142,102 @@ class TestEntrySubmissionWorkflows:
 class TestEntryReviewWorkflows:
     """Test entry review and approval workflows."""
 
-    def test_complete_entry_approval_workflow(self):
+    def test_complete_entry_approval_workflow(self, team_with_workspace):
         """Test complete entry review and approval process."""
-        # Create organization and team with submitter and coordinator
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        reviewer = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_coordinator = TeamCoordinatorFactory(team=team)
-
-        # Get the organization member associated with the coordinator
-        coordinator = team_coordinator.organization_member
 
         # Submit entry - ensure it's an income entry type, not workspace_exp
-        entry = PendingEntryFactory(submitter=submitter, entry_type="income")
-        assert entry.status == "pending_review"
+        entry = PendingEntryFactory(submitter=submitter, entry_type=EntryType.INCOME)
+        assert entry.status == EntryStatus.PENDING_REVIEW
 
         # Review and approve entry
-        entry.status = "approved"
-        entry.reviewed_by = coordinator
+        entry.status = EntryStatus.APPROVED
+        entry.reviewed_by = reviewer
         entry.review_notes = "Entry looks good, approved for processing"
         entry.save()
 
         # Verify approval
         entry.refresh_from_db()
-        assert entry.status == "approved"
-        assert entry.reviewed_by == coordinator
-        assert entry.reviewed_by.user == team_coordinator.organization_member.user
+        assert entry.status == EntryStatus.APPROVED
+        assert entry.reviewed_by == reviewer
         assert entry.review_notes == "Entry looks good, approved for processing"
 
-    def test_entry_rejection_workflow(self):
+    def test_entry_rejection_workflow(self, team_with_workspace):
         """Test entry rejection process."""
-        # Create organization and team with submitter and reviewer
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        reviewer = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_reviewer = OperationsReviewerFactory(team=team)
-
-        # Get the organization member associated with the reviewer
-        reviewer = team_reviewer.organization_member
 
         # Submit entry - ensure it's an income entry type
-        entry = PendingEntryFactory(submitter=submitter, entry_type="income")
+        entry = PendingEntryFactory(submitter=submitter, entry_type=EntryType.INCOME)
 
         # Review and reject entry
-        entry.status = "rejected"
+        entry.status = EntryStatus.REJECTED
         entry.reviewed_by = reviewer
         entry.review_notes = "Insufficient documentation provided"
         entry.save()
 
         # Verify rejection
         entry.refresh_from_db()
-        assert entry.status == "rejected"
+        assert entry.status == EntryStatus.REJECTED
         assert entry.reviewed_by == reviewer
-        assert entry.reviewed_by.user == team_reviewer.organization_member.user
         assert "Insufficient documentation" in entry.review_notes
 
-    def test_entry_flagging_workflow(self):
+    def test_entry_flagging_workflow(self, team_with_workspace):
         """Test entry flagging for further investigation."""
-        # Create organization and team with submitter and workspace admin
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        admin = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_admin = WorkspaceAdminMemberFactory(team=team)
-
-        # Get the organization member associated with the admin
-        admin = team_admin.organization_member
 
         # Submit entry - ensure it's an income entry type
         entry = PendingEntryFactory(
-            submitter=submitter, amount=Decimal("10000.00"), entry_type="income"
+            submitter=submitter, amount=Decimal("10000.00"), entry_type=EntryType.INCOME
         )
 
         # Flag entry for investigation
-        entry.status = "flagged"
+        entry.is_flagged = True
         entry.reviewed_by = admin
         entry.review_notes = "Large amount requires additional verification"
         entry.save()
 
         # Verify flagging
         entry.refresh_from_db()
-        assert entry.status == "flagged"
+        assert entry.is_flagged
         assert entry.reviewed_by == admin
-        assert entry.reviewed_by.user == team_admin.organization_member.user
         assert "additional verification" in entry.review_notes
 
-    def test_reviewer_authorization_workflow(self):
+    def test_reviewer_authorization_workflow(self, team_with_workspace):
         """Test that only authorized roles can review entries."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        workspace = team_with_workspace['workspace']
+        workspace_team = team_with_workspace['workspace_team']
+        reviewer = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
-        # Create reviewers with different authorized roles
-        team_coordinator = TeamCoordinatorFactory(team=team)
-        team_operations_reviewer = OperationsReviewerFactory(team=team)
-        team_workspace_admin = WorkspaceAdminMemberFactory(team=team)
+        # Test the reviewer
+        # Ensure it's an income entry type
+        entry = PendingEntryFactory(
+            submitter=submitter, 
+            entry_type=EntryType.INCOME,
+            workspace=workspace,
+            workspace_team=workspace_team
+        )
+        entry.reviewed_by = reviewer
+        entry.status = EntryStatus.APPROVED
+        entry.review_notes = f"Reviewed by {reviewer.user.email}"
 
-        # Get the organization members associated with the team members
-        coordinator = team_coordinator.organization_member
-        operations_reviewer = team_operations_reviewer.organization_member
-        workspace_admin = team_workspace_admin.organization_member
+        # Should validate successfully
+        entry.full_clean()
+        entry.save()
 
-        # Test each reviewer type
-        for reviewer in [coordinator, operations_reviewer, workspace_admin]:
-            # Ensure it's an income entry type
-            entry = PendingEntryFactory(submitter=submitter, entry_type="income")
-            entry.reviewed_by = reviewer
-            entry.status = "approved"
-            entry.review_notes = f"Reviewed by {reviewer.user.email}"
-
-            # Should validate successfully
-            entry.full_clean()
-            entry.save()
-
-            # Verify the reviewer is an OrganizationMember
-            assert entry.reviewed_by.__class__.__name__ == "OrganizationMember"
+        # Verify the reviewer is an OrganizationMember
+        assert entry.reviewed_by.__class__.__name__ == "OrganizationMember"
 
 
 @pytest.mark.integration
@@ -230,61 +245,57 @@ class TestEntryReviewWorkflows:
 class TestEntryStatusTransitionWorkflows:
     """Test entry status transition workflows."""
 
-    def test_pending_to_approved_workflow(self):
+    def test_pending_to_approved_workflow(self, org_with_workspace_reviewer):
         """Test transitioning entry from pending to approved."""
+        coordinator = org_with_workspace_reviewer['reviewer']
+        
         entry = PendingEntryFactory()
-        team_coordinator = TeamCoordinatorFactory()
-        coordinator = team_coordinator.organization_member
-
-        assert entry.status == "pending_review"
+        assert entry.status == EntryStatus.PENDING_REVIEW
 
         # Approve entry
-        entry.status = "approved"
+        entry.status = EntryStatus.APPROVED
         entry.reviewed_by = coordinator
         entry.review_notes = "Approved after review"
         entry.save()
 
         entry.refresh_from_db()
-        assert entry.status == "approved"
+        assert entry.status == EntryStatus.APPROVED
         assert entry.reviewed_by == coordinator
 
-    def test_pending_to_rejected_workflow(self):
+    def test_pending_to_rejected_workflow(self, org_with_workspace_reviewer):
         """Test transitioning entry from pending to rejected."""
+        reviewer = org_with_workspace_reviewer['reviewer']
+        
         entry = PendingEntryFactory()
-        team_reviewer = OperationsReviewerFactory()
-        reviewer = team_reviewer.organization_member
-
-        assert entry.status == "pending_review"
+        assert entry.status == EntryStatus.PENDING_REVIEW
 
         # Reject entry
-        entry.status = "rejected"
+        entry.status = EntryStatus.REJECTED
         entry.reviewed_by = reviewer
         entry.review_notes = "Missing required information"
         entry.save()
 
         entry.refresh_from_db()
-        assert entry.status == "rejected"
+        assert entry.status == EntryStatus.REJECTED
         assert entry.reviewed_by == reviewer
 
-    def test_flagged_to_approved_workflow(self):
+    def test_flagged_to_approved_workflow(self, org_with_workspace_reviewer):
         """Test transitioning flagged entry to approved after investigation."""
-        # Create a flagged entry with proper OrganizationMember as reviewer
-        team_admin = WorkspaceAdminMemberFactory()
-        admin = team_admin.organization_member
-
+        admin = org_with_workspace_reviewer['reviewer']
+        
         entry = FlaggedEntryFactory()
         entry.reviewed_by = admin
         entry.save()
 
-        assert entry.status == "flagged"
+        assert entry.is_flagged
 
         # After investigation, approve entry
-        entry.status = "approved"
+        entry.status = EntryStatus.APPROVED
         entry.review_notes = "Investigation complete, entry approved"
         entry.save()
 
         entry.refresh_from_db()
-        assert entry.status == "approved"
+        assert entry.status == EntryStatus.APPROVED
         assert entry.reviewed_by == admin
         assert "Investigation complete" in entry.review_notes
 
@@ -294,20 +305,19 @@ class TestEntryStatusTransitionWorkflows:
 class TestEntryBulkOperationWorkflows:
     """Test bulk operations on entries."""
 
-    def test_bulk_entry_approval_workflow(self):
+    def test_bulk_entry_approval_workflow(self, team_with_workspace):
         """Test approving multiple entries in bulk."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        coordinator = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_coordinator = TeamCoordinatorFactory(team=team)
-        coordinator = team_coordinator.organization_member
 
         # Create multiple pending entries
         entries = [PendingEntryFactory(submitter=submitter) for _ in range(5)]
 
         # Bulk approve entries
         for entry in entries:
-            entry.status = "approved"
+            entry.status = EntryStatus.APPROVED
             entry.reviewed_by = coordinator
             entry.review_notes = "Bulk approval"
 
@@ -320,7 +330,7 @@ class TestEntryBulkOperationWorkflows:
         approved_entries = Entry.objects.filter(
             submitter_content_type=team_member_ct,
             submitter_object_id=submitter.pk,
-            status="approved",
+            status=EntryStatus.APPROVED,
         )
         assert approved_entries.count() == 5
 
@@ -328,10 +338,10 @@ class TestEntryBulkOperationWorkflows:
             assert entry.reviewed_by == coordinator
             assert entry.review_notes == "Bulk approval"
 
-    def test_bulk_entry_query_workflow(self):
+    def test_bulk_entry_query_workflow(self, team_with_workspace):
         """Test querying entries by various criteria."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
@@ -343,8 +353,8 @@ class TestEntryBulkOperationWorkflows:
         [DisbursementEntryFactory(submitter=submitter2) for _ in range(2)]
 
         # Query by entry type
-        income_query = Entry.objects.filter(entry_type="income")
-        disbursement_query = Entry.objects.filter(entry_type="disbursement")
+        income_query = Entry.objects.filter(entry_type=EntryType.INCOME)
+        disbursement_query = Entry.objects.filter(entry_type=EntryType.DISBURSEMENT)
 
         assert income_query.count() == 3
         assert disbursement_query.count() == 2
@@ -366,25 +376,27 @@ class TestEntryBulkOperationWorkflows:
 class TestEntryWorkflowIntegration:
     """Test integration between entries and other system components."""
 
-    def test_entry_team_integration_workflow(self):
+    def test_entry_team_integration_workflow(self, team_with_workspace):
         """Test how entries integrate with team structure."""
-        # Create team with multiple members
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org, title="Accounting Team")
+        team = team_with_workspace['team']
+        coordinator = team_with_workspace['reviewer']
+        
+        # Update team title
+        team.title = "Accounting Team"
+        team.save()
+        
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_coordinator = TeamCoordinatorFactory(team=team)
-        coordinator = team_coordinator.organization_member
 
         # Submit entries from different team members
-        entry1 = EntryFactory(submitter=submitter1, entry_type="income")
-        entry2 = EntryFactory(submitter=submitter2, entry_type="disbursement")
+        entry1 = EntryFactory(submitter=submitter1, entry_type=EntryType.INCOME)
+        entry2 = EntryFactory(submitter=submitter2, entry_type=EntryType.DISBURSEMENT)
 
         # Coordinator reviews both entries
         for entry in [entry1, entry2]:
-            entry.status = "approved"
+            entry.status = EntryStatus.APPROVED
             entry.reviewed_by = coordinator
-            entry.review_notes = "Approved by team coordinator"
+            entry.review_notes = "Approved by team auditor"
             entry.save()
 
         # Get content type for TeamMember model (not factory)
@@ -392,7 +404,7 @@ class TestEntryWorkflowIntegration:
 
         # Verify team workflow - using team field on submitter_content_type and submitter_object_id
         team_entries = Entry.objects.filter(
-            submitter_content_type=team_member_ct, status="approved"
+            submitter_content_type=team_member_ct, status=EntryStatus.APPROVED
         ).select_related("reviewed_by")
 
         # Filter entries by team members that belong to this team
@@ -403,7 +415,7 @@ class TestEntryWorkflowIntegration:
         for entry in team_entries:
             assert entry.submitter.team == team
             assert entry.reviewed_by == coordinator
-            assert entry.status == "approved"
+            assert entry.status == EntryStatus.APPROVED
 
     def test_entry_amount_analysis_workflow(self):
         """Test analyzing entries by amount ranges."""
@@ -427,40 +439,40 @@ class TestEntryWorkflowIntegration:
         assert small_total == Decimal("300.00")
         assert large_total == Decimal("10000.00")
 
-    def test_entry_review_chain_workflow(self):
+    def test_entry_review_chain_workflow(self, team_with_workspace):
         """Test complex review chain with multiple reviewers."""
-        org = OrganizationFactory()
-        team = TeamFactory(organization=org)
+        team = team_with_workspace['team']
+        org = team_with_workspace['organization']
+        reviewer1 = team_with_workspace['reviewer']
+        
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        team_reviewer1 = OperationsReviewerFactory(team=team)
-        team_reviewer2 = WorkspaceAdminMemberFactory(team=team)
-
-        # Get the organization members
-        reviewer1 = team_reviewer1.organization_member
-        reviewer2 = team_reviewer2.organization_member
+        
+        # Create second reviewer for the same organization
+        reviewer2 = OrganizationMemberFactory(organization=org)
 
         # Submit high-value entry
         entry = EntryFactory(
             submitter=submitter,
             amount=Decimal("10000.00"),
-            entry_type="disbursement",
+            entry_type=EntryType.DISBURSEMENT,
         )
 
         # First review - flag for additional review
-        entry.status = "flagged"
+        entry.is_flagged = True
         entry.reviewed_by = reviewer1
         entry.review_notes = "High amount, requires admin approval"
         entry.save()
 
         # Second review - final approval
-        entry.status = "approved"
+        entry.is_flagged = False
+        entry.status = EntryStatus.APPROVED
         entry.reviewed_by = reviewer2
         entry.review_notes = "Admin review complete, approved for processing"
         entry.save()
 
         # Verify final state
         entry.refresh_from_db()
-        assert entry.status == "approved"
+        assert entry.status == EntryStatus.APPROVED
         assert entry.reviewed_by == reviewer2
         assert entry.reviewed_by.__class__.__name__ == "OrganizationMember"
         assert "Admin review complete" in entry.review_notes

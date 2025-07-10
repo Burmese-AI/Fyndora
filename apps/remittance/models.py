@@ -15,11 +15,10 @@ class Remittance(baseModel):
     remittance_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    workspace_team = models.ForeignKey(
+    workspace_team = models.OneToOneField(
         WorkspaceTeam, 
         on_delete=models.CASCADE, 
-        related_name="remittances",
-        unique=True
+        related_name="remittance",
     )
     due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])

@@ -7,30 +7,33 @@ from django.utils import timezone
 
 from apps.core.models import baseModel
 from apps.remittance.constants import RemittanceStatus
-
-User = get_user_model()
-
+from apps.organizations.models import OrganizationMember
+from apps.workspaces.models import WorkspaceTeam
+from django.core.validators import MinValueValidator
 
 class Remittance(baseModel):
     remittance_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    workspace_team = models.ForeignKey(
-        "workspaces.WorkspaceTeam", on_delete=models.PROTECT, related_name="remittances"
+    workspace_team = models.OneToOneField(
+        WorkspaceTeam, 
+        on_delete=models.CASCADE, 
+        related_name="remittance",
     )
-    due_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
+    due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=RemittanceStatus.choices, default=RemittanceStatus.PENDING)
-
     confirmed_by = models.ForeignKey(
-        User,
+        OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="confirmed_remittances",
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
-    due_date = models.DateField(null=True, blank=True)
+    paid_within_deadlines = models.BooleanField(default=True)
+    review_notes = models.TextField(blank=True, null=True)
 
     @property
     def workspace(self):
@@ -50,25 +53,28 @@ class Remittance(baseModel):
         """
         Update remittance status based on payment and confirmation.
         """
-        # A paid remittance status is final and should not be reverted by this method.
-        if self.status == "paid" and self.pk:
+        # Don't override paid if it's already marked paid
+        if self.status == RemittanceStatus.PAID and self.pk:
             return
 
-        # Overdue status takes precedence over others, except for 'paid'.
+        # Overdue takes precedence unless fully paid
         if (
             self.due_date
             and self.due_date < timezone.now().date()
             and self.paid_amount < self.due_amount
         ):
-            self.status = "overdue"
+            self.status = RemittanceStatus.OVERDUE
             return
 
+        # Fully paid and confirmed
         if self.paid_amount >= self.due_amount and self.confirmed_by is not None:
-            self.status = "paid"
+            self.status = RemittanceStatus.PAID
+        # Partially paid
         elif self.paid_amount > 0:
-            self.status = "partial"
+            self.status = RemittanceStatus.PARTIAL
+        # Not paid at all
         else:
-            self.status = "pending"
+            self.status = RemittanceStatus.PENDING
 
     def clean(self):
         """

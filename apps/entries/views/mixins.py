@@ -55,7 +55,6 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
         self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace)
-        self.is_team_coordinator = self.workspace_team.team.team_coordinator == self.org_member
         self.workspace_team_member = get_object_or_404(TeamMember, team=self.workspace_team.team, organization_member=self.org_member)
         self.workspace_team_role = self.workspace_team_member.role
 

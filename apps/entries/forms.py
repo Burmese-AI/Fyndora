@@ -229,11 +229,11 @@ class UpdateWorkspaceTeamEntryForm(UpdateEntryForm):
         cleaned_data = super().clean()
         
         # If the entry is an income or disbursement and the status is not pending review and the workspace team member is a submitter or auditor, raise validation error
-        if self.instance.type in [EntryType.INCOME, EntryType.DISBURSEMENT] and self.instance.status != EntryStatus.PENDING_REVIEW and self.workspace_team_member.role in [TeamMemberRole.SUBMITTER, TeamMemberRole.AUDITOR]:
+        if self.instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT] and self.instance.status != EntryStatus.PENDING_REVIEW and self.workspace_team_member.role in [TeamMemberRole.SUBMITTER, TeamMemberRole.AUDITOR]:
             raise forms.ValidationError("You are not authorized to update workspace team entries")
         
         # For remittance entry, only org admin, workspace admin and operation reviewer can update the entry
-        if self.instance.type == EntryType.REMITTANCE and not self.is_org_admin and not self.is_workspace_admin and not self.is_operation_reviewer:
+        if self.instance.entry_type == EntryType.REMITTANCE and not self.is_org_admin and not self.is_workspace_admin and not self.is_operation_reviewer:
             raise forms.ValidationError("You are not authorized to update remittance entries")
         
         

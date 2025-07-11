@@ -96,6 +96,8 @@ class WorkspaceTeamEntryCreateView(
             description=form.cleaned_data["description"],
             attachments=form.cleaned_data["attachment_files"],
             entry_type=form.cleaned_data["entry_type"],
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
         )
 
         messages.success(self.request, "Entry created successfully")

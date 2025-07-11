@@ -53,25 +53,28 @@ class Remittance(baseModel):
         """
         Update remittance status based on payment and confirmation.
         """
-        # A paid remittance status is final and should not be reverted by this method.
-        if self.status == "paid" and self.pk:
+        # Don't override paid if it's already marked paid
+        if self.status == RemittanceStatus.PAID and self.pk:
             return
 
-        # Overdue status takes precedence over others, except for 'paid'.
+        # Overdue takes precedence unless fully paid
         if (
             self.due_date
             and self.due_date < timezone.now().date()
             and self.paid_amount < self.due_amount
         ):
-            self.status = "overdue"
+            self.status = RemittanceStatus.OVERDUE
             return
 
+        # Fully paid and confirmed
         if self.paid_amount >= self.due_amount and self.confirmed_by is not None:
-            self.status = "paid"
+            self.status = RemittanceStatus.PAID
+        # Partially paid
         elif self.paid_amount > 0:
-            self.status = "partial"
+            self.status = RemittanceStatus.PARTIAL
+        # Not paid at all
         else:
-            self.status = "pending"
+            self.status = RemittanceStatus.PENDING
 
     def clean(self):
         """

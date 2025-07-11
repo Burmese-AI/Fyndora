@@ -5,11 +5,47 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.utils import model_update
-from apps.entries.models import EntryType
 from apps.remittance.permissions import RemittancePermissions
 from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus
+from apps.entries.models import Entry
+from apps.entries.constants import EntryType, EntryStatus
 
+def update_remittance_based_on_entry_status_change(old_entry: Entry, new_entry: Entry):
+    remittance = new_entry.workspace_team.remittance
+
+    if not old_entry:
+        if new_entry.status == EntryStatus.APPROVED:
+            _apply_approved_effect(new_entry, remittance)
+    else:
+        status_changed = old_entry.status != new_entry.status
+        amount_changed = old_entry.amount != new_entry.amount
+        
+        if amount_changed:
+            raise ValidationError("Amount cannot be changed after approval")
+
+        # Revert old effect only if status was APPROVED
+        if old_entry.status == EntryStatus.APPROVED and status_changed:
+            revert_approved_effect(old_entry, remittance)
+
+        # Apply new effect if status is APPROVED now
+        if new_entry.status == EntryStatus.APPROVED and status_changed:
+            apply_approved_effect(new_entry, remittance)
+            
+    remittance.save()
+
+def apply_approved_effect(entry: Entry, remittance):
+    if entry.entry_type in [EntryType.INCOME]:
+        remittance.due_amount += entry.amount
+    elif entry.entry_type == EntryType.REMITTANCE:
+        remittance.paid_amount += entry.amount
+
+
+def revert_approved_effect(entry: Entry, remittance):
+    if entry.entry_type in [EntryType.INCOME]:
+        remittance.due_amount -= entry.amount
+    elif entry.entry_type == EntryType.REMITTANCE:
+        remittance.paid_amount -= entry.amount     
 
 def remittance_confirm_payment(*, remittance, user):
     """

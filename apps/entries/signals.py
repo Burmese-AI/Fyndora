@@ -1,52 +1,27 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
 from .models import Entry
 from .constants import EntryType, EntryStatus
+from apps.remittance.services import update_remittance_based_on_entry_status_change, revert_approved_effect
 
 @receiver(pre_save, sender=Entry)
 def keep_remittance_updated_with_entry(sender, instance, **kwargs):
-    remittance = getattr(instance.workspace, "remittance", None)
-    if not remittance:
+    if instance.entry_type not in [
+        EntryType.INCOME, EntryType.REMITTANCE
+    ]:
         return
 
-    # Check if instance.pk exists in Entry table
-    entry = Entry.objects.filter(pk=instance.pk).first()
+    old_entry = Entry.objects.filter(pk=instance.pk).first()
+    update_remittance_based_on_entry_status_change(old_entry, instance)
+    
+@receiver(post_delete, sender=Entry)
+def revert_remittance_on_entry_delete(sender, instance, **kwargs):
+    if instance.status != EntryStatus.APPROVED:
+        return
 
-    # If not exists (created) and status is APPROVED
-    # For income/disbursement entries, add the due_amount of remittance
-    # For remittance entries, add the paid_amount of remittance
-    if not entry:
-        if instance.status == EntryStatus.APPROVED:
-            if instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]:
-                remittance.due_amount += instance.amount
-            elif instance.entry_type == EntryType.REMITTANCE:
-                remittance.paid_amount += instance.amount
-            remittance.save()
-    else:
-        # Prevent logic from getting triggered even though status doesn't change
-        if entry.status == instance.status:
-            return
+    if instance.entry_type not in [EntryType.INCOME, EntryType.REMITTANCE]:
+        return
 
-        # If status is changed from something to APPROVED
-        # For income/disbursement entries, add the due_amount of remittance
-        # For remittance entries, add the paid_amount of remittance
-        if instance.status == EntryStatus.APPROVED:
-            if instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]:
-                remittance.due_amount += instance.amount
-            elif instance.entry_type == EntryType.REMITTANCE:
-                remittance.paid_amount += instance.amount
-
-        # If status is changed from APPROVED to something else
-        # For income/disbursement entries, subtract the due_amount of remittance
-        # For remittance entries, subtract the paid_amount of remittance
-        elif entry.status == EntryStatus.APPROVED:
-            if instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]:
-                remittance.due_amount -= instance.amount
-            elif instance.entry_type == EntryType.REMITTANCE:
-                remittance.paid_amount -= instance.amount
-                
-        #TODO: What's left
-        #Update Remittance Status based on the comparison of due_amount and paid_amount
-        #Refactor these using selectors and services
-
-        remittance.save()
+    remittance = instance.workspace_team.remittance
+    revert_approved_effect(instance, remittance)
+    remittance.save()

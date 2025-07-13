@@ -124,6 +124,7 @@ class BaseEntryDeleteView(
 
     def form_valid(self, form):
         from ..services import delete_entry
+
         try:
             delete_entry(self.entry)
         except Exception as e:
@@ -161,7 +162,8 @@ class BaseEntryDeleteView(
         )
 
         return HttpResponse(f"{message_html}")
-    
+
+
 class BaseEntryDetailView(
     LoginRequiredMixin,
     EntryRequiredMixin,

@@ -381,23 +381,30 @@ class TestEntryReviewService:
         flag_entry(entry=entry, reviewer=reviewer, notes=notes)
 
         mock_entry_review.assert_called_once_with(
-            entry=entry, reviewer=reviewer, status=entry.status, is_flagged=True, notes=notes
+            entry=entry,
+            reviewer=reviewer,
+            status=entry.status,
+            is_flagged=True,
+            notes=notes,
         )
 
     def test_bulk_review_entries(self):
         """Test bulk review entries."""
 
-        entries = [EntryFactory(
-            workspace=self.workspace,
-            submitter=self.submitter,
-            workspace_team=self.workspace_team
-        ) for _ in range(3)]
+        entries = [
+            EntryFactory(
+                workspace=self.workspace,
+                submitter=self.submitter,
+                workspace_team=self.workspace_team,
+            )
+            for _ in range(3)
+        ]
 
         approved_entry = EntryFactory(
             workspace=self.workspace,
             submitter=self.submitter,
             workspace_team=self.workspace_team,
-            status=EntryStatus.APPROVED
+            status=EntryStatus.APPROVED,
         )
         entries.append(approved_entry)
 
@@ -418,11 +425,14 @@ class TestEntryReviewService:
 
     def test_bulk_review_entries_with_rejection(self):
         """Test bulk rejecting entries."""
-        entries = [EntryFactory(
-            workspace=self.workspace,
-            submitter=self.submitter,
-            workspace_team=self.workspace_team
-        ) for _ in range(3)]
+        entries = [
+            EntryFactory(
+                workspace=self.workspace,
+                submitter=self.submitter,
+                workspace_team=self.workspace_team,
+            )
+            for _ in range(3)
+        ]
 
         notes = "Bulk rejection - missing documentation"
         reviewed_entries = bulk_review_entries(

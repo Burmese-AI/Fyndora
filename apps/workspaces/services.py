@@ -35,7 +35,7 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
 
 @transaction.atomic
 def update_workspace_from_form(
-    *, form, workspace, previous_workspace_admin
+    *, form, workspace, previous_workspace_admin, previous_operations_reviewer
 ) -> Workspace:
     """
     Updates a workspace from a form.
@@ -43,8 +43,13 @@ def update_workspace_from_form(
     try:
         workspace = model_update(workspace, form.cleaned_data)
         new_workspace_admin = form.cleaned_data.get("workspace_admin")
+        new_operation_reviewer = form.cleaned_data.get("operation_reviewer")
         update_workspace_admin_group(
-            workspace, previous_workspace_admin, new_workspace_admin
+            workspace,
+            previous_workspace_admin,
+            new_workspace_admin,
+            previous_operations_reviewer,
+            new_operation_reviewer,
         )
 
         return workspace

@@ -133,9 +133,8 @@ class WorkspaceTeamEntryUpdateView(
     WorkspaceTeamContextMixin,
     BaseEntryUpdateView,
 ):
-    
     form_class = UpdateWorkspaceTeamEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.INCOME
 

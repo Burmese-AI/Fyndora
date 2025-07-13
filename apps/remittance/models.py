@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -11,19 +10,28 @@ from apps.organizations.models import OrganizationMember
 from apps.workspaces.models import WorkspaceTeam
 from django.core.validators import MinValueValidator
 
+
 class Remittance(baseModel):
     remittance_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     workspace_team = models.OneToOneField(
-        WorkspaceTeam, 
-        on_delete=models.CASCADE, 
+        WorkspaceTeam,
+        on_delete=models.CASCADE,
         related_name="remittance",
     )
-    due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
+    due_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)]
+    )
+    paid_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)]
+    )
     due_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=RemittanceStatus.choices, default=RemittanceStatus.PENDING)
+    status = models.CharField(
+        max_length=20,
+        choices=RemittanceStatus.choices,
+        default=RemittanceStatus.PENDING,
+    )
     confirmed_by = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,

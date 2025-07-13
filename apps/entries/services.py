@@ -58,9 +58,7 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
             # If the entry is not associated with a team, or if the actor is not the
             # coordinator for that team, deny permission.
             if not entry_team or entry_team.team_coordinator != actor_org_member:
-                raise PermissionDenied(
-                    "You can only manage entries for your own team."
-                )
+                raise PermissionDenied("You can only manage entries for your own team.")
 
 
 def create_entry_with_attachments(
@@ -283,7 +281,10 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
     else:
         _validate_review_data(status=status, notes=notes)
 
-    if not (entry.status == EntryStatus.PENDING_REVIEW or (is_flagged and entry.status == status)):
+    if not (
+        entry.status == EntryStatus.PENDING_REVIEW
+        or (is_flagged and entry.status == status)
+    ):
         raise ValidationError(f"Cannot review entry with status: {entry.status}")
 
     entry.status = status
@@ -349,10 +350,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
         for entry in entries:
             old_status = entry.status
 
-            if (
-                entry.status != EntryStatus.PENDING_REVIEW
-                and not entry.is_flagged
-            ):
+            if entry.status != EntryStatus.PENDING_REVIEW and not entry.is_flagged:
                 continue  # Skip entries that can't be reviewed
 
             entry_data = {
@@ -364,7 +362,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
             entry = model_update(entry, entry_data)
             reviewed_entries.append(entry)
 
-            if hasattr(reviewer, 'organization_member'):
+            if hasattr(reviewer, "organization_member"):
                 audit_user = reviewer.organization_member.user
             else:
                 audit_user = reviewer.user

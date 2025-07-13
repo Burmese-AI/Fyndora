@@ -6,42 +6,62 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0007_alter_organization_options'),
-        ('remittance', '0003_remittance_due_date_alter_remittance_status_and_more'),
-        ('workspaces', '0008_alter_workspace_options'),
+        ("organizations", "0007_alter_organization_options"),
+        ("remittance", "0003_remittance_due_date_alter_remittance_status_and_more"),
+        ("workspaces", "0008_alter_workspace_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='remittance',
-            name='paid_within_deadlines',
+            model_name="remittance",
+            name="paid_within_deadlines",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='remittance',
-            name='review_notes',
+            model_name="remittance",
+            name="review_notes",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='remittance',
-            name='confirmed_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='confirmed_remittances', to='organizations.organizationmember'),
+            model_name="remittance",
+            name="confirmed_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="confirmed_remittances",
+                to="organizations.organizationmember",
+            ),
         ),
         migrations.AlterField(
-            model_name='remittance',
-            name='due_amount',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10, validators=[django.core.validators.MinValueValidator(0)]),
+            model_name="remittance",
+            name="due_amount",
+            field=models.DecimalField(
+                decimal_places=2,
+                default=0.0,
+                max_digits=10,
+                validators=[django.core.validators.MinValueValidator(0)],
+            ),
         ),
         migrations.AlterField(
-            model_name='remittance',
-            name='paid_amount',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10, validators=[django.core.validators.MinValueValidator(0)]),
+            model_name="remittance",
+            name="paid_amount",
+            field=models.DecimalField(
+                decimal_places=2,
+                default=0.0,
+                max_digits=10,
+                validators=[django.core.validators.MinValueValidator(0)],
+            ),
         ),
         migrations.AlterField(
-            model_name='remittance',
-            name='workspace_team',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='remittances', to='workspaces.workspaceteam', unique=True),
+            model_name="remittance",
+            name="workspace_team",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="remittances",
+                to="workspaces.workspaceteam",
+                unique=True,
+            ),
         ),
     ]

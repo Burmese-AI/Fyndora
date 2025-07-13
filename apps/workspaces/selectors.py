@@ -34,14 +34,16 @@ def get_user_workspace_teams_under_organization(organization_id, user):
     """
     Return workspace teams where the user is a member of the organization.
     """
-    
-    #Get Workspaces where user is a member or a team coordinator of the team
-    return WorkspaceTeam.objects.filter(
-        workspace__organization__pk=organization_id
-    ).filter(
-        Q(team__team_coordinator__user=user) | 
-        Q(team__members__organization_member__user=user)
-    ).prefetch_related("workspace", "team")
+
+    # Get Workspaces where user is a member or a team coordinator of the team
+    return (
+        WorkspaceTeam.objects.filter(workspace__organization__pk=organization_id)
+        .filter(
+            Q(team__team_coordinator__user=user)
+            | Q(team__members__organization_member__user=user)
+        )
+        .prefetch_related("workspace", "team")
+    )
 
 
 def get_user_workspaces_under_organization(organization_id):

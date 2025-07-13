@@ -58,7 +58,7 @@ class OrganizationExpenseCreateView(
     BaseEntryCreateView,
 ):
     form_class = CreateOrganizationExpenseEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
@@ -127,9 +127,8 @@ class OrganizationExpenseUpdateView(
     OrganizationContextMixin,
     BaseEntryUpdateView,
 ):
-    
     form_class = UpdateOrganizationExpenseEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
@@ -190,7 +189,6 @@ class OrganizationExpenseDeleteView(
 class WorkspaceExpenseListView(
     LoginRequiredMixin, WorkspaceRequiredMixin, WorkspaceContextMixin, BaseEntryListView
 ):
-    
     template_name = "entries/workspace_expense_index.html"
 
     def get_entry_type(self):
@@ -213,9 +211,8 @@ class WorkspaceExpenseCreateView(
     WorkspaceContextMixin,
     BaseEntryCreateView,
 ):
-    
     form_class = CreateWorkspaceExpenseEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
 
@@ -281,9 +278,8 @@ class WorkspaceExpenseUpdateView(
     WorkspaceContextMixin,
     BaseEntryUpdateView,
 ):
-    
     form_class = UpdateWorkspaceExpenseEntryForm
-    
+
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
 

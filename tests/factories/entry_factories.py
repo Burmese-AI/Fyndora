@@ -160,7 +160,10 @@ class EntryWithReviewFactory(EntryFactory):
             self.status = status
 
         # Assign appropriate reviewer based on status
-        if self.status in [EntryStatus.APPROVED, EntryStatus.REJECTED] or self.is_flagged:
+        if (
+            self.status in [EntryStatus.APPROVED, EntryStatus.REJECTED]
+            or self.is_flagged
+        ):
             # Use OrganizationMember instead of TeamMember
             self.reviewed_by = OrganizationMemberFactory()
             if self.is_flagged:

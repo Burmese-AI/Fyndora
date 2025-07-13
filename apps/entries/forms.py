@@ -4,7 +4,6 @@ from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
-from apps.teams.constants import TeamMemberRole
 from datetime import date
 
 
@@ -63,18 +62,24 @@ class BaseEntryForm(forms.ModelForm):
 
         return cleaned_data
 
+
 class CreateOrganizationExpenseEntryForm(BaseEntryForm):
     def clean(self):
         cleaned_data = super().clean()
         if not self.is_org_admin:
-            raise forms.ValidationError("You are not authorized to create organization expenses")
+            raise forms.ValidationError(
+                "You are not authorized to create organization expenses"
+            )
         return cleaned_data
-    
+
+
 class CreateWorkspaceExpenseEntryForm(BaseEntryForm):
     def clean(self):
         cleaned_data = super().clean()
         if not self.is_workspace_admin:
-            raise forms.ValidationError("You are not authorized to create workspace expenses")
+            raise forms.ValidationError(
+                "You are not authorized to create workspace expenses"
+            )
         return cleaned_data
 
 
@@ -97,23 +102,45 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # If today is after the end date of workspace, don't allow to create Income, Disbursement Entries
-        if cleaned_data['entry_type'] in [EntryType.INCOME, EntryType.DISBURSEMENT] and self.workspace.end_date and date.today() > self.workspace.end_date:
-            raise forms.ValidationError("No more entries can be created for this workspace")
-        
+        if (
+            cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
+            and self.workspace.end_date
+            and date.today() > self.workspace.end_date
+        ):
+            raise forms.ValidationError(
+                "No more entries can be created for this workspace"
+            )
+
         # If today is before end date of workspace, don't allow remittance entries to create
-        if cleaned_data["entry_type"] == EntryType.REMITTANCE and self.workspace.end_date and date.today() < self.workspace.end_date:
-            raise forms.ValidationError("Remittance Entries are not allowed to be uploaded yet")
-        
+        if (
+            cleaned_data["entry_type"] == EntryType.REMITTANCE
+            and self.workspace.end_date
+            and date.today() < self.workspace.end_date
+        ):
+            raise forms.ValidationError(
+                "Remittance Entries are not allowed to be uploaded yet"
+            )
+
         # Only team coordinator is allowed to create remittance entries
-        if cleaned_data["entry_type"] == EntryType.REMITTANCE and not self.is_team_coordinator:
-            raise forms.ValidationError("You are not authorized to create remittance entries")
-        
+        if (
+            cleaned_data["entry_type"] == EntryType.REMITTANCE
+            and not self.is_team_coordinator
+        ):
+            raise forms.ValidationError(
+                "You are not authorized to create remittance entries"
+            )
 
         # Only team coordinator and submitter are allowed to upload entries
-        if cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT] and not self.is_team_coordinator and not self.workspace_team_role == TeamMemberRole.SUBMITTER:
-            raise forms.ValidationError("You are not authorized to create entries for this workspace team")
+        if (
+            cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
+            and not self.is_team_coordinator
+            and not self.workspace_team_role == TeamMemberRole.SUBMITTER
+        ):
+            raise forms.ValidationError(
+                "You are not authorized to create entries for this workspace team"
+            )
 
         return cleaned_data
 
@@ -205,36 +232,53 @@ class UpdateEntryForm(BaseEntryForm):
 class UpdateOrganizationExpenseEntryForm(UpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # If the user is not an org admin, raise validation error
         if not self.is_org_admin:
-            raise forms.ValidationError("You are not authorized to update organization expenses")
-        
+            raise forms.ValidationError(
+                "You are not authorized to update organization expenses"
+            )
+
         return cleaned_data
 
-    
+
 class UpdateWorkspaceExpenseEntryForm(UpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # If the user is not a workspace admin, raise validation error
         if not self.is_workspace_admin:
-            raise forms.ValidationError("You are not authorized to update workspace expenses")
-        
+            raise forms.ValidationError(
+                "You are not authorized to update workspace expenses"
+            )
+
         return cleaned_data
 
-    
+
 class UpdateWorkspaceTeamEntryForm(UpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # If the entry is an income or disbursement and the status is not pending review and the workspace team member is a submitter or auditor, raise validation error
-        if self.instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT] and self.instance.status != EntryStatus.PENDING_REVIEW and self.workspace_team_member.role in [TeamMemberRole.SUBMITTER, TeamMemberRole.AUDITOR]:
-            raise forms.ValidationError("You are not authorized to update workspace team entries")
-        
+        if (
+            self.instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]
+            and self.instance.status != EntryStatus.PENDING_REVIEW
+            and self.workspace_team_member.role
+            in [TeamMemberRole.SUBMITTER, TeamMemberRole.AUDITOR]
+        ):
+            raise forms.ValidationError(
+                "You are not authorized to update workspace team entries"
+            )
+
         # For remittance entry, only org admin, workspace admin and operation reviewer can update the entry
-        if self.instance.entry_type == EntryType.REMITTANCE and not self.is_org_admin and not self.is_workspace_admin and not self.is_operation_reviewer:
-            raise forms.ValidationError("You are not authorized to update remittance entries")
-        
-        
+        if (
+            self.instance.entry_type == EntryType.REMITTANCE
+            and not self.is_org_admin
+            and not self.is_workspace_admin
+            and not self.is_operation_reviewer
+        ):
+            raise forms.ValidationError(
+                "You are not authorized to update remittance entries"
+            )
+
         return cleaned_data

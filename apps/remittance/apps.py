@@ -6,4 +6,4 @@ class RemittanceConfig(AppConfig):
     name = "apps.remittance"
 
     def ready(self):
-        from . import signals
+        pass

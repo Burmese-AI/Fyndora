@@ -5,16 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0004_remittance_paid_within_deadlines_and_more'),
-        ('workspaces', '0008_alter_workspace_options'),
+        ("remittance", "0004_remittance_paid_within_deadlines_and_more"),
+        ("workspaces", "0008_alter_workspace_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='remittance',
-            name='workspace_team',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='remittances', to='workspaces.workspaceteam'),
+            model_name="remittance",
+            name="workspace_team",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="remittances",
+                to="workspaces.workspaceteam",
+            ),
         ),
     ]

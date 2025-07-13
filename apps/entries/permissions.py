@@ -11,5 +11,8 @@ class EntryPermissions(models.TextChoices):
     DELETE_ENTRY = "workspaces.delete_entry", "Can delete entry in workspace"
     VIEW_ENTRY = "workspaces.view_entry", "Can view entry in workspace"
     REVIEW_ENTRY = "workspaces.review_entry", "Can review entry in workspace"
-    UPLOAD_ATTACHMENTS = "workspaces.upload_attachments", "Can upload attachments in workspace"
+    UPLOAD_ATTACHMENTS = (
+        "workspaces.upload_attachments",
+        "Can upload attachments in workspace",
+    )
     FLAG_ENTRY = "workspaces.flag_entry", "Can flag entry in workspace"

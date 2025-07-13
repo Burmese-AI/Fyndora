@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0011_alter_workspace_options'),
+        ("workspaces", "0011_alter_workspace_options"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='workspace',
-            old_name='operation_reviewer',
-            new_name='operations_reviewer',
+            model_name="workspace",
+            old_name="operation_reviewer",
+            new_name="operations_reviewer",
         ),
     ]

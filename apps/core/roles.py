@@ -4,7 +4,6 @@ from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions
 
 
-
 ROLES = {
     "ORG_OWNER": [
         OrganizationPermissions.CHANGE_ORGANIZATION,
@@ -47,7 +46,7 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_TEAM_ENTRY, 
+        WorkspacePermissions.CHANGE_TEAM_ENTRY,
         WorkspacePermissions.DELETE_TEAM_ENTRY,
         WorkspacePermissions.VIEW_TEAM_ENTRY,
         WorkspacePermissions.REVIEW_TEAM_ENTRY,
@@ -64,7 +63,7 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_TEAM_ENTRY, 
+        WorkspacePermissions.CHANGE_TEAM_ENTRY,
         WorkspacePermissions.DELETE_TEAM_ENTRY,
         WorkspacePermissions.VIEW_TEAM_ENTRY,
         WorkspacePermissions.REVIEW_TEAM_ENTRY,

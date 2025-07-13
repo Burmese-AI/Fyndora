@@ -1,9 +1,7 @@
-from django.db import models
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
-from apps.core.roles import ROLES
-from apps.core.permissions import WorkspacePermissions
 from apps.core.roles import get_permissions_for_role
+
 
 def assign_workspace_permissions(workspace):
     """
@@ -19,34 +17,39 @@ def assign_workspace_permissions(workspace):
     print(f"Workspace admins group name: {workspace_admins_group_name}")
     # operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
     try:
-        workspace_admins_group, _ = Group.objects.get_or_create(name=workspace_admins_group_name)
-        operations_reviewer_group, _ = Group.objects.get_or_create(name=operations_reviewer_group_name)
+        workspace_admins_group, _ = Group.objects.get_or_create(
+            name=workspace_admins_group_name
+        )
+        operations_reviewer_group, _ = Group.objects.get_or_create(
+            name=operations_reviewer_group_name
+        )
 
-        #getting the permissions for the workspace admin and operations reviewer
+        # getting the permissions for the workspace admin and operations reviewer
 
         workspace_admin_permissions = get_permissions_for_role("WORKSPACE_ADMIN")
-        operations_reviewer_permissions = get_permissions_for_role("OPERATIONS_REVIEWER")
+        operations_reviewer_permissions = get_permissions_for_role(
+            "OPERATIONS_REVIEWER"
+        )
 
         for perm in workspace_admin_permissions:
             assign_perm(perm, workspace_admins_group, workspace)
-        
+
         for perm in operations_reviewer_permissions:
             assign_perm(perm, operations_reviewer_group, workspace)
 
         print(f"Assigned permissions to {workspace_admins_group} for {workspace}")
         print(f"Assigned permissions to {operations_reviewer_group} for {workspace}")
 
-        #adding owner and workspace admin to the workspace admin group
+        # adding owner and workspace admin to the workspace admin group
         if workspace.workspace_admin is not None:
             workspace_admins_group.user_set.add(workspace.workspace_admin.user)
 
         if workspace.organization.owner is not None:
             workspace_admins_group.user_set.add(workspace.organization.owner.user)
-        
-        #adding operations reviewer to the operations reviewer group
+
+        # adding operations reviewer to the operations reviewer group
         if workspace.operations_reviewer is not None:
             operations_reviewer_group.user_set.add(workspace.operations_reviewer.user)
-
 
     except Exception as e:
         # You might want to log this error or handle it appropriately
@@ -54,7 +57,13 @@ def assign_workspace_permissions(workspace):
         raise e
 
 
-def update_workspace_admin_group(workspace, previous_admin, new_admin, previous_operations_reviewer, new_operations_reviewer):
+def update_workspace_admin_group(
+    workspace,
+    previous_admin,
+    new_admin,
+    previous_operations_reviewer,
+    new_operations_reviewer,
+):
     """
     Updates the workspace admin group membership.
 
@@ -68,15 +77,21 @@ def update_workspace_admin_group(workspace, previous_admin, new_admin, previous_
     print(f"new_admin: {new_admin}")
     print(f"previous_operations_reviewer: {previous_operations_reviewer}")
     print(f"new_operations_reviewer: {new_operations_reviewer}")
-    if previous_admin == new_admin and previous_operations_reviewer == new_operations_reviewer:
+    if (
+        previous_admin == new_admin
+        and previous_operations_reviewer == new_operations_reviewer
+    ):
         return  # No change for workspace admin and operations reviewer
     print("after")
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
-    workspace_admins_group, _ = Group.objects.get_or_create(name=workspace_admins_group_name)
+    workspace_admins_group, _ = Group.objects.get_or_create(
+        name=workspace_admins_group_name
+    )
 
     operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
-    operations_reviewer_group, _ = Group.objects.get_or_create(name=operations_reviewer_group_name)
-
+    operations_reviewer_group, _ = Group.objects.get_or_create(
+        name=operations_reviewer_group_name
+    )
 
     if previous_admin:
         workspace_admins_group.user_set.remove(previous_admin.user)

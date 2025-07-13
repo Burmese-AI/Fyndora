@@ -99,9 +99,7 @@ class Entry(baseModel):
         # 2. Auditors are not allowed to submit entries
         if isinstance(self.submitter, TeamMember):
             if self.submitter.role == TeamMemberRole.AUDITOR:
-                raise ValidationError(
-                    "Auditors are not allowed to submit entries."
-                )
+                raise ValidationError("Auditors are not allowed to submit entries.")
 
         # 3. Reviewer must belong to the same organization as the entry
         if self.reviewed_by and self.organization:

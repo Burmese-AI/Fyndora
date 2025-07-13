@@ -242,8 +242,8 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
 # allauth settings
 ACCOUNT_ADAPTER = "apps.emails.adapters.CustomAccountAdapter"
-ACCOUNT_LOGIN_METHODS = ('email',)
-ACCOUNT_SIGNUP_FIELDS = ('email*', 'username*', 'password1*', 'password2*')
+ACCOUNT_LOGIN_METHODS = ("email",)
+ACCOUNT_SIGNUP_FIELDS = ("email*", "username*", "password1*", "password2*")
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_SESSION_REMEMBER = True

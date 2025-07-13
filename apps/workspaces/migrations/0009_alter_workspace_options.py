@@ -4,14 +4,29 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0008_alter_workspace_options'),
+        ("workspaces", "0008_alter_workspace_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='workspace',
-            options={'ordering': ['-created_at'], 'permissions': (('assign_teams', 'Can assign teams to workspace'), ('lock_workspace', 'Can lock workspace'), ('view_dashboard', 'Can view dashboard reports'), ('add_entry', 'Can add entry to workspace'), ('change_entry', 'Can change entry in workspace'), ('delete_entry', 'Can delete entry in workspace'), ('view_entry', 'Can view entry in workspace'), ('review_entry', 'Can review entry in workspace'), ('upload_attachments', 'Can upload attachments in workspace'), ('flag_entry', 'Can flag entry in workspace')), 'verbose_name': 'workspace', 'verbose_name_plural': 'workspaces'},
+            name="workspace",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    ("assign_teams", "Can assign teams to workspace"),
+                    ("lock_workspace", "Can lock workspace"),
+                    ("view_dashboard", "Can view dashboard reports"),
+                    ("add_entry", "Can add entry to workspace"),
+                    ("change_entry", "Can change entry in workspace"),
+                    ("delete_entry", "Can delete entry in workspace"),
+                    ("view_entry", "Can view entry in workspace"),
+                    ("review_entry", "Can review entry in workspace"),
+                    ("upload_attachments", "Can upload attachments in workspace"),
+                    ("flag_entry", "Can flag entry in workspace"),
+                ),
+                "verbose_name": "workspace",
+                "verbose_name_plural": "workspaces",
+            },
         ),
     ]

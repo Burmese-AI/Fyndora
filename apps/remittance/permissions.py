@@ -10,5 +10,8 @@ class RemittancePermissions(models.TextChoices):
     CHANGE_REMITTANCE = "remittance.change_remittance", "Can change remittance"
     DELETE_REMITTANCE = "remittance.delete_remittance", "Can delete remittance"
     VIEW_REMITTANCE = "remittance.view_remittance", "Can view remittance"
-    REVIEW_REMITTANCE = "remittance.review_remittance", "Can review and confirm remittances"
+    REVIEW_REMITTANCE = (
+        "remittance.review_remittance",
+        "Can review and confirm remittances",
+    )
     FLAG_REMITTANCE = "remittance.flag_remittance", "Can flag remittances"

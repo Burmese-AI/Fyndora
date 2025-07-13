@@ -82,7 +82,9 @@ class TestEntryCleanValidation:
         with pytest.raises(ValidationError) as exc_info:
             entry.clean()
 
-        assert "auditors are not allowed to submit entries" in str(exc_info.value).lower()
+        assert (
+            "auditors are not allowed to submit entries" in str(exc_info.value).lower()
+        )
 
     def test_valid_reviewer_roles_pass_validation(self):
         """Test that entries with valid reviewer roles pass validation."""

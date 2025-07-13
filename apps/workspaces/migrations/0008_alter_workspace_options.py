@@ -4,14 +4,26 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0007_workspace_operation_reviewer'),
+        ("workspaces", "0007_workspace_operation_reviewer"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='workspace',
-            options={'ordering': ['-created_at'], 'permissions': (('add_entry', 'Can add entry to workspace'), ('change_entry', 'Can change entry in workspace'), ('delete_entry', 'Can delete entry in workspace'), ('view_entry', 'Can view entry in workspace'), ('review_entry', 'Can review entry in workspace'), ('upload_attachments', 'Can upload attachments in workspace'), ('flag_entry', 'Can flag entry in workspace')), 'verbose_name': 'workspace', 'verbose_name_plural': 'workspaces'},
+            name="workspace",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    ("add_entry", "Can add entry to workspace"),
+                    ("change_entry", "Can change entry in workspace"),
+                    ("delete_entry", "Can delete entry in workspace"),
+                    ("view_entry", "Can view entry in workspace"),
+                    ("review_entry", "Can review entry in workspace"),
+                    ("upload_attachments", "Can upload attachments in workspace"),
+                    ("flag_entry", "Can flag entry in workspace"),
+                ),
+                "verbose_name": "workspace",
+                "verbose_name_plural": "workspaces",
+            },
         ),
     ]

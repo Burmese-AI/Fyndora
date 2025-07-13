@@ -132,7 +132,10 @@ class TestEntryStatusFactories:
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.team
         )
-        self.coordinator = TeamFactory(organization=self.organization, team_coordinator=OrganizationMemberFactory(organization=self.organization))
+        self.coordinator = TeamFactory(
+            organization=self.organization,
+            team_coordinator=OrganizationMemberFactory(organization=self.organization),
+        )
 
         # Create submitter (TeamMember)
         self.submitter = TeamMemberFactory(

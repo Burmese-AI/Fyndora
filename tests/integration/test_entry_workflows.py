@@ -36,29 +36,25 @@ def org_with_workspace_reviewer():
     reviewer = OrganizationMemberFactory(organization=org)
     workspace.operation_reviewer = reviewer
     workspace.save()
-    return {
-        'organization': org,
-        'workspace': workspace,
-        'reviewer': reviewer
-    }
+    return {"organization": org, "workspace": workspace, "reviewer": reviewer}
 
 
 @pytest.fixture
 def team_with_workspace(org_with_workspace_reviewer):
     """Create team with workspace and workspace_team setup."""
-    org = org_with_workspace_reviewer['organization']
-    workspace = org_with_workspace_reviewer['workspace']
-    reviewer = org_with_workspace_reviewer['reviewer']
-    
+    org = org_with_workspace_reviewer["organization"]
+    workspace = org_with_workspace_reviewer["workspace"]
+    reviewer = org_with_workspace_reviewer["reviewer"]
+
     team = TeamFactory(organization=org)
     workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
-    
+
     return {
-        'organization': org,
-        'team': team,
-        'workspace': workspace,
-        'workspace_team': workspace_team,
-        'reviewer': reviewer
+        "organization": org,
+        "team": team,
+        "workspace": workspace,
+        "workspace_team": workspace_team,
+        "reviewer": reviewer,
     }
 
 
@@ -144,9 +140,9 @@ class TestEntryReviewWorkflows:
 
     def test_complete_entry_approval_workflow(self, team_with_workspace):
         """Test complete entry review and approval process."""
-        team = team_with_workspace['team']
-        reviewer = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        reviewer = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Submit entry - ensure it's an income entry type, not workspace_exp
@@ -167,9 +163,9 @@ class TestEntryReviewWorkflows:
 
     def test_entry_rejection_workflow(self, team_with_workspace):
         """Test entry rejection process."""
-        team = team_with_workspace['team']
-        reviewer = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        reviewer = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Submit entry - ensure it's an income entry type
@@ -189,9 +185,9 @@ class TestEntryReviewWorkflows:
 
     def test_entry_flagging_workflow(self, team_with_workspace):
         """Test entry flagging for further investigation."""
-        team = team_with_workspace['team']
-        admin = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        admin = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Submit entry - ensure it's an income entry type
@@ -213,20 +209,20 @@ class TestEntryReviewWorkflows:
 
     def test_reviewer_authorization_workflow(self, team_with_workspace):
         """Test that only authorized roles can review entries."""
-        team = team_with_workspace['team']
-        workspace = team_with_workspace['workspace']
-        workspace_team = team_with_workspace['workspace_team']
-        reviewer = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        workspace = team_with_workspace["workspace"]
+        workspace_team = team_with_workspace["workspace_team"]
+        reviewer = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Test the reviewer
         # Ensure it's an income entry type
         entry = PendingEntryFactory(
-            submitter=submitter, 
+            submitter=submitter,
             entry_type=EntryType.INCOME,
             workspace=workspace,
-            workspace_team=workspace_team
+            workspace_team=workspace_team,
         )
         entry.reviewed_by = reviewer
         entry.status = EntryStatus.APPROVED
@@ -247,8 +243,8 @@ class TestEntryStatusTransitionWorkflows:
 
     def test_pending_to_approved_workflow(self, org_with_workspace_reviewer):
         """Test transitioning entry from pending to approved."""
-        coordinator = org_with_workspace_reviewer['reviewer']
-        
+        coordinator = org_with_workspace_reviewer["reviewer"]
+
         entry = PendingEntryFactory()
         assert entry.status == EntryStatus.PENDING_REVIEW
 
@@ -264,8 +260,8 @@ class TestEntryStatusTransitionWorkflows:
 
     def test_pending_to_rejected_workflow(self, org_with_workspace_reviewer):
         """Test transitioning entry from pending to rejected."""
-        reviewer = org_with_workspace_reviewer['reviewer']
-        
+        reviewer = org_with_workspace_reviewer["reviewer"]
+
         entry = PendingEntryFactory()
         assert entry.status == EntryStatus.PENDING_REVIEW
 
@@ -281,8 +277,8 @@ class TestEntryStatusTransitionWorkflows:
 
     def test_flagged_to_approved_workflow(self, org_with_workspace_reviewer):
         """Test transitioning flagged entry to approved after investigation."""
-        admin = org_with_workspace_reviewer['reviewer']
-        
+        admin = org_with_workspace_reviewer["reviewer"]
+
         entry = FlaggedEntryFactory()
         entry.reviewed_by = admin
         entry.save()
@@ -307,9 +303,9 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_approval_workflow(self, team_with_workspace):
         """Test approving multiple entries in bulk."""
-        team = team_with_workspace['team']
-        coordinator = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        coordinator = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
         # Create multiple pending entries
@@ -340,8 +336,8 @@ class TestEntryBulkOperationWorkflows:
 
     def test_bulk_entry_query_workflow(self, team_with_workspace):
         """Test querying entries by various criteria."""
-        team = team_with_workspace['team']
-        
+        team = team_with_workspace["team"]
+
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
@@ -378,13 +374,13 @@ class TestEntryWorkflowIntegration:
 
     def test_entry_team_integration_workflow(self, team_with_workspace):
         """Test how entries integrate with team structure."""
-        team = team_with_workspace['team']
-        coordinator = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        coordinator = team_with_workspace["reviewer"]
+
         # Update team title
         team.title = "Accounting Team"
         team.save()
-        
+
         submitter1 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
         submitter2 = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
 
@@ -441,12 +437,12 @@ class TestEntryWorkflowIntegration:
 
     def test_entry_review_chain_workflow(self, team_with_workspace):
         """Test complex review chain with multiple reviewers."""
-        team = team_with_workspace['team']
-        org = team_with_workspace['organization']
-        reviewer1 = team_with_workspace['reviewer']
-        
+        team = team_with_workspace["team"]
+        org = team_with_workspace["organization"]
+        reviewer1 = team_with_workspace["reviewer"]
+
         submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-        
+
         # Create second reviewer for the same organization
         reviewer2 = OrganizationMemberFactory(organization=org)
 

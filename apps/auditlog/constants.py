@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class AuditActionType(models.TextChoices):
     TEAM_MEMBER_ADDED = "team_member_added", "Team Member Added"
     ENTRY_CREATED = "entry_created", "Entry Created"

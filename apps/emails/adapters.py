@@ -11,14 +11,14 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         Overrides the default send_mail to use our custom email service
         and correctly render HTML and text templates.
         """
-        subject = render_to_string(f'{template_prefix}_subject.txt', context)
+        subject = render_to_string(f"{template_prefix}_subject.txt", context)
         # Email subject *must not* contain newlines
         subject = "".join(subject.splitlines())
 
-        text_body = render_to_string(f'{template_prefix}_message.txt', context)
+        text_body = render_to_string(f"{template_prefix}_message.txt", context)
 
         try:
-            html_body = render_to_string(f'{template_prefix}_message.html', context)
+            html_body = render_to_string(f"{template_prefix}_message.html", context)
         except TemplateDoesNotExist:
             html_body = None
 

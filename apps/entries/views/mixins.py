@@ -14,8 +14,7 @@ from ..models import Entry
 
 
 class OrganizationRequiredMixin:
-    """
-    """
+    """ """
 
     organization = None
     org_member = None
@@ -25,13 +24,14 @@ class OrganizationRequiredMixin:
         super().setup(request, *args, **kwargs)
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
-        self.org_member = get_object_or_404(OrganizationMember, user=self.request.user, organization=self.organization)
+        self.org_member = get_object_or_404(
+            OrganizationMember, user=self.request.user, organization=self.organization
+        )
         self.is_org_admin = self.org_member == self.organization.owner
 
 
 class WorkspaceRequiredMixin(OrganizationRequiredMixin):
-    """
-    """
+    """ """
 
     workspace = None
     is_workspace_admin = None
@@ -40,9 +40,13 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_id = kwargs.get("workspace_id")
-        self.workspace = get_object_or_404(Workspace, pk=workspace_id, organization=self.organization)
+        self.workspace = get_object_or_404(
+            Workspace, pk=workspace_id, organization=self.organization
+        )
         self.is_workspace_admin = self.workspace.workspace_admin == self.org_member
-        self.is_operation_reviewer = self.workspace.operation_reviewer == self.org_member
+        self.is_operation_reviewer = (
+            self.workspace.operation_reviewer == self.org_member
+        )
 
 
 class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
@@ -54,8 +58,14 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_team_id = kwargs.get("workspace_team_id")
-        self.workspace_team = get_object_or_404(WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace)
-        self.workspace_team_member = get_object_or_404(TeamMember, team=self.workspace_team.team, organization_member=self.org_member)
+        self.workspace_team = get_object_or_404(
+            WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace
+        )
+        self.workspace_team_member = get_object_or_404(
+            TeamMember,
+            team=self.workspace_team.team,
+            organization_member=self.org_member,
+        )
         self.workspace_team_role = self.workspace_team_member.role
 
 
@@ -78,9 +88,17 @@ class EntryFormMixin:
         kwargs["org_member"] = self.org_member
         kwargs["organization"] = self.organization
         kwargs["is_org_admin"] = self.is_org_admin
-        kwargs["is_workspace_admin"] = self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
-        kwargs["is_operation_reviewer"] = self.is_operation_reviewer if hasattr(self, "is_operation_reviewer") else None
-        kwargs["is_team_coordinator"] = self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
+        kwargs["is_workspace_admin"] = (
+            self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
+        )
+        kwargs["is_operation_reviewer"] = (
+            self.is_operation_reviewer
+            if hasattr(self, "is_operation_reviewer")
+            else None
+        )
+        kwargs["is_team_coordinator"] = (
+            self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
+        )
         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
         kwargs["workspace_team"] = (
             self.workspace_team if hasattr(self, "workspace_team") else None

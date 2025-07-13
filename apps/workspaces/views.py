@@ -268,7 +268,6 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
             )
             return HttpResponseClientRedirect("/403")
 
-
         if request.method == "POST":
             form = AddTeamToWorkspaceForm(
                 request.POST, organization=organization, workspace=workspace

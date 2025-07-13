@@ -54,6 +54,7 @@ ROLES = {
         WorkspacePermissions.FLAG_TEAM_ENTRY,
     ],
     "OPERATIONS_REVIEWER": [
+        WorkspacePermissions.ASSIGN_TEAMS,
         WorkspacePermissions.VIEW_DASHBOARD,
         WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
         WorkspacePermissions.ADD_WORKSPACE_ENTRY,

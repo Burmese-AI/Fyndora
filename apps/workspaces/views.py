@@ -262,6 +262,13 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
         organization = get_organization_by_id(organization_id)
         workspace = get_workspace_by_id(workspace_id)
 
+        if not request.user.has_perm("assign_teams", workspace):
+            messages.error(
+                request, "You do not have permission to add teams to this workspace."
+            )
+            return HttpResponseClientRedirect("/403")
+
+
         if request.method == "POST":
             form = AddTeamToWorkspaceForm(
                 request.POST, organization=organization, workspace=workspace

@@ -20,10 +20,10 @@ class WorkspaceForm(forms.ModelForm):
         ),
     )
 
-    operation_reviewer = forms.ModelChoiceField(
+    operations_reviewer = forms.ModelChoiceField(
         queryset=OrganizationMember.objects.none(),
         required=False,
-        label="Select Operation Reviewer",
+        label="Select Operations Reviewer",
         widget=forms.Select(
             attrs={
                 "class": "select select-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base "
@@ -41,7 +41,7 @@ class WorkspaceForm(forms.ModelForm):
             "start_date",
             "end_date",
             "workspace_admin",
-            "operation_reviewer",
+            "operations_reviewer",
         ]
         widgets = {
             "title": forms.TextInput(
@@ -98,7 +98,7 @@ class WorkspaceForm(forms.ModelForm):
 
         if self.organization:
             self.fields[
-                "operation_reviewer"
+                "operations_reviewer"
             ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
@@ -121,12 +121,12 @@ class WorkspaceForm(forms.ModelForm):
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
         workspace_admin = cleaned_data.get("workspace_admin")
-        operation_reviewer = cleaned_data.get("operation_reviewer")
+        operations_reviewer = cleaned_data.get("operations_reviewer")
 
-        if workspace_admin and operation_reviewer:
-            if workspace_admin == operation_reviewer:
+        if workspace_admin and operations_reviewer:
+            if workspace_admin == operations_reviewer:
                 raise forms.ValidationError(
-                    "Workspace admin and operation reviewer cannot be the same person."
+                    "Workspace admin and operations reviewer cannot be the same person."
                 )
 
         if title and self.organization:

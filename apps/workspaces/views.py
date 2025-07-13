@@ -133,6 +133,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         previous_workspace_admin = workspace.workspace_admin
+        previous_operations_reviewer = workspace.operations_reviewer
 
         if not request.user.has_perm("change_workspace", workspace):
             messages.error(
@@ -150,6 +151,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         form=form,
                         workspace=workspace,
                         previous_workspace_admin=previous_workspace_admin,
+                        previous_operations_reviewer=previous_operations_reviewer,
                     )
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     print(f"DEBUG: workspace single testing: {workspace}")

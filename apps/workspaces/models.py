@@ -24,7 +24,7 @@ class Workspace(baseModel):
         null=True,
         blank=True,
     )  # This is the workspace admin of the workspace, it can be null if the workspace is not yet administered and will be assigned later.
-    operation_reviewer = models.ForeignKey(
+    operations_reviewer = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,
         related_name="reviewed_workspaces",
@@ -68,13 +68,22 @@ class Workspace(baseModel):
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
         permissions = (
-            ("add_entry", "Can add entry to workspace"),
-            ("change_entry", "Can change entry in workspace"),
-            ("delete_entry", "Can delete entry in workspace"),
-            ("view_entry", "Can view entry in workspace"),
-            ("review_entry", "Can review entry in workspace"),
-            ("upload_attachments", "Can upload attachments in workspace"),
-            ("flag_entry", "Can flag entry in workspace"),
+            ("assign_teams", "Can assign teams to workspace"),
+            ("lock_workspace", "Can lock workspace"),
+            ("view_dashboard", "Can view dashboard reports"),
+            ("add_workspace_entry", "Can add entry to workspace"),
+            ("change_workspace_entry", "Can change entry in workspace"),
+            ("delete_workspace_entry", "Can delete entry in workspace"),
+            ("view_workspace_entry", "Can view entry in workspace"),
+            ("review_workspace_entry", "Can review entry in workspace"),
+            ("upload_workspace_attachments", "Can upload attachments in workspace"),
+            ("flag_workspace_entry", "Can flag entry in workspace"),
+            ("export_workspace_report", "Can export workspace report"),
+            ("change_team_entry", "Can change entry in team"),
+            ("delete_team_entry", "Can delete entry in team"),
+            ("view_team_entry", "Can view entry in team"),
+            ("review_team_entry", "Can review entry in team"),
+            ("flag_team_entry", "Can flag entry in team"),
         )
         constraints = [
             models.UniqueConstraint(

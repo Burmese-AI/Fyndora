@@ -55,7 +55,7 @@ class Workspace(baseModel):
         ],
     )
     start_date = models.DateField()
-    end_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField()
     expense = models.DecimalField(
         max_digits=12,
         decimal_places=2,

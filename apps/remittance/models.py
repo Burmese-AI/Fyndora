@@ -26,7 +26,6 @@ class Remittance(baseModel):
     paid_amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)]
     )
-    due_date = models.DateField(null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=RemittanceStatus.choices,
@@ -54,58 +53,33 @@ class Remittance(baseModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["due_date"]),
+            models.Index(fields=["paid_within_deadlines"])
         ]
 
     def update_status(self):
         """
         Update remittance status based on payment and confirmation.
         """
-        # Don't override paid if it's already marked paid
-        if self.status == RemittanceStatus.PAID and self.pk:
-            return
-
-        # Overdue takes precedence unless fully paid
-        if (
-            self.due_date
-            and self.due_date < timezone.now().date()
-            and self.paid_amount < self.due_amount
-        ):
-            self.status = RemittanceStatus.OVERDUE
-            return
-
-        # Fully paid and confirmed
-        if self.paid_amount >= self.due_amount and self.confirmed_by is not None:
-            self.status = RemittanceStatus.PAID
-        # Partially paid
-        elif self.paid_amount > 0:
-            self.status = RemittanceStatus.PARTIAL
-        # Not paid at all
-        else:
+        if self.paid_amount == 0.0:
             self.status = RemittanceStatus.PENDING
+        elif self.due_amount > self.paid_amount:
+            self.status = RemittanceStatus.PARTIAL
+        else:
+            self.status = RemittanceStatus.PAID
+
+    def check_if_overdue(self):
+        if (self.workspace_team.workspace.end_date < timezone.now().date() and self.status != RemittanceStatus.PAID):
+            if self.paid_within_deadlines:
+                self.paid_within_deadlines = False
 
     def clean(self):
-        """
-        Validate the remittance model.
-        - Ensure workspace has an end_date
-        - Ensure amounts are non-negative
-        - Ensure paid_amount doesn't exceed due_amount
-        """
-        if hasattr(self, "workspace_team") and self.workspace_team:
-            if not self.workspace.end_date:
-                raise ValidationError(
-                    "Cannot create remittance: The workspace must have an end_date set."
-                )
-
-        if self.due_amount < 0 or self.paid_amount < 0:
-            raise ValidationError("Amounts cannot be negative.")
-
         if self.paid_amount > self.due_amount:
             raise ValidationError("Paid amount cannot exceed the due amount.")
 
     def save(self, *args, **kwargs):
         """Save the remittance and update the status."""
         self.update_status()
+        self.check_if_overdue()
         super().save(*args, **kwargs)
 
     def __str__(self):

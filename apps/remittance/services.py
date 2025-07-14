@@ -10,44 +10,72 @@ from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus
 from apps.entries.models import Entry
 from apps.entries.constants import EntryType, EntryStatus
+from apps.entries.selectors import get_total_amount_of_entries
 
 
-def update_remittance_based_on_entry_status_change(old_entry: Entry, new_entry: Entry):
-    remittance = new_entry.workspace_team.remittance
+def update_remittance_based_on_entry_status_change(
+    *, remittance: Remittance, due_amount=None, paid_amount=None
+):
+    print(f"Values to update with: {due_amount} | {paid_amount}")
+    remittance.due_amount = (
+        due_amount if due_amount is not None else remittance.due_amount
+    )
+    remittance.paid_amount = (
+        paid_amount if paid_amount is not None else remittance.paid_amount
+    )
+    print(f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount}")
+    remittance.save(update_fields=["due_amount", "paid_amount"])
+    print(f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount}")
 
-    if not old_entry:
-        if new_entry.status == EntryStatus.APPROVED:
-            _apply_approved_effect(new_entry, remittance)
+
+def handle_remittance_update(*, updated_entry: Entry, update_due_amount: bool):
+    workspace_team = updated_entry.workspace_team
+    remittance = workspace_team.remittance
+
+    if update_due_amount:
+        print("Update Due Amount")
+        # Get the total of all approved INCOME entries and DISBURSEMENT entries
+        income_total = get_total_amount_of_entries(
+            entry_type=EntryType.INCOME,
+            entry_status=EntryStatus.APPROVED,
+            workspace_team=workspace_team,
+        )
+        disbursement_total = get_total_amount_of_entries(
+            entry_type=EntryType.DISBURSEMENT,
+            entry_status=EntryStatus.APPROVED,
+            workspace_team=workspace_team,
+        )
+        # Get the final total amount (INCOME - DISBURSEMENT)
+        final_total = Decimal(income_total) - Decimal(disbursement_total)
+        # Multiply it by the remittance rate (Org or Team)
+        remittance_rate = (
+            workspace_team.custom_remittance_rate
+            if workspace_team.custom_remittance_rate != 0.00
+            else workspace_team.workspace.remittance_rate
+        )
+        print(f"Income Total: {income_total}")
+        print(f"Disbursement Total: {disbursement_total}")
+        print(f"Remittance Rate: {remittance_rate} {type(remittance_rate)}")
+        print(f"Final Total: {final_total} {type(final_total)}")
+        due_amount = final_total * (remittance_rate * Decimal("0.01"))
+        # Call update_remittance_based_on_entry_status_change
+        update_remittance_based_on_entry_status_change(
+            remittance=remittance,
+            due_amount=due_amount,
+        )
     else:
-        status_changed = old_entry.status != new_entry.status
-        amount_changed = old_entry.amount != new_entry.amount
-
-        if amount_changed:
-            raise ValidationError("Amount cannot be changed after approval")
-
-        # Revert old effect only if status was APPROVED
-        if old_entry.status == EntryStatus.APPROVED and status_changed:
-            revert_approved_effect(old_entry, remittance)
-
-        # Apply new effect if status is APPROVED now
-        if new_entry.status == EntryStatus.APPROVED and status_changed:
-            apply_approved_effect(new_entry, remittance)
-
-    remittance.save()
-
-
-def apply_approved_effect(entry: Entry, remittance):
-    if entry.entry_type in [EntryType.INCOME]:
-        remittance.due_amount += entry.amount
-    elif entry.entry_type == EntryType.REMITTANCE:
-        remittance.paid_amount += entry.amount
-
-
-def revert_approved_effect(entry: Entry, remittance):
-    if entry.entry_type in [EntryType.INCOME]:
-        remittance.due_amount -= entry.amount
-    elif entry.entry_type == EntryType.REMITTANCE:
-        remittance.paid_amount -= entry.amount
+        print("Update Paid Amount")
+        # Get the total of all approved REMITTANCE entries
+        remittance_total = get_total_amount_of_entries(
+            entry_type=EntryType.REMITTANCE,
+            entry_status=EntryStatus.APPROVED,
+            workspace_team=workspace_team,
+        )
+        # Call update_remittance_based_on_entry_status_change
+        update_remittance_based_on_entry_status_change(
+            remittance=remittance,
+            paid_amount=remittance_total,
+        )
 
 
 def remittance_confirm_payment(*, remittance, user):
@@ -138,7 +166,6 @@ def remittance_create_or_update_from_income_entry(*, entry):
             remittance = Remittance.objects.create(
                 workspace_team=workspace_team,
                 due_amount=due_amount_to_add,
-                due_date=workspace.end_date,
                 status=RemittanceStatus.PENDING,
             )
 

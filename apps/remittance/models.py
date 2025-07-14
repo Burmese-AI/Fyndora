@@ -61,51 +61,30 @@ class Remittance(baseModel):
         """
         Update remittance status based on payment and confirmation.
         """
-        # Don't override paid if it's already marked paid
-        if self.status == RemittanceStatus.PAID and self.pk:
-            return
+        if self.paid_amount == 0.0:
+            self.status = RemittanceStatus.PENDING
+        elif self.due_amount > self.paid_amount:
+            self.status = RemittanceStatus.PARTIAL
+        else:
+            self.status = RemittanceStatus.PAID
 
-        # Overdue takes precedence unless fully paid
+    def check_if_overdue(self):
         if (
             self.due_date
             and self.due_date < timezone.now().date()
-            and self.paid_amount < self.due_amount
+            and self.status != RemittanceStatus.PAID
         ):
-            self.status = RemittanceStatus.OVERDUE
-            return
-
-        # Fully paid and confirmed
-        if self.paid_amount >= self.due_amount and self.confirmed_by is not None:
-            self.status = RemittanceStatus.PAID
-        # Partially paid
-        elif self.paid_amount > 0:
-            self.status = RemittanceStatus.PARTIAL
-        # Not paid at all
-        else:
-            self.status = RemittanceStatus.PENDING
+            if self.paid_within_deadlines:
+                self.paid_within_deadlines = False
 
     def clean(self):
-        """
-        Validate the remittance model.
-        - Ensure workspace has an end_date
-        - Ensure amounts are non-negative
-        - Ensure paid_amount doesn't exceed due_amount
-        """
-        if hasattr(self, "workspace_team") and self.workspace_team:
-            if not self.workspace.end_date:
-                raise ValidationError(
-                    "Cannot create remittance: The workspace must have an end_date set."
-                )
-
-        if self.due_amount < 0 or self.paid_amount < 0:
-            raise ValidationError("Amounts cannot be negative.")
-
         if self.paid_amount > self.due_amount:
             raise ValidationError("Paid amount cannot exceed the due amount.")
 
     def save(self, *args, **kwargs):
         """Save the remittance and update the status."""
         self.update_status()
+        self.check_if_overdue()
         super().save(*args, **kwargs)
 
     def __str__(self):

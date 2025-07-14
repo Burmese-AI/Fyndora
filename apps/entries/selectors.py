@@ -3,7 +3,7 @@ from typing import List
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Count, QuerySet
 from django.contrib.contenttypes.prefetch import GenericPrefetch
-from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 
 from apps.organizations.models import Organization, OrganizationMember
 from apps.teams.models import TeamMember
@@ -121,30 +121,27 @@ def get_entries(
     return queryset
 
 
-def get_entry_by_scope(
-    *,
-    entry_id,
-    organization: Organization = None,
-    workspace: Workspace = None,
-    workspace_team: WorkspaceTeam = None,
-) -> Entry:
+def get_total_amount_of_entries(
+    *, entry_type: EntryType, entry_status: EntryStatus, workspace_team: WorkspaceTeam
+):
     """
-    Fetch entry by ID, scoped to the given organization/workspace/team.
-    Raises 404 if not found or not in scope.
+    Get the total amount of entries for a specific entry type and status.
+
+    Args:
+        entry_type: EntryType object
+        entry_status: EntryStatus object
+        workspace_team: WorkspaceTeam object
+
+    Returns:
+        Decimal: Total amount of entries
     """
-
-    queryset = Entry.objects.all()
-
-    if organization:
-        queryset = queryset.filter(workspace__organization=organization)
-
-    if workspace:
-        queryset = queryset.filter(workspace=workspace)
-
-    if workspace_team:
-        queryset = queryset.filter(workspace_team=workspace_team)
-
-    return get_object_or_404(queryset, pk=entry_id)
+    return (
+        workspace_team.entries.filter(
+            status=entry_status,
+            entry_type=entry_type,
+        ).aggregate(total=Sum("amount"))["total"]
+        or 0.00
+    )
 
 
 # Selectors for Tests

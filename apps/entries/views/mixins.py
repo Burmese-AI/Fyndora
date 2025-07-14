@@ -45,7 +45,7 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
         )
         self.is_workspace_admin = self.workspace.workspace_admin == self.org_member
         self.is_operation_reviewer = (
-            self.workspace.operation_reviewer == self.org_member
+            self.workspace.operations_reviewer == self.org_member
         )
 
 

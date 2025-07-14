@@ -26,7 +26,6 @@ class Remittance(baseModel):
     paid_amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)]
     )
-    due_date = models.DateField(null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=RemittanceStatus.choices,
@@ -54,7 +53,7 @@ class Remittance(baseModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["due_date"]),
+            models.Index(fields=["paid_within_deadlines"])
         ]
 
     def update_status(self):
@@ -69,11 +68,7 @@ class Remittance(baseModel):
             self.status = RemittanceStatus.PAID
 
     def check_if_overdue(self):
-        if (
-            self.due_date
-            and self.due_date < timezone.now().date()
-            and self.status != RemittanceStatus.PAID
-        ):
+        if (self.workspace_team.workspace.end_date < timezone.now().date() and self.status != RemittanceStatus.PAID):
             if self.paid_within_deadlines:
                 self.paid_within_deadlines = False
 

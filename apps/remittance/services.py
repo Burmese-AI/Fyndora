@@ -166,7 +166,6 @@ def remittance_create_or_update_from_income_entry(*, entry):
             remittance = Remittance.objects.create(
                 workspace_team=workspace_team,
                 due_amount=due_amount_to_add,
-                due_date=workspace.end_date,
                 status=RemittanceStatus.PENDING,
             )
 

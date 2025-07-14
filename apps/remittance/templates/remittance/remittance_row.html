@@ -15,7 +15,7 @@
             <div class="badge badge-error text-error-content">Overdue</div>
         {% endif %}
     </td>
-    <td>{{ remittance.due_date|date:"M d, Y" }}</td>
+    <td>{{ remittance.workspace_team.workspace.end_date|date:"M d, Y" }}</td>
     <td>{{ remittance.confirmed_by.get_full_name|default:"-" }}</td>
     <td>{{ remittance.confirmed_at|date:"M d, Y"|default:"-" }}</td>
     <td>

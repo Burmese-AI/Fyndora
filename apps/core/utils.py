@@ -78,10 +78,6 @@ def model_update(
     return instance
 
 
-
-
-
-
 def permission_denied_view(request, message):
     messages.error(request, message)
     if request.headers.get("HX-Request"):

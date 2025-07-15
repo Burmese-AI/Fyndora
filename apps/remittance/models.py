@@ -53,7 +53,7 @@ class Remittance(baseModel):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["paid_within_deadlines"])
+            models.Index(fields=["paid_within_deadlines"]),
         ]
 
     def update_status(self):
@@ -68,7 +68,10 @@ class Remittance(baseModel):
             self.status = RemittanceStatus.PAID
 
     def check_if_overdue(self):
-        if (self.workspace_team.workspace.end_date < timezone.now().date() and self.status != RemittanceStatus.PAID):
+        if (
+            self.workspace_team.workspace.end_date < timezone.now().date()
+            and self.status != RemittanceStatus.PAID
+        ):
             if self.paid_within_deadlines:
                 self.paid_within_deadlines = False
 

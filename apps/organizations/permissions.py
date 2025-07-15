@@ -6,6 +6,8 @@ class OrganizationPermissions(models.TextChoices):
     Permissions for the Organization model.
     """
 
-    CHANGE_ORGANIZATION = "organizations.change_organization", "Can change organization"
-    DELETE_ORGANIZATION = "organizations.delete_organization", "Can delete organization"
-    VIEW_ORGANIZATION = "organizations.view_organization", "Can view organization"
+    CHANGE_ORGANIZATION = "change_organization"
+    DELETE_ORGANIZATION = "delete_organization"
+    VIEW_ORGANIZATION = "view_organization"
+
+    ADD_WORKSPACE = "add_workspace" #can add workspace to organization

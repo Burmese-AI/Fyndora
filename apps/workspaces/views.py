@@ -33,6 +33,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
 from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
+from apps.core.utils import permission_denied_view
+from apps.core.permissions import WorkspacePermissions
+from apps.organizations.permissions import OrganizationPermissions
 
 
 @login_required
@@ -60,12 +63,13 @@ def create_workspace_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        if not orgMember.is_org_owner:
-            messages.error(
+        #check if the user has the permission to add a workspace to the organization (only org owner and workspace admin can add a workspace to the organization)
+        if not request.user.has_perm(OrganizationPermissions.ADD_WORKSPACE, organization):
+            #that will route to the permission denied view
+            return permission_denied_view(
                 request,
                 "You do not have permission to create a workspace in this organization.",
             )
-            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)

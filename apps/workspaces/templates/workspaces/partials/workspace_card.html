@@ -50,6 +50,14 @@
                     Default
                 {% endif %}
             </div>
+            <div><span class="font-semibold">Operations Reviewer:</span> 
+                {% if workspace.operations_reviewer %}
+                    {{ workspace.operations_reviewer.user.username }}
+                {% else %}
+                    Not Assigned
+                {% endif %}
+            </div>
+            
         </div>
 
         <!-- Actions -->

@@ -1,5 +1,8 @@
 from django.core.paginator import Paginator
 from .constants import PAGINATION_SIZE
+from django.contrib import messages
+from django.shortcuts import redirect
+from django_htmx.http import HttpResponseClientRedirect
 
 
 def percent_change(current: float, previous: float) -> str:
@@ -73,3 +76,11 @@ def model_update(
     instance.save(update_fields=update_fields)
 
     return instance
+
+
+def permission_denied_view(request, message):
+    messages.error(request, message)
+    if request.headers.get("HX-Request"):
+        return HttpResponseClientRedirect("/403")
+    else:
+        return redirect("permission_denied")

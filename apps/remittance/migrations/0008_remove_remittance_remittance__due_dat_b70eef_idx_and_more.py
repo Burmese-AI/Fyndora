@@ -4,24 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0007_alter_organization_options'),
-        ('remittance', '0007_alter_remittance_status'),
-        ('workspaces', '0014_alter_workspace_end_date'),
+        ("organizations", "0007_alter_organization_options"),
+        ("remittance", "0007_alter_remittance_status"),
+        ("workspaces", "0014_alter_workspace_end_date"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='remittance',
-            name='remittance__due_dat_b70eef_idx',
+            model_name="remittance",
+            name="remittance__due_dat_b70eef_idx",
         ),
         migrations.RemoveField(
-            model_name='remittance',
-            name='due_date',
+            model_name="remittance",
+            name="due_date",
         ),
         migrations.AddIndex(
-            model_name='remittance',
-            index=models.Index(fields=['paid_within_deadlines'], name='remittance__paid_wi_89ab71_idx'),
+            model_name="remittance",
+            index=models.Index(
+                fields=["paid_within_deadlines"], name="remittance__paid_wi_89ab71_idx"
+            ),
         ),
     ]

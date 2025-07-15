@@ -6,4 +6,4 @@ class EntriesConfig(AppConfig):
     name = "apps.entries"
 
     def ready(self):
-        import apps.entries.signals
+        pass

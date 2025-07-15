@@ -41,6 +41,7 @@ def create_organization_with_owner(*, form, user) -> Organization:
         assign_perm(OrganizationPermissions.CHANGE_ORGANIZATION, user, organization)
         assign_perm(OrganizationPermissions.DELETE_ORGANIZATION, user, organization)
         assign_perm(OrganizationPermissions.VIEW_ORGANIZATION, user, organization)
+        assign_perm(OrganizationPermissions.ADD_WORKSPACE, user, organization)
         print(f"Assigned permissions to {user} for {organization}")
 
         return organization

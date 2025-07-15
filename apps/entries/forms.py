@@ -5,6 +5,7 @@ from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
 from datetime import date
+from pprint import pprint
 
 
 class BaseEntryForm(forms.ModelForm):
@@ -39,7 +40,8 @@ class BaseEntryForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        print(f"debugging kwags: {kwargs}")
+        print("+++++++++++++ DEBUGGING +++++++++++++")
+        pprint(kwargs)
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
@@ -98,7 +100,7 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["entry_type"].choices = self.get_allowed_entry_types()
+        # self.fields["entry_type"].choices = self.get_allowed_entry_types()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -133,14 +135,14 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
             )
 
         # Only team coordinator and submitter are allowed to upload entries
-        if (
-            cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
-            and not self.is_team_coordinator
-            and not self.workspace_team_role == TeamMemberRole.SUBMITTER
-        ):
-            raise forms.ValidationError(
-                "You are not authorized to create entries for this workspace team"
-            )
+        # if (
+        #     cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
+        #     and not self.is_team_coordinator
+        #     and not self.workspace_team_role == TeamMemberRole.SUBMITTER
+        # ):
+        #     raise forms.ValidationError(
+        #         "You are not authorized to create entries for this workspace team"
+        #     )
 
         return cleaned_data
 
@@ -260,15 +262,13 @@ class UpdateWorkspaceTeamEntryForm(UpdateEntryForm):
         cleaned_data = super().clean()
 
         # If the entry is an income or disbursement and the status is not pending review and the workspace team member is a submitter or auditor, raise validation error
-        if (
-            self.instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]
-            and self.instance.status != EntryStatus.PENDING_REVIEW
-            and self.workspace_team_member.role
-            in [TeamMemberRole.SUBMITTER, TeamMemberRole.AUDITOR]
-        ):
-            raise forms.ValidationError(
-                "You are not authorized to update workspace team entries"
-            )
+        # if (
+        #     self.instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]
+        #     and self.instance.status != EntryStatus.PENDING_REVIEW
+        # ):
+        #     raise forms.ValidationError(
+        #         "You are not authorized to update workspace team entries"
+        #     )
 
         # For remittance entry, only org admin, workspace admin and operation reviewer can update the entry
         if (

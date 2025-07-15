@@ -1,0 +1,91 @@
+{% extends 'layouts/default_layout.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+  <!-- Page Title -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-bold text-primary">Joined Workspace Teams</h1>
+  </div>
+
+  {% if workspace_teams %}
+    {% for workspace, teams in workspace_teams.items %}
+      <div class="card bg-base-100 shadow-md border border-base-300 transition hover:shadow-lg">
+        <div class="card-body space-y-6">
+          
+          <!-- Workspace Header -->
+          <div class="space-y-2">
+            <h2 class="text-xl font-semibold text-neutral">{{ workspace.title }}</h2>
+
+            <div class="flex flex-wrap gap-2 text-sm">
+              <span class="badge badge-info text-xs">Teams: {{ workspace.workspace_teams.count }}</span>
+              <span class="badge badge-success text-xs">Admin: {{ workspace.workspace_admin }}</span>
+              <span class="badge badge-warning text-xs">Reviewer: {{ workspace.operations_reviewer }}</span>
+              <span class="badge badge-accent text-xs">Rate: {{ workspace.remittance_rate }}</span>
+              <span class="badge badge-neutral text-xs">Start: {{ workspace.start_date }}</span>
+              <span class="badge badge-neutral text-xs">End: {{ workspace.end_date }}</span>
+              <span class="badge badge-primary text-white text-xs">Status: {{ workspace.status }}</span>
+            </div>
+
+            <p class="text-sm text-base-content/90 mt-2">
+              {{ workspace.description|default:"No description provided." }}
+            </p>
+          </div>
+
+          <!-- Team Cards Grid -->
+          {% if teams %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {% for workspace_team in teams %}
+                <div class="card bg-base-100 shadow border border-base-200 hover:border-primary transition-all duration-200">
+                  <div class="card-body p-4 space-y-3">
+                    <div class="flex justify-between items-start">
+                      <h3 class="text-lg font-bold text-primary">
+                        {{ workspace_team.team.title }}
+                      </h3>
+                      <span class="badge badge-sm badge-outline badge-neutral">
+                        Members: {{ workspace_team.team.members.count }}
+                      </span>
+                    </div>
+
+                    {% if workspace_team.team.description %}
+                      <p class="text-sm text-base-content/80 line-clamp-2">
+                        {{ workspace_team.team.description }}
+                      </p>
+                    {% endif %}
+
+                    <div class="text-sm text-base-content/70 space-y-1">
+                      <p>Coordinator: <span class="font-medium text-base-content">{{ workspace_team.team.team_coordinator }}</span></p>
+                      {% if workspace_team.custom_remittance_rate %}
+                        <p>Custom Rate: <span class="text-primary font-bold">{{ workspace_team.custom_remittance_rate }}</span></p>
+                      {% endif %}
+                    </div>
+
+                    <div class="pt-2">
+                      <a
+                        href="{% url 'workspace_team_entry_list' organization_id=organization.pk workspace_id=workspace.pk workspace_team_id=workspace_team.pk %}"  
+                        class="btn btn-sm btn-primary btn-soft shadow hover:text-white w-full"
+                      >
+                        View Team
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="alert alert-warning shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span>No teams in this workspace.</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-error shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span>No teams found or data not passed correctly.</span>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

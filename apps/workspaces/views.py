@@ -34,6 +34,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
 from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
+from apps.core.utils import permission_denied_view
+from apps.core.permissions import WorkspacePermissions
+from apps.organizations.permissions import OrganizationPermissions
 from django.shortcuts import get_object_or_404
 from apps.organizations.models import Organization
 import pprint
@@ -63,12 +66,15 @@ def create_workspace_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        if not orgMember.is_org_owner:
-            messages.error(
+        # check if the user has the permission to add a workspace to the organization (only org owner and workspace admin can add a workspace to the organization)
+        if not request.user.has_perm(
+            OrganizationPermissions.ADD_WORKSPACE, organization
+        ):
+            # that will route to the permission denied view
+            return permission_denied_view(
                 request,
                 "You do not have permission to create a workspace in this organization.",
             )
-            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
@@ -138,11 +144,11 @@ def edit_workspace_view(request, organization_id, workspace_id):
         previous_workspace_admin = workspace.workspace_admin
         previous_operations_reviewer = workspace.operations_reviewer
 
-        if not request.user.has_perm("change_workspace", workspace):
-            messages.error(
-                request, "You do not have permission to edit this workspace."
+        if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission  to edit this workspace.",
             )
-            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = WorkspaceForm(
@@ -214,11 +220,11 @@ def delete_workspace_view(request, organization_id, workspace_id):
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
 
-        if not request.user.has_perm("delete_workspace", workspace):
-            messages.error(
-                request, "You do not have permission to delete this workspace."
+        if not request.user.has_perm(WorkspacePermissions.DELETE_WORKSPACE, workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete this workspace.",
             )
-            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             group_name = f"Workspace Admins - {workspace_id}"
@@ -265,11 +271,11 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
         organization = get_organization_by_id(organization_id)
         workspace = get_workspace_by_id(workspace_id)
 
-        if not request.user.has_perm("assign_teams", workspace):
-            messages.error(
-                request, "You do not have permission to add teams to this workspace."
+        if not request.user.has_perm(WorkspacePermissions.ASSIGN_TEAMS, workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add teams to this workspace.",
             )
-            return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
             form = AddTeamToWorkspaceForm(

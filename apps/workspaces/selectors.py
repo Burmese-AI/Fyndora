@@ -6,6 +6,7 @@ from apps.organizations.models import Organization
 from apps.organizations.models import OrganizationMember
 from apps.teams.models import Team, TeamMember
 from apps.workspaces.models import WorkspaceTeam
+from collections import defaultdict
 
 
 def get_workspace_team_member_by_workspace_team_and_org_member(
@@ -45,6 +46,41 @@ def get_user_workspace_teams_under_organization(organization_id, user):
         .prefetch_related("workspace", "team")
     )
 
+def get_all_related_workspace_teams(organization, user, group_by_workspace=True):
+    """
+    Returns either:
+    - A dict of workspace -> list of workspace teams (default behavior)
+    - Or a flat queryset, if group_by_workspace is False
+
+    Includes:
+    - All teams if user is organization owner
+    - Otherwise, filters teams the user is directly involved in
+    """
+    is_owner = organization.owner and organization.owner.user == user
+    print(f"is_owner => {is_owner}")
+    qs = WorkspaceTeam.objects.filter(
+        workspace__organization=organization
+    ).select_related("workspace").prefetch_related("team")
+
+    if not is_owner:
+        qs = qs.filter(
+            Q(workspace__workspace_admin__user=user)
+            | Q(workspace__operations_reviewer__user=user)
+            | Q(team__team_coordinator__user=user)
+            | Q(team__members__organization_member__user=user)
+        ).distinct()
+
+    if not group_by_workspace:
+        return qs
+
+    grouped = {}
+    for workspace_team in qs:
+        workspace = workspace_team.workspace
+        if workspace not in grouped:
+            grouped[workspace] = []
+        grouped[workspace].append(workspace_team)
+
+    return grouped
 
 def get_user_workspaces_under_organization(organization_id):
     """

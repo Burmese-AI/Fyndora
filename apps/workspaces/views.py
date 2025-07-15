@@ -26,14 +26,17 @@ from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 from apps.workspaces.selectors import (
     get_workspace_team_by_workspace_team_id,
     get_user_workspace_teams_under_organization,
+    get_all_related_workspace_teams
 )
 from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
-from django.views.generic import ListView
+from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import WorkspaceTeam
 from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
-
+from django.shortcuts import get_object_or_404
+from apps.organizations.models import Organization
+import pprint
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -477,20 +480,17 @@ def change_workspace_team_remittance_rate_view(
         )
 
 
-class SubmissionTeamListView(LoginRequiredMixin, ListView):
-    model = WorkspaceTeam
-    template_name = "workspace_teams/submitter_workspace_teams_index.html"
-    paginate_by = 10
-    context_object_name = "workspace_teams"
-
-    def get_queryset(self):
-        user = self.request.user
-        org_id = self.kwargs["organization_id"]
-
-        return get_user_workspace_teams_under_organization(org_id, user)
+class SubmissionTeamListView(LoginRequiredMixin, TemplateView):
+    template_name = "workspace_teams/index_2.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["organization"] = get_organization_by_id(self.kwargs["organization_id"])
         context["hide_management_access"] = True
+        grouped_teams = get_all_related_workspace_teams(
+            organization=context["organization"],
+            user=self.request.user,
+            group_by_workspace=True
+        )
+        context["workspace_teams"] = dict(grouped_teams)
         return context

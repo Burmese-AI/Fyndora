@@ -5,8 +5,6 @@ class WorkspacePermissions(models.TextChoices):
     """
     Permissions for the Workspace model.
     """
-
-    ADD_WORKSPACE = "add_workspace"
     CHANGE_WORKSPACE = "change_workspace"
     DELETE_WORKSPACE = "delete_workspace"
     VIEW_WORKSPACE = "view_workspace"
@@ -23,6 +21,18 @@ class WorkspacePermissions(models.TextChoices):
     FLAG_WORKSPACE_ENTRY = "flag_workspace_entry"
     CHANGE_TEAM_ENTRY = "change_team_entry"  # team level entry
     DELETE_TEAM_ENTRY = "delete_team_entry"
-    VIEW_TEAM_ENTRY = "workspaces.view_team_entry"
-    REVIEW_TEAM_ENTRY = "workspaces.review_team_entry"
-    FLAG_TEAM_ENTRY = "workspaces.flag_team_entry"
+    VIEW_TEAM_ENTRY = "view_team_entry"
+    REVIEW_TEAM_ENTRY = "review_team_entry"
+    FLAG_TEAM_ENTRY = "flag_team_entry"
+
+
+class OrganizationPermissions(models.TextChoices):
+    """
+    Permissions for the Organization model.
+    """
+
+    CHANGE_ORGANIZATION = "change_organization"
+    DELETE_ORGANIZATION = "delete_organization"
+    VIEW_ORGANIZATION = "view_organization"
+
+    ADD_WORKSPACE = "add_workspace" #can add workspace to organization

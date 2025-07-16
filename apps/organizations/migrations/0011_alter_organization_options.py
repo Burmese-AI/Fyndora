@@ -4,14 +4,21 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0010_alter_organization_options'),
+        ("organizations", "0010_alter_organization_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
-            options={'ordering': ['-created_at'], 'permissions': (('add_workspace', 'Can add workspace'), ('invite_org_member', 'Can invite org member')), 'verbose_name': 'organization', 'verbose_name_plural': 'organizations'},
+            name="organization",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    ("add_workspace", "Can add workspace"),
+                    ("invite_org_member", "Can invite org member"),
+                ),
+                "verbose_name": "organization",
+                "verbose_name_plural": "organizations",
+            },
         ),
     ]

@@ -15,8 +15,7 @@ def get_workspace_team_member_by_workspace_team_and_org_member(
     Return the workspace team member by the workspace team and organization member.
     """
     return TeamMember.objects.filter(
-        organization_member=org_member,
-        team=workspace_team.team
+        organization_member=org_member, team=workspace_team.team
     ).first()
 
 
@@ -46,6 +45,7 @@ def get_user_workspace_teams_under_organization(organization_id, user):
         .prefetch_related("workspace", "team")
     )
 
+
 def get_all_related_workspace_teams(organization, user, group_by_workspace=True):
     """
     Returns either:
@@ -58,9 +58,11 @@ def get_all_related_workspace_teams(organization, user, group_by_workspace=True)
     """
     is_owner = organization.owner and organization.owner.user == user
     print(f"is_owner => {is_owner}")
-    qs = WorkspaceTeam.objects.filter(
-        workspace__organization=organization
-    ).select_related("workspace").prefetch_related("team")
+    qs = (
+        WorkspaceTeam.objects.filter(workspace__organization=organization)
+        .select_related("workspace")
+        .prefetch_related("team")
+    )
 
     if not is_owner:
         qs = qs.filter(
@@ -81,6 +83,7 @@ def get_all_related_workspace_teams(organization, user, group_by_workspace=True)
         grouped[workspace].append(workspace_team)
 
     return grouped
+
 
 def get_user_workspaces_under_organization(organization_id):
     """

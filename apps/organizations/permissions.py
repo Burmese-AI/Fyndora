@@ -1,6 +1,3 @@
-from django.db import models
-
-
 # class OrganizationPermissions(models.TextChoices):
 #     """
 #     Permissions for the Organization model.

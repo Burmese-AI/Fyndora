@@ -23,6 +23,7 @@ from django.core.paginator import Paginator
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 
+
 class InvitationListView(LoginRequiredMixin, ListView):
     model = Invitation
     template_name = "invitations/index.html"
@@ -61,14 +62,15 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
-        if not self.request.user.has_perm(OrganizationPermissions.INVITE_ORG_MEMBER, self.organization):
+        if not self.request.user.has_perm(
+            OrganizationPermissions.INVITE_ORG_MEMBER, self.organization
+        ):
             return permission_denied_view(
-            request,
-            "You do not have permission to invite org members to this organization.",
-        )
+                request,
+                "You do not have permission to invite org members to this organization.",
+            )
 
         return super().dispatch(request, *args, **kwargs)
-    
 
     def get(self, request, *args, **kwargs):
         form = InvitationCreateForm()

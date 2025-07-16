@@ -6,7 +6,6 @@ from apps.organizations.exceptions import (
 )
 from apps.core.utils import model_update
 from guardian.shortcuts import assign_perm
-from apps.core.permissions import OrganizationPermissions
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
 
@@ -40,7 +39,9 @@ def create_organization_with_owner(*, form, user) -> Organization:
         organization = model_update(
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
-        org_owner_group, _ = Group.objects.get_or_create(name=f"Org Owner - {organization.organization_id}")
+        org_owner_group, _ = Group.objects.get_or_create(
+            name=f"Org Owner - {organization.organization_id}"
+        )
 
         # getting the permissions for the org owner
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")

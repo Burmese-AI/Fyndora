@@ -1,4 +1,4 @@
-from apps.organizations.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 from apps.core.permissions import WorkspacePermissions
 from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions

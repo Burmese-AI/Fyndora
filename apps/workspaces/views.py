@@ -36,7 +36,7 @@ from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
 from apps.core.utils import permission_denied_view
 from apps.core.permissions import WorkspacePermissions
-from apps.organizations.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 from django.shortcuts import get_object_or_404
 from apps.organizations.models import Organization
 import pprint

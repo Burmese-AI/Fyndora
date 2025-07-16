@@ -8,7 +8,7 @@ from apps.core.models import baseModel
 from apps.organizations.constants import StatusChoices
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
-from apps.organizations.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 
 
 class Organization(baseModel):
@@ -40,7 +40,10 @@ class Organization(baseModel):
         verbose_name = "organization"
         verbose_name_plural = "organizations"
         ordering = ["-created_at"]
-        permissions = ((OrganizationPermissions.ADD_WORKSPACE, "Can add workspace"),)
+        permissions = (
+            (OrganizationPermissions.ADD_WORKSPACE, "Can add workspace"),
+            (OrganizationPermissions.INVITE_ORG_MEMBER, "Can invite org member"),
+        )
         constraints = [
             models.UniqueConstraint(
                 fields=["owner", "title"],

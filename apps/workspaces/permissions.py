@@ -1,7 +1,7 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
-from apps.organizations.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 
 
 def assign_workspace_permissions(workspace):

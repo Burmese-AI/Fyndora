@@ -6,7 +6,7 @@ from apps.organizations.exceptions import (
 )
 from apps.core.utils import model_update
 from guardian.shortcuts import assign_perm
-from .permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 
 
 @transaction.atomic

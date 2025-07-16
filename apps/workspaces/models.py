@@ -1,12 +1,15 @@
+import uuid
+from decimal import Decimal
+
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 from apps.core.models import baseModel
 from apps.organizations.models import Organization, OrganizationMember
-import uuid
 from apps.workspaces.constants import StatusChoices
-from decimal import Decimal
-from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.teams.models import Team
-from django.core.exceptions import ValidationError
+from apps.currencies.models import ExchangeRateBaseModel
 
 
 # Create your models here.
@@ -134,3 +137,18 @@ class WorkspaceTeam(baseModel):
 
     def __str__(self):
         return f"{self.team.title} in {self.workspace.title}"
+
+
+class WorkspaceExchangeRate(ExchangeRateBaseModel):
+    workspace_exchange_rate_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        related_name="workspace_exchange_rates",
+    )
+    
+    class Meta:
+        verbose_name = "Workspace Exchange Rate"
+        verbose_name_plural = "Workspace Exchange Rates"

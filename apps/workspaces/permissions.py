@@ -32,10 +32,7 @@ def assign_workspace_permissions(workspace):
         )
 
         for perm in workspace_admin_permissions:
-            if perm == OrganizationPermissions.ADD_WORKSPACE:
-                assign_perm(perm, workspace_admins_group, workspace.organization)
-            else:
-                assign_perm(perm, workspace_admins_group, workspace)
+            assign_perm(perm, workspace_admins_group, workspace)
 
         for perm in operations_reviewer_permissions:
             assign_perm(perm, operations_reviewer_group, workspace)

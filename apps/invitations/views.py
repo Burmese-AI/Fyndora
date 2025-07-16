@@ -61,7 +61,6 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
-
         if not self.request.user.has_perm(OrganizationPermissions.INVITE_ORG_MEMBER, self.organization):
             return permission_denied_view(
             request,

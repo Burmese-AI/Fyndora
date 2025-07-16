@@ -10,6 +10,7 @@ ROLES = {
         OrganizationPermissions.DELETE_ORGANIZATION,
         OrganizationPermissions.VIEW_ORGANIZATION,
         OrganizationPermissions.ADD_WORKSPACE,
+        OrganizationPermissions.INVITE_ORG_MEMBER,
     ],
     "WORKSPACE_ADMIN": [
         OrganizationPermissions.ADD_WORKSPACE,

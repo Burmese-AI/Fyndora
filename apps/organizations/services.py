@@ -8,6 +8,7 @@ from apps.core.utils import model_update
 from guardian.shortcuts import assign_perm
 from apps.core.permissions import OrganizationPermissions
 from django.contrib.auth.models import Group
+from apps.core.roles import get_permissions_for_role
 
 
 @transaction.atomic
@@ -40,17 +41,16 @@ def create_organization_with_owner(*, form, user) -> Organization:
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
         org_owner_group, _ = Group.objects.get_or_create(name=f"Org Owner - {organization.organization_id}")
-        # Assign permissions to the user
-        assign_perm(OrganizationPermissions.CHANGE_ORGANIZATION, org_owner_group, organization)
-        assign_perm(OrganizationPermissions.DELETE_ORGANIZATION, org_owner_group, organization)
-        assign_perm(OrganizationPermissions.VIEW_ORGANIZATION, org_owner_group, organization)
-        assign_perm(OrganizationPermissions.ADD_WORKSPACE, org_owner_group, organization)
-        assign_perm(OrganizationPermissions.INVITE_ORG_MEMBER, org_owner_group, organization)
+
+        # getting the permissions for the org owner
+        org_owner_permissions = get_permissions_for_role("ORG_OWNER")
+
+        # Assign permissions to the org owner group
+        for perm in org_owner_permissions:
+            assign_perm(perm, org_owner_group, organization)
 
         # Assign the org owner group to the user
         org_owner_group.user_set.add(user)
-
-        print(f"Assigned permissions to {user} for {organization}")
 
         return organization
     except Exception as e:

@@ -6,10 +6,9 @@ from django.template.loader import render_to_string
 from django.contrib import messages
 
 from apps.workspaces.models import Workspace, WorkspaceTeam
-from apps.teams.models import TeamMember
 from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.selectors import (
-    get_workspace_team_member_by_workspace_team_and_org_member
+    get_workspace_team_member_by_workspace_team_and_org_member,
 )
 
 from ..forms import BaseEntryForm, UpdateEntryForm
@@ -64,11 +63,14 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
         self.workspace_team = get_object_or_404(
             WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace
         )
-        self.workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(
-            workspace_team=self.workspace_team,
-            org_member=self.org_member
+        self.workspace_team_member = (
+            get_workspace_team_member_by_workspace_team_and_org_member(
+                workspace_team=self.workspace_team, org_member=self.org_member
+            )
         )
-        self.workspace_team_role = self.workspace_team_member.role if self.workspace_team_member else None
+        self.workspace_team_role = (
+            self.workspace_team_member.role if self.workspace_team_member else None
+        )
 
 
 class EntryRequiredMixin:

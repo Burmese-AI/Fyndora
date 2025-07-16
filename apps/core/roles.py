@@ -1,4 +1,4 @@
-from apps.organizations.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions
 from apps.core.permissions import WorkspacePermissions
 from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions
@@ -10,9 +10,9 @@ ROLES = {
         OrganizationPermissions.DELETE_ORGANIZATION,
         OrganizationPermissions.VIEW_ORGANIZATION,
         OrganizationPermissions.ADD_WORKSPACE,
+        OrganizationPermissions.INVITE_ORG_MEMBER,
     ],
     "WORKSPACE_ADMIN": [
-        OrganizationPermissions.ADD_WORKSPACE,
         WorkspacePermissions.CHANGE_WORKSPACE,
         WorkspacePermissions.DELETE_WORKSPACE,
         WorkspacePermissions.VIEW_WORKSPACE,

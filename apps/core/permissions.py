@@ -37,3 +37,5 @@ class OrganizationPermissions(models.TextChoices):
     VIEW_ORGANIZATION = "view_organization"
 
     ADD_WORKSPACE = "add_workspace"  # can add workspace to organization
+
+    INVITE_ORG_MEMBER = "invite_org_member"  # can invite org member to organization

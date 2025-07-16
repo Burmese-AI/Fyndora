@@ -25,21 +25,17 @@ from django.contrib.auth.models import Group
 from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 from apps.workspaces.selectors import (
     get_workspace_team_by_workspace_team_id,
-    get_user_workspace_teams_under_organization,
-    get_all_related_workspace_teams
+    get_all_related_workspace_teams,
 )
 from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import WorkspaceTeam
 from django.shortcuts import redirect
 from apps.workspaces.selectors import get_single_workspace_with_team_counts
 from apps.core.utils import permission_denied_view
 from apps.core.permissions import WorkspacePermissions
-from apps.organizations.permissions import OrganizationPermissions
-from django.shortcuts import get_object_or_404
-from apps.organizations.models import Organization
-import pprint
+from apps.core.permissions import OrganizationPermissions
+
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -496,7 +492,7 @@ class SubmissionTeamListView(LoginRequiredMixin, TemplateView):
         grouped_teams = get_all_related_workspace_teams(
             organization=context["organization"],
             user=self.request.user,
-            group_by_workspace=True
+            group_by_workspace=True,
         )
         context["workspace_teams"] = dict(grouped_teams)
         return context

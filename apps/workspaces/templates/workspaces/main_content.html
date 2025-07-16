@@ -4,6 +4,7 @@
             <h1 class="text-3xl font-bold">My Workspaces under {{ organization.title }} Organization</h1>
             <p class="text-base-content/70 mt-2">Manage your project workspaces</p>
         </div>
+        {% if request.user == organization.owner.user %}
         <a 
             hx-get="{% url 'create_workspace' organization_id=request.resolver_match.kwargs.organization_id %}" 
             hx-target="#modal-placeholder" 
@@ -15,6 +16,7 @@
             </svg>
             New Workspace
         </a>
+        {% endif %}
     </div>
    
     {% include "workspaces/partials/workspaces_grid.html" %}

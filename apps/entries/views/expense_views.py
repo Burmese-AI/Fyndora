@@ -45,7 +45,7 @@ class OrganizationExpenseListView(
             )
         return super().dispatch(request, *args, **kwargs)
     
-    
+
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
@@ -147,6 +147,14 @@ class OrganizationExpenseUpdateView(
 ):
     form_class = UpdateOrganizationExpenseEntryForm
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(OrganizationPermissions.CHANGE_ORG_ENTRY, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change organization expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+    
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
@@ -198,6 +206,13 @@ class OrganizationExpenseDeleteView(
     OrganizationContextMixin,
     BaseEntryDeleteView,
 ):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(OrganizationPermissions.DELETE_ORG_ENTRY, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete organization expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization=self.organization, entry_types=[EntryType.ORG_EXP]

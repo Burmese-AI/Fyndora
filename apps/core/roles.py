@@ -11,6 +11,7 @@ ROLES = {
         OrganizationPermissions.VIEW_ORGANIZATION,
         OrganizationPermissions.ADD_WORKSPACE,
         OrganizationPermissions.INVITE_ORG_MEMBER,
+        OrganizationPermissions.ADD_ORG_ENTRY,
     ],
     "WORKSPACE_ADMIN": [
         WorkspacePermissions.CHANGE_WORKSPACE,

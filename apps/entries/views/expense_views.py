@@ -26,7 +26,8 @@ from ..forms import (
     UpdateOrganizationExpenseEntryForm,
     UpdateWorkspaceExpenseEntryForm,
 )
-
+from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
 
 class OrganizationExpenseListView(
     LoginRequiredMixin,
@@ -58,6 +59,15 @@ class OrganizationExpenseCreateView(
     BaseEntryCreateView,
 ):
     form_class = CreateOrganizationExpenseEntryForm
+
+    def dispatch(self, request, *args, **kwargs):
+        # Assumes self.organization is set by OrganizationContextMixin
+        if not request.user.has_perm(OrganizationPermissions.ADD_ORG_ENTRY, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add organization expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_entry_type(self):
         return EntryType.ORG_EXP

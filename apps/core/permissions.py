@@ -6,10 +6,10 @@ class WorkspacePermissions(models.TextChoices):
     Permissions for the Workspace model.
     """
 
-    CHANGE_WORKSPACE = "change_workspace"
-    DELETE_WORKSPACE = "delete_workspace"
-    VIEW_WORKSPACE = "view_workspace"
-    ASSIGN_TEAMS = "assign_teams"
+    CHANGE_WORKSPACE = "change_workspace"  # implemented
+    DELETE_WORKSPACE = "delete_workspace"  # implemented
+    VIEW_WORKSPACE = "view_workspace"  # implemented
+    ASSIGN_TEAMS = "assign_teams"  # implemented
     LOCK_WORKSPACE = "lock_workspace"
     VIEW_DASHBOARD = "view_dashboard"
     EXPORT_WORKSPACE_REPORT = "export_workspace_report"
@@ -32,8 +32,22 @@ class OrganizationPermissions(models.TextChoices):
     Permissions for the Organization model.
     """
 
-    CHANGE_ORGANIZATION = "change_organization"
+    CHANGE_ORGANIZATION = "change_organization"  # implemented
     DELETE_ORGANIZATION = "delete_organization"
     VIEW_ORGANIZATION = "view_organization"
 
-    ADD_WORKSPACE = "add_workspace"  # can add workspace to organization
+    ADD_WORKSPACE = "add_workspace"  # can add workspace to organization # implemented
+
+    INVITE_ORG_MEMBER = (
+        "invite_org_member"  # can invite org member to organization # implemented
+    )
+    ADD_ORG_ENTRY = "add_org_entry"  # can add org entry to organization # implemented
+    VIEW_ORG_ENTRY = (
+        "view_org_entry"  # can view org entry to organization # implemented
+    )
+    CHANGE_ORG_ENTRY = (
+        "change_org_entry"  # can change org entry to organization # implemented
+    )
+    DELETE_ORG_ENTRY = (
+        "delete_org_entry"  # can delete org entry to organization # implemented
+    )

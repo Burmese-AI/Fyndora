@@ -415,6 +415,7 @@ dependencies = [
     { name = "django-htmx" },
     { name = "django-redis" },
     { name = "faker" },
+    { name = "iso4217" },
     { name = "millify" },
     { name = "psycopg2-binary" },
     { name = "pytest-django" },
@@ -449,6 +450,7 @@ requires-dist = [
     { name = "django-htmx", specifier = ">=1.23.0" },
     { name = "django-redis", specifier = ">=5.4.0" },
     { name = "faker", specifier = ">=37.3.0" },
+    { name = "iso4217", specifier = ">=1.14.20250512" },
     { name = "millify", specifier = ">=0.1.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pytest-django", specifier = ">=4.11.1" },
@@ -495,6 +497,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f2/97/ebf4da567aa6827c909642694d71c9fcf53e5b504f2d96afea02718862f3/iniconfig-2.1.0.tar.gz", hash = "sha256:3abbd2e30b36733fee78f9c7f7308f2d0050e88f0087fd25c2645f63c773e1c7", size = 4793, upload-time = "2025-03-19T20:09:59.721Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/e1/e6716421ea10d38022b952c159d5161ca1193197fb744506875fbb87ea7b/iniconfig-2.1.0-py3-none-any.whl", hash = "sha256:9deba5723312380e77435581c6bf4935c94cbfab9b1ed33ef8d238ea168eb760", size = 6050, upload-time = "2025-03-19T20:10:01.071Z" },
+]
+
+[[package]]
+name = "iso4217"
+version = "1.14.20250512"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/29/db0854475507162050c6245be61f37c7216d4157c09ec808ed13cc003d27/iso4217-1.14.20250512.tar.gz", hash = "sha256:f036bd5460f1d371f2df253e90be5032930c8f76512f3a02ecfa5ad1e9fb164b", size = 12622, upload-time = "2025-06-22T01:28:04.377Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/6f/8e1d65453c7099f863d4785d8d3370192d4bcaffc26ad2bf0542c0fbd7f3/iso4217-1.14.20250512-py2.py3-none-any.whl", hash = "sha256:f23974b5b6eb264709f6d764703d5c03f168807305077cb76d7cdfcca87d7d76", size = 10862, upload-time = "2025-06-22T01:28:03.309Z" },
 ]
 
 [[package]]

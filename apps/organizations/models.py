@@ -1,13 +1,14 @@
-# Create your models here.
+import uuid
+from decimal import Decimal
 
 from django.db import models
-import uuid
 from django.core.validators import MinValueValidator
-from decimal import Decimal
-from apps.core.models import baseModel
-from apps.organizations.constants import StatusChoices
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
+
+from apps.core.models import baseModel
+from apps.organizations.constants import StatusChoices
+from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
 
 
@@ -96,3 +97,24 @@ class OrganizationMember(baseModel):
 
     def __str__(self):
         return f"{self.user.username} in {self.organization.title}"
+
+
+class OrganizationExchangeRate(ExchangeRateBaseModel):
+    organization_exchange_rate_id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="organization_exchange_rates",
+    )
+    
+    class Meta:
+        verbose_name = "Organization Exchange Rate"
+        verbose_name_plural = "Organization Exchange Rates"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "currency", "effective_date"],
+                name="unique_organization_exchange_rate",
+            )
+        ]

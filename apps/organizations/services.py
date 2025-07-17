@@ -4,8 +4,13 @@ from apps.organizations.exceptions import (
     OrganizationCreationError,
     OrganizationUpdateError,
 )
-from apps.core.utils import model_update
 from guardian.shortcuts import assign_perm
+from .permissions import OrganizationPermissions
+from apps.core.utils import model_update
+from apps.currencies.models import Currency
+from .models import OrganizationExchangeRate
+from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
 
@@ -68,3 +73,25 @@ def update_organization_from_form(*, form, organization) -> Organization:
         return organization
     except Exception as e:
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
+
+
+def create_organization_exchange_rate(*, organization, organization_member, currency_code, rate, note, effective_date):
+    """
+    Creates an exchange rate for an organization.
+    """
+    try:
+        currency = Currency.objects.get_or_create(code=currency_code)
+        OrganizationExchangeRate.objects.create(
+            organization=organization,
+            currency=currency,
+            rate=rate,
+            effective_date=effective_date,
+            added_by=organization_member,
+            note=note,
+        )
+
+    except IntegrityError as e:
+        raise ValidationError(f"IntegrityError: {str(e)}")
+
+    except Exception as err:
+        raise ValidationError(f"Failed to create organization exchange rate: {str(err)}")

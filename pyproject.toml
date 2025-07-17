@@ -20,6 +20,7 @@ dependencies = [
     "yagmail[all]>=0.15.293",
     "celery[redis]>=5.5.3",
     "django-extensions>=4.1",
+    "iso4217>=1.14.20250512",
 ]
 
 [dependency-groups]

@@ -1,18 +1,34 @@
 from time import timezone
 from uuid import uuid4
+from decimal import Decimal
+from iso4217 import Currency as ISO4217Currency
+
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from apps.core.models import baseModel
-from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.utils import timezone
+
+from apps.core.models import baseModel
 
 class Currency(baseModel):
     currency_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, blank=True, null=True)
     code = models.CharField(max_length=3, unique=True)
-    
+
+    def clean(self):
+        super().clean()
+        self.code = self.code.upper()
+        try:
+            self.name = ISO4217Currency(self.code).currency_name
+        except Exception:
+            raise ValidationError({"code": "Invalid currency code."})
+
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    class Meta:
+        verbose_name_plural = "Currencies"
+    
     
 class ExchangeRateBaseModel(baseModel):
     currency = models.ForeignKey(

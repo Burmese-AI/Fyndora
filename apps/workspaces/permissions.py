@@ -1,7 +1,6 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
-from apps.organizations.permissions import OrganizationPermissions
 
 
 def assign_workspace_permissions(workspace):
@@ -16,7 +15,6 @@ def assign_workspace_permissions(workspace):
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
     print(f"Workspace admins group name: {workspace_admins_group_name}")
-    # operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
     try:
         workspace_admins_group, _ = Group.objects.get_or_create(
             name=workspace_admins_group_name
@@ -33,10 +31,7 @@ def assign_workspace_permissions(workspace):
         )
 
         for perm in workspace_admin_permissions:
-            if perm == OrganizationPermissions.ADD_WORKSPACE:
-                assign_perm(perm, workspace_admins_group, workspace.organization)
-            else:
-                assign_perm(perm, workspace_admins_group, workspace)
+            assign_perm(perm, workspace_admins_group, workspace)
 
         for perm in operations_reviewer_permissions:
             assign_perm(perm, operations_reviewer_group, workspace)

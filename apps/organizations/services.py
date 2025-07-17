@@ -11,6 +11,8 @@ from apps.currencies.models import Currency
 from .models import OrganizationExchangeRate
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import Group
+from apps.core.roles import get_permissions_for_role
 
 
 @transaction.atomic
@@ -42,11 +44,20 @@ def create_organization_with_owner(*, form, user) -> Organization:
         organization = model_update(
             instance=organization, data={"owner": owner_member}, update_fields=["owner"]
         )
-        assign_perm(OrganizationPermissions.CHANGE_ORGANIZATION, user, organization)
-        assign_perm(OrganizationPermissions.DELETE_ORGANIZATION, user, organization)
-        assign_perm(OrganizationPermissions.VIEW_ORGANIZATION, user, organization)
-        assign_perm(OrganizationPermissions.ADD_WORKSPACE, user, organization)
-        print(f"Assigned permissions to {user} for {organization}")
+        org_owner_group, _ = Group.objects.get_or_create(
+            name=f"Org Owner - {organization.organization_id}"
+        )
+
+        # getting the permissions for the org owner
+        org_owner_permissions = get_permissions_for_role("ORG_OWNER")
+        print(org_owner_permissions)
+
+        # Assign permissions to the org owner group
+        for perm in org_owner_permissions:
+            assign_perm(perm, org_owner_group, organization)
+
+        # Assign the org owner group to the user
+        org_owner_group.user_set.add(user)
 
         return organization
     except Exception as e:

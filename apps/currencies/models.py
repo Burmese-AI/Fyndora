@@ -1,4 +1,6 @@
+from enum import unique
 from time import timezone
+import time
 from uuid import uuid4
 from decimal import Decimal
 from iso4217 import Currency as ISO4217Currency
@@ -46,8 +48,7 @@ class ExchangeRateBaseModel(baseModel):
             MaxValueValidator(Decimal("999.99")),
         ],
     )
-    effective_date = models.DateTimeField(
-        unique=True,
+    effective_date = models.DateField(
         default=timezone.now,
         editable=False,
     )
@@ -75,6 +76,9 @@ class ExchangeRateBaseModel(baseModel):
             if self.added_by:
                 self.approved_by = self.added_by
         super().save(*args, **kwargs)
-    
+        
     class Meta:
         abstract = True
+        indexes = [
+            models.Index(fields=["currency", "effective_date"]),
+        ]

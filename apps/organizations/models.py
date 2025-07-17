@@ -106,3 +106,9 @@ class OrganizationExchangeRate(ExchangeRateBaseModel):
     class Meta:
         verbose_name = "Organization Exchange Rate"
         verbose_name_plural = "Organization Exchange Rates"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "currency", "effective_date"],
+                name="unique_organization_exchange_rate",
+            )
+        ]

@@ -1,3 +1,4 @@
+from enum import unique
 import uuid
 from decimal import Decimal
 
@@ -152,3 +153,9 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
     class Meta:
         verbose_name = "Workspace Exchange Rate"
         verbose_name_plural = "Workspace Exchange Rates"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "currency", "effective_date"],
+                name="unique_workspace_exchange_rate",
+            )
+        ]

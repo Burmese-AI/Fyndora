@@ -45,6 +45,8 @@ class Organization(baseModel):
             (OrganizationPermissions.INVITE_ORG_MEMBER, "Can invite org member"),
             (OrganizationPermissions.ADD_ORG_ENTRY, "Can add org entry"),
             (OrganizationPermissions.VIEW_ORG_ENTRY, "Can view org entry"),
+            (OrganizationPermissions.CHANGE_ORG_ENTRY, "Can change org entry"),
+            (OrganizationPermissions.DELETE_ORG_ENTRY, "Can delete org entry"),
         )
         constraints = [
             models.UniqueConstraint(

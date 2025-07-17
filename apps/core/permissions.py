@@ -41,3 +41,5 @@ class OrganizationPermissions(models.TextChoices):
     INVITE_ORG_MEMBER = "invite_org_member"  # can invite org member to organization # implemented
     ADD_ORG_ENTRY = "add_org_entry"  # can add org entry to organization # implemented
     VIEW_ORG_ENTRY = "view_org_entry"  # can view org entry to organization # implemented
+    CHANGE_ORG_ENTRY = "change_org_entry"  # can change org entry to organization # implemented
+    DELETE_ORG_ENTRY = "delete_org_entry"  # can delete org entry to organization # implemented

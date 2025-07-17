@@ -52,16 +52,6 @@ class ExchangeRateBaseModel(baseModel):
         default=timezone.now,
         editable=False,
     )
-    is_approved = models.BooleanField(
-        default=False
-    )
-    approved_by = models.ForeignKey(
-        'organizations.OrganizationMember',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="%(app_label)s_approved_%(class)s_set"
-    )
-
     added_by = models.ForeignKey(
         'organizations.OrganizationMember',
         on_delete=models.SET_NULL,

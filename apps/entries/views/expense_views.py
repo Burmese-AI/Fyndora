@@ -37,6 +37,15 @@ class OrganizationExpenseListView(
 ):
     template_name = "entries/index.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(OrganizationPermissions.VIEW_ORG_ENTRY, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view organization expenses.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+    
+    
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
@@ -61,7 +70,6 @@ class OrganizationExpenseCreateView(
     form_class = CreateOrganizationExpenseEntryForm
 
     def dispatch(self, request, *args, **kwargs):
-        # Assumes self.organization is set by OrganizationContextMixin
         if not request.user.has_perm(OrganizationPermissions.ADD_ORG_ENTRY, self.organization):
             return permission_denied_view(
                 request,

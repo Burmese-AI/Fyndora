@@ -44,6 +44,7 @@ class Organization(baseModel):
             (OrganizationPermissions.ADD_WORKSPACE, "Can add workspace"),
             (OrganizationPermissions.INVITE_ORG_MEMBER, "Can invite org member"),
             (OrganizationPermissions.ADD_ORG_ENTRY, "Can add org entry"),
+            (OrganizationPermissions.VIEW_ORG_ENTRY, "Can view org entry"),
         )
         constraints = [
             models.UniqueConstraint(

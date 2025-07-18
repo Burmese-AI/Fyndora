@@ -9,6 +9,7 @@ from apps.organizations.views import (
     settings_view,
     edit_organization_view,
     delete_organization_view,
+    OrganizationExchangeRateCreateView,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
 
@@ -48,4 +49,9 @@ urlpatterns = [
         delete_organization_view,
         name="delete_organization",
     ),
+    path(
+        "<uuid:organization_id>/exchange_rates/create/",
+        OrganizationExchangeRateCreateView.as_view(),
+        name="organization_exchange_rate_create",
+    )
 ]

@@ -1,50 +1,71 @@
-<div class="max-w-5xl mx-auto mt-10 px-4 " {% if is_oob %}hx-swap-oob="true"{% endif %} id="setting_content">
-    {% if organization %}
-    <div class="bg-base-100 rounded-xl shadow-xl p-8">
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 class="text-4xl font-bold mb-2">{{ organization.title }}</h1>
-          <p class="text-lg text-gray-500">{{ organization.description|default:'No description provided.' }}</p>
-        </div>
-        <div class="flex justify-end">
-            <button hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-secondary btn-md" >Edit </button>
-        </div>
+<div class="max-w-5xl mx-auto" {% if is_oob %}hx-swap-oob="true"{% endif %} id="setting_content">
+  {% if organization %}
+  <div class="bg-base-100 p-6 space-y-6">
+    <!-- Top Section: Title + Edit -->
+    <div class="flex items-start justify-between">
+      <div>
+        <h2 class="text-2xl font-bold">{{ organization.title }}</h2>
+        <p class="text-sm text-gray-500">{{ organization.description|default:"No description provided." }}</p>
       </div>
-  
-      <!-- Info Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
-        <div>
-          <div class="text-gray-400 text-sm mb-1">Organization Name</div>
-          <div class="font-medium text-lg">{{ organization.title }}</div>
-        </div>
-        <div>
-          <div class="text-gray-400 text-sm mb-1">Created At</div>
-          <div class="font-medium text-lg">{{ organization.created_at|date:'M d, Y' }}</div>
-        </div>
-        <div>
-          <div class="text-gray-400 text-sm mb-1">Owner</div>
-          <div class="font-medium text-lg">{% if owner %}{{ owner.username }}{% else %}<span class="text-gray-400">N/A</span>{% endif %}</div>
-        </div>
-        <div>
-          <div class="text-gray-400 text-sm mb-1">Status</div>
-          <div class="font-medium text-lg">{{ organization.get_status_display }}</div>
-        </div>
-        <div>
-          <div class="text-gray-400 text-sm mb-1">Expense</div>
-          <div class="font-medium text-lg">${{ organization.expense }}</div>
-        </div>
+      <div>
+        <!-- Edit Button -->
+        <button 
+          hx-get="{% url 'edit_organization' organization_id=request.resolver_match.kwargs.organization_id %}" 
+          hx-target="#modal-placeholder" 
+          hx-swap="innerHTML" 
+          class="btn btn-sm btn-ghost hover:bg-secondary"
+          title="Edit organization"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487 19.5 7.125" />
+          </svg>
+        </button>
+        <!-- Delete button -->
+        <button 
+          hx-get="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}" 
+          hx-target="#modal-placeholder" 
+          hx-swap="innerHTML" 
+          class="btn btn-sm btn-ghost hover:bg-red-800 hover:text-white"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+          </svg>
+        </button>
+
       </div>
-  
-      <!-- Edit Button Placeholder -->
-            
-        </div>
-    
-        <!-- Example of a "thicken bar" below the button -->
-        <button  hx-get="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-error btn-lg btn-block mt-8 font-bold py-4 text-lg">Delete Organization</button>
-    {% else %}
+    </div>
 
+    <!-- Info Row -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm border border-base-200 rounded-lg p-4 bg-base-100">
+      <div>
+        <span class="text-gray-400 block">Organization</span>
+        <span class="font-semibold">{{ organization.title }}</span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Created</span>
+        <span class="font-semibold">{{ organization.created_at|date:"M d, Y" }}</span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Owner</span>
+        <span class="font-semibold">
+          {% if owner %}
+            {{ owner.username }}
+          {% else %}
+            <span class="text-gray-400">N/A</span>
+          {% endif %}
+        </span>
+      </div>
+      <div>
+        <span class="text-gray-400 block">Status</span>
+        <span class="badge badge-outline badge-primary">{{ organization.get_status_display }}</span>
+      </div>
+    </div>
 
-    <div class="alert alert-error mt-8 max-w-2xl mx-auto">Unable to load organization settings.</div>
-    {% endif %}
   </div>
+  {% else %}
+  <div class="alert alert-error mt-8 max-w-2xl mx-auto">
+    Unable to load organization settings.
+  </div>
+  {% endif %}
+</div>

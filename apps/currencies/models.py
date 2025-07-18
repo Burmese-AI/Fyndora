@@ -49,8 +49,8 @@ class ExchangeRateBaseModel(baseModel):
     )
     effective_date = models.DateField(
         default=timezone.now,
-        editable=False,
     )
+
     is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(
         "organizations.OrganizationMember",

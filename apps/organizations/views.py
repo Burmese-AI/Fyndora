@@ -1,14 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
-from apps.organizations.models import Organization, OrganizationMember
+from django.urls import reverse_lazy
+from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
     get_workspaces_count,
     get_teams_count,
+    get_org_exchange_rates
 )
-from apps.organizations.forms import OrganizationForm
+from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
 from django.shortcuts import render
 from django.contrib import messages
 from apps.organizations.services import create_organization_with_owner
@@ -24,6 +26,10 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
+from apps.core.views.crud_base_views import BaseCreateView
+from apps.core.views.base_views import BaseGetModalFormView
+from apps.core.views.mixins import OrganizationRequiredMixin
+from apps.core.utils import get_paginated_context
 
 
 # Create your views here.
@@ -204,6 +210,15 @@ def settings_view(request, organization_id):
             "organization": organization,
             "owner": owner,
         }
+        org_exchanage_rates = get_org_exchange_rates(organization=organization)
+        context = get_paginated_context(
+            queryset=org_exchanage_rates,
+            context=context,
+            object_name="exchange_rates",
+        )
+        
+        print(f"context: {context}")
+        
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(
@@ -318,3 +333,61 @@ def delete_organization_view(request, organization_id):
             "organizations/partials/delete_organization_form.html",
             {"organization": organization},
         )
+
+class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView):
+    model = OrganizationExchangeRate
+    form_class = OrganizationExchangeRateForm
+    modal_template_name = "currencies/components/create_modal.html"
+    
+    def get_queryset(self):
+        return get_org_exchange_rates(organization=self.organization)
+    
+    def get_post_url(self):
+        return reverse_lazy(
+            "organization_exchange_rate_create", 
+            kwargs={"organization_id": self.kwargs["organization_id"]}
+        )
+    
+    def get_modal_title(self):
+        return "Add Exchange Rate"
+    
+    def form_valid(self, form):
+        
+        from .services import create_organization_exchange_rate
+        
+        try:
+            create_organization_exchange_rate(
+                organization = self.organization,
+                organization_member = self.org_member,
+                currency_code = form.cleaned_data["currency_code"],
+                rate = form.cleaned_data["rate"],
+                effective_date = form.cleaned_data["effective_date"],
+                note = form.cleaned_data["note"],
+            )
+        except Exception as e:
+            messages.error(self.request, f"Failed to create entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+        
+        messages.success(self.request, "Entry created successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        org_exchanage_rates = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=org_exchanage_rates,
+            context=base_context,
+            object_name="exchange_rates",
+        )
+
+        table_html = render_to_string(
+            "currencies/partials/table.html", context=table_context, request=self.request
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}{table_html}")
+        response["HX-trigger"] = "success"
+        return response

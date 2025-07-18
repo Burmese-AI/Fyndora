@@ -1,0 +1,63 @@
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ exchange_rate.pk }}" class="hover:bg-lemonade-100 text-lemonade-900">
+  <!-- Currency Name and Code -->
+  <td class="font-medium">
+    {{ exchange_rate.currency.name }} ({{ exchange_rate.currency.code }})
+  </td>
+
+  <!-- Rate -->
+  <td>
+    <span class="badge badge-primary text-white">
+      {{ exchange_rate.rate }}
+    </span>
+  </td>
+
+  <!-- Effective Date -->
+  <td>
+    {{ exchange_rate.effective_date|date:"Y-m-d" }}
+  </td>
+
+  <!-- Added By -->
+  <td>
+    {{ exchange_rate.added_by.user.username|default:"N/A" }}
+  </td>
+
+  <!-- Note -->
+  <td>
+    {% if exchange_rate.note %}
+      <div class="max-w-[250px] truncate" title="{{ exchange_rate.note }}">
+        {{ exchange_rate.note }}
+      </div>
+    {% else %}
+      <span class="text-lemonade-500 italic">No note</span>
+    {% endif %}
+  </td>
+
+  <!-- Actions -->
+  <td class="text-center">
+    <div class="dropdown dropdown-left">
+      <button tabindex="0" role="button" class="btn btn-xs btn-ghost btn-square">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+        </svg>
+      </button>
+      <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow-md space-y-1">
+        <li>
+          <a href="#" class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+            </svg>
+            Edit
+          </a>
+        </li>
+        <li>
+          <a href="#" class="flex items-center gap-2 text-red-600 hover:text-red-800">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.342.052.682.107 1.022.166m0 0h.918a2.25 2.25 0 012.244 2.077L9.75 8.152a2.25 2.25 0 01-2.244 2.077H5.337A2.25 2.25 0 013.093 8.152L2.03 5.79a48.08 48.08 0 01-.397-1.022V3.25" />
+            </svg>
+            Delete
+          </a>
+        </li>
+      </ul>
+    </div>
+  </td>
+</tr>

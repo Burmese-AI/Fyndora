@@ -10,9 +10,9 @@ from django.contrib import messages
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.workspaces.selectors import (
     get_workspace_by_id,
-    get_orgMember_by_user_id_and_organization_id,
     get_team_by_id,
 )
+from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse

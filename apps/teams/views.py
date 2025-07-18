@@ -12,11 +12,13 @@ from django.http import HttpResponse
 from apps.teams.models import TeamMember
 from apps.teams.forms import TeamMemberForm
 from apps.teams.services import create_team_member_from_form
-from apps.teams.exceptions import TeamMemberCreationError
+from apps.teams.exceptions import TeamMemberCreationError, TeamMemberDeletionError
 from apps.teams.selectors import get_team_member_by_id
 from apps.teams.forms import EditTeamMemberRoleForm
 from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
+from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
+from apps.teams.services import update_team_from_form, remove_team_member
 
 
 # Create your views here.
@@ -24,6 +26,7 @@ def teams_view(request, organization_id):
     try:
         teams = get_teams_by_organization_id(organization_id)
         attached_workspaces = []  # Initialize the variable
+        # to display the workspaces attached to the team
         for team in teams:
             attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
             team.attached_workspaces = attached_workspaces
@@ -41,10 +44,15 @@ def teams_view(request, organization_id):
 def create_team_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
+        orgMember = get_orgMember_by_user_id_and_organization_id(
+            request.user.user_id, organization_id
+        )
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
             if form.is_valid():
-                create_team_from_form(form, organization=organization)
+                create_team_from_form(
+                    form, organization=organization, orgMember=orgMember
+                )
                 messages.success(request, "Team created successfully.")
                 if request.headers.get("HX-Request"):
                     teams = get_teams_by_organization_id(organization_id)
@@ -92,6 +100,129 @@ def create_team_view(request, organization_id):
             return render(request, "teams/partials/create_team_form.html", context)
     except Exception as e:
         print(e)
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+
+def edit_team_view(request, organization_id, team_id):
+    try:
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method != "POST":
+            form = TeamForm(instance=team, organization=organization)
+            context = {
+                "form": form,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/edit_team_form.html", context)
+        else:
+            form = TeamForm(request.POST, instance=team, organization=organization)
+            if form.is_valid():
+                update_team_from_form(form, team=team, organization=organization)
+
+                messages.success(request, "Team updated successfully.")
+                teams = get_teams_by_organization_id(organization_id)
+                attached_workspaces = []  # Initialize the variable
+                for team in teams:
+                    attached_workspaces = WorkspaceTeam.objects.filter(
+                        team_id=team.team_id
+                    )
+                    team.attached_workspaces = attached_workspaces
+                    context = {
+                        "teams": teams,
+                        "organization": organization,
+                        "is_oob": True,
+                    }
+                    teams_grid_html = render_to_string(
+                        "teams/partials/teams_grid.html",
+                        context=context,
+                        request=request,
+                    )
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    response = HttpResponse(f"{message_html} {teams_grid_html}")
+                    response["HX-trigger"] = "success"
+                    return response
+            else:
+                messages.error(request, "Invalid form data.")
+                context = {
+                    "form": form,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                modal_html = render_to_string(
+                    "teams/partials/edit_team_form.html",
+                    context=context,
+                    request=request,
+                )
+                return HttpResponse(f"{message_html} {modal_html}")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+
+def delete_team_view(request, organization_id, team_id):
+    try:
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
+
+        # Check if team exists
+        if not team:
+            messages.error(request, "Team not found.")
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+        # Check if team is attached to workspaces
+        if workspace_teams.exists():
+            messages.error(
+                request,
+                "Team is attached to workspaces. Please remove the team from all workspaces before deleting.",
+            )
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+        # Delete team and workspace teams
+        if request.method == "POST":
+            try:
+                workspace_teams.delete()
+                team.delete()
+                messages.success(request, "Team deleted successfully.")
+                teams = get_teams_by_organization_id(organization_id)
+                attached_workspaces = []  # Initialize the variable
+                for team in teams:
+                    attached_workspaces = WorkspaceTeam.objects.filter(
+                        team_id=team.team_id
+                    )
+                    team.attached_workspaces = attached_workspaces
+                context = {
+                    "teams": teams,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                teams_grid_html = render_to_string(
+                    "teams/partials/teams_grid.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                response = HttpResponse(f"{message_html} {teams_grid_html}")
+                response["HX-trigger"] = "success"
+                return response
+            except Exception as e:
+                messages.error(request, f"Failed to delete team: {str(e)}")
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+        else:
+            context = {
+                "team": team,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/delete_team_form.html", context)
+    except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
@@ -192,7 +323,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
         if request.method == "POST":
             try:
                 team_member = get_team_member_by_id(team_member_id)
-                team_member.delete()
+                remove_team_member(team_member)
                 messages.success(request, "Team member removed successfully.")
 
                 # Get updated team members list
@@ -218,6 +349,11 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
 
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+            except TeamMemberDeletionError as e:
+                messages.error(request, f"An error occurred: {str(e)}")
                 return HttpResponseClientRedirect(
                     f"/{organization_id}/teams/team_members/{team_id}/"
                 )

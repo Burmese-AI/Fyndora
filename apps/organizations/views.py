@@ -26,7 +26,6 @@ from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_
 from django_htmx.http import HttpResponseClientRedirect
 
 
-
 # Create your views here.
 def dashboard_view(request, organization_id):
     try:

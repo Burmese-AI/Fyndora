@@ -4,20 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0005_currency_created_at_currency_updated_at'),
-        ('organizations', '0013_alter_organizationexchangerate_unique_together_and_more'),
-        ('workspaces', '0016_alter_workspaceexchangerate_effective_date_and_more'),
+        ("currencies", "0005_currency_created_at_currency_updated_at"),
+        (
+            "organizations",
+            "0013_alter_organizationexchangerate_unique_together_and_more",
+        ),
+        ("workspaces", "0016_alter_workspaceexchangerate_effective_date_and_more"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='workspaceexchangerate',
+            name="workspaceexchangerate",
             unique_together=set(),
         ),
         migrations.AddConstraint(
-            model_name='workspaceexchangerate',
-            constraint=models.UniqueConstraint(fields=('workspace', 'currency', 'effective_date'), name='unique_workspace_exchange_rate'),
+            model_name="workspaceexchangerate",
+            constraint=models.UniqueConstraint(
+                fields=("workspace", "currency", "effective_date"),
+                name="unique_workspace_exchange_rate",
+            ),
         ),
     ]

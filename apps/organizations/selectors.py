@@ -71,3 +71,16 @@ def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
     if prefetch_user:
         queryset = queryset.select_related("user")
     return queryset
+
+
+def get_orgMember_by_user_id_and_organization_id(user_id, organization_id):
+    """
+    Return an organization member by its user ID.
+    """
+    try:
+        return OrganizationMember.objects.get(
+            user_id=user_id, organization_id=organization_id
+        )
+    except Exception as e:
+        print(f"Error in get_organization_member_by_user_id: {str(e)}")
+        return None

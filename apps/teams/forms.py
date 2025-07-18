@@ -50,17 +50,27 @@ class TeamForm(forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
-        # Use the organization from the form instance if available, otherwise use the one passed to __init__
         organization = getattr(self.instance, "organization", None) or self.organization
 
         if not organization:
             raise forms.ValidationError("Organization is required for team creation")
 
-        if Team.objects.filter(title=title, organization=organization).exists():
+        # Check if the title is already taken by another team in the same organization
+        if self.instance and self.instance.pk:
+            # If this is an edit operation (instance exists), exclude the current instance
+            team_queryset = Team.objects.filter(title=title, organization=organization)
+            team_queryset = team_queryset.exclude(pk=self.instance.pk)
+        else:
+            # If this is a new team creation, check if the title is already taken
+            team_queryset = Team.objects.filter(title=title, organization=organization)
+
+        if team_queryset.exists():
             raise forms.ValidationError(
                 "Team with this title already exists in this organization"
             )
+
         return title
+
 
 
 class TeamMemberForm(forms.ModelForm):

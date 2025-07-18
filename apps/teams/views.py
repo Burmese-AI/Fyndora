@@ -118,8 +118,31 @@ def edit_team_view(request, organization_id, team_id):
             form = TeamForm(request.POST, instance=team, organization=organization)
             if form.is_valid():
                 update_team_from_form(form, team=team, organization=organization)
+
                 messages.success(request, "Team updated successfully.")
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+                teams = get_teams_by_organization_id(organization_id)
+                attached_workspaces = []  # Initialize the variable
+                for team in teams:
+                    attached_workspaces = WorkspaceTeam.objects.filter(
+                        team_id=team.team_id
+                        )
+                    team.attached_workspaces = attached_workspaces
+                    context = {
+                        "teams": teams,
+                        "organization": organization,
+                        "is_oob": True,
+                    }
+                    teams_grid_html = render_to_string(
+                        "teams/partials/teams_grid.html",
+                        context=context,
+                        request=request,
+                    )
+                    message_html = render_to_string(
+                        "includes/message.html", context=context, request=request
+                    )
+                    response = HttpResponse(f"{message_html} {teams_grid_html}")
+                    response["HX-trigger"] = "success"
+                    return response
             else:
                 messages.error(request, "Invalid form data.")
                 context = {

@@ -17,6 +17,7 @@ from apps.teams.selectors import get_team_member_by_id
 from apps.teams.forms import EditTeamMemberRoleForm
 from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
+from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 
 
 # Create your views here.
@@ -41,10 +42,13 @@ def teams_view(request, organization_id):
 def create_team_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
+        orgMember = get_orgMember_by_user_id_and_organization_id(
+            request.user.user_id, organization_id
+        )
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
             if form.is_valid():
-                create_team_from_form(form, organization=organization)
+                create_team_from_form(form, organization=organization, orgMember=orgMember)
                 messages.success(request, "Team created successfully.")
                 if request.headers.get("HX-Request"):
                     teams = get_teams_by_organization_id(organization_id)
@@ -109,6 +113,14 @@ def edit_team_view(request, organization_id, team_id):
                 "organization": organization,
             }
             return render(request, "teams/partials/edit_team_form.html", context)
+        else:
+            form = TeamForm(request.POST, instance=team, organization=organization)
+            if form.is_valid():
+                update_team_from_form(form, team=team, organization=organization)
+                messages.success(request, "Team updated successfully.")
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+            else:
+                messages.error(request, "Invalid form data.")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")

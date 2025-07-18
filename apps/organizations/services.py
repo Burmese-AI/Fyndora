@@ -79,7 +79,7 @@ def create_organization_exchange_rate(*, organization, organization_member, curr
     Creates an exchange rate for an organization.
     """
     try:
-        currency = Currency.objects.get_or_create(code=currency_code)
+        currency, _ = Currency.objects.get_or_create(code=currency_code)
         OrganizationExchangeRate.objects.create(
             organization=organization,
             currency=currency,

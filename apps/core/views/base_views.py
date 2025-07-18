@@ -24,10 +24,17 @@ class BaseGetModalView():
 
     def get_modal_title(self) -> str:
         return ""
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["custom_title"] = self.get_modal_title()
+        context["post_url"] = self.get_post_url()
+        return context
+    
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
-        form = hasattr(self, "form_class")
+        form = self.form_class() if hasattr(self, "form_class") else None
         context = self.get_context_data()
         context.update(
             {

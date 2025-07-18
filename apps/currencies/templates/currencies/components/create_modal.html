@@ -5,12 +5,12 @@
 
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-base-content">
-      Add Exchange Rate
+      {{ custom_title }}
     </h2>
   </div>
 
   <form
-    hx-post={{ post_url}}
+    hx-post="{{ post_url }}"
     hx-swap="none"
     hx-on::after-request="if (event.detail.successful) { this.reset(); }"
     @click.outside="open = false"
@@ -19,13 +19,13 @@
     {% csrf_token %}
     {% include "components/non_field_errors.html" %}
 
-    <!-- Currency Code (Custom Field) -->
+    <!-- Currency Code -->
     <div>
       <label for="{{ form.currency_code.id_for_label }}" class="block text-sm font-medium text-base-content">
         Currency Code
       </label>
       <div class="mt-2">
-        {{ form.currency_code }}
+          {{ form.currency_code }}
       </div>
       {% include "components/field_error.html" with field=form.currency_code %}
     </div>
@@ -47,7 +47,7 @@
         Effective Date
       </label>
       <div class="mt-2">
-        {{ form.effective_date }}
+          {{ form.effective_date }}
       </div>
       {% include "components/field_error.html" with field=form.effective_date %}
     </div>
@@ -76,7 +76,7 @@
         type="submit"
         class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
-        Save
+        Confirm
       </button>
     </div>
   </form>

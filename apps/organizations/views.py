@@ -27,6 +27,7 @@ from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_
 from django_htmx.http import HttpResponseClientRedirect
 from apps.core.views.crud_base_views import BaseCreateView
 from apps.core.views.base_views import BaseGetModalFormView
+from apps.core.views.mixins import OrganizationRequiredMixin
 
 
 # Create your views here.
@@ -322,10 +323,14 @@ def delete_organization_view(request, organization_id):
             {"organization": organization},
         )
 
-class OrganizationExchangeRateCreateView(BaseGetModalFormView, BaseCreateView):
+class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView):
     model = OrganizationExchangeRate
     form_class = OrganizationExchangeRateForm
     modal_template_name = "currencies/components/create_modal.html"
+    
+    def get_queryset(self):
+        query = OrganizationExchangeRate.objects.filter(organization=self.organization)
+        return query
     
     def get_post_url(self):
         return reverse_lazy(
@@ -335,3 +340,46 @@ class OrganizationExchangeRateCreateView(BaseGetModalFormView, BaseCreateView):
     
     def get_modal_title(self):
         return "Add Exchange Rate"
+    
+    def form_valid(self, form):
+        
+        from .services import create_organization_exchange_rate
+        
+        try:
+            create_organization_exchange_rate(
+                organization = self.organization,
+                organization_member = self.org_member,
+                currency_code = form.cleaned_data["currency_code"],
+                rate = form.cleaned_data["rate"],
+                effective_date = form.cleaned_data["effective_date"],
+                note = form.cleaned_data["note"],
+            )
+        except Exception as e:
+            messages.error(self.request, f"Failed to create entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+        
+        messages.success(self.request, "Entry created successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        from apps.core.utils import get_paginated_context
+
+        workspace_team_entries = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=workspace_team_entries,
+            context=base_context,
+            object_name="exchange_rates",
+        )
+
+        table_html = render_to_string(
+            "currencies/partials/table.html", context=table_context, request=self.request
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}{table_html}")
+        response["HX-trigger"] = "success"
+        return response

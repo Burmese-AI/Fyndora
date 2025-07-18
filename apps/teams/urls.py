@@ -5,9 +5,11 @@ from . import views
 urlpatterns = [
     path("", views.teams_view, name="teams"),
     path("create/", views.create_team_view, name="create_team"),
+    path("edit/<uuid:team_id>/", views.edit_team_view, name="edit_team"),
     path(
         "team_members/<uuid:team_id>/", views.get_team_members_view, name="team_members"
     ),
+    path("delete/<uuid:team_id>/", views.delete_team_view, name="delete_team"),
     path(
         "add_team_member/<uuid:team_id>/",
         views.add_team_member_view,

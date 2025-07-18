@@ -9,31 +9,85 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0001_initial'),
-        ('organizations', '0010_alter_organization_options'),
+        ("currencies", "0001_initial"),
+        ("organizations", "0010_alter_organization_options"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='OrganizationExchangeRate',
+            name="OrganizationExchangeRate",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('rate', models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=5, validators=[django.core.validators.MinValueValidator(Decimal('0.00')), django.core.validators.MaxValueValidator(Decimal('999.99'))])),
-                ('effective_date', models.DateTimeField(default=django.utils.timezone.now, editable=False, unique=True)),
-                ('is_approved', models.BooleanField(default=False)),
-                ('note', models.TextField(blank=True, null=True)),
-                ('organization_exchange_rate_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('added_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_added_%(class)s_set', to='organizations.organizationmember')),
-                ('approved_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_approved_%(class)s_set', to='organizations.organizationmember')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(app_label)s_%(class)s_related', related_query_name='%(app_label)s_%(class)s', to='currencies.currency')),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='organization_exchange_rates', to='organizations.organization')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "rate",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=Decimal("0.00"),
+                        max_digits=5,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.00")),
+                            django.core.validators.MaxValueValidator(Decimal("999.99")),
+                        ],
+                    ),
+                ),
+                (
+                    "effective_date",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, unique=True
+                    ),
+                ),
+                ("is_approved", models.BooleanField(default=False)),
+                ("note", models.TextField(blank=True, null=True)),
+                (
+                    "organization_exchange_rate_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "added_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(app_label)s_added_%(class)s_set",
+                        to="organizations.organizationmember",
+                    ),
+                ),
+                (
+                    "approved_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(app_label)s_approved_%(class)s_set",
+                        to="organizations.organizationmember",
+                    ),
+                ),
+                (
+                    "currency",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="%(app_label)s_%(class)s_related",
+                        related_query_name="%(app_label)s_%(class)s",
+                        to="currencies.currency",
+                    ),
+                ),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="organization_exchange_rates",
+                        to="organizations.organization",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Organization Exchange Rate',
-                'verbose_name_plural': 'Organization Exchange Rates',
+                "verbose_name": "Organization Exchange Rate",
+                "verbose_name_plural": "Organization Exchange Rates",
             },
         ),
     ]

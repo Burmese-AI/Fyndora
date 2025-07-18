@@ -20,4 +20,12 @@ class TeamMemberUpdateError(Exception):
 class TeamMemberDeletionError(Exception):
     pass
 
+class TeamMemberDeletionError(Exception):
+    pass
+
+class TeamDeletionError(Exception):
+    pass
+
+class TeamMemberDeletionError(Exception):
+    pass
 

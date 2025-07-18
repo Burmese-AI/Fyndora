@@ -105,3 +105,13 @@ def remove_team_member(team_member: TeamMember) -> None:
         team_member.delete()
     except Exception as e:
         raise TeamMemberDeletionError(f"Failed to remove team member: {str(e)}")
+    
+
+# def delete_team(team: Team) -> Team:
+#     """
+#     Deletes a team.
+#     """
+#     try:
+#         team.delete()
+#     except Exception as e:
+#         raise TeamDeletionError(f"Failed to delete team: {str(e)}")

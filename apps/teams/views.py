@@ -164,6 +164,25 @@ def edit_team_view(request, organization_id, team_id):
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
+def delete_team_view(request, organization_id, team_id):
+    try:
+       team = get_team_by_id(team_id)
+       organization = get_organization_by_id(organization_id)
+       if request.method == "POST":
+            team = get_team_by_id(team_id)
+            team.delete()
+            messages.success(request, "Team deleted successfully.")
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+       else:
+           context = {
+                "team": team,
+                "organization": organization,
+            }
+           return render(request, "teams/partials/delete_team_form.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
 
 def get_team_members_view(request, organization_id, team_id):
     try:

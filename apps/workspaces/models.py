@@ -1,4 +1,3 @@
-from enum import unique
 import uuid
 from decimal import Decimal
 
@@ -149,7 +148,7 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
         on_delete=models.CASCADE,
         related_name="workspace_exchange_rates",
     )
-    
+
     class Meta:
         verbose_name = "Workspace Exchange Rate"
         verbose_name_plural = "Workspace Exchange Rates"

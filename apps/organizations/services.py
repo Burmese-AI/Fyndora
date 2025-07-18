@@ -74,7 +74,9 @@ def update_organization_from_form(*, form, organization) -> Organization:
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
 
 
-def create_organization_exchange_rate(*, organization, organization_member, currency_code, rate, note, effective_date):
+def create_organization_exchange_rate(
+    *, organization, organization_member, currency_code, rate, note, effective_date
+):
     """
     Creates an exchange rate for an organization.
     """
@@ -93,4 +95,6 @@ def create_organization_exchange_rate(*, organization, organization_member, curr
         raise ValidationError(f"IntegrityError: {str(e)}")
 
     except Exception as err:
-        raise ValidationError(f"Failed to create organization exchange rate: {str(err)}")
+        raise ValidationError(
+            f"Failed to create organization exchange rate: {str(err)}"
+        )

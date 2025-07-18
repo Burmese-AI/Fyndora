@@ -72,7 +72,6 @@ class TeamForm(forms.ModelForm):
         return title
 
 
-
 class TeamMemberForm(forms.ModelForm):
     organization_member = forms.ModelChoiceField(
         queryset=OrganizationMember.objects.none(),

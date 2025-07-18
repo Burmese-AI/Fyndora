@@ -26,6 +26,7 @@ def teams_view(request, organization_id):
     try:
         teams = get_teams_by_organization_id(organization_id)
         attached_workspaces = []  # Initialize the variable
+        # to display the workspaces attached to the team
         for team in teams:
             attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
             team.attached_workspaces = attached_workspaces
@@ -49,7 +50,9 @@ def create_team_view(request, organization_id):
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
             if form.is_valid():
-                create_team_from_form(form, organization=organization, orgMember=orgMember)
+                create_team_from_form(
+                    form, organization=organization, orgMember=orgMember
+                )
                 messages.success(request, "Team created successfully.")
                 if request.headers.get("HX-Request"):
                     teams = get_teams_by_organization_id(organization_id)
@@ -101,10 +104,8 @@ def create_team_view(request, organization_id):
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
-
 def edit_team_view(request, organization_id, team_id):
     try:
-        print("edit from view")
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
         if request.method != "POST":
@@ -125,7 +126,7 @@ def edit_team_view(request, organization_id, team_id):
                 for team in teams:
                     attached_workspaces = WorkspaceTeam.objects.filter(
                         team_id=team.team_id
-                        )
+                    )
                     team.attached_workspaces = attached_workspaces
                     context = {
                         "teams": teams,
@@ -169,15 +170,18 @@ def delete_team_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
         workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
-        
+
         # Check if team exists
         if not team:
             messages.error(request, "Team not found.")
             return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-        
+
         # Check if team is attached to workspaces
         if workspace_teams.exists():
-            messages.error(request, "Team is attached to workspaces. Please remove the team from all workspaces before deleting.")
+            messages.error(
+                request,
+                "Team is attached to workspaces. Please remove the team from all workspaces before deleting.",
+            )
             return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
         # Delete team and workspace teams

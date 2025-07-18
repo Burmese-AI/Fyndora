@@ -9,9 +9,7 @@ urlpatterns = [
     path(
         "team_members/<uuid:team_id>/", views.get_team_members_view, name="team_members"
     ),
-    path(
-        "delete/<uuid:team_id>/", views.delete_team_view, name="delete_team"
-    ),
+    path("delete/<uuid:team_id>/", views.delete_team_view, name="delete_team"),
     path(
         "add_team_member/<uuid:team_id>/",
         views.add_team_member_view,

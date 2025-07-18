@@ -5,7 +5,13 @@ from guardian.shortcuts import assign_perm
 from apps.auditlog.services import audit_create
 from apps.core.roles import get_permissions_for_role
 from apps.organizations.models import OrganizationMember
-from apps.teams.exceptions import TeamCreationError, TeamMemberUpdateError, TeamUpdateError, TeamMemberCreationError, TeamMemberDeletionError
+from apps.teams.exceptions import (
+    TeamCreationError,
+    TeamMemberUpdateError,
+    TeamUpdateError,
+    TeamMemberCreationError,
+    TeamMemberDeletionError,
+)
 
 from .models import Team, TeamMember
 from apps.core.utils import model_update
@@ -61,7 +67,9 @@ def team_member_add(
 
         return team_member
     except Exception as e:
-        raise TeamMemberCreationError(f"An error occurred while adding team member: {str(e)}")
+        raise TeamMemberCreationError(
+            f"An error occurred while adding team member: {str(e)}"
+        )
 
 
 def create_team_member_from_form(form, team, organization):
@@ -72,7 +80,9 @@ def create_team_member_from_form(form, team, organization):
         team_member.save()
         return team_member
     except Exception as e:
-        raise TeamMemberCreationError(f"An error occurred while creating team member: {str(e)}")
+        raise TeamMemberCreationError(
+            f"An error occurred while creating team member: {str(e)}"
+        )
 
 
 @transaction.atomic
@@ -85,6 +95,7 @@ def update_team_member_role(*, form, team_member) -> TeamMember:
         return team_member
     except Exception as e:
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
+
 
 def update_team_from_form(form, team, organization) -> Team:
     """
@@ -105,7 +116,7 @@ def remove_team_member(team_member: TeamMember) -> None:
         team_member.delete()
     except Exception as e:
         raise TeamMemberDeletionError(f"Failed to remove team member: {str(e)}")
-    
+
 
 # def delete_team(team: Team) -> Team:
 #     """

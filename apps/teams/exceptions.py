@@ -17,15 +17,6 @@ class TeamMemberCreationError(Exception):
 class TeamMemberUpdateError(Exception):
     pass
 
-class TeamMemberDeletionError(Exception):
-    pass
 
 class TeamMemberDeletionError(Exception):
     pass
-
-class TeamDeletionError(Exception):
-    pass
-
-class TeamMemberDeletionError(Exception):
-    pass
-

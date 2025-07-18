@@ -4,11 +4,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0013_alter_organizationexchangerate_unique_together_and_more'),
-        ('organizations', '0014_alter_organization_options'),
+        (
+            "organizations",
+            "0013_alter_organizationexchangerate_unique_together_and_more",
+        ),
+        ("organizations", "0014_alter_organization_options"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -4,19 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0005_currency_created_at_currency_updated_at'),
-        ('organizations', '0012_alter_organizationexchangerate_effective_date_and_more'),
+        ("currencies", "0005_currency_created_at_currency_updated_at"),
+        (
+            "organizations",
+            "0012_alter_organizationexchangerate_effective_date_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='organizationexchangerate',
+            name="organizationexchangerate",
             unique_together=set(),
         ),
         migrations.AddConstraint(
-            model_name='organizationexchangerate',
-            constraint=models.UniqueConstraint(fields=('organization', 'currency', 'effective_date'), name='unique_organization_exchange_rate'),
+            model_name="organizationexchangerate",
+            constraint=models.UniqueConstraint(
+                fields=("organization", "currency", "effective_date"),
+                name="unique_organization_exchange_rate",
+            ),
         ),
     ]

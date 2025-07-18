@@ -60,4 +60,3 @@ def get_team_members_by_team_id(team_id):
         return TeamMember.objects.filter(team_id=team_id)
     except Exception:
         return TeamMember.objects.none()
-

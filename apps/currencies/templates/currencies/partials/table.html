@@ -1,0 +1,29 @@
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto rounded-xl my-3 shadow-md bg-lemonade-50">
+  <table class="table w-full min-w-[768px]">
+    <thead class="bg-lemonade-200 text-lemonade-900 text-sm uppercase font-semibold">
+      <tr>
+        <th>Currency</th>
+        <th>Rate</th>
+        <th>Effective Date</th>
+        <th>Added By</th>
+        <th>Note</th>
+        <th class="text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exchange_rate in exchange_rates %}
+        {% include "currencies/partials/row.html" %}
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-lemonade-700 py-4">
+            Select currencies and set default rates for them.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+  {% include "components/pagination.html" %}
+{% endif %}

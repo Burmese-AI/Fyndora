@@ -1,14 +1,15 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
-from apps.organizations.models import Organization, OrganizationMember
+from django.urls import reverse_lazy
+from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
     get_workspaces_count,
     get_teams_count,
 )
-from apps.organizations.forms import OrganizationForm
+from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
 from django.shortcuts import render
 from django.contrib import messages
 from apps.organizations.services import create_organization_with_owner
@@ -24,6 +25,8 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
+from apps.core.views.crud_base_views import BaseCreateView
+from apps.core.views.base_views import BaseGetModalFormView
 
 
 # Create your views here.
@@ -318,3 +321,17 @@ def delete_organization_view(request, organization_id):
             "organizations/partials/delete_organization_form.html",
             {"organization": organization},
         )
+
+class OrganizationExchangeRateCreateView(BaseGetModalFormView, BaseCreateView):
+    model = OrganizationExchangeRate
+    form_class = OrganizationExchangeRateForm
+    modal_template_name = "currencies/components/create_modal.html"
+    
+    def get_post_url(self):
+        return reverse_lazy(
+            "organization_exchange_rate_create", 
+            kwargs={"organization_id": self.kwargs["organization_id"]}
+        )
+    
+    def get_modal_title(self):
+        return "Add Exchange Rate"

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Organization
+from .models import Organization, OrganizationExchangeRate
 from .constants import StatusChoices
 
 
@@ -53,3 +53,39 @@ class OrganizationForm(forms.ModelForm):
     class Meta:
         model = Organization
         fields = ("title", "description", "status")
+
+class OrganizationExchangeRateForm(forms.ModelForm):
+    
+    currency_code = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                "placeholder": "Enter currency code",
+            }
+        )
+    )
+    
+    class Meta:
+        model = OrganizationExchangeRate
+        fields = ["rate", "effective_date", "note"]
+        widgets = {
+            "rate": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter exchange rate",
+                }
+            ),
+            "effective_date": forms.DateInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter effective date",
+                }
+            ),
+            "note": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Enter note (optional)",
+                }
+            ),
+        }
+    

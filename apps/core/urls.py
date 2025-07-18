@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import close_modal, permission_denied_view
+from .views.views import close_modal, permission_denied_view
 
 
 urlpatterns = [

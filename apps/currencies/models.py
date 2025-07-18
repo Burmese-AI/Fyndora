@@ -50,7 +50,6 @@ class ExchangeRateBaseModel(baseModel):
     )
     effective_date = models.DateField(
         default=timezone.now,
-        editable=False,
     )
     added_by = models.ForeignKey(
         'organizations.OrganizationMember',

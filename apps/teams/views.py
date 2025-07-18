@@ -166,19 +166,58 @@ def edit_team_view(request, organization_id, team_id):
 
 def delete_team_view(request, organization_id, team_id):
     try:
-       team = get_team_by_id(team_id)
-       organization = get_organization_by_id(organization_id)
-       if request.method == "POST":
-            team = get_team_by_id(team_id)
-            team.delete()
-            messages.success(request, "Team deleted successfully.")
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
+        
+        # Check if team exists
+        if not team:
+            messages.error(request, "Team not found.")
             return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-       else:
-           context = {
+        
+        # Check if team is attached to workspaces
+        if workspace_teams.exists():
+            messages.error(request, "Team is attached to workspaces. Please remove the team from all workspaces before deleting.")
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+        # Delete team and workspace teams
+        if request.method == "POST":
+            try:
+                workspace_teams.delete()
+                team.delete()
+                messages.success(request, "Team deleted successfully.")
+                teams = get_teams_by_organization_id(organization_id)
+                attached_workspaces = []  # Initialize the variable
+                for team in teams:
+                    attached_workspaces = WorkspaceTeam.objects.filter(
+                        team_id=team.team_id
+                    )
+                    team.attached_workspaces = attached_workspaces
+                context = {
+                    "teams": teams,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                teams_grid_html = render_to_string(
+                    "teams/partials/teams_grid.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                response = HttpResponse(f"{message_html} {teams_grid_html}")
+                response["HX-trigger"] = "success"
+                return response
+            except Exception as e:
+                messages.error(request, f"Failed to delete team: {str(e)}")
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+        else:
+            context = {
                 "team": team,
                 "organization": organization,
             }
-           return render(request, "teams/partials/delete_team_form.html", context)
+            return render(request, "teams/partials/delete_team_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")

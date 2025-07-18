@@ -6,7 +6,7 @@ from iso4217 import Currency as ISO4217Currency
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.core.exceptions import ValidationError
-# from django.utils import timezone  #uue to ruff error , readjust if you need to use it
+from django.utils import timezone  # this is causing ruff error , but neglected for now
 
 from apps.core.models import baseModel
 

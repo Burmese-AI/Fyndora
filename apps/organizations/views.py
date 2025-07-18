@@ -8,6 +8,7 @@ from apps.organizations.selectors import (
     get_organization_members_count,
     get_workspaces_count,
     get_teams_count,
+    get_org_exchange_rates
 )
 from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
 from django.shortcuts import render
@@ -28,6 +29,7 @@ from django_htmx.http import HttpResponseClientRedirect
 from apps.core.views.crud_base_views import BaseCreateView
 from apps.core.views.base_views import BaseGetModalFormView
 from apps.core.views.mixins import OrganizationRequiredMixin
+from apps.core.utils import get_paginated_context
 
 
 # Create your views here.
@@ -208,6 +210,15 @@ def settings_view(request, organization_id):
             "organization": organization,
             "owner": owner,
         }
+        org_exchanage_rates = get_org_exchange_rates(organization=organization)
+        context = get_paginated_context(
+            queryset=org_exchanage_rates,
+            context=context,
+            object_name="exchange_rates",
+        )
+        
+        print(f"context: {context}")
+        
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(
@@ -329,8 +340,7 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
     modal_template_name = "currencies/components/create_modal.html"
     
     def get_queryset(self):
-        query = OrganizationExchangeRate.objects.filter(organization=self.organization)
-        return query
+        return get_org_exchange_rates(organization=self.organization)
     
     def get_post_url(self):
         return reverse_lazy(
@@ -364,11 +374,9 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
-        from apps.core.utils import get_paginated_context
-
-        workspace_team_entries = self.get_queryset()
+        org_exchanage_rates = self.get_queryset()
         table_context = get_paginated_context(
-            queryset=workspace_team_entries,
+            queryset=org_exchanage_rates,
             context=base_context,
             object_name="exchange_rates",
         )

@@ -96,6 +96,25 @@ def create_team_view(request, organization_id):
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
+
+def edit_team_view(request, organization_id, team_id):
+    try:
+        print("edit from view")
+        team = get_team_by_id(team_id)
+        organization = get_organization_by_id(organization_id)
+        if request.method != "POST":
+            form = TeamForm(instance=team, organization=organization)
+            context = {
+                "form": form,
+                "organization": organization,
+            }
+            return render(request, "teams/partials/edit_team_form.html", context)
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
+
+
+
 def get_team_members_view(request, organization_id, team_id):
     try:
         # Get the team and organization for context

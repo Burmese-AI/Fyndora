@@ -5,7 +5,6 @@ from apps.organizations.exceptions import (
     OrganizationUpdateError,
 )
 from guardian.shortcuts import assign_perm
-from .permissions import OrganizationPermissions
 from apps.core.utils import model_update
 from apps.currencies.models import Currency
 from .models import OrganizationExchangeRate

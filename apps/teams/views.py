@@ -12,12 +12,13 @@ from django.http import HttpResponse
 from apps.teams.models import TeamMember
 from apps.teams.forms import TeamMemberForm
 from apps.teams.services import create_team_member_from_form
-from apps.teams.exceptions import TeamMemberCreationError
+from apps.teams.exceptions import TeamMemberCreationError, TeamMemberDeletionError
 from apps.teams.selectors import get_team_member_by_id
 from apps.teams.forms import EditTeamMemberRoleForm
 from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
+from apps.teams.services import update_team_from_form, remove_team_member
 
 
 # Create your views here.
@@ -121,6 +122,20 @@ def edit_team_view(request, organization_id, team_id):
                 return HttpResponseClientRedirect(f"/{organization_id}/teams/")
             else:
                 messages.error(request, "Invalid form data.")
+                context = {
+                    "form": form,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                modal_html = render_to_string(
+                    "teams/partials/edit_team_form.html",
+                    context=context,
+                    request=request,
+                )
+                return HttpResponse(f"{message_html} {modal_html}")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/teams/")
@@ -223,7 +238,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
         if request.method == "POST":
             try:
                 team_member = get_team_member_by_id(team_member_id)
-                team_member.delete()
+                remove_team_member(team_member)
                 messages.success(request, "Team member removed successfully.")
 
                 # Get updated team members list
@@ -249,6 +264,11 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
 
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
+            except TeamMemberDeletionError as e:
+                messages.error(request, f"An error occurred: {str(e)}")
                 return HttpResponseClientRedirect(
                     f"/{organization_id}/teams/team_members/{team_id}/"
                 )

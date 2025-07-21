@@ -10,6 +10,7 @@ from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.constants import StatusChoices
 from apps.teams.models import Team
 from apps.currencies.models import ExchangeRateBaseModel
+from apps.core.permissions import WorkspacePermissions, OrganizationPermissions
 
 
 # Create your models here.
@@ -71,22 +72,22 @@ class Workspace(baseModel):
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
         permissions = (
-            ("assign_teams", "Can assign teams to workspace"),
-            ("lock_workspace", "Can lock workspace"),
-            ("view_dashboard", "Can view dashboard reports"),
-            ("add_workspace_entry", "Can add entry to workspace"),
-            ("change_workspace_entry", "Can change entry in workspace"),
-            ("delete_workspace_entry", "Can delete entry in workspace"),
-            ("view_workspace_entry", "Can view entry in workspace"),
-            ("review_workspace_entry", "Can review entry in workspace"),
-            ("upload_workspace_attachments", "Can upload attachments in workspace"),
-            ("flag_workspace_entry", "Can flag entry in workspace"),
-            ("export_workspace_report", "Can export workspace report"),
-            ("change_team_entry", "Can change entry in team"),
-            ("delete_team_entry", "Can delete entry in team"),
-            ("view_team_entry", "Can view entry in team"),
-            ("review_team_entry", "Can review entry in team"),
-            ("flag_team_entry", "Can flag entry in team"),
+            (WorkspacePermissions.ASSIGN_TEAMS, "Can assign teams to workspace"),
+            (WorkspacePermissions.LOCK_WORKSPACE, "Can lock workspace"),
+            (WorkspacePermissions.VIEW_DASHBOARD, "Can view dashboard reports"),
+            (WorkspacePermissions.ADD_WORKSPACE_ENTRY, "Can add entry to workspace"),
+            (WorkspacePermissions.CHANGE_WORKSPACE_ENTRY, "Can change entry in workspace"),
+            (WorkspacePermissions.DELETE_WORKSPACE_ENTRY, "Can delete entry in workspace"),
+            (WorkspacePermissions.VIEW_WORKSPACE_ENTRY, "Can view entry in workspace"),
+            (WorkspacePermissions.REVIEW_WORKSPACE_ENTRY, "Can review entry in workspace"),
+            (WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS, "Can upload attachments in workspace"),
+            (WorkspacePermissions.FLAG_WORKSPACE_ENTRY, "Can flag entry in workspace"),
+            (WorkspacePermissions.EXPORT_WORKSPACE_REPORT, "Can export workspace report"),
+            (WorkspacePermissions.CHANGE_TEAM_ENTRY, "Can change entry in team"),
+            (WorkspacePermissions.DELETE_TEAM_ENTRY, "Can delete entry in team"),
+            (WorkspacePermissions.VIEW_TEAM_ENTRY, "Can view entry in team"),
+            (WorkspacePermissions.REVIEW_TEAM_ENTRY, "Can review entry in team"),
+            (WorkspacePermissions.FLAG_TEAM_ENTRY, "Can flag entry in team"),
         )
         constraints = [
             models.UniqueConstraint(

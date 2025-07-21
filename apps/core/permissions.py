@@ -5,7 +5,6 @@ class WorkspacePermissions(models.TextChoices):
     """
     Permissions for the Workspace model.
     """
-
     CHANGE_WORKSPACE = "change_workspace"  # implemented
     DELETE_WORKSPACE = "delete_workspace"  # implemented
     VIEW_WORKSPACE = "view_workspace"  # implemented
@@ -37,6 +36,7 @@ class OrganizationPermissions(models.TextChoices):
     VIEW_ORGANIZATION = "view_organization"
 
     ADD_WORKSPACE = "add_workspace"  # can add workspace to organization # implemented
+    ADD_TEAM = "add_team"  # can add team to organization # implemented
 
     INVITE_ORG_MEMBER = (
         "invite_org_member"  # can invite org member to organization # implemented

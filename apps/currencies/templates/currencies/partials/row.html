@@ -70,6 +70,7 @@
         type="button"
         class="btn btn-xs btn-ghost"
         title="Delete"
+        hx-post="{% get_delete_exchange_rate_url url_identifier exchange_rate organization %}"
         hx-confirm="Are you sure you want to delete this entry?"
         hx-swap="none"
         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'

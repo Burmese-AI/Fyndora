@@ -29,8 +29,7 @@ class OrganizationRequiredMixin:
         context["org_member"] = self.org_member
         context["is_org_admin"] = self.is_org_admin
         return context
-    
-        
+           
 
 class UpdateFormMixin:
     def get_form_kwargs(self):
@@ -70,3 +69,16 @@ class HtmxModalFormInvalidFormResponseMixin:
         )
 
         return HttpResponse(f"{message_html}{modal_html}")
+
+
+class HtmxInvalidResponseMixin:
+    message_template_name = "includes/message.html"
+
+    def _htmx_invalid_response(self, form) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        message_html = render_to_string(
+            self.message_template_name, context=base_context, request=self.request
+        )
+
+        return HttpResponse(f"{message_html}")

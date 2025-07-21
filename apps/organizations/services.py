@@ -105,3 +105,9 @@ def update_organization_exchange_rate(*, organization, organization_member, org_
         return org_exchange_rate
     except Exception as err:
         raise ValidationError(f"Failed to update organization exchange rate: {str(err)}")
+    
+def delete_organization_exchange_rate(*, organization, organization_member, org_exchange_rate):
+    try:
+        org_exchange_rate.delete()
+    except Exception as err:
+        raise ValidationError(f"Failed to delete organization exchange rate: {str(err)}")

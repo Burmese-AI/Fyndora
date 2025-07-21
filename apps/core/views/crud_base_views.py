@@ -1,9 +1,9 @@
 from typing import Any
-from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView, DetailView
 from django.http import HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.core.constants import PAGINATION_SIZE
-from .mixins import HtmxOobResponseMixin
+from .mixins import HtmxInvalidResponseMixin, HtmxOobResponseMixin
 
 class BaseListView(LoginRequiredMixin,ListView):
     """
@@ -46,3 +46,18 @@ class BaseDetailView(
     model = None
     template_name = None
     context_object_name = None
+    
+class BaseDeleteView(
+    LoginRequiredMixin,
+    HtmxInvalidResponseMixin,
+    HtmxOobResponseMixin,
+    DeleteView,
+):
+    model = None
+    
+    def get_queryset(self):
+        raise NotImplementedError("get_queryset must be implemented")
+    
+    def form_valid(self, form):
+        raise NotImplementedError("form_valid must be implemented")
+    

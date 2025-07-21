@@ -75,11 +75,11 @@ def update_workspace_admin_group(
         previous_admin (UserProfile or None): The previous admin.
         new_admin (UserProfile or None): The new admin.
     """
-    print("before")
-    print(f"previous_admin: {previous_admin}")
-    print(f"new_admin: {new_admin}")
-    print(f"previous_operations_reviewer: {previous_operations_reviewer}")
-    print(f"new_operations_reviewer: {new_operations_reviewer}")
+    # print("before")
+    # print(f"previous_admin: {previous_admin}")
+    # print(f"new_admin: {new_admin}")
+    # print(f"previous_operations_reviewer: {previous_operations_reviewer}")
+    # print(f"new_operations_reviewer: {new_operations_reviewer}")
     if (
         previous_admin == new_admin
         and previous_operations_reviewer == new_operations_reviewer
@@ -111,18 +111,3 @@ def update_workspace_admin_group(
         print("new operations reviewer added")
 
 
-# def check_org_owner_permission(request, org_member, organization_id):
-#     """
-#     Checks if the user is the organization owner. If not, returns an error response.
-
-#     Args:
-#         request: Django request object.
-#         org_member: OrganizationMember instance.
-#         organization_id: UUID or str of the organization.
-
-#     Returns:
-#         HttpResponse (rendered error page) if permission denied, otherwise None.
-#     """
-#     if not org_member.is_org_owner:
-#         messages.error(request, "You do not have permission to do action in this organization.")
-#         return HttpResponseClientRedirect(f"/403")

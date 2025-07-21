@@ -140,16 +140,23 @@ def edit_workspace_view(request, organization_id, workspace_id):
         previous_workspace_admin = workspace.workspace_admin
         previous_operations_reviewer = workspace.operations_reviewer
 
+
         if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
             return permission_denied_view(
                 request,
                 "You do not have permission  to edit this workspace.",
             )
-
+        
         if request.method == "POST":
             form = WorkspaceForm(
                 request.POST, instance=workspace, organization=organization
             )
+            if previous_workspace_admin != request.POST.get("workspace_admin"):
+                if not request.user.has_perm(OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization):
+                    return permission_denied_view(
+                        request,
+                        "You do not have permission to change the workspace admin.",
+                    )
             try:
                 if form.is_valid():
                     update_workspace_from_form(
@@ -198,7 +205,8 @@ def edit_workspace_view(request, organization_id, workspace_id):
                 messages.error(request, f"An error occurred: {str(e)}")
                 return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
         else:
-            form = WorkspaceForm(instance=workspace, organization=organization)
+            form = WorkspaceForm(instance=workspace, organization=organization,
+                                 can_change_workspace_admin=request.user.has_perm(OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization))
 
         context = {
             "form": form,

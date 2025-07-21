@@ -49,6 +49,7 @@ class Organization(baseModel):
             (OrganizationPermissions.VIEW_ORG_ENTRY, "Can view org entry"),
             (OrganizationPermissions.CHANGE_ORG_ENTRY, "Can change org entry"),
             (OrganizationPermissions.DELETE_ORG_ENTRY, "Can delete org entry"),
+            (OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, "Can change workspace admin"),
         )
         constraints = [
             models.UniqueConstraint(

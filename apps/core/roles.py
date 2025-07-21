@@ -16,6 +16,7 @@ ROLES = {
         OrganizationPermissions.VIEW_ORG_ENTRY,
         OrganizationPermissions.CHANGE_ORG_ENTRY,
         OrganizationPermissions.DELETE_ORG_ENTRY,
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
     ],
     "WORKSPACE_ADMIN": [
         OrganizationPermissions.ADD_TEAM,

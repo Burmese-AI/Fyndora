@@ -20,7 +20,14 @@ from apps.teams.selectors import get_team_members_by_team_id
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.teams.services import update_team_from_form, remove_team_member
 from apps.core.permissions import OrganizationPermissions
-from apps.core.utils import permission_denied_view
+from apps.teams.permissions import (
+    remove_team_permissions,
+    check_add_team_permission,
+    check_change_team_permission,
+    check_delete_team_permission,
+    check_add_team_member_permission,
+    check_view_team_permission,
+)
 
 
 # Create your views here.
@@ -57,12 +64,9 @@ def create_team_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-
-        if not request.user.has_perm(OrganizationPermissions.ADD_TEAM, organization):
-            return permission_denied_view(
-                request,
-                "You do not have permission to create a team in this organization.",
-            )
+        permission_check = check_add_team_permission(request, organization)
+        if permission_check:
+            return permission_check
 
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
@@ -125,6 +129,12 @@ def edit_team_view(request, organization_id, team_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+        previous_team_coordinator = team.team_coordinator
+
+        permission_check = check_change_team_permission(request, team)
+        if permission_check:
+            return permission_check
+
         if request.method != "POST":
             form = TeamForm(instance=team, organization=organization)
             context = {
@@ -135,7 +145,12 @@ def edit_team_view(request, organization_id, team_id):
         else:
             form = TeamForm(request.POST, instance=team, organization=organization)
             if form.is_valid():
-                update_team_from_form(form, team=team, organization=organization)
+                update_team_from_form(
+                    form,
+                    team=team,
+                    organization=organization,
+                    previous_team_coordinator=previous_team_coordinator,
+                )
 
                 messages.success(request, "Team updated successfully.")
                 teams = get_teams_by_organization_id(organization_id)
@@ -188,6 +203,10 @@ def delete_team_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
 
+        permission_check = check_delete_team_permission(request, team)
+        if permission_check:
+            return permission_check
+
         # Check if team exists
         if not team:
             messages.error(request, "Team not found.")
@@ -204,6 +223,7 @@ def delete_team_view(request, organization_id, team_id):
         # Delete team and workspace teams
         if request.method == "POST":
             try:
+                remove_team_permissions(team)
                 workspace_teams.delete()
                 team.delete()
                 messages.success(request, "Team deleted successfully.")
@@ -251,6 +271,10 @@ def get_team_members_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         team_members = get_team_members_by_team_id(team_id)
 
+        permission_check = check_view_team_permission(request, team)
+        if permission_check:
+            return permission_check
+
         context = {
             "team": team,
             "organization": organization,
@@ -266,6 +290,11 @@ def add_team_member_view(request, organization_id, team_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+
+        permission_check = check_add_team_member_permission(request, team)
+        if permission_check:
+            return permission_check
+
         if request.method == "POST":
             try:
                 form = TeamMemberForm(

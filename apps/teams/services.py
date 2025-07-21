@@ -12,9 +12,11 @@ from apps.teams.exceptions import (
     TeamMemberCreationError,
     TeamMemberDeletionError,
 )
+from apps.teams.permissions import assign_team_permissions
 
 from .models import Team, TeamMember
 from apps.core.utils import model_update
+from apps.teams.permissions import update_team_coordinator_group
 
 
 def create_team_from_form(form, organization, orgMember):
@@ -23,6 +25,8 @@ def create_team_from_form(form, organization, orgMember):
         team.organization = organization
         team.created_by = orgMember
         team.save()
+
+        assign_team_permissions(team)
         return team
     except Exception as e:
         raise TeamCreationError(f"An error occurred while creating team: {str(e)}")
@@ -97,12 +101,16 @@ def update_team_member_role(*, form, team_member) -> TeamMember:
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
 
 
-def update_team_from_form(form, team, organization) -> Team:
+def update_team_from_form(form, team, organization, previous_team_coordinator) -> Team:
     """
     Updates a team from a form.
     """
     try:
         team = model_update(team, form.cleaned_data)
+        new_team_coordinator = form.cleaned_data.get("team_coordinator")
+        update_team_coordinator_group(
+            team, previous_team_coordinator, new_team_coordinator
+        )
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")

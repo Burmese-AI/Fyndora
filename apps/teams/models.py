@@ -5,6 +5,7 @@ import uuid
 from apps.teams.constants import TeamMemberRole
 from apps.organizations.models import Organization
 from django.contrib.contenttypes.fields import GenericRelation
+from apps.core.permissions import TeamPermissions
 
 
 class Team(baseModel):
@@ -34,6 +35,9 @@ class Team(baseModel):
         verbose_name = "team"
         verbose_name_plural = "teams"
         ordering = ["-created_at"]
+        permissions = [
+            (TeamPermissions.ADD_TEAM_MEMBER, "Can add team member"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["title", "organization"], name="unique_team"

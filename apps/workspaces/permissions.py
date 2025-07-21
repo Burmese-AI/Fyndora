@@ -17,7 +17,6 @@ def assign_workspace_permissions(workspace):
 
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
-    print(f"Workspace admins group name: {workspace_admins_group_name}")
     try:
         workspace_admins_group, _ = Group.objects.get_or_create(
             name=workspace_admins_group_name
@@ -76,12 +75,9 @@ def update_workspace_admin_group(
         workspace (Workspace): The workspace instance.
         previous_admin (UserProfile or None): The previous admin.
         new_admin (UserProfile or None): The new admin.
+        previous_operations_reviewer (UserProfile or None): The previous operations reviewer.
+        new_operations_reviewer (UserProfile or None): The new operations reviewer.
     """
-    # print("before")
-    # print(f"previous_admin: {previous_admin}")
-    # print(f"new_admin: {new_admin}")
-    # print(f"previous_operations_reviewer: {previous_operations_reviewer}")
-    # print(f"new_operations_reviewer: {new_operations_reviewer}")
     if (
         previous_admin == new_admin
         and previous_operations_reviewer == new_operations_reviewer
@@ -113,6 +109,7 @@ def update_workspace_admin_group(
         print("new operations reviewer added")
 
 
+# check if the user has permission to create a workspace
 def check_create_workspace_permission(request, organization):
     """
     Checks if the user is the organization owner. If not, returns an error response.
@@ -125,15 +122,8 @@ def check_create_workspace_permission(request, organization):
         )
 
 
+# check if the user has permission to change the workspace admin
 def check_change_workspace_admin_permission(request, organization):
-    if not request.user.has_perm(
-        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
-    ):
-        return permission_denied_view(
-            request,
-            "You do not have permission to change the workspace admin in this organization.",
-        )
-
     """
     Checks if the user is the organization owner. If not, returns an error response.
     """
@@ -146,6 +136,7 @@ def check_change_workspace_admin_permission(request, organization):
         )
 
 
+# check if the user has permission to edit the workspace
 def check_change_workspace_permission(request, workspace):
     if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
         return permission_denied_view(

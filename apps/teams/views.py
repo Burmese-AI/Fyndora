@@ -19,10 +19,15 @@ from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.teams.services import update_team_from_form, remove_team_member
-from apps.core.permissions import OrganizationPermissions,TeamPermissions
-from apps.core.utils import permission_denied_view
-from django.contrib.auth.models import Group
-from apps.teams.permissions import remove_team_permissions,check_add_team_permission,check_change_team_permission,check_delete_team_permission,check_add_team_member_permission,check_view_team_permission
+from apps.core.permissions import OrganizationPermissions
+from apps.teams.permissions import (
+    remove_team_permissions,
+    check_add_team_permission,
+    check_change_team_permission,
+    check_delete_team_permission,
+    check_add_team_member_permission,
+    check_view_team_permission,
+)
 
 
 # Create your views here.
@@ -140,7 +145,12 @@ def edit_team_view(request, organization_id, team_id):
         else:
             form = TeamForm(request.POST, instance=team, organization=organization)
             if form.is_valid():
-                update_team_from_form(form, team=team, organization=organization, previous_team_coordinator=previous_team_coordinator)
+                update_team_from_form(
+                    form,
+                    team=team,
+                    organization=organization,
+                    previous_team_coordinator=previous_team_coordinator,
+                )
 
                 messages.success(request, "Team updated successfully.")
                 teams = get_teams_by_organization_id(organization_id)

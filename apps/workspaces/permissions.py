@@ -124,7 +124,6 @@ def check_create_workspace_permission(request, organization):
 
 # check if the user has permission to change the workspace admin
 def check_change_workspace_admin_permission(request, organization):
-
     """
     Checks if the user is the organization owner. If not, returns an error response.
     """

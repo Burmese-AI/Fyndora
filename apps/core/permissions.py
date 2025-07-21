@@ -57,12 +57,13 @@ class OrganizationPermissions(models.TextChoices):
         "delete_org_entry"  # can delete org entry to organization # implemented
     )
 
+
 class TeamPermissions(models.TextChoices):
     """
     Permissions for the Team model.
     """
 
     CHANGE_TEAM = "change_team"  # can change team # implemented
-    DELETE_TEAM = "delete_team"  
+    DELETE_TEAM = "delete_team"
     VIEW_TEAM = "view_team"
     ADD_TEAM_MEMBER = "add_team_member"

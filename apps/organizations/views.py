@@ -10,7 +10,7 @@ from apps.organizations.selectors import (
     get_teams_count,
     get_org_exchange_rates
 )
-from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm, OrganizationExchangeRateUpdateForm
+from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateCreateForm, OrganizationExchangeRateUpdateForm
 from django.shortcuts import render
 from django.contrib import messages
 from apps.organizations.services import create_organization_with_owner
@@ -343,7 +343,7 @@ class OrganizationExchangeRateCreateView(
     BaseCreateView
 ):
     model = OrganizationExchangeRate
-    form_class = OrganizationExchangeRateForm
+    form_class = OrganizationExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
     
     def get_queryset(self):

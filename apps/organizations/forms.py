@@ -1,9 +1,11 @@
 from django import forms
+from django.forms import widgets
 from .models import Organization, OrganizationExchangeRate
 from .constants import StatusChoices
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.currencies.models import Currency
+from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 
 class OrganizationForm(forms.ModelForm):
     title = forms.CharField(
@@ -57,61 +59,15 @@ class OrganizationForm(forms.ModelForm):
         fields = ("title", "description", "status")
 
 
-class OrganizationExchangeRateForm(forms.ModelForm):
-    currency_code = forms.CharField(
-        label="Currency Code",
-        widget=forms.TextInput(attrs={
-            "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-            "placeholder": "Enter currency code (e.g., USD)",
-        })
-    )
-
-    # ✅ The key fix: declare DateField with correct widget + format
-    effective_date = forms.DateField(
-        widget=forms.DateInput(
-            attrs={
-                "type": "date",
-                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-            },
-            format="%Y-%m-%d"
-        ),
-        initial=timezone.now().date(),
-    )
-
+class OrganizationExchangeRateCreateForm(BaseExchangeRateCreateForm):
     class Meta:
         model = OrganizationExchangeRate
-        fields = ["rate", "effective_date", "note"]
-        widgets = {
-            "rate": forms.NumberInput(
-                attrs={
-                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Enter exchange rate",
-                    "step": "0.01",
-                    "min": "0.01",
-                }
-            ),
-            "note": forms.TextInput(
-                attrs={
-                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Optional note...",
-                }
-            ),
-        }
-
-
-class OrganizationExchangeRateUpdateForm(forms.ModelForm):
-    class Meta:
-        model = OrganizationExchangeRate
-        fields = ["note"]
-        widgets = {
-            "note": forms.TextInput(
-                attrs={
-                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "placeholder": "Optional note...",
-                }
-            ),
-        }
+        fields = BaseExchangeRateCreateForm.Meta.fields
+        widgets = BaseExchangeRateCreateForm.Meta.widgets
         
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print(f"Init note value: {self.instance.note}")
+class OrganizationExchangeRateUpdateForm(BaseExchangeRateUpdateForm):
+    class Meta(BaseExchangeRateUpdateForm.Meta):
+        model = OrganizationExchangeRate
+        fields = BaseExchangeRateUpdateForm.Meta.fields
+        widgets = BaseExchangeRateUpdateForm.Meta.widgets
+   

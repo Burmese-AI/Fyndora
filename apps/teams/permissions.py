@@ -23,13 +23,23 @@ def assign_team_permissions(team):
         print(f"team.organization.owner: {team.organization.owner}")
         if team.organization.owner is not None:
             team_coordinator_group.user_set.add(team.organization.owner.user)
-
-        print(f"Assigned permissions to {team_coordinator_group} for {team}")
    except Exception as e:
         print(f"Error assigning team permissions: {e}")
         raise e
     
     
+
+
+
+def remove_team_permissions(team):
+    try:
+        team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
+        team_coordinator_group = Group.objects.filter(name=team_coordinator_group_name).first()
+        if team_coordinator_group:
+            team_coordinator_group.delete()
+    except Exception as e:
+        print(f"Error removing team permissions: {e}")
+        raise e
 
 
 

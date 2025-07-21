@@ -21,6 +21,8 @@ from apps.organizations.selectors import get_orgMember_by_user_id_and_organizati
 from apps.teams.services import update_team_from_form, remove_team_member
 from apps.core.permissions import OrganizationPermissions,TeamPermissions
 from apps.core.utils import permission_denied_view
+from django.contrib.auth.models import Group
+from apps.teams.permissions import remove_team_permissions
 
 
 # Create your views here.
@@ -217,6 +219,7 @@ def delete_team_view(request, organization_id, team_id):
         # Delete team and workspace teams
         if request.method == "POST":
             try:
+                remove_team_permissions(team)
                 workspace_teams.delete()
                 team.delete()
                 messages.success(request, "Team deleted successfully.")

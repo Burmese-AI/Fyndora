@@ -1,7 +1,8 @@
 from guardian.shortcuts import assign_perm
-from apps.core.permissions import TeamPermissions
+from apps.core.permissions import TeamPermissions, OrganizationPermissions
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
+from apps.core.utils import permission_denied_view
 
 def assign_team_permissions(team):
    team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
@@ -62,3 +63,38 @@ def update_team_coordinator_group(team, previous_coordinator, new_coordinator):
 
 
 
+def check_add_team_permission(request, organization):
+     if not request.user.has_perm(OrganizationPermissions.ADD_TEAM, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to create a team in this organization.",
+            )
+    
+def check_change_team_permission(request, team):
+    if not request.user.has_perm(TeamPermissions.CHANGE_TEAM, team):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the team in this organization.",
+        )
+    
+def check_delete_team_permission(request, team):
+    if not request.user.has_perm(TeamPermissions.DELETE_TEAM, team):
+        return permission_denied_view(
+            request,
+            "You do not have permission to delete the team in this organization.",
+        )
+    
+def check_add_team_member_permission(request, team):
+    if not request.user.has_perm(TeamPermissions.ADD_TEAM_MEMBER, team):
+        return permission_denied_view(
+            request,
+            "You do not have permission to add a team member to this team.",
+        )
+
+def check_view_team_permission(request, team):
+    if not request.user.has_perm(TeamPermissions.VIEW_TEAM, team):
+        return permission_denied_view(
+            request,
+            "You do not have permission to view the team in this organization.",
+        )
+    

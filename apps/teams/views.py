@@ -22,7 +22,7 @@ from apps.teams.services import update_team_from_form, remove_team_member
 from apps.core.permissions import OrganizationPermissions,TeamPermissions
 from apps.core.utils import permission_denied_view
 from django.contrib.auth.models import Group
-from apps.teams.permissions import remove_team_permissions
+from apps.teams.permissions import remove_team_permissions,check_add_team_permission,check_change_team_permission,check_delete_team_permission,check_add_team_member_permission,check_view_team_permission
 
 
 # Create your views here.
@@ -59,12 +59,9 @@ def create_team_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-
-        if not request.user.has_perm(OrganizationPermissions.ADD_TEAM, organization):
-            return permission_denied_view(
-                request,
-                "You do not have permission to create a team in this organization.",
-            )
+        permission_check = check_add_team_permission(request, organization)
+        if permission_check:
+            return permission_check
 
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
@@ -129,11 +126,9 @@ def edit_team_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         previous_team_coordinator = team.team_coordinator
 
-        if not request.user.has_perm(TeamPermissions.CHANGE_TEAM, team):
-            return permission_denied_view(
-                request,
-                "You do not have permission to change the team in this organization.",
-            )
+        permission_check = check_change_team_permission(request, team)
+        if permission_check:
+            return permission_check
 
         if request.method != "POST":
             form = TeamForm(instance=team, organization=organization)
@@ -198,11 +193,9 @@ def delete_team_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
 
-        if not request.user.has_perm(TeamPermissions.DELETE_TEAM, team):
-            return permission_denied_view(
-                request,
-                "You do not have permission to delete the team in this organization.",
-            )
+        permission_check = check_delete_team_permission(request, team)
+        if permission_check:
+            return permission_check
 
         # Check if team exists
         if not team:
@@ -268,11 +261,9 @@ def get_team_members_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         team_members = get_team_members_by_team_id(team_id)
 
-        if not request.user.has_perm(TeamPermissions.VIEW_TEAM, team):
-            return permission_denied_view(
-                request,
-                "You do not have permission to view the team members in this team.",
-            )
+        permission_check = check_view_team_permission(request, team)
+        if permission_check:
+            return permission_check
 
         context = {
             "team": team,
@@ -290,11 +281,9 @@ def add_team_member_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
 
-        if not request.user.has_perm(TeamPermissions.ADD_TEAM_MEMBER, team):
-            return permission_denied_view(
-                request,
-                "You do not have permission to add a team member to this team.",
-            )
+        permission_check = check_add_team_member_permission(request, team)
+        if permission_check:
+            return permission_check
 
         if request.method == "POST":
             try:

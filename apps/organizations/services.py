@@ -74,7 +74,9 @@ def update_organization_from_form(*, form, organization) -> Organization:
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
 
 
-def create_organization_exchange_rate(*, organization, organization_member, currency_code, rate, note, effective_date):
+def create_organization_exchange_rate(
+    *, organization, organization_member, currency_code, rate, note, effective_date
+):
     """
     Creates an exchange rate for an organization.
     """
@@ -93,9 +95,14 @@ def create_organization_exchange_rate(*, organization, organization_member, curr
         raise ValidationError(f"IntegrityError: {str(e)}")
 
     except Exception as err:
-        raise ValidationError(f"Failed to create organization exchange rate: {str(err)}")
-    
-def update_organization_exchange_rate(*, organization, organization_member, org_exchange_rate, note):
+        raise ValidationError(
+            f"Failed to create organization exchange rate: {str(err)}"
+        )
+
+
+def update_organization_exchange_rate(
+    *, organization, organization_member, org_exchange_rate, note
+):
     try:
         org_exchange_rate = model_update(
             instance=org_exchange_rate,
@@ -104,10 +111,17 @@ def update_organization_exchange_rate(*, organization, organization_member, org_
         )
         return org_exchange_rate
     except Exception as err:
-        raise ValidationError(f"Failed to update organization exchange rate: {str(err)}")
-    
-def delete_organization_exchange_rate(*, organization, organization_member, org_exchange_rate):
+        raise ValidationError(
+            f"Failed to update organization exchange rate: {str(err)}"
+        )
+
+
+def delete_organization_exchange_rate(
+    *, organization, organization_member, org_exchange_rate
+):
     try:
         org_exchange_rate.delete()
     except Exception as err:
-        raise ValidationError(f"Failed to delete organization exchange rate: {str(err)}")
+        raise ValidationError(
+            f"Failed to delete organization exchange rate: {str(err)}"
+        )

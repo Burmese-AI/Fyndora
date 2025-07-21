@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0015_merge_20250717_0952'),
+        ("organizations", "0015_merge_20250717_0952"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='organizationexchangerate',
-            name='effective_date',
+            model_name="organizationexchangerate",
+            name="effective_date",
             field=models.DateField(default=django.utils.timezone.now),
         ),
     ]

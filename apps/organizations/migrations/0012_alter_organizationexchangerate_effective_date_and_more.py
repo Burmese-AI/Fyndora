@@ -5,20 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0005_currency_created_at_currency_updated_at'),
-        ('organizations', '0011_organizationexchangerate'),
+        ("currencies", "0005_currency_created_at_currency_updated_at"),
+        ("organizations", "0011_organizationexchangerate"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='organizationexchangerate',
-            name='effective_date',
+            model_name="organizationexchangerate",
+            name="effective_date",
             field=models.DateField(default=django.utils.timezone.now, editable=False),
         ),
         migrations.AlterUniqueTogether(
-            name='organizationexchangerate',
-            unique_together={('organization', 'currency', 'effective_date')},
+            name="organizationexchangerate",
+            unique_together={("organization", "currency", "effective_date")},
         ),
     ]

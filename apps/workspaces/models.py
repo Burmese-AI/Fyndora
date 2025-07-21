@@ -1,4 +1,3 @@
-from enum import unique
 import uuid
 from decimal import Decimal
 
@@ -144,21 +143,19 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
     workspace_exchange_rate_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    is_approved = models.BooleanField(
-        default=False
-    )
+    is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="%(app_label)s_approved_%(class)s_set"
+        related_name="%(app_label)s_approved_%(class)s_set",
     )
     workspace = models.ForeignKey(
         Workspace,
         on_delete=models.CASCADE,
         related_name="workspace_exchange_rates",
     )
-    
+
     class Meta:
         verbose_name = "Workspace Exchange Rate"
         verbose_name_plural = "Workspace Exchange Rates"

@@ -12,7 +12,7 @@ from apps.organizations.views import (
     OrganizationExchangeRateCreateView,
     OrganizationExchangeRateUpdateView,
     OrganizationExchangeRateDetailView,
-    OrganizationExchangerateDeleteView
+    OrganizationExchangerateDeleteView,
 )
 from apps.invitations.views import InvitationCreateView, InvitationListView
 
@@ -72,5 +72,4 @@ urlpatterns = [
         OrganizationExchangerateDeleteView.as_view(),
         name="organization_exchange_rate_delete",
     ),
-    
 ]

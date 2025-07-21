@@ -108,7 +108,7 @@ class OrganizationExchangeRate(ExchangeRateBaseModel):
         on_delete=models.CASCADE,
         related_name="organization_exchange_rates",
     )
-    
+
     class Meta:
         verbose_name = "Organization Exchange Rate"
         verbose_name_plural = "Organization Exchange Rates"

@@ -4,12 +4,14 @@
             <h1 class="text-3xl font-bold">My Teams under {{ organization.title }} Organization</h1>
             <p class="text-base-content/70 mt-2">Manage your project teams</p>
         </div>
+        {% if permissions.can_add_team %}
         <a hx-get="{% url 'create_team' organization_id=organization.organization_id %}" hx-target="#modal-placeholder" class="btn btn-soft btn-primary shadow hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             New Team
         </a>
+        {% endif %}
     </div>
     {% include "teams/partials/teams_grid.html" %}
 </div>

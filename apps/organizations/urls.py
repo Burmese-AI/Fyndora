@@ -53,5 +53,5 @@ urlpatterns = [
         "<uuid:organization_id>/exchange_rates/create/",
         OrganizationExchangeRateCreateView.as_view(),
         name="organization_exchange_rate_create",
-    )
+    ),
 ]

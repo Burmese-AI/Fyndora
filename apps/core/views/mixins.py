@@ -5,9 +5,10 @@ from django.shortcuts import get_object_or_404
 from apps.organizations.models import Organization, OrganizationMember
 from django.template.loader import render_to_string
 
+
 class OrganizationRequiredMixin:
     """
-        Mixin for organization required.
+    Mixin for organization required.
     """
 
     organization = None
@@ -22,14 +23,16 @@ class OrganizationRequiredMixin:
             OrganizationMember, user=self.request.user, organization=self.organization
         )
         self.is_org_admin = self.org_member == self.organization.owner
-        
+
+
 class HtmxOobResponseMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         if self.request.htmx:
             context["is_oob"] = True
         return context
-    
+
+
 class HtmxModalFormInvalidFormResponseMixin:
     message_template_name = "includes/message.html"
     modal_template_name = None

@@ -1,6 +1,9 @@
 from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
+from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
+from apps.core.permissions import WorkspacePermissions
 
 
 def assign_workspace_permissions(workspace):
@@ -31,7 +34,10 @@ def assign_workspace_permissions(workspace):
         )
 
         for perm in workspace_admin_permissions:
-            assign_perm(perm, workspace_admins_group, workspace)
+            if perm == OrganizationPermissions.ADD_TEAM:
+                assign_perm(perm, workspace_admins_group, workspace.organization)
+            else:
+                assign_perm(perm, workspace_admins_group, workspace)
 
         for perm in operations_reviewer_permissions:
             assign_perm(perm, operations_reviewer_group, workspace)
@@ -71,11 +77,11 @@ def update_workspace_admin_group(
         previous_admin (UserProfile or None): The previous admin.
         new_admin (UserProfile or None): The new admin.
     """
-    print("before")
-    print(f"previous_admin: {previous_admin}")
-    print(f"new_admin: {new_admin}")
-    print(f"previous_operations_reviewer: {previous_operations_reviewer}")
-    print(f"new_operations_reviewer: {new_operations_reviewer}")
+    # print("before")
+    # print(f"previous_admin: {previous_admin}")
+    # print(f"new_admin: {new_admin}")
+    # print(f"previous_operations_reviewer: {previous_operations_reviewer}")
+    # print(f"new_operations_reviewer: {new_operations_reviewer}")
     if (
         previous_admin == new_admin
         and previous_operations_reviewer == new_operations_reviewer
@@ -107,18 +113,42 @@ def update_workspace_admin_group(
         print("new operations reviewer added")
 
 
-# def check_org_owner_permission(request, org_member, organization_id):
-#     """
-#     Checks if the user is the organization owner. If not, returns an error response.
+def check_create_workspace_permission(request, organization):
+    """
+    Checks if the user is the organization owner. If not, returns an error response.
+    """
+    if not request.user.has_perm(OrganizationPermissions.ADD_WORKSPACE, organization):
+        # that will route to the permission denied view
+        return permission_denied_view(
+            request,
+            "You do not have permission to create a workspace in this organization.",
+        )
 
-#     Args:
-#         request: Django request object.
-#         org_member: OrganizationMember instance.
-#         organization_id: UUID or str of the organization.
 
-#     Returns:
-#         HttpResponse (rendered error page) if permission denied, otherwise None.
-#     """
-#     if not org_member.is_org_owner:
-#         messages.error(request, "You do not have permission to do action in this organization.")
-#         return HttpResponseClientRedirect(f"/403")
+def check_change_workspace_admin_permission(request, organization):
+    if not request.user.has_perm(
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
+    ):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace admin in this organization.",
+        )
+
+    """
+    Checks if the user is the organization owner. If not, returns an error response.
+    """
+    if not request.user.has_perm(
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
+    ):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace admin in this organization.",
+        )
+
+
+def check_change_workspace_permission(request, workspace):
+    if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace in this organization.",
+        )

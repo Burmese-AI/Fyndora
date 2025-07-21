@@ -43,11 +43,16 @@ class Organization(baseModel):
         ordering = ["-created_at"]
         permissions = (
             (OrganizationPermissions.ADD_WORKSPACE, "Can add workspace"),
+            (OrganizationPermissions.ADD_TEAM, "Can add team"),
             (OrganizationPermissions.INVITE_ORG_MEMBER, "Can invite org member"),
             (OrganizationPermissions.ADD_ORG_ENTRY, "Can add org entry"),
             (OrganizationPermissions.VIEW_ORG_ENTRY, "Can view org entry"),
             (OrganizationPermissions.CHANGE_ORG_ENTRY, "Can change org entry"),
             (OrganizationPermissions.DELETE_ORG_ENTRY, "Can delete org entry"),
+            (
+                OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
+                "Can change workspace admin",
+            ),
         )
         constraints = [
             models.UniqueConstraint(

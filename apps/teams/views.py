@@ -19,6 +19,8 @@ from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.teams.services import update_team_from_form, remove_team_member
+from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
 
 
 # Create your views here.
@@ -31,9 +33,17 @@ def teams_view(request, organization_id):
             attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
             team.attached_workspaces = attached_workspaces
         organization = get_organization_by_id(organization_id)
+        # sending true or false to the template to display the new team button
+        can_add_team = request.user.has_perm(
+            OrganizationPermissions.ADD_TEAM, organization
+        )
+        permissions = {
+            "can_add_team": can_add_team,
+        }
         context = {
             "teams": teams,
             "organization": organization,
+            "permissions": permissions,
         }
         return render(request, "teams/index.html", context)
     except Exception as e:
@@ -47,6 +57,13 @@ def create_team_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
+
+        if not request.user.has_perm(OrganizationPermissions.ADD_TEAM, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to create a team in this organization.",
+            )
+
         if request.method == "POST":
             form = TeamForm(request.POST, organization=organization)
             if form.is_valid():

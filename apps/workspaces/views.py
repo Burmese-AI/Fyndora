@@ -35,6 +35,11 @@ from apps.workspaces.selectors import get_single_workspace_with_team_counts
 from apps.core.utils import permission_denied_view
 from apps.core.permissions import WorkspacePermissions
 from apps.core.permissions import OrganizationPermissions
+from apps.workspaces.permissions import (
+    check_create_workspace_permission,
+    check_change_workspace_admin_permission,
+    check_change_workspace_permission,
+)
 
 
 @login_required
@@ -63,14 +68,9 @@ def create_workspace_view(request, organization_id):
             request.user.user_id, organization_id
         )
         # check if the user has the permission to add a workspace to the organization (only org owner and workspace admin can add a workspace to the organization)
-        if not request.user.has_perm(
-            OrganizationPermissions.ADD_WORKSPACE, organization
-        ):
-            # that will route to the permission denied view
-            return permission_denied_view(
-                request,
-                "You do not have permission to create a workspace in this organization.",
-            )
+        permission_check = check_create_workspace_permission(request, organization)
+        if permission_check:
+            return permission_check
 
         if request.method == "POST":
             form = WorkspaceForm(request.POST, organization=organization)
@@ -140,15 +140,25 @@ def edit_workspace_view(request, organization_id, workspace_id):
         previous_workspace_admin = workspace.workspace_admin
         previous_operations_reviewer = workspace.operations_reviewer
 
-        if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
-            return permission_denied_view(
-                request,
-                "You do not have permission  to edit this workspace.",
-            )
+        permission_check = check_change_workspace_permission(request, workspace)
+        if permission_check:
+            return permission_check  # this will route to the permission denied view
 
         if request.method == "POST":
+            if request.POST.get("workspace_admin") is not None:
+                if previous_workspace_admin != request.POST.get("workspace_admin"):
+                    permission_check = check_change_workspace_admin_permission(
+                        request, organization
+                    )
+                if permission_check:
+                    return permission_check  # this will route to the permission denied view
+
+            form_data = request.POST.copy()
+            if "workspace_admin" not in form_data:
+                form_data["workspace_admin"] = previous_workspace_admin
+
             form = WorkspaceForm(
-                request.POST, instance=workspace, organization=organization
+                form_data, instance=workspace, organization=organization
             )
             try:
                 if form.is_valid():
@@ -159,7 +169,6 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         previous_operations_reviewer=previous_operations_reviewer,
                     )
                     workspace = get_single_workspace_with_team_counts(workspace_id)
-                    print(f"DEBUG: workspace single testing: {workspace}")
                     context = {
                         "workspace": workspace,
                         "organization": organization,
@@ -198,7 +207,13 @@ def edit_workspace_view(request, organization_id, workspace_id):
                 messages.error(request, f"An error occurred: {str(e)}")
                 return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
         else:
-            form = WorkspaceForm(instance=workspace, organization=organization)
+            form = WorkspaceForm(
+                instance=workspace,
+                organization=organization,
+                can_change_workspace_admin=request.user.has_perm(
+                    OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
+                ),
+            )
 
         context = {
             "form": form,

@@ -17,7 +17,6 @@ def assign_workspace_permissions(workspace):
 
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
-    print(f"Workspace admins group name: {workspace_admins_group_name}")
     try:
         workspace_admins_group, _ = Group.objects.get_or_create(
             name=workspace_admins_group_name

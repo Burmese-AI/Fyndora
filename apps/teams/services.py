@@ -12,6 +12,7 @@ from apps.teams.exceptions import (
     TeamMemberCreationError,
     TeamMemberDeletionError,
 )
+from apps.teams.permissions import assign_team_permissions
 
 from .models import Team, TeamMember
 from apps.core.utils import model_update
@@ -23,6 +24,8 @@ def create_team_from_form(form, organization, orgMember):
         team.organization = organization
         team.created_by = orgMember
         team.save()
+
+        assign_team_permissions(team)
         return team
     except Exception as e:
         raise TeamCreationError(f"An error occurred while creating team: {str(e)}")

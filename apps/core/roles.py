@@ -1,5 +1,6 @@
 from apps.core.permissions import OrganizationPermissions
 from apps.core.permissions import WorkspacePermissions
+from apps.core.permissions import TeamPermissions
 from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions
 
@@ -58,15 +59,10 @@ ROLES = {
         WorkspacePermissions.FLAG_TEAM_ENTRY,
     ],
     "TEAM_COORDINATOR": [
-        EntryPermissions.VIEW_ENTRY,
-        EntryPermissions.ADD_ENTRY,
-        EntryPermissions.UPLOAD_ATTACHMENTS,
-        EntryPermissions.CHANGE_ENTRY,
-        EntryPermissions.REVIEW_ENTRY,
-        EntryPermissions.FLAG_ENTRY,
-        WorkspacePermissions.VIEW_DASHBOARD,
-        RemittancePermissions.VIEW_REMITTANCE,
-        RemittancePermissions.FLAG_REMITTANCE,
+        TeamPermissions.CHANGE_TEAM,
+        TeamPermissions.DELETE_TEAM,
+        TeamPermissions.VIEW_TEAM,
+        TeamPermissions.ADD_TEAM_MEMBER,
     ],
     "RECORD_SUBMITTER": [
         EntryPermissions.VIEW_ENTRY,

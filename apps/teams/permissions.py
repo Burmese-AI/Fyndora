@@ -20,6 +20,7 @@ def assign_team_permissions(team):
         if team.team_coordinator is not None:
             team_coordinator_group.user_set.add(team.team_coordinator.user)
 
+        print(f"team.organization.owner: {team.organization.owner}")
         if team.organization.owner is not None:
             team_coordinator_group.user_set.add(team.organization.owner.user)
 

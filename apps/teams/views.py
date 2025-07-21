@@ -19,7 +19,7 @@ from apps.teams.services import update_team_member_role
 from apps.teams.selectors import get_team_members_by_team_id
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.teams.services import update_team_from_form, remove_team_member
-from apps.core.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions,TeamPermissions
 from apps.core.utils import permission_denied_view
 
 
@@ -125,6 +125,13 @@ def edit_team_view(request, organization_id, team_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+
+        if not request.user.has_perm(TeamPermissions.CHANGE_TEAM, team):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change the team in this organization.",
+            )
+
         if request.method != "POST":
             form = TeamForm(instance=team, organization=organization)
             context = {

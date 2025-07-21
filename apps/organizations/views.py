@@ -26,7 +26,7 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
-from apps.core.views.crud_base_views import BaseCreateView, BaseUpdateView
+from apps.core.views.crud_base_views import BaseCreateView, BaseDetailView, BaseUpdateView
 from apps.core.views.base_views import BaseGetModalFormView
 from apps.core.views.mixins import OrganizationRequiredMixin, UpdateFormMixin
 from apps.core.utils import get_paginated_context
@@ -403,7 +403,7 @@ class OrganizationExchangeRateCreateView(
         return response
 
     
-class OrganizationExchangeUpdateView(
+class OrganizationExchangeRateUpdateView(
     ExchangeRateUrlIdentifierMixin,
     OrganizationExchangeRateRequiredMixin,
     OrganizationRequiredMixin, 
@@ -464,5 +464,10 @@ class OrganizationExchangeUpdateView(
         return response
 
         
-
+class OrganizationExchangeRateDetailView(
+    BaseDetailView
+):
+    model = OrganizationExchangeRate
+    template_name = "currencies/components/detail_modal.html"
+    context_object_name = "exchange_rate"
     

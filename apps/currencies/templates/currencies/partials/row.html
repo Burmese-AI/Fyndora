@@ -40,6 +40,7 @@
     <div class="flex justify-center gap-2">
       <!-- View -->
       <a
+        hx-get="{% get_detail_exchange_rate_url url_identifier exchange_rate organization %}"
         hx-target="#modal-placeholder"
         hx-swap="innerHTML"
         title="View" 

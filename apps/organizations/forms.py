@@ -57,10 +57,6 @@ class OrganizationForm(forms.ModelForm):
         fields = ("title", "description", "status")
 
 
-from django import forms
-from django.utils import timezone
-from .models import OrganizationExchangeRate
-
 class OrganizationExchangeRateForm(forms.ModelForm):
     currency_code = forms.CharField(
         label="Currency Code",
@@ -100,5 +96,22 @@ class OrganizationExchangeRateForm(forms.ModelForm):
                     "placeholder": "Optional note...",
                 }
             ),
-            # 🚫 Don't put `effective_date` here
         }
+
+
+class OrganizationExchangeRateUpdateForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationExchangeRate
+        fields = ["note"]
+        widgets = {
+            "note": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "placeholder": "Optional note...",
+                }
+            ),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        print(f"Init note value: {self.instance.note}")

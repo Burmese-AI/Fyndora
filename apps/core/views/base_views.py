@@ -34,7 +34,7 @@ class BaseGetModalView():
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
-        form = self.form_class() if hasattr(self, "form_class") else None
+        form = self.form_class(instance=self.instance if hasattr(self, "instance") else None)
         context = self.get_context_data()
         context.update(
             {
@@ -44,6 +44,7 @@ class BaseGetModalView():
                 "post_url": self.get_post_url(),
             }
         )
+        print(f"FORM Context: {context}")
         return render(request, self.modal_template_name, context)
 
 class BaseGetModalFormView(

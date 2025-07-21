@@ -19,9 +19,17 @@ class OrganizationRequiredMixin:
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
         self.org_member = get_object_or_404(
-            OrganizationMember, user=self.request.user, organization=self.organization
+            OrganizationMember, user=request.user, organization=self.organization
         )
         self.is_org_admin = self.org_member == self.organization.owner
+        
+
+class UpdateFormMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = getattr(self, "instance", None)
+        return kwargs
+
         
 class HtmxOobResponseMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -29,6 +37,7 @@ class HtmxOobResponseMixin:
         if self.request.htmx:
             context["is_oob"] = True
         return context
+  
     
 class HtmxModalFormInvalidFormResponseMixin:
     message_template_name = "includes/message.html"

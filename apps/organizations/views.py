@@ -10,7 +10,7 @@ from apps.organizations.selectors import (
     get_teams_count,
     get_org_exchange_rates
 )
-from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
+from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm, OrganizationExchangeRateUpdateForm
 from django.shortcuts import render
 from django.contrib import messages
 from apps.organizations.services import create_organization_with_owner
@@ -26,11 +26,12 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
-from apps.core.views.crud_base_views import BaseCreateView
+from apps.core.views.crud_base_views import BaseCreateView, BaseUpdateView
 from apps.core.views.base_views import BaseGetModalFormView
-from apps.core.views.mixins import OrganizationRequiredMixin
+from apps.core.views.mixins import OrganizationRequiredMixin, UpdateFormMixin
 from apps.core.utils import get_paginated_context
-
+from apps.organizations.mixins.organization_exchange_rate.required_mixins import OrganizationExchangeRateRequiredMixin
+from apps.currencies.views.mixins import ExchangeRateUrlIdentifierMixin
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -216,6 +217,7 @@ def settings_view(request, organization_id):
             context=context,
             object_name="exchange_rates",
         )
+        context["url_identifier"] = "organization"
         
         print(f"context: {context}")
         
@@ -334,7 +336,12 @@ def delete_organization_view(request, organization_id):
             {"organization": organization},
         )
 
-class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView):
+class OrganizationExchangeRateCreateView(
+    OrganizationRequiredMixin, 
+    ExchangeRateUrlIdentifierMixin,
+    BaseGetModalFormView, 
+    BaseCreateView
+):
     model = OrganizationExchangeRate
     form_class = OrganizationExchangeRateForm
     modal_template_name = "currencies/components/create_modal.html"
@@ -345,11 +352,14 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
     def get_post_url(self):
         return reverse_lazy(
             "organization_exchange_rate_create", 
-            kwargs={"organization_id": self.kwargs["organization_id"]}
+            kwargs={"organization_id": self.organization.pk}
         )
     
     def get_modal_title(self):
         return "Add Exchange Rate"
+    
+    def get_exchange_rate_level(self):
+        return "organization"
     
     def form_valid(self, form):
         
@@ -391,3 +401,32 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+
+    
+class OrganizationExchangeUpdateView(
+    ExchangeRateUrlIdentifierMixin,
+    OrganizationExchangeRateRequiredMixin,
+    OrganizationRequiredMixin, 
+    UpdateFormMixin,
+    BaseGetModalFormView, 
+    BaseUpdateView
+):
+    model = OrganizationExchangeRate
+    form_class = OrganizationExchangeRateUpdateForm
+    modal_template_name = "currencies/components/update_modal.html"
+
+    
+    def get_queryset(self):
+        return get_org_exchange_rates(organization=self.organization)
+    
+    def get_post_url(self):
+        return reverse_lazy(
+            "organization_exchange_rate_update", 
+            kwargs={"organization_id": self.organization.pk, "pk": self.org_exchange_rate.pk}
+        )
+        
+    def get_exchange_rate_level(self):
+        return "organization"
+    
+    def get_modal_title(self):
+        return "Update Exchange Rate"

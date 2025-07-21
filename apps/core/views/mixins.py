@@ -23,6 +23,14 @@ class OrganizationRequiredMixin:
         )
         self.is_org_admin = self.org_member == self.organization.owner
         
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["organization"] = self.organization
+        context["org_member"] = self.org_member
+        context["is_org_admin"] = self.is_org_admin
+        return context
+    
+        
 
 class UpdateFormMixin:
     def get_form_kwargs(self):

@@ -94,3 +94,14 @@ def create_organization_exchange_rate(*, organization, organization_member, curr
 
     except Exception as err:
         raise ValidationError(f"Failed to create organization exchange rate: {str(err)}")
+    
+def update_organization_exchange_rate(*, organization, organization_member, org_exchange_rate, note):
+    try:
+        org_exchange_rate = model_update(
+            instance=org_exchange_rate,
+            data={"note": note},
+            update_fields=["note"],
+        )
+        return org_exchange_rate
+    except Exception as err:
+        raise ValidationError(f"Failed to update organization exchange rate: {str(err)}")

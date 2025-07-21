@@ -422,7 +422,7 @@ class OrganizationExchangeUpdateView(
     def get_post_url(self):
         return reverse_lazy(
             "organization_exchange_rate_update", 
-            kwargs={"organization_id": self.organization.pk, "pk": self.org_exchange_rate.pk}
+            kwargs={"organization_id": self.organization.pk, "pk": self.exchange_rate.pk}
         )
         
     def get_exchange_rate_level(self):
@@ -430,3 +430,39 @@ class OrganizationExchangeUpdateView(
     
     def get_modal_title(self):
         return "Update Exchange Rate"
+    
+    def form_valid(self, form):    
+        from .services import update_organization_exchange_rate
+        
+        try:
+            update_organization_exchange_rate(
+                organization = self.organization,
+                organization_member = self.org_member,
+                org_exchange_rate = self.exchange_rate,
+                note = form.cleaned_data["note"],
+            )
+        except Exception as e:
+            messages.error(self.request, f"Failed to update entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+        
+        messages.success(self.request, "Entry updated successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        row_html = render_to_string(
+            "currencies/partials/row.html", context=base_context, request=self.request
+        )
+
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}<table>{row_html}</table>")
+        response["HX-trigger"] = "success"
+        return response
+
+        
+
+    

@@ -30,7 +30,7 @@ def assign_team_permissions(team):
     
 
 
-
+# remove the team permissions
 def remove_team_permissions(team):
     try:
         team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
@@ -40,6 +40,25 @@ def remove_team_permissions(team):
     except Exception as e:
         print(f"Error removing team permissions: {e}")
         raise e
+
+
+
+def update_team_coordinator_group(team, previous_coordinator, new_coordinator):
+    try:
+        if previous_coordinator == new_coordinator:
+            return
+        
+        team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
+        team_coordinator_group = Group.objects.filter(name=team_coordinator_group_name).first()
+        if previous_coordinator:
+            team_coordinator_group.user_set.remove(previous_coordinator.user)
+        if new_coordinator:
+            team_coordinator_group.user_set.add(new_coordinator.user)
+    except Exception as e:
+        print(f"Error updating team coordinator group: {e}")
+        raise e
+
+
 
 
 

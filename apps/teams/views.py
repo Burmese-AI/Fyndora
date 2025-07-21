@@ -127,6 +127,7 @@ def edit_team_view(request, organization_id, team_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+        previous_team_coordinator = team.team_coordinator
 
         if not request.user.has_perm(TeamPermissions.CHANGE_TEAM, team):
             return permission_denied_view(
@@ -144,7 +145,7 @@ def edit_team_view(request, organization_id, team_id):
         else:
             form = TeamForm(request.POST, instance=team, organization=organization)
             if form.is_valid():
-                update_team_from_form(form, team=team, organization=organization)
+                update_team_from_form(form, team=team, organization=organization, previous_team_coordinator=previous_team_coordinator)
 
                 messages.success(request, "Team updated successfully.")
                 teams = get_teams_by_organization_id(organization_id)

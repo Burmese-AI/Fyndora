@@ -10,7 +10,7 @@ from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.constants import StatusChoices
 from apps.teams.models import Team
 from apps.currencies.models import ExchangeRateBaseModel
-from apps.core.permissions import WorkspacePermissions, OrganizationPermissions
+from apps.core.permissions import WorkspacePermissions
 
 
 # Create your models here.
@@ -76,13 +76,28 @@ class Workspace(baseModel):
             (WorkspacePermissions.LOCK_WORKSPACE, "Can lock workspace"),
             (WorkspacePermissions.VIEW_DASHBOARD, "Can view dashboard reports"),
             (WorkspacePermissions.ADD_WORKSPACE_ENTRY, "Can add entry to workspace"),
-            (WorkspacePermissions.CHANGE_WORKSPACE_ENTRY, "Can change entry in workspace"),
-            (WorkspacePermissions.DELETE_WORKSPACE_ENTRY, "Can delete entry in workspace"),
+            (
+                WorkspacePermissions.CHANGE_WORKSPACE_ENTRY,
+                "Can change entry in workspace",
+            ),
+            (
+                WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
+                "Can delete entry in workspace",
+            ),
             (WorkspacePermissions.VIEW_WORKSPACE_ENTRY, "Can view entry in workspace"),
-            (WorkspacePermissions.REVIEW_WORKSPACE_ENTRY, "Can review entry in workspace"),
-            (WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS, "Can upload attachments in workspace"),
+            (
+                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
+                "Can review entry in workspace",
+            ),
+            (
+                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
+                "Can upload attachments in workspace",
+            ),
             (WorkspacePermissions.FLAG_WORKSPACE_ENTRY, "Can flag entry in workspace"),
-            (WorkspacePermissions.EXPORT_WORKSPACE_REPORT, "Can export workspace report"),
+            (
+                WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
+                "Can export workspace report",
+            ),
             (WorkspacePermissions.CHANGE_TEAM_ENTRY, "Can change entry in team"),
             (WorkspacePermissions.DELETE_TEAM_ENTRY, "Can delete entry in team"),
             (WorkspacePermissions.VIEW_TEAM_ENTRY, "Can view entry in team"),
@@ -144,14 +159,12 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
     workspace_exchange_rate_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    is_approved = models.BooleanField(
-        default=False
-    )
+    is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="%(app_label)s_approved_%(class)s_set"
+        related_name="%(app_label)s_approved_%(class)s_set",
     )
     workspace = models.ForeignKey(
         Workspace,

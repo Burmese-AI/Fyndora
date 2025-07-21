@@ -2,6 +2,8 @@ from guardian.shortcuts import assign_perm
 from django.contrib.auth.models import Group
 from apps.core.roles import get_permissions_for_role
 from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
+from apps.core.permissions import WorkspacePermissions
 
 
 def assign_workspace_permissions(workspace):
@@ -111,3 +113,42 @@ def update_workspace_admin_group(
         print("new operations reviewer added")
 
 
+def check_create_workspace_permission(request, organization):
+    """
+    Checks if the user is the organization owner. If not, returns an error response.
+    """
+    if not request.user.has_perm(OrganizationPermissions.ADD_WORKSPACE, organization):
+        # that will route to the permission denied view
+        return permission_denied_view(
+            request,
+            "You do not have permission to create a workspace in this organization.",
+        )
+
+
+def check_change_workspace_admin_permission(request, organization):
+    if not request.user.has_perm(
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
+    ):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace admin in this organization.",
+        )
+
+    """
+    Checks if the user is the organization owner. If not, returns an error response.
+    """
+    if not request.user.has_perm(
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN, organization
+    ):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace admin in this organization.",
+        )
+
+
+def check_change_workspace_permission(request, workspace):
+    if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE, workspace):
+        return permission_denied_view(
+            request,
+            "You do not have permission to change the workspace in this organization.",
+        )

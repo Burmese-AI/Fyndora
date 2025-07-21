@@ -3,20 +3,20 @@ from django.http import HttpResponse, HttpRequest
 from django.shortcuts import render
 from .mixins import HtmxModalFormInvalidFormResponseMixin
 
-class BaseGetModalView():
-    
+
+class BaseGetModalView:
     """
-        Base class for getting modal view.
-        Comptaible with:
-            - Create View
-            - Update View
-        Required in the subclass:
-            - modal_template_name
-            - get_post_url()
-        Optional: 
-            - get_modal_title()
+    Base class for getting modal view.
+    Comptaible with:
+        - Create View
+        - Update View
+    Required in the subclass:
+        - modal_template_name
+        - get_post_url()
+    Optional:
+        - get_modal_title()
     """
-    
+
     modal_template_name = None
 
     def get_post_url(self) -> str:
@@ -24,13 +24,12 @@ class BaseGetModalView():
 
     def get_modal_title(self) -> str:
         return ""
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["custom_title"] = self.get_modal_title()
         context["post_url"] = self.get_post_url()
         return context
-    
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
@@ -46,8 +45,6 @@ class BaseGetModalView():
         )
         return render(request, self.modal_template_name, context)
 
-class BaseGetModalFormView(
-    BaseGetModalView, 
-    HtmxModalFormInvalidFormResponseMixin
-):
+
+class BaseGetModalFormView(BaseGetModalView, HtmxModalFormInvalidFormResponseMixin):
     form_class = None

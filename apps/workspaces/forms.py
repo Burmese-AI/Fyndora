@@ -103,7 +103,7 @@ class WorkspaceForm(forms.ModelForm):
             ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
-        
+
         if not self.can_change_workspace_admin:
             self.fields["workspace_admin"].widget.attrs["disabled"] = True
 

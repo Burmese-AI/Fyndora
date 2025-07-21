@@ -2,13 +2,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
-from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
+from apps.organizations.models import (
+    Organization,
+    OrganizationMember,
+    OrganizationExchangeRate,
+)
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
     get_workspaces_count,
     get_teams_count,
-    get_org_exchange_rates
+    get_org_exchange_rates,
 )
 from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
 from django.shortcuts import render
@@ -216,9 +220,9 @@ def settings_view(request, organization_id):
             context=context,
             object_name="exchange_rates",
         )
-        
+
         print(f"context: {context}")
-        
+
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(
@@ -334,43 +338,45 @@ def delete_organization_view(request, organization_id):
             {"organization": organization},
         )
 
-class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView):
+
+class OrganizationExchangeRateCreateView(
+    OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView
+):
     model = OrganizationExchangeRate
     form_class = OrganizationExchangeRateForm
     modal_template_name = "currencies/components/create_modal.html"
-    
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
-    
+
     def get_post_url(self):
         return reverse_lazy(
-            "organization_exchange_rate_create", 
-            kwargs={"organization_id": self.kwargs["organization_id"]}
+            "organization_exchange_rate_create",
+            kwargs={"organization_id": self.kwargs["organization_id"]},
         )
-    
+
     def get_modal_title(self):
         return "Add Exchange Rate"
-    
+
     def form_valid(self, form):
-        
         from .services import create_organization_exchange_rate
-        
+
         try:
             create_organization_exchange_rate(
-                organization = self.organization,
-                organization_member = self.org_member,
-                currency_code = form.cleaned_data["currency_code"],
-                rate = form.cleaned_data["rate"],
-                effective_date = form.cleaned_data["effective_date"],
-                note = form.cleaned_data["note"],
+                organization=self.organization,
+                organization_member=self.org_member,
+                currency_code=form.cleaned_data["currency_code"],
+                rate=form.cleaned_data["rate"],
+                effective_date=form.cleaned_data["effective_date"],
+                note=form.cleaned_data["note"],
             )
         except Exception as e:
             messages.error(self.request, f"Failed to create entry: {str(e)}")
             return self._render_htmx_error_response(form)
-        
+
         messages.success(self.request, "Entry created successfully")
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
@@ -382,7 +388,9 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
         )
 
         table_html = render_to_string(
-            "currencies/partials/table.html", context=table_context, request=self.request
+            "currencies/partials/table.html",
+            context=table_context,
+            request=self.request,
         )
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request

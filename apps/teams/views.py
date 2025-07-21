@@ -22,6 +22,7 @@ from apps.teams.services import update_team_from_form, remove_team_member
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 
+
 # Create your views here.
 def teams_view(request, organization_id):
     try:
@@ -32,8 +33,10 @@ def teams_view(request, organization_id):
             attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
             team.attached_workspaces = attached_workspaces
         organization = get_organization_by_id(organization_id)
-        #sending true or false to the template to display the new team button
-        can_add_team = request.user.has_perm(OrganizationPermissions.ADD_TEAM, organization)
+        # sending true or false to the template to display the new team button
+        can_add_team = request.user.has_perm(
+            OrganizationPermissions.ADD_TEAM, organization
+        )
         permissions = {
             "can_add_team": can_add_team,
         }

@@ -195,6 +195,12 @@ def delete_team_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
 
+        if not request.user.has_perm(TeamPermissions.DELETE_TEAM, team):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete the team in this organization.",
+            )
+
         # Check if team exists
         if not team:
             messages.error(request, "Team not found.")
@@ -258,6 +264,12 @@ def get_team_members_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         team_members = get_team_members_by_team_id(team_id)
 
+        if not request.user.has_perm(TeamPermissions.VIEW_TEAM, team):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view the team members in this team.",
+            )
+
         context = {
             "team": team,
             "organization": organization,
@@ -273,6 +285,13 @@ def add_team_member_view(request, organization_id, team_id):
     try:
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
+
+        if not request.user.has_perm(TeamPermissions.ADD_TEAM_MEMBER, team):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add a team member to this team.",
+            )
+
         if request.method == "POST":
             try:
                 form = TeamMemberForm(

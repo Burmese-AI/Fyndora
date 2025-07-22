@@ -40,7 +40,6 @@ class ExchangeRateBaseModel(baseModel):
         on_delete=models.CASCADE,
         related_name="%(app_label)s_%(class)s_related",
         related_query_name="%(app_label)s_%(class)s",
-        related_query_name="%(app_label)s_%(class)s",
     )
     rate = models.DecimalField(
         max_digits=5,  # 0.00 - 100.00
@@ -56,10 +55,8 @@ class ExchangeRateBaseModel(baseModel):
     )
     added_by = models.ForeignKey(
         "organizations.OrganizationMember",
-        "organizations.OrganizationMember",
         on_delete=models.SET_NULL,
         null=True,
-        related_name="%(app_label)s_added_%(class)s_set",
         related_name="%(app_label)s_added_%(class)s_set",
     )
     note = models.TextField(blank=True, null=True)

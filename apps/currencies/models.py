@@ -1,4 +1,3 @@
-from time import timezone
 from uuid import uuid4
 from decimal import Decimal
 from iso4217 import Currency as ISO4217Currency
@@ -9,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone  # this is causing ruff error , but neglected for now
 
 from apps.core.models import baseModel
+
 
 
 class Currency(baseModel):
@@ -27,8 +27,11 @@ class Currency(baseModel):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+
     class Meta:
         verbose_name_plural = "Currencies"
+
+
 
 
 class ExchangeRateBaseModel(baseModel):
@@ -36,6 +39,7 @@ class ExchangeRateBaseModel(baseModel):
         Currency,
         on_delete=models.CASCADE,
         related_name="%(app_label)s_%(class)s_related",
+        related_query_name="%(app_label)s_%(class)s",
         related_query_name="%(app_label)s_%(class)s",
     )
     rate = models.DecimalField(
@@ -50,22 +54,16 @@ class ExchangeRateBaseModel(baseModel):
     effective_date = models.DateField(
         default=timezone.now,
     )
-
-    is_approved = models.BooleanField(default=False)
-    approved_by = models.ForeignKey(
-        "organizations.OrganizationMember",
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="%(app_label)s_approved_%(class)s_set",
-    )
-
     added_by = models.ForeignKey(
+        "organizations.OrganizationMember",
         "organizations.OrganizationMember",
         on_delete=models.SET_NULL,
         null=True,
         related_name="%(app_label)s_added_%(class)s_set",
+        related_name="%(app_label)s_added_%(class)s_set",
     )
     note = models.TextField(blank=True, null=True)
+
 
     def save(self, *args, **kwargs):
         if self.currency.code == "MMK":
@@ -73,6 +71,7 @@ class ExchangeRateBaseModel(baseModel):
             if self.added_by:
                 self.approved_by = self.added_by
         super().save(*args, **kwargs)
+
 
     class Meta:
         abstract = True

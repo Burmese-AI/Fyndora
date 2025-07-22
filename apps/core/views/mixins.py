@@ -20,9 +20,23 @@ class OrganizationRequiredMixin:
         organization_id = kwargs.get("organization_id")
         self.organization = get_object_or_404(Organization, pk=organization_id)
         self.org_member = get_object_or_404(
-            OrganizationMember, user=self.request.user, organization=self.organization
+            OrganizationMember, user=request.user, organization=self.organization
         )
         self.is_org_admin = self.org_member == self.organization.owner
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["organization"] = self.organization
+        context["org_member"] = self.org_member
+        context["is_org_admin"] = self.is_org_admin
+        return context
+
+
+class UpdateFormMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = getattr(self, "instance", None)
+        return kwargs
 
 
 class HtmxOobResponseMixin:
@@ -56,3 +70,16 @@ class HtmxModalFormInvalidFormResponseMixin:
         )
 
         return HttpResponse(f"{message_html}{modal_html}")
+
+
+class HtmxInvalidResponseMixin:
+    message_template_name = "includes/message.html"
+
+    def _htmx_invalid_response(self, form) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        message_html = render_to_string(
+            self.message_template_name, context=base_context, request=self.request
+        )
+
+        return HttpResponse(f"{message_html}")

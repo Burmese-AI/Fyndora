@@ -1,3 +1,6 @@
+{% load humanize %}
+{% load exchange_rate_url_identifier %}
+
 <tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ exchange_rate.pk }}" class="hover:bg-lemonade-100 text-lemonade-900">
   <!-- Currency Name and Code -->
   <td class="font-medium">
@@ -34,30 +37,48 @@
 
   <!-- Actions -->
   <td class="text-center">
-    <div class="dropdown dropdown-left">
-      <button tabindex="0" role="button" class="btn btn-xs btn-ghost btn-square">
+    <div class="flex justify-center gap-2">
+      <!-- View -->
+      <a
+        hx-get="{% get_detail_exchange_rate_url url_identifier exchange_rate organization %}"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+        title="View" 
+        class="btn btn-xs btn-ghost"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>        
+      </a>
+
+      <!-- Edit -->
+      <a
+        hx-get="{% get_update_exchange_rate_url url_identifier exchange_rate organization %}"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+        title="Edit"
+        class="btn btn-xs btn-ghost"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+        </svg>
+      </a>
+
+      <!-- Delete -->
+      <button
+        type="button"
+        class="btn btn-xs btn-ghost"
+        title="Delete"
+        hx-post="{% get_delete_exchange_rate_url url_identifier exchange_rate organization %}"
+        hx-confirm="Are you sure you want to delete this entry?"
+        hx-swap="none"
+        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow-md space-y-1">
-        <li>
-          <a href="#" class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-            </svg>
-            Edit
-          </a>
-        </li>
-        <li>
-          <a href="#" class="flex items-center gap-2 text-red-600 hover:text-red-800">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.342.052.682.107 1.022.166m0 0h.918a2.25 2.25 0 012.244 2.077L9.75 8.152a2.25 2.25 0 01-2.244 2.077H5.337A2.25 2.25 0 013.093 8.152L2.03 5.79a48.08 48.08 0 01-.397-1.022V3.25" />
-            </svg>
-            Delete
-          </a>
-        </li>
-      </ul>
     </div>
   </td>
 </tr>

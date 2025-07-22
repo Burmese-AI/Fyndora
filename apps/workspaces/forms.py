@@ -87,6 +87,7 @@ class WorkspaceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
+        self.can_change_workspace_admin = kwargs.pop("can_change_workspace_admin", True)
         super().__init__(*args, **kwargs)
 
         if self.organization:
@@ -102,6 +103,9 @@ class WorkspaceForm(forms.ModelForm):
             ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
+
+        if not self.can_change_workspace_admin:
+            self.fields["workspace_admin"].widget.attrs["disabled"] = True
 
     def clean_title(self):
         title = self.cleaned_data.get("title")

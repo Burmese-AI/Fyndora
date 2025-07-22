@@ -1,5 +1,6 @@
 from django import forms
 from .models import Organization, OrganizationExchangeRate
+from .models import Organization, OrganizationExchangeRate
 from .constants import StatusChoices
 from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 

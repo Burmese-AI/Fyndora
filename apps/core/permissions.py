@@ -36,7 +36,12 @@ class OrganizationPermissions(models.TextChoices):
     DELETE_ORGANIZATION = "delete_organization"
     VIEW_ORGANIZATION = "view_organization"
 
+    CHANGE_WORKSPACE_ADMIN = (
+        "edit_workspace_admin"  # can edit workspace admin # implemented
+    )
+
     ADD_WORKSPACE = "add_workspace"  # can add workspace to organization # implemented
+    ADD_TEAM = "add_team"  # can add team to organization # implemented
 
     INVITE_ORG_MEMBER = (
         "invite_org_member"  # can invite org member to organization # implemented
@@ -51,3 +56,14 @@ class OrganizationPermissions(models.TextChoices):
     DELETE_ORG_ENTRY = (
         "delete_org_entry"  # can delete org entry to organization # implemented
     )
+
+
+class TeamPermissions(models.TextChoices):
+    """
+    Permissions for the Team model.
+    """
+
+    CHANGE_TEAM = "change_team"  # can change team # implemented
+    DELETE_TEAM = "delete_team"
+    VIEW_TEAM = "view_team"
+    ADD_TEAM_MEMBER = "add_team_member"

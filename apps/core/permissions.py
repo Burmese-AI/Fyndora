@@ -6,14 +6,14 @@ class WorkspacePermissions(models.TextChoices):
     Permissions for the Workspace model.
     """
 
-    CHANGE_WORKSPACE = "change_workspace"  
-    DELETE_WORKSPACE = "delete_workspace"  
-    VIEW_WORKSPACE = "view_workspace"  
-    ASSIGN_TEAMS = "assign_teams"  
+    CHANGE_WORKSPACE = "change_workspace"
+    DELETE_WORKSPACE = "delete_workspace"
+    VIEW_WORKSPACE = "view_workspace"
+    ASSIGN_TEAMS = "assign_teams"
     LOCK_WORKSPACE = "lock_workspace"
     VIEW_DASHBOARD = "view_dashboard"
     EXPORT_WORKSPACE_REPORT = "export_workspace_report"
-    
+
     ADD_WORKSPACE_ENTRY = "add_workspace_entry"  # workspace level entry
     CHANGE_WORKSPACE_ENTRY = "change_workspace_entry"
     DELETE_WORKSPACE_ENTRY = "delete_workspace_entry"

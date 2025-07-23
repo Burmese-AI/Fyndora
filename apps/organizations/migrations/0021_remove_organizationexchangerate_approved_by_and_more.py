@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0020_alter_organization_options'),
+        ("organizations", "0020_alter_organization_options"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='organizationexchangerate',
-            name='approved_by',
+            model_name="organizationexchangerate",
+            name="approved_by",
         ),
         migrations.RemoveField(
-            model_name='organizationexchangerate',
-            name='is_approved',
+            model_name="organizationexchangerate",
+            name="is_approved",
         ),
     ]

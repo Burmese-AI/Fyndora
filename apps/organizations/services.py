@@ -74,7 +74,6 @@ def update_organization_from_form(*, form, organization) -> Organization:
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
 
 
-
 def create_organization_exchange_rate(
     *, organization, organization_member, currency_code, rate, note, effective_date
 ):

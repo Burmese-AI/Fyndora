@@ -26,7 +26,7 @@ from ..forms import (
     UpdateOrganizationExpenseEntryForm,
     UpdateWorkspaceExpenseEntryForm,
 )
-from apps.core.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
 from apps.core.utils import permission_denied_view
 
 
@@ -255,6 +255,16 @@ class WorkspaceExpenseCreateView(
 ):
     form_class = CreateWorkspaceExpenseEntryForm
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.ADD_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
 
@@ -322,6 +332,16 @@ class WorkspaceExpenseUpdateView(
 ):
     form_class = UpdateWorkspaceExpenseEntryForm
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.CHANGE_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
 
@@ -350,6 +370,16 @@ class WorkspaceExpenseDeleteView(
     WorkspaceContextMixin,
     BaseEntryDeleteView,
 ):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.DELETE_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP]

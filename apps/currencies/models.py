@@ -10,7 +10,6 @@ from django.utils import timezone  # this is causing ruff error , but neglected 
 from apps.core.models import baseModel
 
 
-
 class Currency(baseModel):
     currency_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
     name = models.CharField(max_length=100, blank=True, null=True)
@@ -27,11 +26,8 @@ class Currency(baseModel):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
-
     class Meta:
         verbose_name_plural = "Currencies"
-
-
 
 
 class ExchangeRateBaseModel(baseModel):
@@ -61,14 +57,12 @@ class ExchangeRateBaseModel(baseModel):
     )
     note = models.TextField(blank=True, null=True)
 
-
     def save(self, *args, **kwargs):
         if self.currency.code == "MMK":
             self.is_approved = True
             if self.added_by:
                 self.approved_by = self.added_by
         super().save(*args, **kwargs)
-
 
     class Meta:
         abstract = True

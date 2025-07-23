@@ -7,6 +7,10 @@
         <th>Effective Date</th>
         <th>Added By</th>
         <th>Note</th>
+        {% if  view == "exchange_rates"%}
+        <th>Approved By</th>
+        <th>Is Approved</th>
+        {% endif %}
         <th class="text-center">Actions</th>
       </tr>
     </thead>

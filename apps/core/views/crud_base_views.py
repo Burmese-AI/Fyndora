@@ -13,7 +13,7 @@ from .mixins import HtmxInvalidResponseMixin, HtmxOobResponseMixin
 from django.shortcuts import render
 
 
-class BaseListView(LoginRequiredMixin, ListView):
+class BaseListView(LoginRequiredMixin, HtmxOobResponseMixin, ListView):
     """
     Base class for list view.
     Required:
@@ -24,6 +24,7 @@ class BaseListView(LoginRequiredMixin, ListView):
 
     model = None
     context_object_name = None
+    template_name = None
     table_template_name = None
     paginate_by = PAGINATION_SIZE
 

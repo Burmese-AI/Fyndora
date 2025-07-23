@@ -159,6 +159,7 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
         OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="%(app_label)s_approved_%(class)s_set",
     )
     workspace = models.ForeignKey(

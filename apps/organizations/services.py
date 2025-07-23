@@ -74,6 +74,8 @@ def update_organization_from_form(*, form, organization) -> Organization:
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
 
 
+
+@transaction.atomic
 def create_organization_exchange_rate(
     *, organization, organization_member, currency_code, rate, note, effective_date
 ):
@@ -81,7 +83,6 @@ def create_organization_exchange_rate(
     Creates an exchange rate for an organization.
     """
     try:
-        currency, _ = Currency.objects.get_or_create(code=currency_code)
         currency, _ = Currency.objects.get_or_create(code=currency_code)
         OrganizationExchangeRate.objects.create(
             organization=organization,

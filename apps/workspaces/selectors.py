@@ -1,7 +1,7 @@
 # apps/workspaces/selectors.py
 
 from django.db.models import Q
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate
 from apps.organizations.models import Organization
 from apps.organizations.models import OrganizationMember
 from apps.teams.models import Team, TeamMember
@@ -202,4 +202,16 @@ def get_workspace_team_by_workspace_team_id(workspace_team_id):
         return WorkspaceTeam.objects.get(workspace_team_id=workspace_team_id)
     except Exception as e:
         print(f"Error in get_workspace_team_by_id: {str(e)}")
+        return None
+
+
+def get_workspace_exchange_rates(*, organization, workspace):
+    ''''''
+    try:
+        return WorkspaceExchangeRate.objects.filter(
+            workspace__organization=organization,
+            workspace=workspace,
+        )
+    except Exception as e:
+        print(f"Error in get_workspace_exchange_rates: {str(e)}")
         return None

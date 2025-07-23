@@ -370,6 +370,16 @@ class WorkspaceExpenseDeleteView(
     WorkspaceContextMixin,
     BaseEntryDeleteView,
 ):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.DELETE_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             workspace=self.workspace, entry_types=[EntryType.WORKSPACE_EXP]

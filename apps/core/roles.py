@@ -35,11 +35,6 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_TEAM_ENTRY,
-        WorkspacePermissions.DELETE_TEAM_ENTRY,
-        WorkspacePermissions.VIEW_TEAM_ENTRY,
-        WorkspacePermissions.REVIEW_TEAM_ENTRY,
-        WorkspacePermissions.FLAG_TEAM_ENTRY,
     ],
     "OPERATIONS_REVIEWER": [
         WorkspacePermissions.ASSIGN_TEAMS,

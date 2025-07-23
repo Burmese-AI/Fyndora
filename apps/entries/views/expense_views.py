@@ -26,7 +26,7 @@ from ..forms import (
     UpdateOrganizationExpenseEntryForm,
     UpdateWorkspaceExpenseEntryForm,
 )
-from apps.core.permissions import OrganizationPermissions
+from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
 from apps.core.utils import permission_denied_view
 
 
@@ -254,6 +254,16 @@ class WorkspaceExpenseCreateView(
     BaseEntryCreateView,
 ):
     form_class = CreateWorkspaceExpenseEntryForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.ADD_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP

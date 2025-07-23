@@ -332,6 +332,16 @@ class WorkspaceExpenseUpdateView(
 ):
     form_class = UpdateWorkspaceExpenseEntryForm
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            WorkspacePermissions.CHANGE_WORKSPACE_ENTRY, self.workspace
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change workspace expense.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
 

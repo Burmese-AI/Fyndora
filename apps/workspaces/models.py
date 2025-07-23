@@ -98,11 +98,6 @@ class Workspace(baseModel):
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
                 "Can export workspace report",
             ),
-            (WorkspacePermissions.CHANGE_TEAM_ENTRY, "Can change entry in team"),
-            (WorkspacePermissions.DELETE_TEAM_ENTRY, "Can delete entry in team"),
-            (WorkspacePermissions.VIEW_TEAM_ENTRY, "Can view entry in team"),
-            (WorkspacePermissions.REVIEW_TEAM_ENTRY, "Can review entry in team"),
-            (WorkspacePermissions.FLAG_TEAM_ENTRY, "Can flag entry in team"),
         )
         constraints = [
             models.UniqueConstraint(

@@ -248,12 +248,12 @@ class UpdateWorkspaceExpenseEntryForm(UpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        # If the user is not a workspace admin, raise validation error
-        if not self.is_workspace_admin:
-            raise forms.ValidationError(
-                "You are not authorized to update workspace expenses"
-            )
-
+        # # If the user is not a workspace admin, raise validation error
+        # if not self.is_workspace_admin:
+        #     raise forms.ValidationError(
+        #         "You are not authorized to update workspace expenses"
+        #     )
+        # Commented this as we use guardian for permission control.. but we can use this if we want to use for other purposes
         return cleaned_data
 
 

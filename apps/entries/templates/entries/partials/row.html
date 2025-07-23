@@ -87,6 +87,7 @@
       </a>
 
       <!-- Edit -->
+      {% if can_change_workspace_entry %}
       <a
         hx-get="{% entry_update_url entry_type entry organization workspace workspace_team %}"
         hx-target="#modal-placeholder"
@@ -98,7 +99,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
         </svg>
       </a>
+      {% endif %}
 
+      {% if can_delete_workspace_entry %}
       <!-- Delete -->
        {% comment %} HTMX requires csrf {% endcomment %}
       <button
@@ -114,6 +117,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
+      {% endif %}
     </div>
   </td>
 </tr>

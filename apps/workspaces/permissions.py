@@ -83,7 +83,6 @@ def update_workspace_admin_group(
         and previous_operations_reviewer == new_operations_reviewer
     ):
         return  # No change for workspace admin and operations reviewer
-    print("after")
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     workspace_admins_group, _ = Group.objects.get_or_create(
         name=workspace_admins_group_name
@@ -96,17 +95,13 @@ def update_workspace_admin_group(
 
     if previous_admin:
         workspace_admins_group.user_set.remove(previous_admin.user)
-        print("workspace admin removed")
     if new_admin:
         workspace_admins_group.user_set.add(new_admin.user)
-        print("new workspace admin added")
 
     if previous_operations_reviewer:
         operations_reviewer_group.user_set.remove(previous_operations_reviewer.user)
-        print("operations reviewer removed")
     if new_operations_reviewer:
         operations_reviewer_group.user_set.add(new_operations_reviewer.user)
-        print("new operations reviewer added")
 
 
 # check if the user has permission to create a workspace

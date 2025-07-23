@@ -54,6 +54,7 @@ from apps.organizations.mixins.organization_exchange_rate.required_mixins import
     OrganizationExchangeRateRequiredMixin,
 )
 from apps.currencies.views.mixins import ExchangeRateUrlIdentifierMixin
+from apps.currencies.constants import EXCHANGE_RATE_CONTEXT_OBJECT_NAME, EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
 
 
 # Create your views here.
@@ -238,7 +239,7 @@ def settings_view(request, organization_id):
         context = get_paginated_context(
             queryset=org_exchanage_rates,
             context=context,
-            object_name="exchange_rates",
+            object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
         )
         context["url_identifier"] = "organization"
 
@@ -398,7 +399,7 @@ class OrganizationExchangeRateCreateView(
                 note=form.cleaned_data["note"],
             )
         except Exception as e:
-            messages.error(self.request, f"Failed to create entry: {str(e)}")
+            messages.error(self.request, f"Failed to create Exchange Rate: {str(e)}")
             return self._render_htmx_error_response(form)
 
         messages.success(self.request, "Entry created successfully")
@@ -494,11 +495,13 @@ class OrganizationExchangeRateUpdateView(
 class OrganizationExchangeRateDetailView(BaseDetailView):
     model = OrganizationExchangeRate
     template_name = "currencies/components/detail_modal.html"
-    context_object_name = "exchange_rate"
+    context_object_name = EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
 
 
 class OrganizationExchangerateDeleteView(
-    OrganizationExchangeRateRequiredMixin, OrganizationRequiredMixin, BaseDeleteView
+    OrganizationExchangeRateRequiredMixin, 
+    OrganizationRequiredMixin, 
+    BaseDeleteView
 ):
     model = OrganizationExchangeRate
 

@@ -40,18 +40,11 @@
           <p><span class="font-medium">Approved By:</span> {{ exchange_rate.approved_by.user.get_full_name }}</p>
         {% endif %}
       {% endif %}
+      <p class="text-sm capitalize"><span class="font-medium">Approved By:</span> {{ exchange_rate.approved_by.user.username | default:"-" }}</p>
       <p><span class="font-medium">Added At:</span> {{ exchange_rate.created_at|date:"Y-m-d H:i" }}</p>
       <p><span class="font-medium">Last Updated:</span> {{ exchange_rate.updated_at|date:"Y-m-d H:i" }}</p>
     </div>
   </div>
-
-  <!-- Approval Info (Only for Workspace Exchange Rates) -->
-  {% if exchange_rate_type == "workspace" and exchange_rate.review_notes %}
-    <div class="bg-base-200 p-4 rounded-lg space-y-2">
-      <h3 class="text-sm font-semibold text-base-content mb-2">Review Information</h3>
-      <p class="text-sm"><span class="font-medium">Review Notes:</span> {{ exchange_rate.review_notes }}</p>
-    </div>
-  {% endif %}
 
   <!-- Actions -->
   <div class="flex justify-end pt-2">

@@ -30,6 +30,19 @@
       {% include "components/field_error.html" with field=form.note %}
     </div>
 
+    <!-- is approved -->
+    {% if form.is_approved %}
+    <div>
+      <div class="mt-2">
+        <label for="{{ form.is_approved.id_for_label }}" class="inline-block text-sm font-medium text-base-content mr-2">
+          Is Approved
+        </label>
+        {{ form.is_approved }}
+      </div>
+      {% include "components/field_error.html" with field=form.is_approved %}
+    </div>
+    {% endif %}
+
     <!-- Actions -->
     <div class="flex justify-end space-x-2 pt-4">
       <button

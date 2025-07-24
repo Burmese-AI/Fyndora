@@ -330,25 +330,6 @@ def is_security_related(action_type):
     return action_value in security_actions
 
 
-def is_critical_action(action_type):
-    """
-    Check if an audit action type is considered critical.
-    """
-    action_value = action_type.value if hasattr(action_type, "value") else action_type
-
-    critical_actions = [
-        "user_deleted",
-        "organization_deleted",
-        "workspace_deleted",
-        "entry_deleted",
-        "remittance_deleted",
-        "unauthorized_access_attempt",
-        "data_exported",
-    ]
-
-    return action_value in critical_actions
-
-
 # =============================================================================
 # AUDIT LOGGING UTILITIES
 # =============================================================================

@@ -4,12 +4,14 @@ from typing import Any, Dict, List, Optional, Union
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
+from django.db import models
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
-from .constants import AuditActionType
+from .config import AuditConfig
+from .constants import AuditActionType, is_critical_action
 from .models import AuditTrail
-from .utils import get_action_category, is_critical_action, is_security_related
+from .utils import get_action_category, is_security_related
 
 User = get_user_model()
 
@@ -27,7 +29,7 @@ class AuditLogSelector:
         Get audit logs for entities related to the target entity.
         """
         related_conditions = Q()
-        
+
         # 1. Find logs that reference this entity in their metadata
         related_conditions |= Q(
             metadata__contains={f"related_{entity_type.lower()}_id": entity_id}
@@ -38,14 +40,16 @@ class AuditLogSelector:
         related_conditions |= Q(
             metadata__contains={f"child_{entity_type.lower()}_id": entity_id}
         )
-        
+
         # 2. For workspace-scoped entities, include workspace-level changes
-        if entity_type.lower() in ['entry', 'organization', 'team']:
+        if entity_type.lower() in ["entry", "organization", "team"]:
             # Get workspace_id from the original entity's metadata
-            workspace_logs = base_qs.filter(
-                metadata__has_key='workspace_id'
-            ).values_list('metadata__workspace_id', flat=True).distinct()
-            
+            workspace_logs = (
+                base_qs.filter(metadata__has_key="workspace_id")
+                .values_list("metadata__workspace_id", flat=True)
+                .distinct()
+            )
+
             for workspace_id in workspace_logs:
                 if workspace_id:
                     # Include workspace-level changes that might affect this entity
@@ -56,53 +60,47 @@ class AuditLogSelector:
                             AuditActionType.WORKSPACE_UPDATED,
                             AuditActionType.ORGANIZATION_STATUS_CHANGED,
                             AuditActionType.ORGANIZATION_UPDATED,
-                        ]
+                        ],
                     )
-        
+
         # 3. Entity-specific relationships
-        if entity_type.lower() == 'entry':
+        if entity_type.lower() == "entry":
             # For entries, include related remittance and attachment changes
+            related_conditions |= Q(metadata__contains={"entry_id": entity_id})
             related_conditions |= Q(
-                metadata__contains={"entry_id": entity_id}
+                target_entity_type__model__in=["remittance", "attachment"],
+                metadata__contains={"related_entry_id": entity_id},
             )
-            related_conditions |= Q(
-                target_entity_type__model__in=['remittance', 'attachment'],
-                metadata__contains={"related_entry_id": entity_id}
-            )
-            
-        elif entity_type.lower() == 'organization':
+
+        elif entity_type.lower() == "organization":
             # For organizations, include related workspace and team changes
-            related_conditions |= Q(
-                metadata__contains={"organization_id": entity_id}
-            )
-            
-        elif entity_type.lower() == 'workspace':
+            related_conditions |= Q(metadata__contains={"organization_id": entity_id})
+
+        elif entity_type.lower() == "workspace":
             # For workspaces, include all entity changes within the workspace
-            related_conditions |= Q(
-                metadata__workspace_id=entity_id
-            )
-            
-        elif entity_type.lower() == 'user':
+            related_conditions |= Q(metadata__workspace_id=entity_id)
+
+        elif entity_type.lower() == "user":
             # For users, include invitation and team membership changes
-            related_conditions |= Q(
-                metadata__contains={"user_id": entity_id}
-            )
-            related_conditions |= Q(
-                metadata__contains={"invited_user_id": entity_id}
-            )
-        
+            related_conditions |= Q(metadata__contains={"user_id": entity_id})
+            related_conditions |= Q(metadata__contains={"invited_user_id": entity_id})
+
         # 4. Bulk operations that might have affected this entity
         related_conditions |= Q(
             action_type=AuditActionType.BULK_OPERATION,
-            metadata__contains={f"affected_{entity_type.lower()}_ids": [entity_id]}
+            metadata__contains={f"affected_{entity_type.lower()}_ids": [entity_id]},
         )
-        
+
         # Execute the query for related logs, excluding the base entity logs
-        related_qs = AuditTrail.objects.filter(related_conditions).exclude(
-            target_entity_id=entity_id,
-            target_entity_type__model=entity_type.lower()
-        ).select_related("user", "target_entity_type")
-        
+        related_qs = (
+            AuditTrail.objects.filter(related_conditions)
+            .exclude(
+                target_entity_id=entity_id,
+                target_entity_type__model=entity_type.lower(),
+            )
+            .select_related("user", "target_entity_type")
+        )
+
         return related_qs
 
     @staticmethod
@@ -465,3 +463,203 @@ class AuditLogSelector:
             for action in AuditActionType.values
             if get_action_category(action) == category
         ]
+
+
+def get_retention_summary() -> Dict[str, int]:
+    """
+    Get a summary of audit logs by retention category.
+    Read-only operation for retention statistics.
+    """
+    now = timezone.now()
+    summary = {
+        "total_logs": AuditTrail.objects.count(),
+        "authentication_logs": 0,
+        "critical_logs": 0,
+        "default_logs": 0,
+        "expired_logs": 0,
+    }
+
+    # Count by retention categories
+    auth_actions = [
+        AuditActionType.LOGIN_SUCCESS,
+        AuditActionType.LOGIN_FAILED,
+        AuditActionType.LOGOUT,
+    ]
+
+    # Count authentication logs
+    summary["authentication_logs"] = AuditTrail.objects.filter(
+        action_type__in=auth_actions
+    ).count()
+
+    # Count critical logs
+    all_action_types = AuditTrail.objects.values_list(
+        "action_type", flat=True
+    ).distinct()
+    critical_actions = [
+        action for action in all_action_types if is_critical_action(action)
+    ]
+    summary["critical_logs"] = AuditTrail.objects.filter(
+        action_type__in=critical_actions
+    ).count()
+
+    # Count default logs (non-auth, non-critical)
+    summary["default_logs"] = (
+        AuditTrail.objects.exclude(action_type__in=auth_actions)
+        .exclude(action_type__in=critical_actions)
+        .count()
+    )
+
+    # Count expired logs by category
+    auth_cutoff = now - timedelta(days=AuditConfig.AUTHENTICATION_RETENTION_DAYS)
+    critical_cutoff = now - timedelta(days=AuditConfig.CRITICAL_RETENTION_DAYS)
+    default_cutoff = now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS)
+
+    expired_auth = AuditTrail.objects.filter(
+        action_type__in=auth_actions, timestamp__lt=auth_cutoff
+    ).count()
+
+    expired_critical = AuditTrail.objects.filter(
+        action_type__in=critical_actions, timestamp__lt=critical_cutoff
+    ).count()
+
+    expired_default = (
+        AuditTrail.objects.exclude(action_type__in=auth_actions)
+        .exclude(action_type__in=critical_actions)
+        .filter(timestamp__lt=default_cutoff)
+        .count()
+    )
+
+    summary["expired_logs"] = expired_auth + expired_critical + expired_default
+
+    return summary
+
+
+def get_logs_approaching_expiry(*, days_warning: int = 7) -> Dict[str, List]:
+    """
+    Get logs that will expire within the warning period.
+    Read-only operation for retention monitoring.
+    """
+    now = timezone.now()
+
+    # Calculate warning dates
+    auth_warning_date = now - timedelta(
+        days=AuditConfig.AUTHENTICATION_RETENTION_DAYS - days_warning
+    )
+    default_warning_date = now - timedelta(
+        days=AuditConfig.DEFAULT_RETENTION_DAYS - days_warning
+    )
+
+    auth_actions = [
+        AuditActionType.LOGIN_SUCCESS,
+        AuditActionType.LOGIN_FAILED,
+        AuditActionType.LOGOUT,
+    ]
+
+    approaching_expiry = {
+        "authentication_logs": list(
+            AuditTrail.objects.filter(
+                action_type__in=auth_actions,
+                timestamp__lt=auth_warning_date,
+                timestamp__gte=now
+                - timedelta(days=AuditConfig.AUTHENTICATION_RETENTION_DAYS),
+            ).values("audit_id", "action_type", "timestamp", "user__username")
+        ),
+        "default_logs": list(
+            AuditTrail.objects.exclude(action_type__in=auth_actions)
+            .filter(
+                timestamp__lt=default_warning_date,
+                timestamp__gte=now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS),
+            )
+            .values("audit_id", "action_type", "timestamp", "user__username")
+        ),
+    }
+
+    return approaching_expiry
+
+
+def get_expired_logs_queryset(
+    *, action_type: Optional[str] = None, override_days: Optional[int] = None
+) -> QuerySet[AuditTrail]:
+    """
+    Get queryset of expired audit logs.
+    Read-only operation for identifying expired logs.
+    """
+    now = timezone.now()
+
+    # Authentication logs
+    auth_actions = [
+        AuditActionType.LOGIN_SUCCESS,
+        AuditActionType.LOGIN_FAILED,
+        AuditActionType.LOGOUT,
+    ]
+
+    if override_days is not None:
+        # Use override days for all logs
+        cutoff = now - timedelta(days=override_days)
+        if action_type:
+            return AuditTrail.objects.filter(
+                action_type=action_type, timestamp__lt=cutoff
+            )
+        else:
+            return AuditTrail.objects.filter(timestamp__lt=cutoff)
+
+    if action_type and action_type in auth_actions:
+        # Only authentication logs of specific type
+        auth_cutoff = now - timedelta(days=AuditConfig.AUTHENTICATION_RETENTION_DAYS)
+        return AuditTrail.objects.filter(
+            action_type=action_type, timestamp__lt=auth_cutoff
+        )
+    elif action_type and action_type not in auth_actions:
+        # Only default logs of specific type
+        default_cutoff = now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS)
+        return AuditTrail.objects.filter(
+            action_type=action_type, timestamp__lt=default_cutoff
+        )
+    else:
+        # All expired logs
+        auth_cutoff = now - timedelta(days=AuditConfig.AUTHENTICATION_RETENTION_DAYS)
+        default_cutoff = now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS)
+
+        expired_auth = Q(action_type__in=auth_actions, timestamp__lt=auth_cutoff)
+
+        expired_default = Q(timestamp__lt=default_cutoff) & ~Q(
+            action_type__in=auth_actions
+        )
+
+        return AuditTrail.objects.filter(expired_auth | expired_default)
+
+
+def get_retention_statistics_by_action_type() -> Dict[str, Dict[str, int]]:
+    """
+    Get detailed retention statistics grouped by action type.
+    Read-only operation for detailed retention analysis.
+    """
+    now = timezone.now()
+    stats = {}
+
+    # Get all action types with counts
+    action_counts = AuditTrail.objects.values("action_type").annotate(
+        total=models.Count("audit_id")
+    )
+
+    for item in action_counts:
+        action_type = item["action_type"]
+        total_count = item["total"]
+
+        # Calculate retention period for this action type
+        retention_days = AuditConfig.get_retention_days_for_action(action_type)
+        cutoff_date = now - timedelta(days=retention_days)
+
+        # Count expired logs for this action type
+        expired_count = AuditTrail.objects.filter(
+            action_type=action_type, timestamp__lt=cutoff_date
+        ).count()
+
+        stats[action_type] = {
+            "total": total_count,
+            "expired": expired_count,
+            "active": total_count - expired_count,
+            "retention_days": retention_days,
+        }
+
+    return stats

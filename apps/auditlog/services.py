@@ -1,12 +1,17 @@
 import logging
+from typing import Dict, Optional
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 
 from apps.core.utils import model_update
 from apps.workspaces.models import Workspace
 
 from .models import AuditTrail
+from .config import AuditConfig
+from .constants import AuditActionType
+from .selectors import get_expired_logs_queryset
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -98,3 +103,96 @@ def audit_create_security_event(
         target_entity=target_entity,
         metadata=enhanced_metadata,
     )
+
+
+def audit_cleanup_expired_logs(
+    *,
+    dry_run: bool = False,
+    batch_size: Optional[int] = None,
+    action_type: Optional[str] = None,
+    override_days: Optional[int] = None,
+) -> Dict[str, int]:
+    """
+    Clean up expired audit logs based on retention policies.
+    """
+    if batch_size is None:
+        batch_size = AuditConfig.CLEANUP_BATCH_SIZE
+
+    stats = {
+        "authentication_deleted": 0,
+        "default_deleted": 0,
+        "total_deleted": 0,
+        "dry_run": dry_run,
+    }
+
+    # Get expired logs queryset
+    expired_logs = get_expired_logs_queryset(action_type=action_type, override_days=override_days)
+
+    if action_type:
+        # Clean up specific action type
+        if dry_run:
+            stats["total_deleted"] = expired_logs.count()
+        else:
+            stats["total_deleted"] = _delete_in_batches(expired_logs, batch_size)
+    else:
+        # Clean up by categories
+        auth_actions = [
+            AuditActionType.LOGIN_SUCCESS,
+            AuditActionType.LOGIN_FAILED,
+            AuditActionType.LOGOUT,
+        ]
+
+        # Authentication logs
+        auth_expired = expired_logs.filter(action_type__in=auth_actions)
+        if dry_run:
+            stats["authentication_deleted"] = auth_expired.count()
+        else:
+            stats["authentication_deleted"] = _delete_in_batches(
+                auth_expired, batch_size
+            )
+
+        # Default logs (non-auth)
+        default_expired = expired_logs.exclude(action_type__in=auth_actions)
+        if dry_run:
+            stats["default_deleted"] = default_expired.count()
+        else:
+            stats["default_deleted"] = _delete_in_batches(default_expired, batch_size)
+
+        stats["total_deleted"] = (
+            stats["authentication_deleted"] + stats["default_deleted"]
+        )
+
+    logger.info(
+        f"Audit log cleanup completed. "
+        f"Deleted: {stats['total_deleted']} logs "
+        f"(Auth: {stats['authentication_deleted']}, "
+        f"Default: {stats['default_deleted']}) "
+        f"Dry run: {dry_run}"
+    )
+
+    return stats
+
+
+def _delete_in_batches(queryset, batch_size: int) -> int:
+    """
+    Delete records in batches to avoid memory issues.
+    Internal helper function for safe batch deletion.
+    """
+    total_deleted = 0
+
+    while True:
+        with transaction.atomic():
+            # Get a batch of IDs
+            batch_ids = list(queryset.values_list("audit_id", flat=True)[:batch_size])
+
+            if not batch_ids:
+                break
+
+            # Delete the batch
+            deleted_count = AuditTrail.objects.filter(audit_id__in=batch_ids).delete()[
+                0
+            ]
+
+            total_deleted += deleted_count
+
+    return total_deleted

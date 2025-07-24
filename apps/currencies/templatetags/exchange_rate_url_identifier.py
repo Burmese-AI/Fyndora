@@ -35,7 +35,14 @@ def get_delete_exchange_rate_url(
             kwargs={"organization_id": organization.pk, "pk": exchange_rate.pk},
         )
     elif exchange_rate_level == "workspace":
-        pass
+        return reverse(
+            "workspace_exchange_rate_delete",
+            kwargs={
+                "organization_id": organization.pk,
+                "workspace_id": workspace.pk,
+                "pk": exchange_rate.pk,
+            },
+        )
 
 
 @register.simple_tag

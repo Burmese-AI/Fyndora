@@ -12,6 +12,7 @@ from apps.workspaces.views import (
     WorkspaceExchangeRateCreateView,
     WorkspaceExchangeRateUpdateView,
     WorkspaceExchangeRateDetailView,
+    WorkspaceExchangeRateDeleteView,
 )
 
 urlpatterns = [
@@ -55,8 +56,13 @@ urlpatterns = [
         name="workspace_exchange_rate_update",
     ),
     path(
-        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/delete/",
+        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/detail/",
         WorkspaceExchangeRateDetailView.as_view(),
         name="workspace_exchange_rate_detail",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/delete/",
+        WorkspaceExchangeRateDeleteView.as_view(),
+        name="workspace_exchange_rate_delete",
     ),
 ]

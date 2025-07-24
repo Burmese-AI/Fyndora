@@ -5,7 +5,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-from apps.core.models import baseModel
+from apps.core.models import SoftDeleteModel, baseModel
 from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.constants import StatusChoices
 from apps.teams.models import Team
@@ -168,7 +168,7 @@ class WorkspaceTeam(baseModel):
         return f"{self.team.title} in {self.workspace.title}"
 
 
-class WorkspaceExchangeRate(ExchangeRateBaseModel):
+class WorkspaceExchangeRate(ExchangeRateBaseModel, SoftDeleteModel):
     workspace_exchange_rate_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -192,6 +192,7 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["workspace", "currency", "effective_date"],
+                condition=models.Q(deleted_at__isnull=True),
                 name="unique_workspace_exchange_rate",
             )
         ]

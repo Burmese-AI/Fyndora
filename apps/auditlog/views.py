@@ -5,7 +5,7 @@ from django.views.generic import ListView
 
 from .constants import AuditActionType
 from .models import AuditTrail
-from .selectors import get_audit_logs_for_workspace_with_filters
+from .selectors import AuditLogSelector
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ class AuditLogListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Use the selector to fetch and filter the queryset
-        return get_audit_logs_for_workspace_with_filters(
+        return AuditLogSelector.get_audit_logs_with_filters(
             user_id=self.request.GET.get("user"),
             action_type=self.request.GET.get("action_type"),
             start_date=self.request.GET.get("start_date"),

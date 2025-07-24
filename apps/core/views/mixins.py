@@ -31,10 +31,11 @@ class OrganizationRequiredMixin:
         context["org_member"] = self.org_member
         context["is_org_admin"] = self.is_org_admin
         return context
-    
+
+
 class WorkspaceRequiredMixin(OrganizationRequiredMixin):
     """
-        Mixin for workspace required.
+    Mixin for workspace required.
     """
 
     workspace = None
@@ -48,8 +49,10 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
             Workspace, pk=workspace_id, organization=self.organization
         )
         self.is_workspace_admin = self.workspace.workspace_admin == self.org_member
-        self.is_operation_reviewer = self.workspace.operations_reviewer == self.org_member
-        
+        self.is_operation_reviewer = (
+            self.workspace.operations_reviewer == self.org_member
+        )
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["workspace"] = self.workspace

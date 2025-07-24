@@ -5,16 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0021_remove_organizationexchangerate_approved_by_and_more'),
-        ('workspaces', '0018_alter_workspaceexchangerate_effective_date'),
+        ("organizations", "0021_remove_organizationexchangerate_approved_by_and_more"),
+        ("workspaces", "0018_alter_workspaceexchangerate_effective_date"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='workspaceexchangerate',
-            name='approved_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_approved_%(class)s_set', to='organizations.organizationmember'),
+            model_name="workspaceexchangerate",
+            name="approved_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="%(app_label)s_approved_%(class)s_set",
+                to="organizations.organizationmember",
+            ),
         ),
     ]

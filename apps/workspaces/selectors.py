@@ -206,7 +206,7 @@ def get_workspace_team_by_workspace_team_id(workspace_team_id):
 
 
 def get_workspace_exchange_rates(*, organization, workspace):
-    ''''''
+    """"""
     try:
         return WorkspaceExchangeRate.objects.filter(
             workspace__organization=organization,

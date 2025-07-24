@@ -12,7 +12,6 @@ from apps.workspaces.permissions import (
 from django.db.utils import IntegrityError
 
 
-
 @transaction.atomic
 def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
     """
@@ -87,6 +86,7 @@ def update_workspace_team_remittance_rate_from_form(
     workspace_team.save()
     return workspace_team
 
+
 @transaction.atomic
 def create_workspace_exchange_rate(
     *, workspace, organization_member, currency_code, rate, note, effective_date
@@ -94,29 +94,32 @@ def create_workspace_exchange_rate(
     try:
         currency, _ = Currency.objects.get_or_create(code=currency_code)
         WorkspaceExchangeRate.objects.create(
-            workspace = workspace,
-            currency = currency,
-            rate = rate,
-            effective_date = effective_date,
-            added_by = organization_member,
-            note = note,
+            workspace=workspace,
+            currency=currency,
+            rate=rate,
+            effective_date=effective_date,
+            added_by=organization_member,
+            note=note,
         )
     except IntegrityError as e:
         raise ValidationError(f"Failed to create workspace exchange rate: {str(e)}")
     except Exception as e:
         raise ValidationError(f"Failed to create workspace exchange rate: {str(e)}")
-    
+
+
 @transaction.atomic
 def update_workspace_exchange_rate(
     *, workspace_exchange_rate, note, is_approved, org_member
-
 ):
     try:
-        workspace_exchange_rate = model_update(workspace_exchange_rate, {
-            "note": note,
-            "is_approved": is_approved,
-            "approved_by": org_member if is_approved else None
-        })
+        workspace_exchange_rate = model_update(
+            workspace_exchange_rate,
+            {
+                "note": note,
+                "is_approved": is_approved,
+                "approved_by": org_member if is_approved else None,
+            },
+        )
         return workspace_exchange_rate
     except Exception as e:
         raise ValidationError(f"Failed to update workspace exchange rate: {str(e)}")

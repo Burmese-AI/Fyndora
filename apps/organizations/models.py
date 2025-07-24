@@ -42,16 +42,34 @@ class Organization(baseModel):
         verbose_name_plural = "organizations"
         ordering = ["-created_at"]
         permissions = (
-            (OrganizationPermissions.ADD_WORKSPACE, "Can add workspace"),
-            (OrganizationPermissions.ADD_TEAM, "Can add team"),
-            (OrganizationPermissions.INVITE_ORG_MEMBER, "Can invite org member"),
-            (OrganizationPermissions.ADD_ORG_ENTRY, "Can add org entry"),
-            (OrganizationPermissions.VIEW_ORG_ENTRY, "Can view org entry"),
-            (OrganizationPermissions.CHANGE_ORG_ENTRY, "Can change org entry"),
-            (OrganizationPermissions.DELETE_ORG_ENTRY, "Can delete org entry"),
+            (
+                OrganizationPermissions.ADD_WORKSPACE,
+                OrganizationPermissions.ADD_WORKSPACE.label,
+            ),
+            (OrganizationPermissions.ADD_TEAM, OrganizationPermissions.ADD_TEAM.label),
+            (
+                OrganizationPermissions.INVITE_ORG_MEMBER,
+                OrganizationPermissions.INVITE_ORG_MEMBER.label,
+            ),
+            (
+                OrganizationPermissions.ADD_ORG_ENTRY,
+                OrganizationPermissions.ADD_ORG_ENTRY.label,
+            ),
+            (
+                OrganizationPermissions.VIEW_ORG_ENTRY,
+                OrganizationPermissions.VIEW_ORG_ENTRY.label,
+            ),
+            (
+                OrganizationPermissions.CHANGE_ORG_ENTRY,
+                OrganizationPermissions.CHANGE_ORG_ENTRY.label,
+            ),
+            (
+                OrganizationPermissions.DELETE_ORG_ENTRY,
+                OrganizationPermissions.DELETE_ORG_ENTRY.label,
+            ),
             (
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
-                "Can change workspace admin",
+                OrganizationPermissions.CHANGE_WORKSPACE_ADMIN.label,
             ),
         )
         constraints = [

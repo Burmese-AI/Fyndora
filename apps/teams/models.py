@@ -36,7 +36,7 @@ class Team(baseModel):
         verbose_name_plural = "teams"
         ordering = ["-created_at"]
         permissions = [
-            (TeamPermissions.ADD_TEAM_MEMBER, "Can add team member"),
+            (TeamPermissions.ADD_TEAM_MEMBER, TeamPermissions.ADD_TEAM_MEMBER.label),
         ]
         constraints = [
             models.UniqueConstraint(

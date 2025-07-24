@@ -2,8 +2,12 @@ from typing import Any
 
 from django.urls import reverse_lazy
 from apps.core.views.base_views import BaseGetModalFormView
-from apps.core.views.crud_base_views import BaseCreateView, BaseDetailView, BaseListView, BaseUpdateView
-from apps.core.views.mixins import HtmxOobResponseMixin
+from apps.core.views.crud_base_views import (
+    BaseCreateView,
+    BaseDetailView,
+    BaseListView,
+    BaseUpdateView,
+)
 from apps.workspaces.forms import WorkspaceExchangeRateUpdateForm, WorkspaceForm
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -22,7 +26,10 @@ from apps.organizations.selectors import get_orgMember_by_user_id_and_organizati
 from apps.workspaces.services import update_workspace_from_form
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-from apps.workspaces.forms import AddTeamToWorkspaceForm, WorkspaceExchangeRateCreateForm
+from apps.workspaces.forms import (
+    AddTeamToWorkspaceForm,
+    WorkspaceExchangeRateCreateForm,
+)
 from apps.workspaces.exceptions import AddTeamToWorkspaceError
 from apps.workspaces.selectors import get_workspace_teams_by_workspace_id
 from apps.workspaces.selectors import get_workspaces_with_team_counts
@@ -32,7 +39,7 @@ from apps.workspaces.forms import ChangeWorkspaceTeamRemittanceRateForm
 from apps.workspaces.selectors import (
     get_workspace_team_by_workspace_team_id,
     get_all_related_workspace_teams,
-    get_workspace_exchange_rates
+    get_workspace_exchange_rates,
 )
 from apps.workspaces.services import update_workspace_team_remittance_rate_from_form
 from django.views.generic import TemplateView
@@ -48,11 +55,17 @@ from apps.workspaces.permissions import (
     check_change_workspace_permission,
 )
 from .models import WorkspaceExchangeRate
-from apps.currencies.constants import EXCHANGE_RATE_CONTEXT_OBJECT_NAME, EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
+from apps.currencies.constants import (
+    EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
+    EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
+)
 from apps.currencies.views.mixins import ExchangeRateUrlIdentifierMixin
 from apps.core.views.mixins import WorkspaceRequiredMixin
 from apps.core.utils import get_paginated_context
-from .mixins.workspace_exchange_rate.required_mixins import WorkspaceExchangeRateRequiredMixin
+from .mixins.workspace_exchange_rate.required_mixins import (
+    WorkspaceExchangeRateRequiredMixin,
+)
+
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -509,10 +522,7 @@ def change_workspace_team_remittance_rate_view(
         )
 
 
-class SubmissionTeamListView(
-    LoginRequiredMixin, 
-    TemplateView
-):
+class SubmissionTeamListView(LoginRequiredMixin, TemplateView):
     template_name = "workspace_teams/index_2.html"
 
     def get_context_data(self, **kwargs):
@@ -538,61 +548,63 @@ class WorkspaceExchangeRateListView(
     context_object_name = EXCHANGE_RATE_CONTEXT_OBJECT_NAME
     template_name = "workspace_exchange_rates/index.html"
     table_template_name = ""
-    
+
     def get_queryset(self):
         return get_workspace_exchange_rates(
             organization=self.organization,
             workspace=self.workspace,
         )
-        
+
     def get_exchange_rate_level(self):
         return "workspace"
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "exchange_rates"
         return context
-    
+
+
 class WorkspaceExchangeRateCreateView(
     WorkspaceRequiredMixin,
     ExchangeRateUrlIdentifierMixin,
     BaseGetModalFormView,
     BaseCreateView,
-    LoginRequiredMixin
+    LoginRequiredMixin,
 ):
     model = WorkspaceExchangeRate
     form_class = WorkspaceExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
-    
+
     def get_queryset(self):
         return get_workspace_exchange_rates(
             organization=self.organization,
             workspace=self.workspace,
         )
-        
+
     def get_post_url(self) -> str:
         return reverse_lazy(
             "workspace_exchange_rate_create",
             kwargs={
                 "organization_id": self.organization.pk,
                 "workspace_id": self.workspace.pk,
-            }
+            },
         )
-    
+
     def get_modal_title(self) -> str:
         return "Add Workpsace Exchange Rate"
-    
+
     def get_exchange_rate_level(self):
         return "workspace"
-    
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
         kwargs["workspace"] = self.workspace
         return kwargs
-    
-    def form_valid(self, form):   
-        from .services import create_workspace_exchange_rate 
+
+    def form_valid(self, form):
+        from .services import create_workspace_exchange_rate
+
         try:
             create_workspace_exchange_rate(
                 workspace=self.workspace,
@@ -606,7 +618,7 @@ class WorkspaceExchangeRateCreateView(
             messages.error(self.request, f"{str(e)}")
             return self._render_htmx_error_response(form)
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
@@ -629,7 +641,7 @@ class WorkspaceExchangeRateCreateView(
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
-    
+
 
 class WorkspaceExchangeRateUpdateView(
     WorkspaceExchangeRateRequiredMixin,
@@ -637,14 +649,16 @@ class WorkspaceExchangeRateUpdateView(
     ExchangeRateUrlIdentifierMixin,
     BaseGetModalFormView,
     BaseUpdateView,
-    LoginRequiredMixin
+    LoginRequiredMixin,
 ):
     model = WorkspaceExchangeRate
     form_class = WorkspaceExchangeRateUpdateForm
     modal_template_name = "currencies/components/update_modal.html"
 
     def get_queryset(self):
-        return get_workspace_exchange_rates(organization=self.organization, workspace=self.workspace)
+        return get_workspace_exchange_rates(
+            organization=self.organization, workspace=self.workspace
+        )
 
     def get_post_url(self):
         return reverse_lazy(
@@ -661,14 +675,15 @@ class WorkspaceExchangeRateUpdateView(
 
     def get_modal_title(self):
         return "Update Exchange Rate"
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "exchange_rates"
         return context
-    
+
     def form_valid(self, form):
         from .services import update_workspace_exchange_rate
+
         try:
             update_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
@@ -680,7 +695,7 @@ class WorkspaceExchangeRateUpdateView(
             messages.error(self.request, e.message)
             return self._render_htmx_error_response(form)
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
@@ -695,7 +710,8 @@ class WorkspaceExchangeRateUpdateView(
         response = HttpResponse(f"{message_html}<table>{row_html}</table>")
         response["HX-trigger"] = "success"
         return response
-    
+
+
 class WorkspaceExchangeRateDetailView(BaseDetailView):
     model = WorkspaceExchangeRate
     template_name = "currencies/components/detail_modal.html"

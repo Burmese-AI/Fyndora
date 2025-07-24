@@ -171,9 +171,6 @@ class OrganizationContextMixin:
         context["organization"] = (
             self.organization if hasattr(self, "organization") else None
         )
-        context["can_add_org_entry"] = self.request.user.has_perm(
-            WorkspacePermissions.ADD_WORKSPACE_ENTRY, self.workspace
-        )
         context["org_member"] = self.org_member if hasattr(self, "org_member") else None
         context["entry"] = self.entry if hasattr(self, "entry") else None
         context["attachments"] = (

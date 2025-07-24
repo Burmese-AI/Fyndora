@@ -4,10 +4,12 @@ from django.urls import reverse_lazy
 from apps.core.views.base_views import BaseGetModalFormView
 from apps.core.views.crud_base_views import (
     BaseCreateView,
+    BaseDeleteView,
     BaseDetailView,
     BaseListView,
     BaseUpdateView,
 )
+from apps.workspaces.constants import WORKSPACE_CONTEXT_OBJECT_NAME
 from apps.workspaces.forms import WorkspaceExchangeRateUpdateForm, WorkspaceForm
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -716,3 +718,58 @@ class WorkspaceExchangeRateDetailView(BaseDetailView):
     model = WorkspaceExchangeRate
     template_name = "currencies/components/detail_modal.html"
     context_object_name = EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
+
+class WorkspaceExchangeRateDeleteView(
+    WorkspaceExchangeRateRequiredMixin, 
+    WorkspaceRequiredMixin, 
+    ExchangeRateUrlIdentifierMixin, 
+    BaseDeleteView
+):
+    model = WorkspaceExchangeRate
+
+    def get_queryset(self):
+        return get_workspace_exchange_rates(
+            organization=self.organization, workspace=self.workspace
+        )
+    
+    def get_exchange_rate_level(self):
+        return "workspace"
+    
+    def dispatch(self, request, *args, **kwargs):
+        print(f"\n\n\nDeleting exchange rate: {self.exchange_rate}")
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        print(f"\n\n\nDeleting exchange rate: {self.exchange_rate}")
+        from .services import delete_workspace_exchange_rate
+
+        try:
+            delete_workspace_exchange_rate(workspace_exchange_rate=self.exchange_rate,)
+        except Exception as e:
+            messages.error(self.request, f"Failed to delete entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+
+        messages.success(self.request, "Entry deleted successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        workspace_exchanage_rates = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=workspace_exchanage_rates,
+            context=base_context,
+            object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
+        )
+        
+        table_html = render_to_string(
+            "currencies/partials/table.html",
+            context=table_context,
+            request=self.request,
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}{table_html}")
+        return response

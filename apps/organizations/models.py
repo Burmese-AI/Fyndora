@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 
-from apps.core.models import baseModel
+from apps.core.models import baseModel, SoftDeleteModel
 from apps.organizations.constants import StatusChoices
 from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
@@ -122,7 +122,7 @@ class OrganizationMember(baseModel):
         return f"{self.user.username} in {self.organization.title}"
 
 
-class OrganizationExchangeRate(ExchangeRateBaseModel):
+class OrganizationExchangeRate(ExchangeRateBaseModel, SoftDeleteModel):
     organization_exchange_rate_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -138,6 +138,7 @@ class OrganizationExchangeRate(ExchangeRateBaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["organization", "currency", "effective_date"],
+                condition=models.Q(deleted_at__isnull=True),
                 name="unique_organization_exchange_rate",
             )
         ]

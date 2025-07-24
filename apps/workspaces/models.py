@@ -72,10 +72,22 @@ class Workspace(baseModel):
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
         permissions = (
-            (WorkspacePermissions.ASSIGN_TEAMS, WorkspacePermissions.ASSIGN_TEAMS.label),
-            (WorkspacePermissions.LOCK_WORKSPACE, WorkspacePermissions.LOCK_WORKSPACE.label),
-            (WorkspacePermissions.VIEW_DASHBOARD, WorkspacePermissions.VIEW_DASHBOARD.label),
-            (WorkspacePermissions.ADD_WORKSPACE_ENTRY, WorkspacePermissions.ADD_WORKSPACE_ENTRY.label),
+            (
+                WorkspacePermissions.ASSIGN_TEAMS,
+                WorkspacePermissions.ASSIGN_TEAMS.label,
+            ),
+            (
+                WorkspacePermissions.LOCK_WORKSPACE,
+                WorkspacePermissions.LOCK_WORKSPACE.label,
+            ),
+            (
+                WorkspacePermissions.VIEW_DASHBOARD,
+                WorkspacePermissions.VIEW_DASHBOARD.label,
+            ),
+            (
+                WorkspacePermissions.ADD_WORKSPACE_ENTRY,
+                WorkspacePermissions.ADD_WORKSPACE_ENTRY.label,
+            ),
             (
                 WorkspacePermissions.CHANGE_WORKSPACE_ENTRY,
                 WorkspacePermissions.CHANGE_WORKSPACE_ENTRY.label,
@@ -84,7 +96,10 @@ class Workspace(baseModel):
                 WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
                 WorkspacePermissions.DELETE_WORKSPACE_ENTRY.label,
             ),
-            (WorkspacePermissions.VIEW_WORKSPACE_ENTRY, WorkspacePermissions.VIEW_WORKSPACE_ENTRY.label),
+            (
+                WorkspacePermissions.VIEW_WORKSPACE_ENTRY,
+                WorkspacePermissions.VIEW_WORKSPACE_ENTRY.label,
+            ),
             (
                 WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
                 WorkspacePermissions.REVIEW_WORKSPACE_ENTRY.label,
@@ -93,7 +108,10 @@ class Workspace(baseModel):
                 WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
                 WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS.label,
             ),
-            (WorkspacePermissions.FLAG_WORKSPACE_ENTRY, WorkspacePermissions.FLAG_WORKSPACE_ENTRY.label),
+            (
+                WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
+                WorkspacePermissions.FLAG_WORKSPACE_ENTRY.label,
+            ),
             (
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT.label,

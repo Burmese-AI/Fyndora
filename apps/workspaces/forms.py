@@ -233,23 +233,24 @@ class WorkspaceExchangeRateCreateForm(BaseExchangeRateCreateForm):
         model = WorkspaceExchangeRate
         fields = BaseExchangeRateCreateForm.Meta.fields
         widgets = BaseExchangeRateCreateForm.Meta.widgets
-        
+
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
         super().__init__(*args, **kwargs)
-        
+
     def clean(self):
-        
         cleaned_data = super().clean()
-        #Check if an org exchange rate with this provided currency already exists
-        currency_code = cleaned_data.get('currency_code')
+        # Check if an org exchange rate with this provided currency already exists
+        currency_code = cleaned_data.get("currency_code")
         org_exchange_rate_exists = OrganizationExchangeRate.objects.filter(
-            organization = self.organization,
-            currency__code__iexact = currency_code,
+            organization=self.organization,
+            currency__code__iexact=currency_code,
         ).exists()
         if not org_exchange_rate_exists:
-            raise ValidationError("Organization exchange rate with this currency does not exist.")
+            raise ValidationError(
+                "Organization exchange rate with this currency does not exist."
+            )
         return cleaned_data
 
 
@@ -265,9 +266,8 @@ class WorkspaceExchangeRateUpdateForm(BaseExchangeRateUpdateForm):
                 }
             ),
         }
-        
+
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
         super().__init__(*args, **kwargs)
-        

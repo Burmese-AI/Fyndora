@@ -47,7 +47,10 @@ from apps.organizations.mixins.organization_exchange_rate.required_mixins import
     OrganizationExchangeRateRequiredMixin,
 )
 from apps.currencies.views.mixins import ExchangeRateUrlIdentifierMixin
-from apps.currencies.constants import EXCHANGE_RATE_CONTEXT_OBJECT_NAME, EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
+from apps.currencies.constants import (
+    EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
+    EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
+)
 
 
 # Create your views here.
@@ -492,9 +495,7 @@ class OrganizationExchangeRateDetailView(BaseDetailView):
 
 
 class OrganizationExchangerateDeleteView(
-    OrganizationExchangeRateRequiredMixin, 
-    OrganizationRequiredMixin, 
-    BaseDeleteView
+    OrganizationExchangeRateRequiredMixin, OrganizationRequiredMixin, BaseDeleteView
 ):
     model = OrganizationExchangeRate
 

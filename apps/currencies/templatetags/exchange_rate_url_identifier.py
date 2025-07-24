@@ -17,7 +17,11 @@ def get_update_exchange_rate_url(
     elif exchange_rate_level == "workspace":
         return reverse(
             "workspace_exchange_rate_update",
-            kwargs={"organization_id": organization.pk, "workspace_id": workspace.pk, "pk": exchange_rate.pk},
+            kwargs={
+                "organization_id": organization.pk,
+                "workspace_id": workspace.pk,
+                "pk": exchange_rate.pk,
+            },
         )
 
 
@@ -47,5 +51,9 @@ def get_detail_exchange_rate_url(
     elif exchange_rate_level == "workspace":
         return reverse(
             "workspace_exchange_rate_detail",
-            kwargs={"organization_id": organization.pk, "workspace_id": workspace.pk, "pk": exchange_rate.pk},
+            kwargs={
+                "organization_id": organization.pk,
+                "workspace_id": workspace.pk,
+                "pk": exchange_rate.pk,
+            },
         )

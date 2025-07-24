@@ -11,7 +11,7 @@ from apps.workspaces.views import (
     WorkspaceExchangeRateListView,
     WorkspaceExchangeRateCreateView,
     WorkspaceExchangeRateUpdateView,
-    WorkspaceExchangeRateDetailView
+    WorkspaceExchangeRateDetailView,
 )
 
 urlpatterns = [
@@ -58,5 +58,5 @@ urlpatterns = [
         "<uuid:workspace_id>/exchange-rates/<uuid:pk>/delete/",
         WorkspaceExchangeRateDetailView.as_view(),
         name="workspace_exchange_rate_detail",
-    )
+    ),
 ]

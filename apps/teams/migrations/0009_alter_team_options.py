@@ -4,14 +4,23 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0008_alter_team_options'),
+        ("teams", "0008_alter_team_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='team',
-            options={'ordering': ['-created_at'], 'permissions': [('add_team_member', 'Can add team member by Team Admin and Org Owner')], 'verbose_name': 'team', 'verbose_name_plural': 'teams'},
+            name="team",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": [
+                    (
+                        "add_team_member",
+                        "Can add team member by Team Admin and Org Owner",
+                    )
+                ],
+                "verbose_name": "team",
+                "verbose_name_plural": "teams",
+            },
         ),
     ]

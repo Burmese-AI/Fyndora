@@ -1,11 +1,14 @@
-import uuid
 import json
+import uuid
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 
+from .config import AuditConfig
 from .constants import AuditActionType
 
 
@@ -227,6 +230,16 @@ class AuditTrail(models.Model):
             return self._format_crud_operation(metadata)
         else:
             return self._format_generic(metadata)
+
+    def is_expired(self) -> bool:
+        """
+        Check if this audit log has exceeded its retention period.
+        """
+        now = timezone.now()
+        retention_days = AuditConfig.get_retention_days_for_action(self.action_type)
+        cutoff_date = now - timedelta(days=retention_days)
+        
+        return self.timestamp < cutoff_date
 
     def __str__(self):
         return f"{self.action_type} by {self.user} on {self.target_entity_type}:{self.target_entity_id} at {self.timestamp}"

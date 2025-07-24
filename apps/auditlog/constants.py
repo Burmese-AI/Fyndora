@@ -135,3 +135,23 @@ class AuditActionType(models.TextChoices):
     EMAIL_SENT = "email_sent", "Email Sent"
     EMAIL_FAILED = "email_failed", "Email Failed"
     NOTIFICATION_SENT = "notification_sent", "Notification Sent"
+
+
+def is_critical_action(action_type):
+    """
+    Check if an audit action type is considered critical.
+    Critical actions have longer retention periods.
+    """
+    action_value = action_type.value if hasattr(action_type, "value") else action_type
+
+    critical_actions = [
+        "user_deleted",
+        "organization_deleted",
+        "workspace_deleted",
+        "entry_deleted",
+        "remittance_deleted",
+        "unauthorized_access_attempt",
+        "data_exported",
+    ]
+
+    return action_value in critical_actions

@@ -1,6 +1,8 @@
-from apps.core.permissions import OrganizationPermissions
-from apps.core.permissions import WorkspacePermissions
-from apps.core.permissions import TeamPermissions
+from apps.core.permissions import (
+    OrganizationPermissions,
+    WorkspacePermissions,
+    TeamPermissions,
+)
 from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions
 

@@ -72,31 +72,31 @@ class Workspace(baseModel):
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
         permissions = (
-            (WorkspacePermissions.ASSIGN_TEAMS, "Can assign teams to workspace"),
-            (WorkspacePermissions.LOCK_WORKSPACE, "Can lock workspace"),
-            (WorkspacePermissions.VIEW_DASHBOARD, "Can view dashboard reports"),
-            (WorkspacePermissions.ADD_WORKSPACE_ENTRY, "Can add entry to workspace"),
+            (WorkspacePermissions.ASSIGN_TEAMS, WorkspacePermissions.ASSIGN_TEAMS.label),
+            (WorkspacePermissions.LOCK_WORKSPACE, WorkspacePermissions.LOCK_WORKSPACE.label),
+            (WorkspacePermissions.VIEW_DASHBOARD, WorkspacePermissions.VIEW_DASHBOARD.label),
+            (WorkspacePermissions.ADD_WORKSPACE_ENTRY, WorkspacePermissions.ADD_WORKSPACE_ENTRY.label),
             (
                 WorkspacePermissions.CHANGE_WORKSPACE_ENTRY,
-                "Can change entry in workspace",
+                WorkspacePermissions.CHANGE_WORKSPACE_ENTRY.label,
             ),
             (
                 WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
-                "Can delete entry in workspace",
+                WorkspacePermissions.DELETE_WORKSPACE_ENTRY.label,
             ),
-            (WorkspacePermissions.VIEW_WORKSPACE_ENTRY, "Can view entry in workspace"),
+            (WorkspacePermissions.VIEW_WORKSPACE_ENTRY, WorkspacePermissions.VIEW_WORKSPACE_ENTRY.label),
             (
                 WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
-                "Can review entry in workspace",
+                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY.label,
             ),
             (
                 WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
-                "Can upload attachments in workspace",
+                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS.label,
             ),
-            (WorkspacePermissions.FLAG_WORKSPACE_ENTRY, "Can flag entry in workspace"),
+            (WorkspacePermissions.FLAG_WORKSPACE_ENTRY, WorkspacePermissions.FLAG_WORKSPACE_ENTRY.label),
             (
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
-                "Can export workspace report",
+                WorkspacePermissions.EXPORT_WORKSPACE_REPORT.label,
             ),
         )
         constraints = [

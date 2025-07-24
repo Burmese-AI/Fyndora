@@ -7,7 +7,7 @@
 {% block content %}
     <div class="flex flex-row justify-between items-center gap-1">
         {% include "components/navigation_slider_for_members.html" %}
-        {% if request.user.is_org_owner %}
+        {% if request.user == organization.owner.user %}
         <button 
             class="btn btn-neutral w-auto md:px-10" 
             hx-get="{% url 'invitation_create' organization_id=organization.pk %}" 

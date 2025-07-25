@@ -69,7 +69,7 @@
       </a>
 
       <!-- Edit -->
-      {% if can_change_exchange_rate %}
+      {% if permissions.can_change_exchange_rate %}
       <a
         hx-get="{% get_update_exchange_rate_url url_identifier exchange_rate organization workspace %}"
         hx-target="#modal-placeholder"
@@ -84,6 +84,7 @@
       {% endif %}
 
       <!-- Delete -->
+      {% if permissions.can_delete_exchange_rate %}
       <button
         type="button"
         class="btn btn-xs btn-ghost cursor-pointer"
@@ -97,6 +98,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
+      {% endif %}
     </div>
   </td>
 </tr>

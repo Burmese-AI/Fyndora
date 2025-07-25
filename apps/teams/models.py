@@ -61,12 +61,7 @@ class TeamMember(baseModel):
     role = models.CharField(
         max_length=32, choices=TeamMemberRole.choices, default=TeamMemberRole.SUBMITTER
     )
-    entries = GenericRelation(
-        "entries.Entry",
-        content_type_field="submitter_content_type",
-        object_id_field="submitter_object_id",
-        related_query_name="team_member_entries",
-    )
+
 
     class Meta:
         verbose_name = "team member"

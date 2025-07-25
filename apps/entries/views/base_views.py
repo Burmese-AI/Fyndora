@@ -10,16 +10,17 @@ from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
 from .mixins import (
-    EntryRequiredMixin,
-    HtmxModalFormInvalidFormResponseMixin,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    UpdateEntryFormMixin,
+    # EntryRequiredMixin,
+    # HtmxModalFormInvalidFormResponseMixin,
+    # CreateEntryFormMixin,
+    # HtmxOobResponseMixin,
+    # UpdateEntryFormMixin,
     EntryUrlIdentifierMixin,
 )
+from apps.entries.constants import EntryType
 
 
-class BaseEntryListView(EntryUrlIdentifierMixin, ListView):
+class BaseEntryListView(ListView):
     model = Entry
     paginate_by = PAGINATION_SIZE
     context_object_name = CONTEXT_OBJECT_NAME
@@ -31,144 +32,156 @@ class BaseEntryListView(EntryUrlIdentifierMixin, ListView):
         if self.request.htmx:
             return render(self.request, self.table_template_name, context)
         return super().render_to_response(context, **response_kwargs)
+    
+class OrganizationLevelEntryView(EntryUrlIdentifierMixin):
+    def get_entry_type(self):
+        return EntryType.ORG_EXP
+
+class WorkspaceLevelEntryView(EntryUrlIdentifierMixin):
+    def get_entry_type(self):
+        return EntryType.WORKSPACE_EXP
+
+class TeamLevelEntryView(EntryUrlIdentifierMixin):
+    def get_entry_type(self):
+        return EntryType.INCOME
 
 
-class EntryModalFormViewBase(HtmxModalFormInvalidFormResponseMixin):
-    modal_template_name = None
+# class EntryModalFormViewBase(HtmxModalFormInvalidFormResponseMixin):
+#     modal_template_name = None
 
-    def get_post_url(self) -> str:
-        raise NotImplementedError("You must implement get_post_url() in the subclass")
+#     def get_post_url(self) -> str:
+#         raise NotImplementedError("You must implement get_post_url() in the subclass")
 
-    def get_modal_title(self) -> str:
-        return ""
+#     def get_modal_title(self) -> str:
+#         return ""
 
-    def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
-        self.object = None
-        form = self.get_form()
-        context = self.get_context_data()
-        context.update(
-            {
-                "form": form,
-                "is_oob": False,
-                "custom_title": self.get_modal_title(),
-                "post_url": self.get_post_url(),
-            }
-        )
-        return render(request, self.modal_template_name, context)
-
-
-class BaseEntryCreateView(
-    EntryModalFormViewBase,
-    CreateEntryFormMixin,
-    HtmxOobResponseMixin,
-    EntryUrlIdentifierMixin,
-    CreateView,
-):
-    modal_template_name = "entries/components/create_modal.html"
+#     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
+#         self.object = None
+#         form = self.get_form()
+#         context = self.get_context_data()
+#         context.update(
+#             {
+#                 "form": form,
+#                 "is_oob": False,
+#                 "custom_title": self.get_modal_title(),
+#                 "post_url": self.get_post_url(),
+#             }
+#         )
+#         return render(request, self.modal_template_name, context)
 
 
-class BaseEntryUpdateView(
-    EntryRequiredMixin,
-    EntryModalFormViewBase,
-    UpdateEntryFormMixin,
-    HtmxOobResponseMixin,
-    EntryUrlIdentifierMixin,
-    UpdateView,
-):
-    modal_template_name = "entries/components/update_modal.html"
-
-    def form_valid(self, form):
-        # Update org exp entry along with attachements if provided
-        from ..services import update_entry_with_attachments
-
-        update_entry_with_attachments(
-            entry=self.entry,
-            amount=form.cleaned_data["amount"],
-            description=form.cleaned_data["description"],
-            status=form.cleaned_data["status"],
-            reviewed_by=self.org_member,
-            review_notes=form.cleaned_data["review_notes"],
-            attachments=form.cleaned_data["attachment_files"],
-            replace_attachments=form.cleaned_data["replace_attachments"],
-        )
-
-        messages.success(
-            self.request, f"Expense entry {self.entry.pk} updated successfully"
-        )
-        return self._render_htmx_success_response()
-
-    def _render_htmx_success_response(self) -> HttpResponse:
-        base_context = self.get_context_data()
-
-        row_html = render_to_string(
-            "entries/partials/row.html", context=base_context, request=self.request
-        )
-
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-
-        response = HttpResponse(f"{message_html}<table>{row_html}</table>")
-        response["HX-trigger"] = "success"
-        return response
+# class BaseEntryCreateView(
+#     EntryModalFormViewBase,
+#     CreateEntryFormMixin,
+#     HtmxOobResponseMixin,
+#     EntryUrlIdentifierMixin,
+#     CreateView,
+# ):
+#     modal_template_name = "entries/components/create_modal.html"
 
 
-class BaseEntryDeleteView(
-    EntryRequiredMixin,
-    HtmxOobResponseMixin,
-    HtmxModalFormInvalidFormResponseMixin,
-    DeleteView,
-):
-    def get_queryset(self):
-        raise NotImplementedError("You must implement get_queryset() in the subclass")
+# class BaseEntryUpdateView(
+#     EntryRequiredMixin,
+#     EntryModalFormViewBase,
+#     UpdateEntryFormMixin,
+#     HtmxOobResponseMixin,
+#     EntryUrlIdentifierMixin,
+#     UpdateView,
+# ):
+#     modal_template_name = "entries/components/update_modal.html"
 
-    def form_valid(self, form):
-        from ..services import delete_entry
+#     def form_valid(self, form):
+#         # Update org exp entry along with attachements if provided
+#         from ..services import update_entry_with_attachments
 
-        try:
-            delete_entry(self.entry)
-        except Exception as e:
-            messages.error(self.request, e)
-            return self._render_htmx_error_response(form)
-        messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
-        return self._render_htmx_success_response()
+#         update_entry_with_attachments(
+#             entry=self.entry,
+#             amount=form.cleaned_data["amount"],
+#             description=form.cleaned_data["description"],
+#             status=form.cleaned_data["status"],
+#             reviewed_by=self.org_member,
+#             review_notes=form.cleaned_data["review_notes"],
+#             attachments=form.cleaned_data["attachment_files"],
+#             replace_attachments=form.cleaned_data["replace_attachments"],
+#         )
 
-    def _render_htmx_success_response(self) -> HttpResponse:
-        base_context = self.get_context_data()
-        from apps.core.utils import get_paginated_context
+#         messages.success(
+#             self.request, f"Expense entry {self.entry.pk} updated successfully"
+#         )
+#         return self._render_htmx_success_response()
 
-        entries = self.get_queryset()
-        table_context = get_paginated_context(
-            queryset=entries,
-            context=base_context,
-            object_name=CONTEXT_OBJECT_NAME,
-        )
+#     def _render_htmx_success_response(self) -> HttpResponse:
+#         base_context = self.get_context_data()
 
-        table_html = render_to_string(
-            "entries/partials/table.html", context=table_context, request=self.request
-        )
+#         row_html = render_to_string(
+#             "entries/partials/row.html", context=base_context, request=self.request
+#         )
 
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-        response = HttpResponse(f"{message_html}{table_html}")
-        return response
+#         message_html = render_to_string(
+#             "includes/message.html", context=base_context, request=self.request
+#         )
 
-    def _render_htmx_error_response(self, form) -> HttpResponse:
-        base_context = self.get_context_data()
-
-        message_html = render_to_string(
-            self.message_template_name, context=base_context, request=self.request
-        )
-
-        return HttpResponse(f"{message_html}")
+#         response = HttpResponse(f"{message_html}<table>{row_html}</table>")
+#         response["HX-trigger"] = "success"
+#         return response
 
 
-class BaseEntryDetailView(
-    LoginRequiredMixin,
-    EntryRequiredMixin,
-    DetailView,
-):
-    model = Entry
-    template_name = "entries/components/detail_modal.html"
-    context_object_name = DETAIL_CONTEXT_OBJECT_NAME
+# class BaseEntryDeleteView(
+#     EntryRequiredMixin,
+#     HtmxOobResponseMixin,
+#     HtmxModalFormInvalidFormResponseMixin,
+#     DeleteView,
+# ):
+#     def get_queryset(self):
+#         raise NotImplementedError("You must implement get_queryset() in the subclass")
+
+#     def form_valid(self, form):
+#         from ..services import delete_entry
+
+#         try:
+#             delete_entry(self.entry)
+#         except Exception as e:
+#             messages.error(self.request, e)
+#             return self._render_htmx_error_response(form)
+#         messages.success(self.request, f"Entry {self.entry.pk} deleted successfully")
+#         return self._render_htmx_success_response()
+
+#     def _render_htmx_success_response(self) -> HttpResponse:
+#         base_context = self.get_context_data()
+#         from apps.core.utils import get_paginated_context
+
+#         entries = self.get_queryset()
+#         table_context = get_paginated_context(
+#             queryset=entries,
+#             context=base_context,
+#             object_name=CONTEXT_OBJECT_NAME,
+#         )
+
+#         table_html = render_to_string(
+#             "entries/partials/table.html", context=table_context, request=self.request
+#         )
+
+#         message_html = render_to_string(
+#             "includes/message.html", context=base_context, request=self.request
+#         )
+#         response = HttpResponse(f"{message_html}{table_html}")
+#         return response
+
+#     def _render_htmx_error_response(self, form) -> HttpResponse:
+#         base_context = self.get_context_data()
+
+#         message_html = render_to_string(
+#             self.message_template_name, context=base_context, request=self.request
+#         )
+
+#         return HttpResponse(f"{message_html}")
+
+
+# class BaseEntryDetailView(
+#     LoginRequiredMixin,
+#     EntryRequiredMixin,
+#     DetailView,
+# ):
+#     model = Entry
+#     template_name = "entries/components/detail_modal.html"
+#     context_object_name = DETAIL_CONTEXT_OBJECT_NAME

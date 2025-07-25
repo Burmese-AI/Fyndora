@@ -13,7 +13,7 @@ class EntryType(models.TextChoices):
 
 
 class EntryStatus(models.TextChoices):
-    PENDING_REVIEW = "pending", "Pending"
+    PENDING = "pending", "Pending"
     REVIEWED = "reviewed", "Reviewed"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"

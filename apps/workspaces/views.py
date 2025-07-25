@@ -577,6 +577,14 @@ class WorkspaceExchangeRateCreateView(
     form_class = WorkspaceExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(WorkspacePermissions.ADD_WORKSPACE_CURRENCY, self.workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add exchange rates to this workspace.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_workspace_exchange_rates(
             organization=self.organization,

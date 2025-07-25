@@ -43,9 +43,9 @@ def teams_view(request, organization_id):
         # sending true or false to the template to display the new team button
         can_add_team = request.user.has_perm(
             OrganizationPermissions.ADD_TEAM, organization
-        ) # false
+        )  # false
         permissions = {
-            "can_add_team": can_add_team, #false
+            "can_add_team": can_add_team,  # false
         }
         context = {
             "teams": teams,

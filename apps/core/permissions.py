@@ -54,7 +54,7 @@ class WorkspacePermissions(models.TextChoices):
         "delete_workspace_currency",
         "Can delete workspace currency by WA and Org Owner",
     )
-   
+
 
 class OrganizationPermissions(models.TextChoices):
     """

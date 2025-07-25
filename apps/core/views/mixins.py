@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from apps.workspaces.models import Workspace
 from apps.core.permissions import WorkspacePermissions
 
+
 class OrganizationRequiredMixin:
     """
     Mixin for organization required.
@@ -59,9 +60,15 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
         context["is_workspace_admin"] = self.is_workspace_admin
         context["is_operation_reviewer"] = self.is_operation_reviewer
         context["permissions"] = {
-            "can_add_exchange_rate": self.request.user.has_perm(WorkspacePermissions.ADD_WORKSPACE_CURRENCY, self.workspace),
-            "can_change_exchange_rate": self.request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY, self.workspace),
-            "can_delete_exchange_rate": self.request.user.has_perm(WorkspacePermissions.DELETE_WORKSPACE_CURRENCY, self.workspace),
+            "can_add_exchange_rate": self.request.user.has_perm(
+                WorkspacePermissions.ADD_WORKSPACE_CURRENCY, self.workspace
+            ),
+            "can_change_exchange_rate": self.request.user.has_perm(
+                WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY, self.workspace
+            ),
+            "can_delete_exchange_rate": self.request.user.has_perm(
+                WorkspacePermissions.DELETE_WORKSPACE_CURRENCY, self.workspace
+            ),
         }
         return context
 

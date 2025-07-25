@@ -4,19 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0005_currency_created_at_currency_updated_at'),
+        ("currencies", "0005_currency_created_at_currency_updated_at"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='currency',
-            name='deleted_at',
+            model_name="currency",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddConstraint(
-            model_name='currency',
-            constraint=models.UniqueConstraint(condition=models.Q(('deleted_at__isnull', True)), fields=('code',), name='unique_currency_code'),
+            model_name="currency",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("deleted_at__isnull", True)),
+                fields=("code",),
+                name="unique_currency_code",
+            ),
         ),
     ]

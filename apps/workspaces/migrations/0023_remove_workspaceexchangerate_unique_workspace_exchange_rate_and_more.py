@@ -4,25 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0006_currency_deleted_at_currency_unique_currency_code'),
-        ('organizations', '0023_remove_organizationexchangerate_unique_organization_exchange_rate_and_more'),
-        ('workspaces', '0022_alter_workspace_options'),
+        ("currencies", "0006_currency_deleted_at_currency_unique_currency_code"),
+        (
+            "organizations",
+            "0023_remove_organizationexchangerate_unique_organization_exchange_rate_and_more",
+        ),
+        ("workspaces", "0022_alter_workspace_options"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='workspaceexchangerate',
-            name='unique_workspace_exchange_rate',
+            model_name="workspaceexchangerate",
+            name="unique_workspace_exchange_rate",
         ),
         migrations.AddField(
-            model_name='workspaceexchangerate',
-            name='deleted_at',
+            model_name="workspaceexchangerate",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddConstraint(
-            model_name='workspaceexchangerate',
-            constraint=models.UniqueConstraint(condition=models.Q(('deleted_at__isnull', True)), fields=('workspace', 'currency', 'effective_date'), name='unique_workspace_exchange_rate'),
+            model_name="workspaceexchangerate",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("deleted_at__isnull", True)),
+                fields=("workspace", "currency", "effective_date"),
+                name="unique_workspace_exchange_rate",
+            ),
         ),
     ]

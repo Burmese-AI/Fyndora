@@ -20,6 +20,8 @@ ROLES = {
         OrganizationPermissions.CHANGE_ORG_ENTRY,
         OrganizationPermissions.DELETE_ORG_ENTRY,
         OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
+        WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
+        WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
     ],
     "WORKSPACE_ADMIN": [
         OrganizationPermissions.ADD_TEAM,
@@ -37,6 +39,7 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
+        WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
     ],
     "OPERATIONS_REVIEWER": [
         WorkspacePermissions.ASSIGN_TEAMS,

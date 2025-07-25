@@ -17,6 +17,8 @@ def assign_workspace_permissions(workspace):
 
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
+    org_owner_group_name = f"Org Owner - {workspace.organization.organization_id}"
+
     try:
         workspace_admins_group, _ = Group.objects.get_or_create(
             name=workspace_admins_group_name
@@ -24,13 +26,14 @@ def assign_workspace_permissions(workspace):
         operations_reviewer_group, _ = Group.objects.get_or_create(
             name=operations_reviewer_group_name
         )
-
+        org_owner_group, _ = Group.objects.get_or_create(name=org_owner_group_name)
         # getting the permissions for the workspace admin and operations reviewer
 
         workspace_admin_permissions = get_permissions_for_role("WORKSPACE_ADMIN")
         operations_reviewer_permissions = get_permissions_for_role(
             "OPERATIONS_REVIEWER"
         )
+        org_owner_permissions = get_permissions_for_role("ORG_OWNER")
 
         for perm in workspace_admin_permissions:
             if perm == OrganizationPermissions.ADD_TEAM:
@@ -41,8 +44,13 @@ def assign_workspace_permissions(workspace):
         for perm in operations_reviewer_permissions:
             assign_perm(perm, operations_reviewer_group, workspace)
 
-        print(f"Assigned permissions to {workspace_admins_group} for {workspace}")
-        print(f"Assigned permissions to {operations_reviewer_group} for {workspace}")
+        for perm in org_owner_permissions:
+            if (
+                perm == WorkspacePermissions.ADD_WORKSPACE_CURRENCY
+                or perm == WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY
+                or perm == WorkspacePermissions.DELETE_WORKSPACE_CURRENCY
+            ):
+                assign_perm(perm, org_owner_group, workspace)
 
         # adding owner and workspace admin to the workspace admin group
         if workspace.workspace_admin is not None:

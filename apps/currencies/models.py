@@ -13,9 +13,9 @@ from apps.core.models import SoftDeleteModel, baseModel
 class Currency(baseModel, SoftDeleteModel):
     currency_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
     name = models.CharField(max_length=100, blank=True, null=True)
-    #Note: Field Level constraint can't be conditional 
-    #That's why, its unique constraint is defined at model (table) level in Meta class
-    code = models.CharField(max_length=3) 
+    # Note: Field Level constraint can't be conditional
+    # That's why, its unique constraint is defined at model (table) level in Meta class
+    code = models.CharField(max_length=3)
 
     def clean(self):
         super().clean()

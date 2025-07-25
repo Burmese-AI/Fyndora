@@ -125,9 +125,7 @@ def update_workspace_exchange_rate(
         raise ValidationError(f"Failed to update workspace exchange rate: {str(e)}")
 
 
-def delete_workspace_exchange_rate(
-    *, workspace_exchange_rate
-):
+def delete_workspace_exchange_rate(*, workspace_exchange_rate):
     try:
         workspace_exchange_rate.delete()
     except Exception as e:

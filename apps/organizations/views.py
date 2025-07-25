@@ -495,16 +495,16 @@ class OrganizationExchangeRateDetailView(BaseDetailView):
 
 
 class OrganizationExchangerateDeleteView(
-    OrganizationExchangeRateRequiredMixin, 
-    OrganizationRequiredMixin, 
-    ExchangeRateUrlIdentifierMixin, 
-    BaseDeleteView
+    OrganizationExchangeRateRequiredMixin,
+    OrganizationRequiredMixin,
+    ExchangeRateUrlIdentifierMixin,
+    BaseDeleteView,
 ):
     model = OrganizationExchangeRate
 
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
-    
+
     def get_exchange_rate_level(self):
         return "organization"
 
@@ -533,7 +533,7 @@ class OrganizationExchangerateDeleteView(
             context=base_context,
             object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
         )
-        
+
         table_html = render_to_string(
             "currencies/partials/table.html",
             context=table_context,

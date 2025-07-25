@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('currencies', '0006_currency_deleted_at_currency_unique_currency_code'),
+        ("currencies", "0006_currency_deleted_at_currency_unique_currency_code"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='currency',
-            name='code',
+            model_name="currency",
+            name="code",
             field=models.CharField(max_length=3),
         ),
     ]

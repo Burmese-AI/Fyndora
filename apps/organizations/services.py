@@ -49,7 +49,6 @@ def create_organization_with_owner(*, form, user) -> Organization:
 
         # getting the permissions for the org owner
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
-        print(org_owner_permissions)
 
         # Assign permissions to the org owner group
         for perm in org_owner_permissions:

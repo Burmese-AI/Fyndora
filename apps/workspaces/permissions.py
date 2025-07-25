@@ -42,6 +42,7 @@ def assign_workspace_permissions(workspace):
             assign_perm(perm, operations_reviewer_group, workspace)
 
         print(f"Assigned permissions to {workspace_admins_group} for {workspace}")
+        print(f"Permissions: {workspace_admin_permissions}")
         print(f"Assigned permissions to {operations_reviewer_group} for {workspace}")
 
         # adding owner and workspace admin to the workspace admin group

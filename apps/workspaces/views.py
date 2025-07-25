@@ -564,6 +564,7 @@ class WorkspaceExchangeRateListView(
         context = super().get_context_data(**kwargs)
         context["view"] = "exchange_rates"
         context["can_add_exchange_rate"] = self.request.user.has_perm(WorkspacePermissions.ADD_WORKSPACE_CURRENCY, self.workspace)
+        context["can_change_exchange_rate"] = self.request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY, self.workspace)
         return context
 
 
@@ -666,6 +667,14 @@ class WorkspaceExchangeRateUpdateView(
     form_class = WorkspaceExchangeRateUpdateForm
     modal_template_name = "currencies/components/update_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY, self.workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to update exchange rates for this workspace.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_workspace_exchange_rates(
             organization=self.organization, workspace=self.workspace
@@ -745,7 +754,11 @@ class WorkspaceExchangeRateDeleteView(
         return "workspace"
     
     def dispatch(self, request, *args, **kwargs):
-        print(f"\n\n\nDeleting exchange rate: {self.exchange_rate}")
+        if not request.user.has_perm(WorkspacePermissions.DELETE_WORKSPACE_CURRENCY, self.workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete exchange rates from this workspace.",
+            )
         return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):

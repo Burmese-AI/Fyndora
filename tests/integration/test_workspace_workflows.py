@@ -7,7 +7,7 @@ Tests how workspaces work with organizations, teams, admins, and business proces
 import pytest
 from decimal import Decimal
 from datetime import date, timedelta
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 
 from apps.teams.constants import TeamMemberRole
 from apps.workspaces.models import Workspace
@@ -84,7 +84,6 @@ class TestWorkspaceCreationWorkflows:
         WorkspaceFactory(organization=org, title="Unique Workspace")
 
         # Attempting to create another workspace with same title in same org should fail
-        from django.db import transaction
 
         with pytest.raises(IntegrityError):
             with transaction.atomic():

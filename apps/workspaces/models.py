@@ -116,6 +116,14 @@ class Workspace(baseModel):
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
                 WorkspacePermissions.EXPORT_WORKSPACE_REPORT.label,
             ),
+            (
+                WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
+                WorkspacePermissions.ADD_WORKSPACE_CURRENCY.label,
+            ),
+            (
+                WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
+                WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

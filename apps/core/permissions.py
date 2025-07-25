@@ -42,7 +42,15 @@ class WorkspacePermissions(models.TextChoices):
         "flag_workspace_entry",
         "Can flag workspace entry by WA and Org Owner",
     )
-
+    ADD_WORKSPACE_CURRENCY = (
+        "add_workspace_currency",
+        "Can add workspace currency by WA and Org Owner",
+    )
+    CHANGE_WORKSPACE_CURRENCY = (
+        "change_workspace_currency",
+        "Can change workspace currency by WA and Org Owner",
+    )
+   
 
 class OrganizationPermissions(models.TextChoices):
     """

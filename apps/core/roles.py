@@ -37,6 +37,8 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
+        WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
+        WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
     ],
     "OPERATIONS_REVIEWER": [
         WorkspacePermissions.ASSIGN_TEAMS,

@@ -563,6 +563,7 @@ class WorkspaceExchangeRateListView(
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "exchange_rates"
+        context["can_add_exchange_rate"] = self.request.user.has_perm(WorkspacePermissions.ADD_WORKSPACE_CURRENCY, self.workspace)
         return context
 
 

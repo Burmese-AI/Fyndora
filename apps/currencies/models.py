@@ -47,12 +47,10 @@ class ExchangeRateBaseModel(baseModel):
         related_query_name="%(app_label)s_%(class)s",
     )
     rate = models.DecimalField(
-        max_digits=5,  # 0.00 - 100.00
+        max_digits=10,  # 0.00 - 999999999.99
         decimal_places=2,
-        default=Decimal("0.00"),
         validators=[
-            MinValueValidator(Decimal("0.00")),
-            MaxValueValidator(Decimal("999.99")),
+            MinValueValidator(Decimal("0.01")),
         ],
     )
     effective_date = models.DateField(

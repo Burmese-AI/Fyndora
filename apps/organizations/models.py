@@ -96,12 +96,6 @@ class OrganizationMember(baseModel):
         related_name="organization_memberships",
     )
     is_active = models.BooleanField(default=True)
-    entries = GenericRelation(
-        "entries.Entry",
-        content_type_field="submitter_content_type",
-        object_id_field="submitter_object_id",
-        related_query_name="organization_member_entries",
-    )
 
     @property
     def is_org_owner(self):

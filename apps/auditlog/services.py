@@ -1,4 +1,7 @@
 import logging
+import uuid
+from decimal import Decimal
+from datetime import datetime, date
 from typing import Dict, Optional
 
 from django.contrib.auth import get_user_model
@@ -15,6 +18,31 @@ from .selectors import get_expired_logs_queryset
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def make_json_serializable(obj):
+    """
+    Convert objects to JSON serializable format.
+    Raises TypeError for truly non-serializable objects.
+    """
+    if obj is None:
+        return None
+    elif isinstance(obj, (str, int, float, bool)):
+        return obj
+    elif isinstance(obj, (uuid.UUID,)):
+        return str(obj)
+    elif isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {key: make_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [make_json_serializable(item) for item in obj]
+    else:
+        # For truly non-serializable objects, raise an exception
+        # instead of converting to string
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def audit_create(
@@ -46,13 +74,16 @@ def audit_create(
             ):
                 workspace = target_entity.workspace_team.workspace
 
+        # Ensure metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata or {})
+
         data = {
             "workspace": workspace,
             "user": user,
             "action_type": action_type,
             "target_entity_id": target_entity_id,
             "target_entity_type": target_entity_type,
-            "metadata": metadata or {},
+            "metadata": serializable_metadata,
         }
 
         return model_update(audit, data)
@@ -66,7 +97,7 @@ def audit_create_authentication_event(*, user, action_type, metadata=None):
     """
     Service to create authentication-related audit log entries.
     """
-    enhanced_metadata = metadata or {}
+    enhanced_metadata = make_json_serializable(metadata or {})
     enhanced_metadata.update(
         {
             "event_category": "authentication",
@@ -88,7 +119,7 @@ def audit_create_security_event(
     """
     Service to create security-related audit log entries.
     """
-    enhanced_metadata = metadata or {}
+    enhanced_metadata = make_json_serializable(metadata or {})
     enhanced_metadata.update(
         {
             "event_category": "security",

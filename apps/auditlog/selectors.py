@@ -448,8 +448,6 @@ class AuditLogSelector:
             # Search in user information
             search_conditions |= Q(user__username__icontains=term)
             search_conditions |= Q(user__email__icontains=term)
-            search_conditions |= Q(user__first_name__icontains=term)
-            search_conditions |= Q(user__last_name__icontains=term)
 
             qs = qs.filter(search_conditions)
 

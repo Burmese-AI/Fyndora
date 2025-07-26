@@ -3,7 +3,10 @@ Signal handlers for automatic audit logging.
 """
 
 import logging
+from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Dict, List, Optional
+from uuid import UUID
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
@@ -21,11 +24,13 @@ logger = logging.getLogger(__name__)
 
 class AuditModelRegistry:
     """Registry for managing audit configurations for different models."""
-    
+
     _registry: Dict[str, Dict] = {}
-    
+
     @classmethod
-    def register_model(cls, model_class, action_types: Dict[str, str], tracked_fields: List[str]):
+    def register_model(
+        cls, model_class, action_types: Dict[str, str], tracked_fields: List[str]
+    ):
         """Register a model for audit logging with its configuration."""
         model_key = f"{model_class._meta.app_label}.{model_class.__name__}"
         cls._registry[model_key] = {
@@ -34,17 +39,17 @@ class AuditModelRegistry:
             "tracked_fields": tracked_fields,
         }
         logger.info(f"Registered audit logging for model: {model_key}")
-    
+
     @classmethod
     def get_config(cls, model_key: str) -> Optional[Dict]:
         """Get audit configuration for a model."""
         return cls._registry.get(model_key)
-    
+
     @classmethod
     def get_all_registered_models(cls) -> Dict[str, Dict]:
         """Get all registered models and their configurations."""
         return cls._registry.copy()
-    
+
     @classmethod
     def auto_register_models(cls):
         """Automatically register all models that should be logged."""
@@ -54,17 +59,15 @@ class AuditModelRegistry:
                 config = cls._get_default_model_config(model)
                 if config:
                     cls.register_model(
-                        model, 
-                        config["action_types"], 
-                        config["tracked_fields"]
+                        model, config["action_types"], config["tracked_fields"]
                     )
-    
+
     @classmethod
     def _get_default_model_config(cls, model_class) -> Optional[Dict]:
         """Get default audit configuration for a model based on its type."""
         app_label = model_class._meta.app_label
         model_name = model_class.__name__
-        
+
         # Define default configurations for known models
         default_configs = {
             "organizations.Organization": {
@@ -73,7 +76,7 @@ class AuditModelRegistry:
                     "updated": AuditActionType.ORGANIZATION_UPDATED,
                     "deleted": AuditActionType.ORGANIZATION_DELETED,
                 },
-                "tracked_fields": ["name", "status", "description"],
+                "tracked_fields": ["title", "status", "description"],
             },
             "workspaces.Workspace": {
                 "action_types": {
@@ -81,7 +84,7 @@ class AuditModelRegistry:
                     "updated": AuditActionType.WORKSPACE_UPDATED,
                     "deleted": AuditActionType.WORKSPACE_DELETED,
                 },
-                "tracked_fields": ["name", "description", "status"],
+                "tracked_fields": ["title", "description", "status"],
             },
             "entries.Entry": {
                 "action_types": {
@@ -97,7 +100,7 @@ class AuditModelRegistry:
                     "updated": AuditActionType.TEAM_UPDATED,
                     "deleted": AuditActionType.TEAM_DELETED,
                 },
-                "tracked_fields": ["name", "description", "status"],
+                "tracked_fields": ["title", "description"],
             },
             "remittance.Remittance": {
                 "action_types": {
@@ -116,7 +119,7 @@ class AuditModelRegistry:
                 "tracked_fields": ["email", "status", "role"],
             },
         }
-        
+
         model_key = f"{app_label}.{model_name}"
         return default_configs.get(model_key)
 
@@ -158,6 +161,25 @@ class BaseAuditHandler:
         return changes
 
     @staticmethod
+    def _serialize_field_value(value):
+        """Convert field value to JSON-serializable type."""
+        if value is None:
+            return None
+
+        # Handle common Django field types that aren't JSON serializable
+
+        if isinstance(value, Decimal):
+            return str(value)
+        elif isinstance(value, (datetime, date, time)):
+            return value.isoformat()
+        elif isinstance(value, UUID):
+            return str(value)
+        elif hasattr(value, "pk"):  # Django model instance
+            return str(value.pk)
+        else:
+            return value
+
+    @staticmethod
     def build_metadata(instance, changes=None, **extra_metadata):
         """Build metadata dictionary for audit logging."""
         metadata = {"automatic_logging": True, **extra_metadata}
@@ -172,13 +194,13 @@ class GenericAuditSignalHandler(BaseAuditHandler):
     """Generic signal handler for common CRUD operations with improved registry integration."""
 
     @classmethod
-    def create_handlers(cls, model_string, action_types, tracked_fields):
+    def create_handlers(cls, model_class, action_types, tracked_fields):
         """
         Factory method to create signal handlers for a model.
         Enhanced with better error handling and logging.
         """
 
-        @receiver(pre_save, sender=model_string)
+        @receiver(pre_save, sender=model_class)
         @safe_audit_log
         def capture_changes(sender, instance, **kwargs):
             """Capture field changes before save for update tracking."""
@@ -191,18 +213,22 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                         if hasattr(old_instance, field)
                     }
                 except ObjectDoesNotExist:
-                    logger.debug(f"Old instance not found for {sender.__name__} with pk={instance.pk}")
+                    logger.debug(
+                        f"Old instance not found for {sender.__name__} with pk={instance.pk}"
+                    )
                 except Exception as e:
-                    logger.warning(f"Error capturing changes for {sender.__name__}: {e}")
+                    logger.warning(
+                        f"Error capturing changes for {sender.__name__}: {e}"
+                    )
 
-        @receiver(post_save, sender=model_string)
+        @receiver(post_save, sender=model_class)
         @safe_audit_log
         def log_changes(sender, instance, created, **kwargs):
             """Log create and update operations."""
             # Skip logging if model should not be logged (dynamic check)
             if not should_log_model(sender):
                 return
-                
+
             audit_context = cls.get_audit_context(instance)
 
             if created:
@@ -211,7 +237,9 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                     instance,
                     operation_type="create",
                     **{
-                        field: getattr(instance, field, None)
+                        field: cls._serialize_field_value(
+                            getattr(instance, field, None)
+                        )
                         for field in tracked_fields
                         if hasattr(instance, field)
                     },
@@ -223,7 +251,9 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                     target_entity=instance,
                     metadata=metadata,
                 )
-                logger.debug(f"Logged creation of {sender.__name__} with id={instance.pk}")
+                logger.debug(
+                    f"Logged creation of {sender.__name__} with id={instance.pk}"
+                )
             else:
                 # Log updates only if there are actual changes
                 old_values = audit_context["old_values"]
@@ -236,12 +266,12 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 changes.append(
                                     {
                                         "field": field,
-                                        "old_value": str(old_value)
-                                        if old_value is not None
-                                        else None,
-                                        "new_value": str(new_value)
-                                        if new_value is not None
-                                        else None,
+                                        "old_value": cls._serialize_field_value(
+                                            old_value
+                                        ),
+                                        "new_value": cls._serialize_field_value(
+                                            new_value
+                                        ),
                                     }
                                 )
 
@@ -251,7 +281,9 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                             operation_type="update",
                             changes=changes,
                             **{
-                                field: getattr(instance, field, None)
+                                field: cls._serialize_field_value(
+                                    getattr(instance, field, None)
+                                )
                                 for field in tracked_fields
                                 if hasattr(instance, field)
                             },
@@ -263,22 +295,24 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                             target_entity=instance,
                             metadata=metadata,
                         )
-                        logger.debug(f"Logged update of {sender.__name__} with id={instance.pk}, {len(changes)} changes")
+                        logger.debug(
+                            f"Logged update of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
+                        )
 
-        @receiver(pre_delete, sender=model_string)
+        @receiver(pre_delete, sender=model_class)
         @safe_audit_log
         def log_deletion(sender, instance, **kwargs):
             """Log deletion operations."""
             # Skip logging if model should not be logged (dynamic check)
             if not should_log_model(sender):
                 return
-                
+
             audit_context = cls.get_audit_context(instance)
             metadata = cls.build_metadata(
                 instance,
                 operation_type="delete",
                 **{
-                    field: getattr(instance, field, None)
+                    field: cls._serialize_field_value(getattr(instance, field, None))
                     for field in tracked_fields
                     if hasattr(instance, field)
                 },
@@ -301,13 +335,13 @@ class GenericAuditSignalHandler(BaseAuditHandler):
     def register_all_models(cls):
         """Register signal handlers for all models in the registry."""
         AuditModelRegistry.auto_register_models()
-        
+
         for model_key, config in AuditModelRegistry.get_all_registered_models().items():
             try:
                 cls.create_handlers(
                     config["model_class"],
                     config["action_types"],
-                    config["tracked_fields"]
+                    config["tracked_fields"],
                 )
                 logger.info(f"Successfully registered signal handlers for {model_key}")
             except Exception as e:
@@ -323,12 +357,10 @@ def initialize_audit_signals():
         logger.error(f"Failed to initialize audit signal handlers: {e}")
 
 
-# Initialize the audit signals when this module is imported
-initialize_audit_signals()
-
-
 # Utility functions for manual registration
-def register_custom_model(model_class, action_types: Dict[str, str], tracked_fields: List[str]):
+def register_custom_model(
+    model_class, action_types: Dict[str, str], tracked_fields: List[str]
+):
     """
     Manually register a custom model for audit logging.
     """

@@ -344,6 +344,8 @@ def safe_audit_log(func):
             return func(*args, **kwargs)
         except Exception as e:
             logger.error(f"Audit logging failed in {func.__name__}: {e}", exc_info=True)
+            # Don't re-raise to avoid breaking main operations
+            return None
 
     return wrapper
 
@@ -383,26 +385,37 @@ def should_log_model(model_class):
 
     # Exclude Django internal models
     excluded_models = {
-        "Session", "LogEntry", "AuditTrail", "ContentType", "Permission",
-        "Group", "Migration", "Token"
+        "Session",
+        "LogEntry",
+        "AuditTrail",
+        "ContentType",
+        "Permission",
+        "Group",
+        "Migration",
+        "Token",
     }
-    
+
     # Exclude models by app
     excluded_apps = {"admin", "contenttypes", "sessions", "auth"}
-    app_label = getattr(model_class._meta, 'app_label', '')
-    
+    app_label = getattr(model_class._meta, "app_label", "")
+
     if app_label in excluded_apps:
         return False
-    
+
     if model_class.__name__ in excluded_models:
         return False
-    
+
     # Only log specific business models
     business_models = {
-        "Organization", "Workspace", "Entry", "Team", 
-        "User", "Invitation", "Remittance"
+        "Organization",
+        "Workspace",
+        "Entry",
+        "Team",
+        "User",
+        "Invitation",
+        "Remittance",
     }
-    
+
     return model_class.__name__ in business_models
 
 

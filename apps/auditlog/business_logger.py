@@ -10,9 +10,9 @@ from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import (
     audit_create,
     audit_create_security_event,
+    make_json_serializable,
 )
 
-from .config import AuditConfig
 from .utils import safe_audit_log
 
 logger = logging.getLogger(__name__)
@@ -72,12 +72,12 @@ class BusinessAuditLogger:
             return
 
         metadata = {
-            "entry_id": entry.id,
-            "entry_type": entry.type,
+            "entry_id": str(entry.entry_id),
+            "entry_type": entry.entry_type,
             "entry_amount": str(entry.amount) if hasattr(entry, "amount") else None,
-            "workspace_id": entry.workspace.id,
-            "workspace_name": entry.workspace.name,
-            "organization_id": entry.workspace.organization.id,
+            "workspace_id": str(entry.workspace.workspace_id),
+            "workspace_name": entry.workspace.title,
+            "organization_id": str(entry.workspace.organization.organization_id),
             "action": action,
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
@@ -88,7 +88,7 @@ class BusinessAuditLogger:
         if action == "approve":
             metadata.update(
                 {
-                    "approver_id": user.id,
+                    "approver_id": str(user.user_id),
                     "approver_email": user.email,
                     "approval_notes": request.POST.get("notes", "") if request else kwargs.get("notes", ""),
                     "approval_level": request.POST.get("level", "standard") if request else kwargs.get("level", "standard"),
@@ -98,7 +98,7 @@ class BusinessAuditLogger:
         elif action == "reject":
             metadata.update(
                 {
-                    "rejector_id": user.id,
+                    "rejector_id": str(user.user_id),
                     "rejector_email": user.email,
                     "rejection_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
                     "rejection_notes": request.POST.get("notes", "") if request else kwargs.get("notes", ""),
@@ -115,11 +115,14 @@ class BusinessAuditLogger:
                 }
             )
 
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
         audit_create(
             user=user,
             action_type=action_mapping[action],
             target_entity=entry,
-            metadata=metadata,
+            metadata=serializable_metadata,
         )
 
     @staticmethod
@@ -132,24 +135,29 @@ class BusinessAuditLogger:
             logger.warning(f"Unknown permission action: {action}")
             return
 
+        metadata = {
+            "target_user_id": str(target_user.user_id),
+            "target_user_email": target_user.email,
+            "permission": permission,
+            "action": action,
+            "change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
+            "effective_date": request.POST.get(
+                "effective_date", timezone.now().isoformat()
+            ) if request else kwargs.get("effective_date", timezone.now().isoformat()),
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+        }
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
         audit_create_security_event(
             user=user,
             action_type=AuditActionType.PERMISSION_GRANTED
             if action == "grant"
             else AuditActionType.PERMISSION_REVOKED,
             target_entity=target_user,
-            metadata={
-                "target_user_id": target_user.id,
-                "target_user_email": target_user.email,
-                "permission": permission,
-                "action": action,
-                "change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
-                "effective_date": request.POST.get(
-                    "effective_date", timezone.now().isoformat()
-                ) if request else kwargs.get("effective_date", timezone.now().isoformat()),
-                "manual_logging": True,
-                **BusinessAuditLogger._extract_request_metadata(request),
-            },
+            metadata=serializable_metadata,
         )
 
     @staticmethod
@@ -158,55 +166,66 @@ class BusinessAuditLogger:
         """Log data export operations with detailed context"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
+        # Ensure filters are JSON serializable
+        serializable_filters = make_json_serializable(filters or {})
+
+        metadata = {
+            "export_type": export_type,
+            "export_filters": serializable_filters,
+            "result_count": result_count,
+            "export_format": request.GET.get("format", "csv") if request else kwargs.get("format", "csv"),
+            "export_reason": request.POST.get("reason", "business_analysis") if request else kwargs.get("reason", "business_analysis"),
+            "file_size_estimate": f"{result_count * 100}B",  # Rough estimate
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+        }
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
         audit_create(
             user=user,
             action_type=AuditActionType.DATA_EXPORTED,
-            metadata={
-                "export_type": export_type,
-                "export_filters": filters,
-                "result_count": result_count,
-                "export_format": request.GET.get("format", "csv") if request else kwargs.get("format", "csv"),
-                "export_reason": request.POST.get("reason", "business_analysis") if request else kwargs.get("reason", "business_analysis"),
-                "file_size_estimate": f"{result_count * 100}B",  # Rough estimate
-                "manual_logging": True,
-                **BusinessAuditLogger._extract_request_metadata(request),
-            },
+            metadata=serializable_metadata,
         )
 
     @staticmethod
     @safe_audit_log
     def log_bulk_operation(user, operation_type, affected_objects, request=None, **kwargs):
-        """Log bulk operations with intelligent object ID handling"""
+        """Log bulk operations with sampling for large datasets"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
-        object_count = len(affected_objects)
-
-        # Use configuration-based thresholds
-        if object_count <= AuditConfig.BULK_OPERATION_THRESHOLD:
-            # Log all object IDs for smaller operations
-            object_ids = [str(obj.id) for obj in affected_objects]
+        # Sample object IDs for large operations
+        object_ids = []
+        for obj in affected_objects:
+            # Get the primary key value, handling different field names
+            pk_field = obj._meta.pk.name
+            pk_value = getattr(obj, pk_field)
+            object_ids.append(str(pk_value))
+        
+        if len(object_ids) > 10:
+            sampled_ids = object_ids[:5] + object_ids[-5:]
+            object_ids_display = sampled_ids + [f"... and {len(object_ids) - 10} more"]
         else:
-            # Log sample for large operations
-            sample_size = min(AuditConfig.BULK_SAMPLE_SIZE, object_count)
-            sample_objects = affected_objects[:sample_size]
-            object_ids = [str(obj.id) for obj in sample_objects]
+            object_ids_display = object_ids
+
+        metadata = {
+            "operation_type": operation_type,
+            "total_affected": len(affected_objects),
+            "affected_object_ids": object_ids_display,
+            "operation_criteria": request.POST.get("criteria", "manual_selection") if request else kwargs.get("criteria", "manual_selection"),
+            "batch_size": request.POST.get("batch_size", len(affected_objects)) if request else kwargs.get("batch_size", len(affected_objects)),
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+        }
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
 
         audit_create(
             user=user,
             action_type=AuditActionType.BULK_OPERATION,
-            metadata={
-                "operation_type": operation_type,
-                "total_objects": object_count,
-                "object_ids": object_ids,
-                "is_sample": object_count > AuditConfig.BULK_OPERATION_THRESHOLD,
-                "sample_size": len(object_ids)
-                if object_count > AuditConfig.BULK_OPERATION_THRESHOLD
-                else None,
-                "operation_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
-                "manual_logging": True,
-                **BusinessAuditLogger._extract_request_metadata(request),
-                **kwargs,
-            },
+            metadata=serializable_metadata,
         )
 
     @staticmethod
@@ -215,20 +234,25 @@ class BusinessAuditLogger:
         """Log status changes for any entity"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
+        metadata = {
+            "entity_type": entity.__class__.__name__,
+            "entity_id": str(getattr(entity, entity._meta.pk.name)),
+            "old_status": old_status,
+            "new_status": new_status,
+            "status_change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
         audit_create(
             user=user,
             action_type=AuditActionType.STATUS_CHANGED,
             target_entity=entity,
-            metadata={
-                "entity_type": entity.__class__.__name__,
-                "entity_id": entity.id,
-                "old_status": old_status,
-                "new_status": new_status,
-                "status_change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
-                "manual_logging": True,
-                **BusinessAuditLogger._extract_request_metadata(request),
-                **kwargs,
-            },
+            metadata=serializable_metadata,
         )
 
     @staticmethod
@@ -272,9 +296,12 @@ class BusinessAuditLogger:
                 }
             )
 
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
         audit_create(
             user=user,
             action_type=operation_mapping[operation],
-            target_entity=file_obj if hasattr(file_obj, "id") else None,
-            metadata=metadata,
+            target_entity=file_obj if hasattr(file_obj, '_meta') and hasattr(file_obj._meta, 'pk') else None,
+            metadata=serializable_metadata,
         )

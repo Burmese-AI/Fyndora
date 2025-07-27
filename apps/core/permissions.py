@@ -7,7 +7,6 @@ class WorkspacePermissions(models.TextChoices):
     Permissions that are tied with workspace ID Object
     """
 
-
     CHANGE_WORKSPACE = (
         "change_workspace",
         "Can change workspace by WA and Org Owner",
@@ -84,22 +83,22 @@ class OrganizationPermissions(models.TextChoices):
     Permissions for the Organization model.
     Permissions that are tied with organization ID Object
     """
-    
+
     MANAGE_ORGANIZATION = (
         "manage_organization",
         "Can manage organization by higher level roles (Org Owner, WA, OR, TC)",
-    ) # permission to enter into organization management page
+    )  # permission to enter into organization management page
 
     CHANGE_ORGANIZATION = (
         "change_organization",
         "Can change organization by Org Owner",
-    ) 
+    )
     DELETE_ORGANIZATION = "delete_organization", "Can delete organization by Org Owner"
     VIEW_ORGANIZATION = "view_organization", "Can view organization by Org Owner"
 
     CHANGE_WORKSPACE_ADMIN = (
         "edit_workspace_admin",
-        "Can edit workspace admin by Org Owner",  # can edit workspace admin 
+        "Can edit workspace admin by Org Owner",  # can edit workspace admin
     )
 
     ADD_WORKSPACE = (

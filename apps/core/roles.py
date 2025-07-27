@@ -3,8 +3,6 @@ from apps.core.permissions import (
     WorkspacePermissions,
     TeamPermissions,
 )
-from apps.entries.permissions import EntryPermissions
-from apps.remittance.permissions import RemittancePermissions
 
 
 ROLES = {

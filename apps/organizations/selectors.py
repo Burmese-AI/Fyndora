@@ -16,6 +16,7 @@ def get_user_organizations(user):
         members__user=user, members__is_active=True
     ).select_related("owner")
 
+
 def get_organization_by_id(organization_id):
     """
     Returns the organization by its ID.

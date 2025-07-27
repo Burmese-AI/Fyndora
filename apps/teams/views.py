@@ -31,6 +31,7 @@ from apps.teams.permissions import (
 from apps.core.utils import can_manage_organization, permission_denied_view
 from django.contrib.auth.decorators import login_required
 
+
 # Create your views here.
 @login_required
 def teams_view(request, organization_id):

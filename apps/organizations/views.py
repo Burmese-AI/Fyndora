@@ -71,7 +71,7 @@ def dashboard_view(request, organization_id):
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
         owner = organization.owner.user if organization.owner else None
-       
+
         context = {
             "organization": organization,
             "members_count": members_count,
@@ -90,8 +90,10 @@ def home_view(request):
     try:
         organizations = get_user_organizations(request.user)
         for organization in organizations:
-            organization.permissions = { 
-                "can_manage_organization": can_manage_organization(request.user, organization),
+            organization.permissions = {
+                "can_manage_organization": can_manage_organization(
+                    request.user, organization
+                ),
             }
         paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
         page = request.GET.get("page", 1)
@@ -102,8 +104,6 @@ def home_view(request):
             organizations = paginator.page(1)
         except EmptyPage:
             organizations = paginator.page(paginator.num_pages)
-
-        
 
         context = {
             "organizations": organizations,
@@ -185,6 +185,7 @@ def create_organization_view(request):
             "organizations/partials/create_organization_form.html",
             {"form": form},
         )
+
 
 @login_required
 def organization_overview_view(request, organization_id):

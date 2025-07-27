@@ -54,15 +54,14 @@ from apps.currencies.constants import (
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
+from apps.organizations.permissions import can_manage_organization
 
 
 # Create your views here.
 def dashboard_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
-        if not request.user.has_perm(
-            OrganizationPermissions.MANAGE_ORGANIZATION, organization
-        ):
+        if not can_manage_organization(request.user, organization):
             return permission_denied_view(
                 request,
                 "You do not have permission to access this organization.",

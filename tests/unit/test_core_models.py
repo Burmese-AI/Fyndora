@@ -8,6 +8,7 @@ Following the test plan: Core App (apps.core)
 """
 
 import pytest
+import time
 from django.test import TestCase, TransactionTestCase
 from django.db import models, connection
 
@@ -75,7 +76,6 @@ class TestBaseModelTimestamps(TransactionTestCase):
 
         # Verify update behavior
         original_created = instance.created_at
-        import time
 
         time.sleep(0.01)
 

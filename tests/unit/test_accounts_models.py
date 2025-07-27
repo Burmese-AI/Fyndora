@@ -11,7 +11,7 @@ import pytest
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 import uuid
 
 from apps.accounts.models import CustomUser
@@ -47,7 +47,6 @@ class TestCustomUserModel(TestCase):
     @pytest.mark.django_db
     def test_user_unique_constraints(self):
         """Test unique constraints on email and username."""
-        from django.db import transaction
 
         CustomUserFactory(email="test@example.com", username="testuser")
 

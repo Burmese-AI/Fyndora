@@ -10,12 +10,17 @@ Following the test plan: Accounts App (apps.accounts)
 import pytest
 from django.test import TestCase, Client
 from django.contrib.auth import authenticate, get_user_model
+from django.db import IntegrityError
 
 from apps.accounts.constants import StatusChoices
 from tests.factories import (
     CustomUserFactory,
     StaffUserFactory,
     SuperUserFactory,
+    OrganizationFactory,
+    OrganizationMemberFactory,
+    TeamFactory,
+    TeamMemberFactory,
 )
 
 User = get_user_model()
@@ -296,7 +301,6 @@ class TestUserRelationshipWorkflows(TestCase):
     @pytest.mark.django_db
     def test_user_organization_membership_integration(self):
         """Test user integration with organization membership."""
-        from tests.factories import OrganizationFactory, OrganizationMemberFactory
 
         # Create user and organization
         user = CustomUserFactory()
@@ -318,12 +322,6 @@ class TestUserRelationshipWorkflows(TestCase):
     @pytest.mark.django_db
     def test_user_team_membership_integration(self):
         """Test user integration with team membership through organization."""
-        from tests.factories import (
-            OrganizationFactory,
-            OrganizationMemberFactory,
-            TeamFactory,
-            TeamMemberFactory,
-        )
 
         # Create user and organization
         user = CustomUserFactory()
@@ -373,7 +371,6 @@ class TestUserSecurityWorkflows(TestCase):
         CustomUserFactory(email=email)
 
         # Try to create second user with same email - should fail at DB level
-        from django.db import IntegrityError
 
         with self.assertRaises(IntegrityError):
             CustomUserFactory(email=email)

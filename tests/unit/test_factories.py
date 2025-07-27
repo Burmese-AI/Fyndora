@@ -21,6 +21,7 @@ from tests.factories import (
 )
 from apps.accounts.models import CustomUser
 from apps.organizations.models import Organization, OrganizationMember
+from apps.organizations.constants import StatusChoices
 
 
 @pytest.mark.unit
@@ -114,8 +115,6 @@ class TestOrganizationFactories(TestCase):
     def test_archived_organization_factory(self):
         """Test ArchivedOrganizationFactory creates archived organization."""
         org = ArchivedOrganizationFactory()
-
-        from apps.organizations.constants import StatusChoices
 
         self.assertEqual(org.status, StatusChoices.ARCHIVED)
 

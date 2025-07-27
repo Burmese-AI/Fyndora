@@ -11,10 +11,17 @@ import pytest
 import time
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import authenticate, get_user_model
-from django.db import transaction
+from django.db import transaction, IntegrityError
 
 from apps.accounts.constants import StatusChoices
-from tests.factories import CustomUserFactory, StaffUserFactory
+from tests.factories import (
+    CustomUserFactory,
+    StaffUserFactory,
+    OrganizationFactory,
+    OrganizationMemberFactory,
+    TeamFactory,
+    TeamMemberFactory,
+)
 
 User = get_user_model()
 
@@ -238,8 +245,6 @@ class TestUserSystemWorkflows(TransactionTestCase):
         user1 = CustomUserFactory(email="unique@example.com", username="uniqueuser")
 
         # Test email uniqueness
-        from django.db import IntegrityError
-
         with self.assertRaises(IntegrityError):
             CustomUserFactory(email="unique@example.com")
 
@@ -320,13 +325,6 @@ class TestUserSystemIntegration(TestCase):
     @pytest.mark.django_db
     def test_user_organization_team_integration_system(self):
         """Test complete user integration across organization and team systems."""
-        from tests.factories import (
-            OrganizationFactory,
-            OrganizationMemberFactory,
-            TeamFactory,
-            TeamMemberFactory,
-        )
-
         # Create user
         user = CustomUserFactory()
 

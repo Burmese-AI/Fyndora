@@ -1,0 +1,99 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:auditlog_audittrail_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    <div class="results">
+        <table id="result_list">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Count</th>
+                    <th scope="col">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="row1">
+                    <td><strong>Total Logs</strong></td>
+                    <td>{{ summary.total_logs|default:0 }}</td>
+                    <td>Total number of audit log entries</td>
+                </tr>
+                <tr class="row2">
+                    <td><strong>Authentication Logs</strong></td>
+                    <td>{{ summary.authentication_logs|default:0 }}</td>
+                    <td>Login/logout events (30-day retention)</td>
+                </tr>
+                <tr class="row1">
+                    <td><strong>Default Logs</strong></td>
+                    <td>{{ summary.default_logs|default:0 }}</td>
+                    <td>General audit events (90-day retention)</td>
+                </tr>
+                <tr class="row2">
+                    <td><strong>Critical Logs</strong></td>
+                    <td>{{ summary.critical_logs|default:0 }}</td>
+                    <td>Security and critical events (365-day retention)</td>
+                </tr>
+                <tr class="row1" style="background-color: #ffebee;">
+                    <td><strong>Expired Logs</strong></td>
+                    <td style="color: #d32f2f; font-weight: bold;">{{ summary.expired_logs|default:0 }}</td>
+                    <td>Logs that have exceeded their retention period</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="submit-row" style="margin-top: 20px;">
+        <p class="help">
+            <strong>Retention Policies:</strong><br>
+            • Authentication events (login/logout): 30 days<br>
+            • Critical security events: 365 days<br>
+            • All other events: 90 days<br>
+        </p>
+        
+        {% if summary.expired_logs > 0 %}
+        <div class="messagelist">
+            <div class="warning">
+                <strong>Warning:</strong> There are {{ summary.expired_logs }} expired log(s) that can be cleaned up.
+                Use the management command <code>python manage.py cleanup_audit_logs</code> to remove them.
+            </div>
+        </div>
+        {% endif %}
+        
+        <a href="{% url 'admin:auditlog_audittrail_changelist' %}" class="default">
+            ← Back to Audit Logs
+        </a>
+    </div>
+</div>
+
+<style>
+.messagelist .warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.help {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+</style>
+{% endblock %}

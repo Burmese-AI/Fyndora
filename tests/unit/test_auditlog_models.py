@@ -292,7 +292,12 @@ class TestAuditTrailDetailsProperty(TestCase):
             },
         }
 
-        audit = AuditTrailFactory(target_entity=entry, metadata=custom_metadata)
+        # Use a generic action type that will trigger the generic formatter
+        audit = AuditTrailFactory(
+            target_entity=entry, 
+            metadata=custom_metadata,
+            action_type="custom_action"  # This will use the generic formatter
+        )
 
         details = audit.details
         # Should contain formatted key-value pairs
@@ -320,8 +325,8 @@ class TestAuditTrailConstants(TestCase):
         """Test that expected action types are present."""
         expected_actions = [
             "entry_created",
-            "status_changed",
-            "flagged",
+            "entry_status_changed",
+            "entry_flagged",
             "file_uploaded",
         ]
         action_values = [choice[0] for choice in AuditActionType.choices]
@@ -354,7 +359,7 @@ class TestAuditTrailFactories(TestCase):
         entry = EntryFactory()
         audit = StatusChangedAuditFactory(target_entity=entry)
 
-        self.assertEqual(audit.action_type, "status_changed")
+        self.assertEqual(audit.action_type, "entry_status_changed")
         # target_entity_type will be set from the entry now
         self.assertEqual(
             audit.target_entity_type, ContentType.objects.get_for_model(entry)

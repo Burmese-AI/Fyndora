@@ -342,6 +342,9 @@ def safe_audit_log(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except ValueError:
+            # Re-raise validation errors as they indicate incorrect usage
+            raise
         except Exception as e:
             logger.error(f"Audit logging failed in {func.__name__}: {e}", exc_info=True)
             # Don't re-raise to avoid breaking main operations

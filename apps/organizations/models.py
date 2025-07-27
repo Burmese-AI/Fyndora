@@ -43,6 +43,10 @@ class Organization(baseModel):
         ordering = ["-created_at"]
         permissions = (
             (
+                OrganizationPermissions.MANAGE_ORGANIZATION,
+                OrganizationPermissions.MANAGE_ORGANIZATION.label,
+            ),
+            (
                 OrganizationPermissions.ADD_WORKSPACE,
                 OrganizationPermissions.ADD_WORKSPACE.label,
             ),

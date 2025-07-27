@@ -7,13 +7,35 @@ class WorkspacePermissions(models.TextChoices):
     Permissions that are tied with workspace ID Object
     """
 
-    CHANGE_WORKSPACE = "change_workspace", "Can change workspace by WA and Org Owner"
-    DELETE_WORKSPACE = "delete_workspace", "Can delete workspace by WA and Org Owner"
-    VIEW_WORKSPACE = "view_workspace", "Can view workspace by WA and Org Owner"
-    ASSIGN_TEAMS = "assign_teams", "Can assign teams to workspace by WA and Org Owner"
-    LOCK_WORKSPACE = "lock_workspace", "Can lock workspace"
-    VIEW_DASHBOARD = "view_dashboard", "Can view dashboard"
-    EXPORT_WORKSPACE_REPORT = "export_workspace_report", "Can export workspace report"
+
+    CHANGE_WORKSPACE = (
+        "change_workspace",
+        "Can change workspace by WA and Org Owner",
+    )
+    DELETE_WORKSPACE = (
+        "delete_workspace",
+        "Can delete workspace by WA and Org Owner",
+    )
+    VIEW_WORKSPACE = (
+        "view_workspace",
+        "Can view workspace by WA and Org Owner",
+    )
+    ASSIGN_TEAMS = (
+        "assign_teams",
+        "Can assign teams to workspace by WA and Org Owner",
+    )
+    LOCK_WORKSPACE = (
+        "lock_workspace",
+        "Can lock workspace",
+    )
+    VIEW_DASHBOARD = (
+        "view_dashboard",
+        "Can view dashboard",
+    )
+    EXPORT_WORKSPACE_REPORT = (
+        "export_workspace_report",
+        "Can export workspace report",
+    )
 
     ADD_WORKSPACE_ENTRY = (
         "add_workspace_entry",
@@ -62,17 +84,22 @@ class OrganizationPermissions(models.TextChoices):
     Permissions for the Organization model.
     Permissions that are tied with organization ID Object
     """
+    
+    MANAGE_ORGANIZATION = (
+        "manage_organization",
+        "Can manage organization by higher level roles (Org Owner, WA, OR, TC)",
+    ) # permission to enter into organization management page
 
     CHANGE_ORGANIZATION = (
         "change_organization",
         "Can change organization by Org Owner",
-    )  # implemented
+    ) 
     DELETE_ORGANIZATION = "delete_organization", "Can delete organization by Org Owner"
     VIEW_ORGANIZATION = "view_organization", "Can view organization by Org Owner"
 
     CHANGE_WORKSPACE_ADMIN = (
         "edit_workspace_admin",
-        "Can edit workspace admin by Org Owner",  # can edit workspace admin # implemented
+        "Can edit workspace admin by Org Owner",  # can edit workspace admin 
     )
 
     ADD_WORKSPACE = (

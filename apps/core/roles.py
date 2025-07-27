@@ -9,6 +9,7 @@ from apps.remittance.permissions import RemittancePermissions
 
 ROLES = {
     "ORG_OWNER": [
+        OrganizationPermissions.MANAGE_ORGANIZATION,
         OrganizationPermissions.CHANGE_ORGANIZATION,
         OrganizationPermissions.DELETE_ORGANIZATION,
         OrganizationPermissions.VIEW_ORGANIZATION,
@@ -27,6 +28,7 @@ ROLES = {
         WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
     ],
     "WORKSPACE_ADMIN": [
+        OrganizationPermissions.MANAGE_ORGANIZATION,
         OrganizationPermissions.ADD_TEAM,
         WorkspacePermissions.CHANGE_WORKSPACE,
         WorkspacePermissions.DELETE_WORKSPACE,
@@ -45,6 +47,7 @@ ROLES = {
         WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
     ],
     "OPERATIONS_REVIEWER": [
+        OrganizationPermissions.MANAGE_ORGANIZATION,
         WorkspacePermissions.ASSIGN_TEAMS,
         WorkspacePermissions.VIEW_DASHBOARD,
         WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
@@ -57,32 +60,11 @@ ROLES = {
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
     ],
     "TEAM_COORDINATOR": [
+        OrganizationPermissions.MANAGE_ORGANIZATION,
         TeamPermissions.CHANGE_TEAM,
         TeamPermissions.DELETE_TEAM,
         TeamPermissions.VIEW_TEAM,
         TeamPermissions.ADD_TEAM_MEMBER,
-    ],
-    "RECORD_SUBMITTER": [
-        EntryPermissions.VIEW_ENTRY,
-        EntryPermissions.ADD_ENTRY,
-        EntryPermissions.UPLOAD_ATTACHMENTS,
-        EntryPermissions.CHANGE_ENTRY,
-    ],
-    "QUALITY_AUDITOR": [
-        EntryPermissions.VIEW_ENTRY,
-        EntryPermissions.REVIEW_ENTRY,
-        EntryPermissions.FLAG_ENTRY,
-        WorkspacePermissions.VIEW_DASHBOARD,
-        WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
-        RemittancePermissions.VIEW_REMITTANCE,
-        RemittancePermissions.FLAG_REMITTANCE,
-    ],
-    "SYSTEM_ASSISTANT": [
-        EntryPermissions.VIEW_ENTRY,
-        EntryPermissions.REVIEW_ENTRY,
-        EntryPermissions.FLAG_ENTRY,
-        WorkspacePermissions.VIEW_DASHBOARD,
-        WorkspacePermissions.LOCK_WORKSPACE,
     ],
 }
 

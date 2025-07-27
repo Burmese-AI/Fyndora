@@ -1,4 +1,8 @@
-from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
+from apps.organizations.models import (
+    Organization,
+    OrganizationMember,
+    OrganizationExchangeRate,
+)
 from apps.workspaces.models import StatusChoices
 from apps.teams.models import Team
 
@@ -72,12 +76,14 @@ def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
         queryset = queryset.select_related("user")
     return queryset
 
+
 def get_org_exchange_rates(*, organization: Organization):
     """
     Returns all exchange rates of the given organization.
     """
     queryset = OrganizationExchangeRate.objects.filter(organization=organization)
     return queryset
+
 
 def get_orgMember_by_user_id_and_organization_id(user_id, organization_id):
     """

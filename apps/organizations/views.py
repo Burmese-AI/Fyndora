@@ -2,15 +2,23 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
-from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
+from apps.organizations.models import (
+    Organization,
+    OrganizationMember,
+    OrganizationExchangeRate,
+)
 from apps.organizations.selectors import (
     get_user_organizations,
     get_organization_members_count,
     get_workspaces_count,
     get_teams_count,
-    get_org_exchange_rates
+    get_org_exchange_rates,
 )
-from apps.organizations.forms import OrganizationForm, OrganizationExchangeRateForm
+from apps.organizations.forms import (
+    OrganizationForm,
+    OrganizationExchangeRateCreateForm,
+    OrganizationExchangeRateUpdateForm,
+)
 from django.shortcuts import render
 from django.contrib import messages
 from apps.organizations.services import create_organization_with_owner
@@ -26,10 +34,25 @@ from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
 from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
-from apps.core.views.crud_base_views import BaseCreateView
+from apps.core.views.crud_base_views import (
+    BaseCreateView,
+    BaseDeleteView,
+    BaseDetailView,
+    BaseUpdateView,
+)
 from apps.core.views.base_views import BaseGetModalFormView
-from apps.core.views.mixins import OrganizationRequiredMixin
+from apps.core.views.mixins import OrganizationRequiredMixin, UpdateFormMixin
 from apps.core.utils import get_paginated_context
+from apps.organizations.mixins.organization_exchange_rate.required_mixins import (
+    OrganizationExchangeRateRequiredMixin,
+)
+from apps.currencies.views.mixins import ExchangeRateUrlIdentifierMixin
+from apps.currencies.constants import (
+    EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
+    EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
+)
+from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
 
 
 # Create your views here.
@@ -201,10 +224,11 @@ def settings_view(request, organization_id):
             request.user.user_id, organization_id
         )
         if not orgMember.is_org_owner:
-            messages.error(
-                request, "You do not have permission to access this organization."
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
             )
-            return HttpResponseClientRedirect("/403")
+
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -214,11 +238,23 @@ def settings_view(request, organization_id):
         context = get_paginated_context(
             queryset=org_exchanage_rates,
             context=context,
-            object_name="exchange_rates",
+            object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
         )
-        
+        context["url_identifier"] = "organization"
+        context["permissions"] = {
+            "can_add_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.ADD_ORG_CURRENCY, organization
+            ),
+            "can_change_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORG_CURRENCY, organization
+            ),
+            "can_delete_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORG_CURRENCY, organization
+            ),
+        }
+
         print(f"context: {context}")
-        
+
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(
@@ -334,43 +370,61 @@ def delete_organization_view(request, organization_id):
             {"organization": organization},
         )
 
-class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModalFormView, BaseCreateView):
+
+class OrganizationExchangeRateCreateView(
+    OrganizationRequiredMixin,
+    ExchangeRateUrlIdentifierMixin,
+    BaseGetModalFormView,
+    BaseCreateView,
+):
     model = OrganizationExchangeRate
-    form_class = OrganizationExchangeRateForm
+    form_class = OrganizationExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
-    
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.ADD_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
-    
+
     def get_post_url(self):
         return reverse_lazy(
-            "organization_exchange_rate_create", 
-            kwargs={"organization_id": self.kwargs["organization_id"]}
+            "organization_exchange_rate_create",
+            kwargs={"organization_id": self.organization.pk},
         )
-    
+
     def get_modal_title(self):
         return "Add Exchange Rate"
-    
+
+    def get_exchange_rate_level(self):
+        return "organization"
+
     def form_valid(self, form):
-        
         from .services import create_organization_exchange_rate
-        
+
         try:
             create_organization_exchange_rate(
-                organization = self.organization,
-                organization_member = self.org_member,
-                currency_code = form.cleaned_data["currency_code"],
-                rate = form.cleaned_data["rate"],
-                effective_date = form.cleaned_data["effective_date"],
-                note = form.cleaned_data["note"],
+                organization=self.organization,
+                organization_member=self.org_member,
+                currency_code=form.cleaned_data["currency_code"],
+                rate=form.cleaned_data["rate"],
+                effective_date=form.cleaned_data["effective_date"],
+                note=form.cleaned_data["note"],
             )
         except Exception as e:
-            messages.error(self.request, f"Failed to create entry: {str(e)}")
+            messages.error(self.request, f"Failed to create Exchange Rate: {str(e)}")
             return self._render_htmx_error_response(form)
-        
+
         messages.success(self.request, "Entry created successfully")
         return self._render_htmx_success_response()
-    
+
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
@@ -382,7 +436,9 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
         )
 
         table_html = render_to_string(
-            "currencies/partials/table.html", context=table_context, request=self.request
+            "currencies/partials/table.html",
+            context=table_context,
+            request=self.request,
         )
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
@@ -390,4 +446,146 @@ class OrganizationExchangeRateCreateView(OrganizationRequiredMixin, BaseGetModal
 
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
+        return response
+
+
+class OrganizationExchangeRateUpdateView(
+    ExchangeRateUrlIdentifierMixin,
+    OrganizationExchangeRateRequiredMixin,
+    OrganizationRequiredMixin,
+    UpdateFormMixin,
+    BaseGetModalFormView,
+    BaseUpdateView,
+):
+    model = OrganizationExchangeRate
+    form_class = OrganizationExchangeRateUpdateForm
+    modal_template_name = "currencies/components/update_modal.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.CHANGE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return get_org_exchange_rates(organization=self.organization)
+
+    def get_post_url(self):
+        return reverse_lazy(
+            "organization_exchange_rate_update",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "pk": self.exchange_rate.pk,
+            },
+        )
+
+    def get_exchange_rate_level(self):
+        return "organization"
+
+    def get_modal_title(self):
+        return "Update Exchange Rate"
+
+    def form_valid(self, form):
+        from .services import update_organization_exchange_rate
+
+        try:
+            update_organization_exchange_rate(
+                organization=self.organization,
+                organization_member=self.org_member,
+                org_exchange_rate=self.exchange_rate,
+                note=form.cleaned_data["note"],
+            )
+        except Exception as e:
+            messages.error(self.request, f"Failed to update entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+
+        messages.success(self.request, "Entry updated successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        row_html = render_to_string(
+            "currencies/partials/row.html", context=base_context, request=self.request
+        )
+
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}<table>{row_html}</table>")
+        response["HX-trigger"] = "success"
+        return response
+
+
+class OrganizationExchangeRateDetailView(BaseDetailView):
+    model = OrganizationExchangeRate
+    template_name = "currencies/components/detail_modal.html"
+    context_object_name = EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME
+
+
+class OrganizationExchangerateDeleteView(
+    OrganizationExchangeRateRequiredMixin,
+    OrganizationRequiredMixin,
+    ExchangeRateUrlIdentifierMixin,
+    BaseDeleteView,
+):
+    model = OrganizationExchangeRate
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.DELETE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return get_org_exchange_rates(organization=self.organization)
+
+    def get_exchange_rate_level(self):
+        return "organization"
+
+    def form_valid(self, form):
+        from .services import delete_organization_exchange_rate
+
+        try:
+            delete_organization_exchange_rate(
+                organization=self.organization,
+                organization_member=self.org_member,
+                org_exchange_rate=self.exchange_rate,
+            )
+        except Exception as e:
+            messages.error(self.request, f"Failed to delete entry: {str(e)}")
+            return self._render_htmx_error_response(form)
+
+        messages.success(self.request, "Entry deleted successfully")
+        return self._render_htmx_success_response()
+
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        org_exchanage_rates = self.get_queryset()
+        table_context = get_paginated_context(
+            queryset=org_exchanage_rates,
+            context=base_context,
+            object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
+        )
+
+        table_html = render_to_string(
+            "currencies/partials/table.html",
+            context=table_context,
+            request=self.request,
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(f"{message_html}{table_html}")
         return response

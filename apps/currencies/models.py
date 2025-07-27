@@ -1,4 +1,3 @@
-from time import timezone
 from uuid import uuid4
 from decimal import Decimal
 from iso4217 import Currency as ISO4217Currency
@@ -8,13 +7,15 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone  # this is causing ruff error , but neglected for now
 
-from apps.core.models import baseModel
+from apps.core.models import SoftDeleteModel, baseModel
 
 
-class Currency(baseModel):
+class Currency(baseModel, SoftDeleteModel):
     currency_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
     name = models.CharField(max_length=100, blank=True, null=True)
-    code = models.CharField(max_length=3, unique=True)
+    # Note: Field Level constraint can't be conditional
+    # That's why, its unique constraint is defined at model (table) level in Meta class
+    code = models.CharField(max_length=3)
 
     def clean(self):
         super().clean()
@@ -29,6 +30,13 @@ class Currency(baseModel):
 
     class Meta:
         verbose_name_plural = "Currencies"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["code"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="unique_currency_code",
+            )
+        ]
 
 
 class ExchangeRateBaseModel(baseModel):
@@ -50,15 +58,6 @@ class ExchangeRateBaseModel(baseModel):
     effective_date = models.DateField(
         default=timezone.now,
     )
-
-    is_approved = models.BooleanField(default=False)
-    approved_by = models.ForeignKey(
-        "organizations.OrganizationMember",
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="%(app_label)s_approved_%(class)s_set",
-    )
-
     added_by = models.ForeignKey(
         "organizations.OrganizationMember",
         on_delete=models.SET_NULL,

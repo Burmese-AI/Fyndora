@@ -1,0 +1,64 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6">
+
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-base-content">
+      {{ custom_title }}
+    </h2>
+  </div>
+
+  <form
+    hx-post="{{ post_url }}"
+    hx-swap="none"
+    hx-on::after-request="if (event.detail.successful) { this.reset(); }"
+    @click.outside="open = false"
+    class="space-y-6"
+  >
+    {% csrf_token %}
+    {% include "components/non_field_errors.html" %}
+
+    <!-- Note -->
+    <div>
+      <label for="{{ form.note.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Note (Optional)
+      </label>
+      <div class="mt-2">
+        {{ form.note }}
+      </div>
+      {% include "components/field_error.html" with field=form.note %}
+    </div>
+
+    <!-- is approved -->
+    {% if form.is_approved %}
+    <div>
+      <div class="mt-2">
+        <label for="{{ form.is_approved.id_for_label }}" class="inline-block text-sm font-medium text-base-content mr-2">
+          Is Approved
+        </label>
+        {{ form.is_approved }}
+      </div>
+      {% include "components/field_error.html" with field=form.is_approved %}
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="flex justify-end space-x-2 pt-4">
+      <button
+        type="button"
+        onclick="this.closest('.modal').removeAttribute('open')"
+        class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="px-4 py-2 text-sm font-medium text-base-100 bg-primary rounded-md transition-colors duration-200 transform hover:scale-105 hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Confirm
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock modal_content %}

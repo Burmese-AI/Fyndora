@@ -1,12 +1,15 @@
 from django.db import transaction
-from apps.workspaces.models import Workspace
+from apps.currencies.models import Currency
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.core.utils import model_update
+from django.core.exceptions import ValidationError
 from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.permissions import (
     assign_workspace_permissions,
     update_workspace_admin_group,
 )
+from django.db.utils import IntegrityError
 
 
 @transaction.atomic
@@ -82,3 +85,48 @@ def update_workspace_team_remittance_rate_from_form(
         workspace_team.custom_remittance_rate = None
     workspace_team.save()
     return workspace_team
+
+
+@transaction.atomic
+def create_workspace_exchange_rate(
+    *, workspace, organization_member, currency_code, rate, note, effective_date
+):
+    try:
+        currency, _ = Currency.objects.get_or_create(code=currency_code)
+        WorkspaceExchangeRate.objects.create(
+            workspace=workspace,
+            currency=currency,
+            rate=rate,
+            effective_date=effective_date,
+            added_by=organization_member,
+            note=note,
+        )
+    except IntegrityError as e:
+        raise ValidationError(f"Failed to create workspace exchange rate: {str(e)}")
+    except Exception as e:
+        raise ValidationError(f"Failed to create workspace exchange rate: {str(e)}")
+
+
+@transaction.atomic
+def update_workspace_exchange_rate(
+    *, workspace_exchange_rate, note, is_approved, org_member
+):
+    try:
+        workspace_exchange_rate = model_update(
+            workspace_exchange_rate,
+            {
+                "note": note,
+                "is_approved": is_approved,
+                "approved_by": org_member if is_approved else None,
+            },
+        )
+        return workspace_exchange_rate
+    except Exception as e:
+        raise ValidationError(f"Failed to update workspace exchange rate: {str(e)}")
+
+
+def delete_workspace_exchange_rate(*, workspace_exchange_rate):
+    try:
+        workspace_exchange_rate.delete()
+    except Exception as e:
+        raise ValidationError(f"Failed to delete workspace exchange rate: {str(e)}")

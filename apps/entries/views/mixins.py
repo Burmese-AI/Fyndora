@@ -13,6 +13,7 @@ from apps.workspaces.selectors import (
 
 from ..forms import BaseEntryForm, UpdateEntryForm
 from ..models import Entry
+from apps.core.permissions import WorkspacePermissions
 
 
 class OrganizationRequiredMixin:
@@ -182,6 +183,15 @@ class WorkspaceContextMixin(OrganizationContextMixin):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        context["can_add_workspace_entry"] = self.request.user.has_perm(
+            WorkspacePermissions.ADD_WORKSPACE_ENTRY, self.workspace
+        )
+        context["can_change_workspace_entry"] = self.request.user.has_perm(
+            WorkspacePermissions.CHANGE_WORKSPACE_ENTRY, self.workspace
+        )
+        context["can_delete_workspace_entry"] = self.request.user.has_perm(
+            WorkspacePermissions.DELETE_WORKSPACE_ENTRY, self.workspace
+        )
         return context
 
 

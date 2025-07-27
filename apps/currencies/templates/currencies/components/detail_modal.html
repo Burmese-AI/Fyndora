@@ -1,0 +1,59 @@
+{% extends "components/new_base_modal.html" %}
+{% load humanize %}
+
+{% block modal_content %}
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-2xl p-4 space-y-4">
+
+  <!-- Header -->
+  <div class="flex justify-between items-start">
+    <h2 class="text-lg font-bold text-base-content">Exchange Rate Details</h2>
+    {% if exchange_rate.is_approved %}
+      <span class="badge badge-sm capitalize badge-success">
+        {{ exchange_rate.is_approved|yesno:"Approved, Pending" }}
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- Exchange Rate Info -->
+  <div class="bg-base-200 p-4 rounded-lg space-y-2">
+    <h3 class="text-sm font-semibold text-base-content mb-2">Exchange Rate Information</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+      <p><span class="font-medium">Currency:</span> {{ exchange_rate.currency.name }} ({{ exchange_rate.currency.code }})</p>
+      <p><span class="font-medium">Rate:</span> {{ exchange_rate.rate }}</p>
+      <p><span class="font-medium">Effective Date:</span> {{ exchange_rate.effective_date|date:"Y-m-d" }}</p>
+      <p><span class="font-medium">Note:</span> {{ exchange_rate.note|default:"-" }}</p>
+    </div>
+  </div>
+
+  <!-- Context Info (Organization or Workspace) -->
+  <div class="bg-base-200 p-4 rounded-lg space-y-2">
+    <h3 class="text-sm font-semibold text-base-content mb-2">
+      {{ exchange_rate_type|title }} Information
+    </h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+      {% if exchange_rate_type == "organization" %}
+        <p><span class="font-medium">Organization:</span> {{ exchange_rate.organization.name }}</p>
+      {% elif exchange_rate_type == "workspace" %}
+        <p><span class="font-medium">Workspace:</span> {{ exchange_rate.workspace.name }}</p>
+        <p><span class="font-medium">Added By:</span> {{ exchange_rate.added_by.user.get_full_name }}</p>
+        {% if exchange_rate.is_approved %}
+          <p><span class="font-medium">Approved By:</span> {{ exchange_rate.approved_by.user.get_full_name }}</p>
+        {% endif %}
+      {% endif %}
+      <p class="text-sm capitalize"><span class="font-medium">Approved By:</span> {{ exchange_rate.approved_by.user.username | default:"-" }}</p>
+      <p><span class="font-medium">Added At:</span> {{ exchange_rate.created_at|date:"Y-m-d H:i" }}</p>
+      <p><span class="font-medium">Last Updated:</span> {{ exchange_rate.updated_at|date:"Y-m-d H:i" }}</p>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end pt-2">
+    <button
+      type="button"
+      onclick="this.closest('.modal').removeAttribute('open')"
+      class="btn btn-sm btn-neutral">
+      Close
+    </button>
+  </div>
+</div>
+{% endblock modal_content %}

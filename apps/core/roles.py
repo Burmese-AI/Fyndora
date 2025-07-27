@@ -1,5 +1,8 @@
-from apps.core.permissions import OrganizationPermissions
-from apps.core.permissions import WorkspacePermissions
+from apps.core.permissions import (
+    OrganizationPermissions,
+    WorkspacePermissions,
+    TeamPermissions,
+)
 from apps.entries.permissions import EntryPermissions
 from apps.remittance.permissions import RemittancePermissions
 
@@ -10,13 +13,21 @@ ROLES = {
         OrganizationPermissions.DELETE_ORGANIZATION,
         OrganizationPermissions.VIEW_ORGANIZATION,
         OrganizationPermissions.ADD_WORKSPACE,
+        OrganizationPermissions.ADD_TEAM,
         OrganizationPermissions.INVITE_ORG_MEMBER,
         OrganizationPermissions.ADD_ORG_ENTRY,
         OrganizationPermissions.VIEW_ORG_ENTRY,
         OrganizationPermissions.CHANGE_ORG_ENTRY,
         OrganizationPermissions.DELETE_ORG_ENTRY,
+        OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
+        OrganizationPermissions.ADD_ORG_CURRENCY,
+        OrganizationPermissions.CHANGE_ORG_CURRENCY,
+        OrganizationPermissions.DELETE_ORG_CURRENCY,
+        WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
+        WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
     ],
     "WORKSPACE_ADMIN": [
+        OrganizationPermissions.ADD_TEAM,
         WorkspacePermissions.CHANGE_WORKSPACE,
         WorkspacePermissions.DELETE_WORKSPACE,
         WorkspacePermissions.VIEW_WORKSPACE,
@@ -31,11 +42,7 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_TEAM_ENTRY,
-        WorkspacePermissions.DELETE_TEAM_ENTRY,
-        WorkspacePermissions.VIEW_TEAM_ENTRY,
-        WorkspacePermissions.REVIEW_TEAM_ENTRY,
-        WorkspacePermissions.FLAG_TEAM_ENTRY,
+        WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
     ],
     "OPERATIONS_REVIEWER": [
         WorkspacePermissions.ASSIGN_TEAMS,
@@ -48,22 +55,12 @@ ROLES = {
         WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
         WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_TEAM_ENTRY,
-        WorkspacePermissions.DELETE_TEAM_ENTRY,
-        WorkspacePermissions.VIEW_TEAM_ENTRY,
-        WorkspacePermissions.REVIEW_TEAM_ENTRY,
-        WorkspacePermissions.FLAG_TEAM_ENTRY,
     ],
     "TEAM_COORDINATOR": [
-        EntryPermissions.VIEW_ENTRY,
-        EntryPermissions.ADD_ENTRY,
-        EntryPermissions.UPLOAD_ATTACHMENTS,
-        EntryPermissions.CHANGE_ENTRY,
-        EntryPermissions.REVIEW_ENTRY,
-        EntryPermissions.FLAG_ENTRY,
-        WorkspacePermissions.VIEW_DASHBOARD,
-        RemittancePermissions.VIEW_REMITTANCE,
-        RemittancePermissions.FLAG_REMITTANCE,
+        TeamPermissions.CHANGE_TEAM,
+        TeamPermissions.DELETE_TEAM,
+        TeamPermissions.VIEW_TEAM,
+        TeamPermissions.ADD_TEAM_MEMBER,
     ],
     "RECORD_SUBMITTER": [
         EntryPermissions.VIEW_ENTRY,

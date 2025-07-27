@@ -5,11 +5,12 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-from apps.core.models import baseModel
+from apps.core.models import SoftDeleteModel, baseModel
 from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.constants import StatusChoices
 from apps.teams.models import Team
 from apps.currencies.models import ExchangeRateBaseModel
+from apps.core.permissions import WorkspacePermissions
 
 
 # Create your models here.
@@ -71,22 +72,62 @@ class Workspace(baseModel):
         verbose_name_plural = "workspaces"
         ordering = ["-created_at"]
         permissions = (
-            ("assign_teams", "Can assign teams to workspace"),
-            ("lock_workspace", "Can lock workspace"),
-            ("view_dashboard", "Can view dashboard reports"),
-            ("add_workspace_entry", "Can add entry to workspace"),
-            ("change_workspace_entry", "Can change entry in workspace"),
-            ("delete_workspace_entry", "Can delete entry in workspace"),
-            ("view_workspace_entry", "Can view entry in workspace"),
-            ("review_workspace_entry", "Can review entry in workspace"),
-            ("upload_workspace_attachments", "Can upload attachments in workspace"),
-            ("flag_workspace_entry", "Can flag entry in workspace"),
-            ("export_workspace_report", "Can export workspace report"),
-            ("change_team_entry", "Can change entry in team"),
-            ("delete_team_entry", "Can delete entry in team"),
-            ("view_team_entry", "Can view entry in team"),
-            ("review_team_entry", "Can review entry in team"),
-            ("flag_team_entry", "Can flag entry in team"),
+            (
+                WorkspacePermissions.ASSIGN_TEAMS,
+                WorkspacePermissions.ASSIGN_TEAMS.label,
+            ),
+            (
+                WorkspacePermissions.LOCK_WORKSPACE,
+                WorkspacePermissions.LOCK_WORKSPACE.label,
+            ),
+            (
+                WorkspacePermissions.VIEW_DASHBOARD,
+                WorkspacePermissions.VIEW_DASHBOARD.label,
+            ),
+            (
+                WorkspacePermissions.ADD_WORKSPACE_ENTRY,
+                WorkspacePermissions.ADD_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.CHANGE_WORKSPACE_ENTRY,
+                WorkspacePermissions.CHANGE_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
+                WorkspacePermissions.DELETE_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.VIEW_WORKSPACE_ENTRY,
+                WorkspacePermissions.VIEW_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
+                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
+                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS.label,
+            ),
+            (
+                WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
+                WorkspacePermissions.FLAG_WORKSPACE_ENTRY.label,
+            ),
+            (
+                WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
+                WorkspacePermissions.EXPORT_WORKSPACE_REPORT.label,
+            ),
+            (
+                WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
+                WorkspacePermissions.ADD_WORKSPACE_CURRENCY.label,
+            ),
+            (
+                WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
+                WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY.label,
+            ),
+            (
+                WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
+                WorkspacePermissions.DELETE_WORKSPACE_CURRENCY.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(
@@ -139,18 +180,17 @@ class WorkspaceTeam(baseModel):
         return f"{self.team.title} in {self.workspace.title}"
 
 
-class WorkspaceExchangeRate(ExchangeRateBaseModel):
+class WorkspaceExchangeRate(ExchangeRateBaseModel, SoftDeleteModel):
     workspace_exchange_rate_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
-    is_approved = models.BooleanField(
-        default=False
-    )
+    is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(
         OrganizationMember,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="%(app_label)s_approved_%(class)s_set"
+        blank=True,
+        related_name="%(app_label)s_approved_%(class)s_set",
     )
     workspace = models.ForeignKey(
         Workspace,
@@ -164,6 +204,7 @@ class WorkspaceExchangeRate(ExchangeRateBaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["workspace", "currency", "effective_date"],
+                condition=models.Q(deleted_at__isnull=True),
                 name="unique_workspace_exchange_rate",
             )
         ]

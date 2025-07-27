@@ -8,6 +8,11 @@ from apps.workspaces.views import (
     get_workspace_teams_view,
     remove_team_from_workspace_view,
     change_workspace_team_remittance_rate_view,
+    WorkspaceExchangeRateListView,
+    WorkspaceExchangeRateCreateView,
+    WorkspaceExchangeRateUpdateView,
+    WorkspaceExchangeRateDetailView,
+    WorkspaceExchangeRateDeleteView,
 )
 
 urlpatterns = [
@@ -34,5 +39,30 @@ urlpatterns = [
         "<uuid:workspace_id>/teams/<uuid:team_id>/remittance/<uuid:workspace_team_id>/",
         change_workspace_team_remittance_rate_view,
         name="change_workspace_team_remittance_rate",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/",
+        WorkspaceExchangeRateListView.as_view(),
+        name="workspace_exchange_rate_list",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/create/",
+        WorkspaceExchangeRateCreateView.as_view(),
+        name="workspace_exchange_rate_create",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/edit/",
+        WorkspaceExchangeRateUpdateView.as_view(),
+        name="workspace_exchange_rate_update",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/detail/",
+        WorkspaceExchangeRateDetailView.as_view(),
+        name="workspace_exchange_rate_detail",
+    ),
+    path(
+        "<uuid:workspace_id>/exchange-rates/<uuid:pk>/delete/",
+        WorkspaceExchangeRateDeleteView.as_view(),
+        name="workspace_exchange_rate_delete",
     ),
 ]

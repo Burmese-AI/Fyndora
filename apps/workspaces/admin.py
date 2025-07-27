@@ -1,5 +1,7 @@
 from django.contrib import admin
-from apps.workspaces.models import Workspace, WorkspaceTeam
+from apps.workspaces.models import Workspace, WorkspaceTeam, WorkspaceExchangeRate
+
+admin.site.register(WorkspaceExchangeRate)
 
 
 @admin.register(Workspace)

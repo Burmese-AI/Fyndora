@@ -1,10 +1,11 @@
 from django import forms
-from .models import Workspace
-from apps.organizations.models import OrganizationMember
+from .models import Workspace, WorkspaceExchangeRate
+from apps.organizations.models import OrganizationMember, OrganizationExchangeRate
 from apps.workspaces.selectors import get_organization_members_by_organization_id
 from apps.teams.models import Team
 from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.selectors import get_teams_by_organization_id
+from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 from django.core.exceptions import ValidationError
 
 
@@ -87,6 +88,7 @@ class WorkspaceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
+        self.can_change_workspace_admin = kwargs.pop("can_change_workspace_admin", True)
         super().__init__(*args, **kwargs)
 
         if self.organization:
@@ -102,6 +104,9 @@ class WorkspaceForm(forms.ModelForm):
             ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
+
+        if not self.can_change_workspace_admin:
+            self.fields["workspace_admin"].widget.attrs["disabled"] = True
 
     def clean_title(self):
         title = self.cleaned_data.get("title")
@@ -221,3 +226,48 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
         ):
             raise forms.ValidationError("Remittance rate must be between 0 and 100.")
         return custom_remittance_rate
+
+
+class WorkspaceExchangeRateCreateForm(BaseExchangeRateCreateForm):
+    class Meta(BaseExchangeRateCreateForm.Meta):
+        model = WorkspaceExchangeRate
+        fields = BaseExchangeRateCreateForm.Meta.fields
+        widgets = BaseExchangeRateCreateForm.Meta.widgets
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Check if an org exchange rate with this provided currency already exists
+        currency_code = cleaned_data.get("currency_code")
+        org_exchange_rate_exists = OrganizationExchangeRate.objects.filter(
+            organization=self.organization,
+            currency__code__iexact=currency_code,
+        ).exists()
+        if not org_exchange_rate_exists:
+            raise ValidationError(
+                "Organization exchange rate with this currency does not exist."
+            )
+        return cleaned_data
+
+
+class WorkspaceExchangeRateUpdateForm(BaseExchangeRateUpdateForm):
+    class Meta(BaseExchangeRateUpdateForm.Meta):
+        model = WorkspaceExchangeRate
+        fields = BaseExchangeRateUpdateForm.Meta.fields + ["is_approved"]
+        widgets = {
+            **BaseExchangeRateUpdateForm.Meta.widgets,
+            "is_approved": forms.CheckboxInput(
+                attrs={
+                    "class": "checkbox checkbox-bordered rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        super().__init__(*args, **kwargs)

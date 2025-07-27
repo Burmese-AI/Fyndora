@@ -156,22 +156,40 @@ class AuditTrail(models.Model):
         if not display_fields:
             return "No additional details"
 
-        return "; ".join(
-            [
-                f"{key.replace('_', ' ').title()}: {value}"
-                for key, value in display_fields.items()
-            ]
-        )
+        formatted_parts = []
+        for key, value in display_fields.items():
+            formatted_key = key.replace('_', ' ').title()
+            
+            # Handle nested dictionaries
+            if isinstance(value, dict):
+                # For nested dictionaries, just include the section title
+                formatted_parts.append(f"{formatted_key}:")
+            else:
+                # For simple values, include key: value
+                formatted_parts.append(f"{formatted_key}: {value}")
+
+        return "; ".join(formatted_parts)
 
     @property
     def details(self):
         """
         Generate human-readable details from metadata based on action type.
         """
-        metadata = self._parse_metadata()
+        # Handle special cases where metadata should be returned as-is
+        if isinstance(self.metadata, str):
+            try:
+                # Try to parse as JSON
+                parsed_metadata = json.loads(self.metadata)
+                # If successful, continue with normal processing
+                metadata = parsed_metadata if isinstance(parsed_metadata, dict) else {}
+            except json.JSONDecodeError:
+                # If JSON parsing fails, return the raw string
+                return self.metadata
+        else:
+            metadata = self._parse_metadata()
 
         if not metadata:
-            return "No details provided"
+            return "No details provided."
 
         # Action-specific formatters
         formatters = {
@@ -184,6 +202,8 @@ class AuditTrail(models.Model):
             AuditActionType.WORKSPACE_STATUS_CHANGED: self._format_status_change,
             AuditActionType.ENTRY_STATUS_CHANGED: self._format_status_change,
             AuditActionType.REMITTANCE_STATUS_CHANGED: self._format_status_change,
+            # Generic status change (for backward compatibility and tests)
+            "status_changed": self._format_status_change,
             # Entry workflow actions
             AuditActionType.ENTRY_SUBMITTED: self._format_workflow_action,
             AuditActionType.ENTRY_REVIEWED: self._format_workflow_action,

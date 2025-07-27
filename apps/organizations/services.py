@@ -49,14 +49,16 @@ def create_organization_with_owner(*, form, user) -> Organization:
 
         # getting the permissions for the org owner
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
+        print(org_owner_permissions)
 
         # Assign permissions to the org owner group
         for perm in org_owner_permissions:
-            assign_perm(perm, org_owner_group, organization)
+            if "workspace_currency" not in perm:
+                assign_perm(perm, org_owner_group, organization)
 
         # Assign the org owner group to the user
         org_owner_group.user_set.add(user)
-
+        # Get all permissions assigned to the org owner group
         return organization
     except Exception as e:
         raise OrganizationCreationError(f"Failed to create organization: {str(e)}")

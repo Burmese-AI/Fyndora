@@ -51,7 +51,7 @@ from apps.currencies.constants import (
     EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
     EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
 )
-
+from apps.core.permissions import OrganizationPermissions
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -238,6 +238,17 @@ def settings_view(request, organization_id):
             object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
         )
         context["url_identifier"] = "organization"
+        context["permissions"] = {
+            "can_add_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.ADD_ORG_CURRENCY, organization
+            ),
+            "can_change_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORG_CURRENCY, organization
+            ),
+            "can_delete_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORG_CURRENCY, organization
+            ),
+        }
 
         print(f"context: {context}")
 

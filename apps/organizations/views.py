@@ -52,6 +52,7 @@ from apps.currencies.constants import (
     EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
 )
 from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
 
 # Create your views here.
 def dashboard_view(request, organization_id):
@@ -221,11 +222,12 @@ def settings_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        if not orgMember.is_org_owner:
-            messages.error(
-                request, "You do not have permission to access this organization."
-            )
-            return HttpResponseClientRedirect("/403")
+        # if not orgMember.is_org_owner:
+        #     return permission_denied_view(
+        #         request,
+        #         "You do not have permission to access this organization.",
+        #     )
+
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,

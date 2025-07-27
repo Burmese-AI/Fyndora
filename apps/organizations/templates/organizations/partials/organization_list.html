@@ -45,7 +45,9 @@
             <!-- Actions -->
             <div class="card-actions justify-end mt-4">
                 <a href="{% url 'submission-teams' organization.pk %}" class="btn btn-outline btn-sm btn-primary btn-soft hover:text-white">My Workspaces</a>
+                {% if organization.permissions.can_manage_organization %}
                 <a href="{% url 'dashboard' organization.organization_id %}" class="btn btn-outline btn-sm btn-primary btn-soft hover:text-white">Manage</a>
+                {% endif %}
                 <a 
                     hx-get="{% url 'organization_overview' organization.organization_id %}" 
                     hx-target="#modal-placeholder"

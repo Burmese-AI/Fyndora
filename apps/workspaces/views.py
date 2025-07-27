@@ -66,12 +66,18 @@ from apps.core.utils import get_paginated_context
 from .mixins.workspace_exchange_rate.required_mixins import (
     WorkspaceExchangeRateRequiredMixin,
 )
+from apps.core.utils import can_manage_organization
 
 
 @login_required
 def get_workspaces_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
+        if not can_manage_organization(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
         workspaces = get_workspaces_with_team_counts(organization_id)
         return render(
             request,

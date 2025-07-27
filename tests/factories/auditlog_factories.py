@@ -41,7 +41,7 @@ class AuditTrailFactory(DjangoModelFactory):
 class EntryCreatedAuditFactory(AuditTrailFactory):
     """Factory for entry creation audit logs."""
 
-    action_type = "entry_created"
+    action_type = AuditActionType.ENTRY_CREATED
     target_entity_type = factory.LazyAttribute(
         lambda o: ContentType.objects.get_for_model(o.target_entity)
         if o.target_entity
@@ -60,7 +60,7 @@ class EntryCreatedAuditFactory(AuditTrailFactory):
 class StatusChangedAuditFactory(AuditTrailFactory):
     """Factory for status change audit logs."""
 
-    action_type = "status_changed"
+    action_type = AuditActionType.ENTRY_STATUS_CHANGED
     target_entity_type = factory.LazyAttribute(
         lambda obj: ContentType.objects.get(model="entry")
     )

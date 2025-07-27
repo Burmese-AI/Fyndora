@@ -6,7 +6,6 @@ from apps.organizations.models import Organization, OrganizationMember
 from django.template.loader import render_to_string
 from apps.workspaces.models import Workspace
 from apps.core.permissions import WorkspacePermissions
-from apps.core.permissions import OrganizationPermissions
 
 
 class OrganizationRequiredMixin:
@@ -70,7 +69,6 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
             "can_delete_workspace_exchange_rate": self.request.user.has_perm(
                 WorkspacePermissions.DELETE_WORKSPACE_CURRENCY, self.workspace
             ),
-            
         }
         return context
 

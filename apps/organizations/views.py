@@ -54,6 +54,7 @@ from apps.currencies.constants import (
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 
+
 # Create your views here.
 def dashboard_view(request, organization_id):
     try:
@@ -222,11 +223,11 @@ def settings_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        # if not orgMember.is_org_owner:
-        #     return permission_denied_view(
-        #         request,
-        #         "You do not have permission to access this organization.",
-        #     )
+        if not orgMember.is_org_owner:
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
 
         owner = organization.owner.user if organization.owner else None
         context = {
@@ -380,6 +381,16 @@ class OrganizationExchangeRateCreateView(
     form_class = OrganizationExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.ADD_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
 
@@ -450,6 +461,16 @@ class OrganizationExchangeRateUpdateView(
     form_class = OrganizationExchangeRateUpdateForm
     modal_template_name = "currencies/components/update_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.CHANGE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
 
@@ -514,6 +535,16 @@ class OrganizationExchangerateDeleteView(
     BaseDeleteView,
 ):
     model = OrganizationExchangeRate
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.DELETE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)

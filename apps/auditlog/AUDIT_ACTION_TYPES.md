@@ -150,6 +150,25 @@ Events related to email and notifications:
 
 ## Usage Guidelines
 
+### Choosing the Right Logging Method
+
+#### Use BusinessAuditLogger for Business Operations
+For manual business operations that require rich context and standardized metadata, use the `BusinessAuditLogger` class:
+
+- **Entry workflow actions** (submit, approve, reject, flag)
+- **Permission changes** (grant, revoke)
+- **Data exports** and **bulk operations**
+- **Status changes** and **file operations**
+- **User-initiated actions** in views and services
+
+#### Use audit_create for System Operations
+For low-level system operations and automatic logging, use `audit_create` directly:
+
+- **Signal handlers** (automatic model change tracking)
+- **Authentication events** (login, logout)
+- **System-generated events**
+- **Test cases** and **custom scenarios**
+
 ### When to Use Each Action Type
 
 1. **Be Specific**: Use the most specific action type available rather than generic ones
@@ -176,11 +195,79 @@ Each audit log entry should include relevant metadata:
 
 ## Implementation Examples
 
+### BusinessAuditLogger Examples (Recommended for Business Operations)
+
+```python
+from apps.auditlog.business_logger import BusinessAuditLogger
+
+# Entry workflow actions
+BusinessAuditLogger.log_entry_action(
+    user=request.user,
+    entry=entry,
+    action="approve",  # or "reject", "submit", "flag", "unflag"
+    request=request,
+    notes="Entry meets all requirements",
+    level="standard"
+)
+
+# Permission changes
+BusinessAuditLogger.log_permission_change(
+    user=request.user,
+    target_user=target_user,
+    permission="workspace.change_entry",
+    action="grant",  # or "revoke"
+    request=request,
+    reason="Promoted to reviewer role"
+)
+
+# Data export operations
+BusinessAuditLogger.log_data_export(
+    user=request.user,
+    export_type="entries",
+    filters={"status": "approved", "date_range": "2024-01"},
+    result_count=150,
+    request=request,
+    format="csv",
+    reason="Monthly financial report"
+)
+
+# Bulk operations
+BusinessAuditLogger.log_bulk_operation(
+    user=request.user,
+    operation_type="bulk_approve",
+    affected_objects=entries_queryset,
+    request=request,
+    criteria="auto_approval_eligible"
+)
+
+# Status changes
+BusinessAuditLogger.log_status_change(
+    user=request.user,
+    entity=workspace,
+    old_status="active",
+    new_status="archived",
+    request=request,
+    reason="End of fiscal year"
+)
+
+# File operations
+BusinessAuditLogger.log_file_operation(
+    user=request.user,
+    file_obj=uploaded_file,
+    operation="upload",  # or "download", "delete"
+    request=request,
+    file_category="receipt",
+    purpose="Expense documentation"
+)
+```
+
+### Direct audit_create Examples (For System Operations)
+
 ```python
 from apps.auditlog.services import audit_create
 from apps.auditlog.constants import AuditActionType
 
-# User login success
+# Authentication events (typically in signal handlers)
 audit_create(
     user=user,
     action_type=AuditActionType.LOGIN_SUCCESS,
@@ -192,19 +279,62 @@ audit_create(
     }
 )
 
-# Entry status change
+# System-generated events
+audit_create(
+    user=system_user,
+    action_type=AuditActionType.INVITATION_EXPIRED,
+    target_entity=invitation,
+    metadata={
+        'invitation_type': 'organization_member',
+        'expired_after_days': 7,
+        'auto_cleanup': True
+    }
+)
+
+# Model change tracking (in signal handlers)
 audit_create(
     user=request.user,
-    action_type=AuditActionType.ENTRY_STATUS_CHANGED,
-    target_entity=entry,
-    workspace=entry.workspace,
+    action_type=AuditActionType.ORGANIZATION_UPDATED,
+    target_entity=organization,
     metadata={
-        'previous_status': 'pending',
-        'new_status': 'approved',
-        'reviewer_comments': 'Approved after review'
+        'changed_fields': ['name', 'description'],
+        'previous_values': {'name': 'Old Name'},
+        'source': 'admin_interface'
     }
 )
 ```
+
+### Migration from audit_create to BusinessAuditLogger
+
+If you're currently using `audit_create` for business operations, consider migrating:
+
+```python
+# OLD: Direct audit_create usage
+audit_create(
+    user=reviewer.user,
+    action_type=AuditActionType.ENTRY_APPROVED,
+    target_entity=entry,
+    metadata={"notes": notes}
+)
+
+# NEW: BusinessAuditLogger usage (recommended)
+BusinessAuditLogger.log_entry_action(
+    user=reviewer.user,
+    entry=entry,
+    action="approve",
+    request=request,
+    notes=notes
+)
+```
+
+### Available BusinessAuditLogger Methods
+
+- `log_entry_action()` - Entry workflow actions (submit, approve, reject, flag, unflag)
+- `log_permission_change()` - Permission grants and revocations
+- `log_data_export()` - Data export operations with filters and context
+- `log_bulk_operation()` - Bulk operations with smart object sampling
+- `log_status_change()` - Generic status changes for any entity
+- `log_file_operation()` - File upload, download, and delete operations
 
 ## Migration Notes
 

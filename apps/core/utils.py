@@ -3,6 +3,7 @@ from .constants import PAGINATION_SIZE
 from django.contrib import messages
 from django.shortcuts import redirect
 from django_htmx.http import HttpResponseClientRedirect
+from apps.core.permissions import OrganizationPermissions
 
 
 def percent_change(current: float, previous: float) -> str:
@@ -84,3 +85,10 @@ def permission_denied_view(request, message):
         return HttpResponseClientRedirect("/403")
     else:
         return redirect("permission_denied")
+
+
+def can_manage_organization(user, organization):
+    """
+    Returns True if the user has the permission to manage the organization.
+    """
+    return user.has_perm(OrganizationPermissions.MANAGE_ORGANIZATION, organization)

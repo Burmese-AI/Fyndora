@@ -16,12 +16,14 @@ def assign_team_permissions(team):
 
     try:
         for perm in team_coordinator_permissions:
-            assign_perm(perm, team_coordinator_group, team)
+            if perm == OrganizationPermissions.MANAGE_ORGANIZATION:
+                assign_perm(perm, team_coordinator_group, team.organization)
+            else:
+                assign_perm(perm, team_coordinator_group, team)
 
         if team.team_coordinator is not None:
             team_coordinator_group.user_set.add(team.team_coordinator.user)
 
-        print(f"team.organization.owner: {team.organization.owner}")
         if team.organization.owner is not None:
             team_coordinator_group.user_set.add(team.organization.owner.user)
     except Exception as e:

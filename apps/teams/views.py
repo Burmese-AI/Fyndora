@@ -28,11 +28,20 @@ from apps.teams.permissions import (
     check_add_team_member_permission,
     check_view_team_permission,
 )
+from apps.core.utils import can_manage_organization, permission_denied_view
+from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
+@login_required
 def teams_view(request, organization_id):
     try:
+        organization = get_organization_by_id(organization_id)
+        if not can_manage_organization(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
         teams = get_teams_by_organization_id(organization_id)
         attached_workspaces = []  # Initialize the variable
         # to display the workspaces attached to the team

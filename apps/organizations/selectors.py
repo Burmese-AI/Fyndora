@@ -17,6 +17,16 @@ def get_user_organizations(user):
     ).select_related("owner")
 
 
+def get_organization_by_id(organization_id):
+    """
+    Returns the organization by its ID.
+    """
+    try:
+        return Organization.objects.get(organization_id=organization_id)
+    except Organization.DoesNotExist:
+        return None
+
+
 def get_organization_members_count(organization):
     """
     Returns the count of active members in the given organization.

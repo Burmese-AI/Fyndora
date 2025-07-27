@@ -36,20 +36,22 @@ def assign_workspace_permissions(workspace):
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
 
         for perm in workspace_admin_permissions:
-            if perm == OrganizationPermissions.ADD_TEAM:
+            if (
+                perm == OrganizationPermissions.ADD_TEAM
+                or perm == OrganizationPermissions.MANAGE_ORGANIZATION
+            ):
                 assign_perm(perm, workspace_admins_group, workspace.organization)
             else:
                 assign_perm(perm, workspace_admins_group, workspace)
 
         for perm in operations_reviewer_permissions:
-            assign_perm(perm, operations_reviewer_group, workspace)
+            if perm == OrganizationPermissions.MANAGE_ORGANIZATION:
+                assign_perm(perm, operations_reviewer_group, workspace.organization)
+            else:
+                assign_perm(perm, operations_reviewer_group, workspace)
 
         for perm in org_owner_permissions:
-            if (
-                perm == WorkspacePermissions.ADD_WORKSPACE_CURRENCY
-                or perm == WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY
-                or perm == WorkspacePermissions.DELETE_WORKSPACE_CURRENCY
-            ):
+            if "workspace_currency" in perm:
                 assign_perm(perm, org_owner_group, workspace)
 
         # adding owner and workspace admin to the workspace admin group

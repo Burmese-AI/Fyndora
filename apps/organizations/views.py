@@ -53,16 +53,25 @@ from apps.currencies.constants import (
 )
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
+from apps.organizations.selectors import get_organization_by_id
+from apps.core.utils import can_manage_organization
 
 
 # Create your views here.
+@login_required
 def dashboard_view(request, organization_id):
     try:
-        organization = Organization.objects.get(organization_id=organization_id)
+        organization = get_organization_by_id(organization_id)
+        if not can_manage_organization(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
         members_count = get_organization_members_count(organization)
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
         owner = organization.owner.user if organization.owner else None
+
         context = {
             "organization": organization,
             "members_count": members_count,
@@ -80,6 +89,12 @@ def dashboard_view(request, organization_id):
 def home_view(request):
     try:
         organizations = get_user_organizations(request.user)
+        for organization in organizations:
+            organization.permissions = {
+                "can_manage_organization": can_manage_organization(
+                    request.user, organization
+                ),
+            }
         paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
         page = request.GET.get("page", 1)
 
@@ -107,6 +122,7 @@ def home_view(request):
         return render(request, "organizations/home.html", {"organizations": []})
 
 
+@login_required
 def create_organization_view(request):
     try:
         if request.method != "POST":
@@ -171,6 +187,7 @@ def create_organization_view(request):
         )
 
 
+@login_required
 def organization_overview_view(request, organization_id):
     organization = get_object_or_404(Organization, pk=organization_id)
     owner = organization.owner.user if organization.owner else None
@@ -197,6 +214,11 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
+        if not can_manage_organization(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -217,6 +239,7 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().render_to_response(context, **response_kwargs)
 
 
+@login_required
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)

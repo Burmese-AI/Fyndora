@@ -71,6 +71,18 @@ class Organization(baseModel):
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN.label,
             ),
+            (
+                OrganizationPermissions.ADD_ORG_CURRENCY,
+                OrganizationPermissions.ADD_ORG_CURRENCY.label,
+            ),
+            (
+                OrganizationPermissions.CHANGE_ORG_CURRENCY,
+                OrganizationPermissions.CHANGE_ORG_CURRENCY.label,
+            ),
+            (
+                OrganizationPermissions.DELETE_ORG_CURRENCY,
+                OrganizationPermissions.DELETE_ORG_CURRENCY.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

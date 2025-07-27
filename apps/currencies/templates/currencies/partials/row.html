@@ -69,7 +69,7 @@
       </a>
 
       <!-- Edit -->
-      {% if permissions.can_change_exchange_rate %}
+      {% if permissions.can_change_workspace_exchange_rate or request.user == organization.owner.user %}
       <a
         hx-get="{% get_update_exchange_rate_url url_identifier exchange_rate organization workspace %}"
         hx-target="#modal-placeholder"
@@ -84,7 +84,7 @@
       {% endif %}
 
       <!-- Delete -->
-      {% if permissions.can_delete_exchange_rate %}
+      {% if permissions.can_delete_workspace_exchange_rate or request.user == organization.owner.user %}
       <button
         type="button"
         class="btn btn-xs btn-ghost cursor-pointer"

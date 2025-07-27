@@ -4,6 +4,7 @@ from django.db import models
 class WorkspacePermissions(models.TextChoices):
     """
     Permissions for the Workspace model.
+    Permissions that are tied with workspace ID Object
     """
 
     CHANGE_WORKSPACE = "change_workspace", "Can change workspace by WA and Org Owner"
@@ -59,6 +60,7 @@ class WorkspacePermissions(models.TextChoices):
 class OrganizationPermissions(models.TextChoices):
     """
     Permissions for the Organization model.
+    Permissions that are tied with organization ID Object
     """
 
     CHANGE_ORGANIZATION = (
@@ -102,11 +104,24 @@ class OrganizationPermissions(models.TextChoices):
         "delete_org_entry",
         "Can delete org entry to organization by Org Owner",  # can delete org entry to organization # implemented
     )
+    ADD_ORG_CURRENCY = (
+        "add_org_currency",
+        "Can add org currency to organization only by Org Owner",
+    )
+    CHANGE_ORG_CURRENCY = (
+        "change_org_currency",
+        "Can change org currency to organization only by Org Owner",
+    )
+    DELETE_ORG_CURRENCY = (
+        "delete_org_currency",
+        "Can delete org currency to organization only by Org Owner",
+    )
 
 
 class TeamPermissions(models.TextChoices):
     """
     Permissions for the Team model.
+    Permissions that are tied with team ID Object
     """
 
     CHANGE_TEAM = (

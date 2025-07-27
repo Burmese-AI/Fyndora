@@ -51,6 +51,8 @@ from apps.currencies.constants import (
     EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
     EXCHANGE_RATE_DETAIL_CONTEXT_OBJECT_NAME,
 )
+from apps.core.permissions import OrganizationPermissions
+from apps.core.utils import permission_denied_view
 
 
 # Create your views here.
@@ -222,10 +224,11 @@ def settings_view(request, organization_id):
             request.user.user_id, organization_id
         )
         if not orgMember.is_org_owner:
-            messages.error(
-                request, "You do not have permission to access this organization."
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
             )
-            return HttpResponseClientRedirect("/403")
+
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -238,6 +241,17 @@ def settings_view(request, organization_id):
             object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
         )
         context["url_identifier"] = "organization"
+        context["permissions"] = {
+            "can_add_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.ADD_ORG_CURRENCY, organization
+            ),
+            "can_change_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORG_CURRENCY, organization
+            ),
+            "can_delete_org_exchange_rate": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORG_CURRENCY, organization
+            ),
+        }
 
         print(f"context: {context}")
 
@@ -367,6 +381,16 @@ class OrganizationExchangeRateCreateView(
     form_class = OrganizationExchangeRateCreateForm
     modal_template_name = "currencies/components/create_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.ADD_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
 
@@ -437,6 +461,16 @@ class OrganizationExchangeRateUpdateView(
     form_class = OrganizationExchangeRateUpdateForm
     modal_template_name = "currencies/components/update_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.CHANGE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to change exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)
 
@@ -501,6 +535,16 @@ class OrganizationExchangerateDeleteView(
     BaseDeleteView,
 ):
     model = OrganizationExchangeRate
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.DELETE_ORG_CURRENCY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete exchange rates to this organization.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return get_org_exchange_rates(organization=self.organization)

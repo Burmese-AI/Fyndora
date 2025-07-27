@@ -2,6 +2,8 @@
 Authentication signal handlers for audit logging.
 """
 
+import logging
+
 from django.contrib.auth.signals import (
     user_logged_in,
     user_logged_out,
@@ -16,6 +18,8 @@ from apps.auditlog.services import (
 )
 
 from .utils import safe_audit_log
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(user_logged_in)

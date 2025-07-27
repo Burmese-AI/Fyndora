@@ -7,6 +7,7 @@ import logging
 from django.utils import timezone
 
 from apps.auditlog.constants import AuditActionType
+from apps.auditlog.config import AuditConfig
 from apps.auditlog.services import (
     audit_create,
     audit_create_security_event,
@@ -48,7 +49,7 @@ class BusinessAuditLogger:
             "user_agent": request.META.get("HTTP_USER_AGENT", "unknown"),
             "http_method": request.method,
             "request_path": request.path,
-            "session_key": getattr(request.session, "session_key", None),
+            "session_key": getattr(getattr(request, "session", None), "session_key", None),
             "source": "web_request"
         }
 
@@ -203,20 +204,25 @@ class BusinessAuditLogger:
             pk_value = getattr(obj, pk_field)
             object_ids.append(str(pk_value))
         
-        if len(object_ids) > 10:
-            sampled_ids = object_ids[:5] + object_ids[-5:]
-            object_ids_display = sampled_ids + [f"... and {len(object_ids) - 10} more"]
+        total_objects = len(object_ids)
+        
+        # Use AuditConfig values for threshold and sampling
+        if total_objects > AuditConfig.BULK_OPERATION_THRESHOLD:
+            # For large operations, sample only the first N objects
+            sampled_ids = object_ids[:AuditConfig.BULK_SAMPLE_SIZE]
         else:
-            object_ids_display = object_ids
+            # For small operations, include all object IDs
+            sampled_ids = object_ids
 
         metadata = {
             "operation_type": operation_type,
-            "total_affected": len(affected_objects),
-            "affected_object_ids": object_ids_display,
+            "total_objects": total_objects,
+            "object_ids": sampled_ids,
             "operation_criteria": request.POST.get("criteria", "manual_selection") if request else kwargs.get("criteria", "manual_selection"),
-            "batch_size": request.POST.get("batch_size", len(affected_objects)) if request else kwargs.get("batch_size", len(affected_objects)),
+            "batch_size": request.POST.get("batch_size", total_objects) if request else kwargs.get("batch_size", total_objects),
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
         }
 
         # Ensure all metadata is JSON serializable

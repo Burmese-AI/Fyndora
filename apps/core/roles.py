@@ -49,15 +49,7 @@ ROLES = {
     "OPERATIONS_REVIEWER": [
         OrganizationPermissions.MANAGE_ORGANIZATION,
         WorkspacePermissions.ASSIGN_TEAMS,
-        WorkspacePermissions.VIEW_DASHBOARD,
         WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
-        WorkspacePermissions.ADD_WORKSPACE_ENTRY,
-        WorkspacePermissions.CHANGE_WORKSPACE_ENTRY,
-        WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
-        WorkspacePermissions.VIEW_WORKSPACE_ENTRY,
-        WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
-        WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
-        WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
     ],
     "TEAM_COORDINATOR": [
         OrganizationPermissions.MANAGE_ORGANIZATION,

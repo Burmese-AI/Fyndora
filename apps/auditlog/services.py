@@ -75,7 +75,7 @@ def audit_create(
                 workspace = target_entity.workspace_team.workspace
 
         # Ensure metadata is JSON serializable
-        serializable_metadata = make_json_serializable(metadata or {})
+        serializable_metadata = make_json_serializable(metadata) if metadata is not None else None
 
         data = {
             "workspace": workspace,

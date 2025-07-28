@@ -32,7 +32,6 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
-from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
 from apps.core.views.crud_base_views import (
     BaseCreateView,

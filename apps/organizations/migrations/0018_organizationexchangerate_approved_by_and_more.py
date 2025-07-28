@@ -5,20 +5,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0017_merge_20250722_1019'),
+        ("organizations", "0017_merge_20250722_1019"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organizationexchangerate',
-            name='approved_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_approved_%(class)s_set', to='organizations.organizationmember'),
+            model_name="organizationexchangerate",
+            name="approved_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="%(app_label)s_approved_%(class)s_set",
+                to="organizations.organizationmember",
+            ),
         ),
         migrations.AddField(
-            model_name='organizationexchangerate',
-            name='is_approved',
+            model_name="organizationexchangerate",
+            name="is_approved",
             field=models.BooleanField(default=False),
         ),
     ]

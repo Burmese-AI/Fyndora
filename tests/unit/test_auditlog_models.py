@@ -294,9 +294,9 @@ class TestAuditTrailDetailsProperty(TestCase):
 
         # Use a generic action type that will trigger the generic formatter
         audit = AuditTrailFactory(
-            target_entity=entry, 
+            target_entity=entry,
             metadata=custom_metadata,
-            action_type="custom_action"  # This will use the generic formatter
+            action_type="custom_action",  # This will use the generic formatter
         )
 
         details = audit.details

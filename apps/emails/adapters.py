@@ -31,8 +31,8 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         except TemplateDoesNotExist:
             html_body = None
 
-        # Use HTML if available, otherwise text, otherwise raise error for missing templates
-        if html_body is not None:
+        # Use HTML if available and not empty, otherwise text, otherwise raise error for missing templates
+        if html_body is not None and isinstance(html_body, str) and html_body.strip():
             contents = html_body
         elif text_body is not None:
             contents = text_body

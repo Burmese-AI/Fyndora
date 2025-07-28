@@ -2,10 +2,13 @@ from guardian.shortcuts import assign_perm
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
+from apps.currencies.models import Currency
 from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.models import TeamMember
 from apps.attachments.services import replace_or_append_attachments, create_attachments
@@ -19,6 +22,7 @@ from .stats import EntryStats
 from datetime import date
 from apps.currencies.selectors import get_currency_by_code
 from .selectors import get_closest_exchanged_rate
+
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
     """
@@ -131,70 +135,75 @@ def create_entry_with_attachments(
     return entry
 
 
-def update_entry_with_attachments(
+def update_entry_user_inputs(
     *,
-    entry,
+    entry: Entry,
+    organization: Organization,
+    workspace: Workspace = None,
     amount,
+    occurred_at,
     description,
-    status,
-    reviewed_by,
-    review_notes,
+    currency: Currency,
     attachments,
-    replace_attachments: bool,
-) -> Entry:
-    """
-    Service to update an existing entry with attachments.
-    """
-
-    with transaction.atomic():
-        # Update basic fields
-        update_entry(
+    replace_attachments: bool
+):
+    
+    if entry.status != EntryStatus.PENDING:
+        raise ValidationError("User can only update Entry info during the pending stage.")
+    
+    # Check if currency or occurred_at values are changed or not
+    is_currency_changed = entry.currency.code != currency.code
+    is_occurred_at_changed = entry.occurred_at != occurred_at
+    # If changed, update exchange_rate_used, org_exchange_rate_ref, workspace_exchange_rate_ref
+    new_exchange_rate_used = None
+    if is_currency_changed or is_occurred_at_changed:
+        new_exchange_rate_used = get_closest_exchanged_rate(
+            currency=currency,
+            occurred_at=occurred_at,
+            organization=organization,
+            workspace=workspace,
+        )
+        if not new_exchange_rate_used:
+            raise ValueError("No exchange rate is defined for the given currency and date.")
+    
+    # Update Provided Fields
+    entry.amount = amount
+    entry.currency = currency
+    entry.occurred_at = occurred_at
+    entry.description = description
+    
+    if new_exchange_rate_used:
+        entry.exchange_rate_used = new_exchange_rate_used.rate
+        entry.org_exchange_rate_ref = new_exchange_rate_used if isinstance(new_exchange_rate_used, OrganizationExchangeRate) else None
+        entry.workspace_exchange_rate_ref = new_exchange_rate_used if isinstance(new_exchange_rate_used, WorkspaceExchangeRate) else None
+            
+    entry.save()
+    
+    # If new attachments were provided, replace existing ones or append the new ones
+    if attachments:
+        replace_or_append_attachments(
             entry=entry,
-            amount=amount,
-            description=description,
-            status=status,
-            reviewed_by=reviewed_by,
-            review_notes=review_notes,
+            attachments=attachments,
+            replace_attachments=replace_attachments,
         )
 
-        # If new attachments were provided, replace existing ones or append the new ones
-        if attachments:
-            replace_or_append_attachments(
-                entry=entry,
-                attachments=attachments,
-                replace_attachments=replace_attachments,
-            )
+        # If the entry was flagged, unflag it
+        if entry.is_flagged:
+            entry.is_flagged = False
+            entry.save(update_fields=["is_flagged"])
 
-            # If the entry was flagged, unflag it
-            if entry.is_flagged:
-                entry.is_flagged = False
-                entry.save(update_fields=["is_flagged"])
-
-    return entry
-
-
-def update_entry(
+def update_entry_status(
     *,
-    entry,
-    amount,
-    description,
+    entry: Entry,
     status,
-    review_notes,
-    reviewed_by,
+    status_note,
+    last_status_modified_by
 ):
-    """
-    Service to update an existing entry.
-    """
-
-    entry.amount = amount
-    entry.description = description
     entry.status = status
-    entry.review_notes = review_notes
-    entry.reviewed_by = reviewed_by
-    entry.save(
-        update_fields=["amount", "description", "status", "review_notes", "reviewed_by"]
-    )
-
+    entry.status_note = status_note
+    entry.last_status_modified_by = last_status_modified_by
+    entry.status_last_updated_at = timezone.now()
+    entry.save()
 
 def delete_entry(entry):
     """

@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from apps.core.views.base_views import BaseGetModalFormView
-from ..constants import CONTEXT_OBJECT_NAME, EntryType
+from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..selectors import get_entries
 from ..services import get_org_expense_stats
 from apps.core.views.mixins import (
@@ -15,6 +15,7 @@ from apps.core.views.mixins import (
 )
 from .mixins import (
     EntryFormMixin,
+    EntryRequiredMixin,
     # OrganizationRequiredMixin,
     # WorkspaceRequiredMixin,
     # OrganizationContextMixin,
@@ -25,6 +26,7 @@ from .base_views import (
 )
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
+    UpdateOrganizationExpenseEntryForm
     # CreateWorkspaceExpenseEntryForm,
     # UpdateOrganizationExpenseEntryForm,
     # UpdateWorkspaceExpenseEntryForm,
@@ -34,6 +36,7 @@ from apps.core.utils import permission_denied_view
 from apps.core.views.crud_base_views import (
     BaseCreateView,
     BaseListView,
+    BaseUpdateView,
 )
 from ..models import Entry
 
@@ -149,3 +152,86 @@ class OrganizationExpenseCreateView(
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+    
+    
+class OrganizationExpenseUpdateView(
+    OrganizationRequiredMixin,
+    EntryRequiredMixin,
+    OrganizationLevelEntryView,
+    BaseGetModalFormView,
+    EntryFormMixin,
+    BaseUpdateView
+):
+    model = Entry
+    form_class = UpdateOrganizationExpenseEntryForm
+    modal_template_name = "entries/components/update_modal.html"
+    
+    def get_queryset(self):
+        return Entry.objects.filter(
+            organization = self.organization,
+            entry_type = EntryType.ORG_EXP,
+            entry_id = self.kwargs["pk"]
+        )
+    
+    def get_modal_title(self) -> str:
+        return "Organization Expense"
+    
+    def get_post_url(self) -> str:
+        return reverse(
+            "organization_expense_update",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "pk": self.instance.pk
+            },
+        )
+        
+    def form_valid(self, form):
+        
+        try:
+            from ..services import update_entry_status, update_entry_user_inputs
+            if self.entry.status == EntryStatus.PENDING:
+                update_entry_user_inputs(
+                    entry = self.entry,
+                    organization = self.organization,
+                    amount = form.cleaned_data["amount"],
+                    occurred_at = form.cleaned_data["occurred_at"],
+                    description = form.cleaned_data["description"],
+                    currency = form.cleaned_data["currency"],
+                    attachments = form.cleaned_data["attachment_files"],
+                    replace_attachments = True,
+                )
+            
+            # If the status has changed, update the status
+            if self.entry.status != form.cleaned_data["status"]:
+                update_entry_status(
+                    entry = self.entry,
+                    status = form.cleaned_data["status"],
+                    last_status_modified_by = self.org_member,
+                    status_note = form.cleaned_data["status_note"],
+                )
+            
+        except Exception as e:
+            messages.error(self.request, f"Expense entry update failed: {e}")
+            return self._render_htmx_error_response(form)
+        
+        messages.success(self.request, "Expense entry updated successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+
+        row_html = render_to_string(
+            "entries/partials/row.html", context=base_context, request=self.request
+        )
+
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        # Added table tag to the response to fix the issue of the row not being rendered
+        response = HttpResponse(
+            f"{message_html}<table>{row_html}</table>"
+        )
+        response["HX-trigger"] = "success"
+        return response
+    

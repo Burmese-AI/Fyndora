@@ -74,15 +74,24 @@ from apps.core.permissions import WorkspacePermissions
 #         )
 
 
-# class EntryRequiredMixin:
-#     entry = None
-#     attachments = None
+class EntryRequiredMixin:
+    entry = None
+    instance = None
+    attachments = None
 
-#     def setup(self, request, *args, **kwargs):
-#         super().setup(request, *args, **kwargs)
-#         entry_id = kwargs.get("pk")
-#         self.entry = get_object_or_404(Entry, pk=entry_id)
-#         self.attachments = self.entry.attachments.all()
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        entry_id = kwargs.get("pk")
+        self.entry = get_object_or_404(Entry, pk=entry_id)
+        self.instance = self.entry
+        print(f"Update entry note: {self.instance}")
+        self.attachments = self.entry.attachments.all()
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["entry"] = self.entry
+        context["attachments"] = self.attachments
+        return context
 
 
 class EntryFormMixin:

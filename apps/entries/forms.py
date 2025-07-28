@@ -44,7 +44,7 @@ class BaseEntryForm(forms.ModelForm):
 
     class Meta:
         model = Entry
-        fields = ["amount", "description"]
+        fields = ["amount", "description", "currency"]
         widgets = {
             "amount": forms.NumberInput(
                 attrs={
@@ -109,4 +109,82 @@ class CreateOrganizationExpenseEntryForm(BaseEntryForm):
             raise forms.ValidationError(
                 "You are not authorized to create organization expenses"
             )
+        return cleaned_data
+    
+class BaseUpdateEntryForm(BaseEntryForm):
+    replace_attachments = forms.BooleanField(
+        label="Replace existing attachments",
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(
+            attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
+        ),
+    )
+    
+    class Meta(BaseEntryForm.Meta):
+        fields = BaseEntryForm.Meta.fields + ["status", "status_note"]
+        widgets = {
+            **BaseEntryForm.Meta.widgets,
+            "status": forms.Select(
+                attrs={
+                    "class": "select select-bordered w-full",
+                    "placeholder": "Select status",
+                    "choices": EntryStatus.choices,
+                }
+            ),
+            "status_note": forms.Textarea(
+                attrs={
+                    "class": "textarea textarea-bordered w-full",
+                    "placeholder": "Leave notes for the status update",
+                }
+            ),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
+        # Don't Allow Amount, Description and Attachments to be changed if the status is not PENDING
+        if self.instance.status != EntryStatus.PENDING:
+            self.fields["amount"].disabled = True
+            self.fields["description"].disabled = True
+            self.fields["attachment_files"].disabled = True
+            self.fields["replace_attachments"].disabled = True
+            
+    def get_allowed_statuses(self, current_status):
+        transitions = {
+            EntryStatus.PENDING: [
+                EntryStatus.PENDING,
+                EntryStatus.REVIEWED,
+                EntryStatus.REJECTED,
+            ],
+            EntryStatus.REVIEWED: [
+                EntryStatus.REVIEWED,
+                EntryStatus.APPROVED,
+                EntryStatus.REJECTED,
+            ],
+            EntryStatus.REJECTED: [
+                EntryStatus.REJECTED,
+                EntryStatus.PENDING,
+                EntryStatus.REVIEWED,
+            ],
+            EntryStatus.APPROVED: [EntryStatus.APPROVED, EntryStatus.REJECTED],
+        }
+
+        allowed_statuses = transitions.get(current_status, [])
+
+        # Convert codes into (value, label) tuples using EntryStatus.labels
+        return [
+            (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
+        ]
+
+class UpdateOrganizationExpenseEntryForm(BaseUpdateEntryForm):
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # If the user is not an org admin, raise validation error
+        if not self.is_org_admin:
+            raise forms.ValidationError(
+                "You are not authorized to update organization expenses"
+            )
+
         return cleaned_data

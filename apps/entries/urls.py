@@ -2,7 +2,7 @@ from django.urls import path
 from .views.expense_views import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
-    # OrganizationExpenseUpdateView,
+    OrganizationExpenseUpdateView,
     # WorkspaceExpenseListView,
     # WorkspaceExpenseCreateView,
     # WorkspaceExpenseUpdateView,
@@ -28,11 +28,11 @@ urlpatterns = [
         OrganizationExpenseCreateView.as_view(),
         name="organization_expense_create",
     ),
-#     path(
-#         "expenses/<uuid:pk>/",
-#         OrganizationExpenseUpdateView.as_view(),
-#         name="organization_expense_update",
-#     ),
+    path(
+        "expenses/<uuid:pk>/",
+        OrganizationExpenseUpdateView.as_view(),
+        name="organization_expense_update",
+    ),
 #     path(
 #         "expenses/<uuid:pk>/",
 #         OrganizationExpenseUpdateView.as_view(),

@@ -98,6 +98,10 @@ class Entry(baseModel, SoftDeleteModel):
     )
     status_note = models.TextField(null=True, blank=True)
     is_flagged = models.BooleanField(default=False)
+    
+    @property
+    def converted_amount(self):
+        return self.amount * self.exchange_rate_used
 
     def clean(self):
         super().clean()

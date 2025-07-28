@@ -243,14 +243,6 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
-        orgMember = get_orgMember_by_user_id_and_organization_id(
-            request.user.user_id, organization_id
-        )
-        if not orgMember.is_org_owner:
-            return permission_denied_view(
-                request,
-                "You do not have permission to access this organization.",
-            )
 
         owner = organization.owner.user if organization.owner else None
         context = {

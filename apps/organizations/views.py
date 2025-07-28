@@ -248,6 +248,12 @@ def settings_view(request, organization_id):
             "organization": organization,
             "owner": owner,
         }
+        if not can_manage_organization(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
+
         org_exchanage_rates = get_org_exchange_rates(organization=organization)
         context = get_paginated_context(
             queryset=org_exchanage_rates,

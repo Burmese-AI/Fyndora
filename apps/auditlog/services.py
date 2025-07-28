@@ -75,7 +75,9 @@ def audit_create(
                 workspace = target_entity.workspace_team.workspace
 
         # Ensure metadata is JSON serializable
-        serializable_metadata = make_json_serializable(metadata) if metadata is not None else None
+        serializable_metadata = (
+            make_json_serializable(metadata) if metadata is not None else None
+        )
 
         data = {
             "workspace": workspace,
@@ -157,7 +159,9 @@ def audit_cleanup_expired_logs(
     }
 
     # Get expired logs queryset
-    expired_logs = get_expired_logs_queryset(action_type=action_type, override_days=override_days)
+    expired_logs = get_expired_logs_queryset(
+        action_type=action_type, override_days=override_days
+    )
 
     if action_type:
         # Clean up specific action type

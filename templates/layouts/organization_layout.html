@@ -101,7 +101,6 @@
           <span>Teams</span>
         </a>
       </li>
-      {% if request.user == organization.owner.user %}
       <li>
         <a href="{% url 'settings' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24"
@@ -114,7 +113,6 @@
           <span>Settings</span>
         </a>
       </li>
-      {% endif %}
       {% if request.user == organization.owner.user %}
       <li>
         <a href="{% url 'dashboard' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">

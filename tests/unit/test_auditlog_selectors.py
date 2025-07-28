@@ -72,7 +72,7 @@ class TestAuditLogSelectors(TestCase):
         """Test filtering audit logs by user ID."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             user1 = CustomUserFactory()
@@ -82,7 +82,9 @@ class TestAuditLogSelectors(TestCase):
             EntryCreatedAuditFactory(user=user2, target_entity=entry)
 
             # Filter by user1
-            result = AuditLogSelector().get_audit_logs_with_filters(user_id=user1.user_id)
+            result = AuditLogSelector().get_audit_logs_with_filters(
+                user_id=user1.user_id
+            )
 
             # Should only return audits for user1
             self.assertEqual(result.count(), 1)
@@ -170,7 +172,7 @@ class TestAuditLogSelectors(TestCase):
         """Test filtering audit logs by date range."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             # Create audits with different timestamps
@@ -182,7 +184,9 @@ class TestAuditLogSelectors(TestCase):
             StatusChangedAuditFactory(target_entity=entry)
 
             # Test start_date filter
-            result = AuditLogSelector().get_audit_logs_with_filters(start_date=yesterday)
+            result = AuditLogSelector().get_audit_logs_with_filters(
+                start_date=yesterday
+            )
 
             # Should include audits from yesterday onward
             self.assertGreaterEqual(result.count(), 0)
@@ -216,20 +220,24 @@ class TestAuditLogSelectors(TestCase):
             )
 
             # Search for "entry"
-            result = AuditLogSelector().get_audit_logs_with_filters(search_query="entry")
+            result = AuditLogSelector().get_audit_logs_with_filters(
+                search_query="entry"
+            )
 
             # Should return 3 audits:
             # - 2 containing "entry" in metadata
             # - 1 containing "entry" in action type display name (entry_status_changed -> "Entry Status Changed")
             self.assertEqual(result.count(), 3)
-            
+
             # Verify that all results contain "entry" either in metadata or action type
             for audit in result:
                 contains_entry_in_metadata = "entry" in str(audit.metadata).lower()
-                contains_entry_in_action = "entry" in str(audit.get_action_type_display()).lower()
+                contains_entry_in_action = (
+                    "entry" in str(audit.get_action_type_display()).lower()
+                )
                 self.assertTrue(
                     contains_entry_in_metadata or contains_entry_in_action,
-                    f"Audit {audit.audit_id} should contain 'entry' in metadata or action type"
+                    f"Audit {audit.audit_id} should contain 'entry' in metadata or action type",
                 )
 
     @pytest.mark.django_db
@@ -237,7 +245,7 @@ class TestAuditLogSelectors(TestCase):
         """Test filtering audit logs with multiple filters combined."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             user = CustomUserFactory()
             entry = EntryFactory()
@@ -278,7 +286,7 @@ class TestAuditLogSelectors(TestCase):
         """Test that audit logs are returned in correct order (newest first)."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             # Create multiple audits
@@ -297,7 +305,7 @@ class TestAuditLogSelectors(TestCase):
         """Test that selector uses select_related for user optimization."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             user = CustomUserFactory()
@@ -316,13 +324,15 @@ class TestAuditLogSelectors(TestCase):
         """Test selector with filters that match no records."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             EntryCreatedAuditFactory(target_entity=entry)
 
             # Filter by non-existent user
-            result = AuditLogSelector().get_audit_logs_with_filters(user_id=uuid.uuid4())
+            result = AuditLogSelector().get_audit_logs_with_filters(
+                user_id=uuid.uuid4()
+            )
 
             self.assertEqual(result.count(), 0)
             self.assertEqual(list(result), [])
@@ -357,13 +367,15 @@ class TestAuditLogSelectors(TestCase):
         """Test selector performance with larger dataset."""
         # Clear any existing audit logs to ensure clean test
         AuditTrail.objects.all().delete()
-        
+
         with disable_automatic_audit_logging():
             # Create multiple audits efficiently
             user = CustomUserFactory()
             entry = EntryFactory()
 
-            BulkAuditTrailFactory.create_batch_for_entity(entity=entry, count=20, user=user)
+            BulkAuditTrailFactory.create_batch_for_entity(
+                entity=entry, count=20, user=user
+            )
 
             # Should handle larger datasets efficiently
             result = AuditLogSelector().get_audit_logs_with_filters(

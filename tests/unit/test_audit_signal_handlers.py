@@ -198,7 +198,9 @@ class TestBaseAuditHandler(TestCase):
         # Copy the pk to simulate the same instance
         new_entry.pk = old_entry.pk
 
-        changes = BaseAuditHandler.capture_field_changes(old_entry, new_entry, ["entry_type"])
+        changes = BaseAuditHandler.capture_field_changes(
+            old_entry, new_entry, ["entry_type"]
+        )
 
         self.assertEqual(len(changes), 0)
 
@@ -385,14 +387,14 @@ class TestSignalHandlerErrorHandling(TestCase):
         # Mock objects.get to raise a database error
         with patch.object(entry.__class__.objects, "get") as mock_get:
             mock_get.side_effect = Exception("Database error")
-            
+
             # Simulate the pre_save signal that would trigger capture_changes
             # by calling the signal handler directly with an instance that has a pk
             entry.pk = 1  # Ensure it has a pk to trigger the database lookup
-            
+
             # Import the signal to trigger it
             from django.db.models.signals import pre_save
-            
+
             # Send the signal which should trigger our handler
             pre_save.send(sender=entry.__class__, instance=entry)
 

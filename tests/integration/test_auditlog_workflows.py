@@ -126,7 +126,7 @@ class TestEntryLifecycleAuditWorkflows(TestCase):
         """Test complete audit chain for entry lifecycle."""
         # Clear any existing audit records
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
         entry = EntryFactory(submitter=user)
 
@@ -389,7 +389,7 @@ class TestCrossAppAuditIntegrationWorkflows(TestCase):
         """Test audit integration between workspace and entry operations."""
         # Clear any existing audit records to avoid conflicts with automatic signal-generated audits
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
         entry = EntryFactory(submitter=user)
 
@@ -439,7 +439,7 @@ class TestCrossAppAuditIntegrationWorkflows(TestCase):
         """Test audit integration for organization and team operations."""
         # Clear any existing audit records to avoid conflicts with automatic signal-generated audits
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
         organization = OrganizationFactory()
 
@@ -520,7 +520,7 @@ class TestAuditLogViewWorkflows(TestCase):
         """Test audit log filtering functionality."""
         # Clear any existing audit records to avoid conflicts with automatic signal-generated audits
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
         other_user = CustomUserFactory()
 
@@ -547,13 +547,17 @@ class TestAuditLogViewWorkflows(TestCase):
 
         # Test filtering by user - expect more records due to automatic signal-generated audits
         user_audits = AuditLogSelector.get_audit_logs_with_filters(user_id=user.user_id)
-        self.assertGreaterEqual(user_audits.count(), 2)  # At least 2, but may be more due to signals
+        self.assertGreaterEqual(
+            user_audits.count(), 2
+        )  # At least 2, but may be more due to signals
 
         # Test filtering by action type - expect more ENTRY_CREATED records due to signals
         entry_audits = AuditLogSelector.get_audit_logs_with_filters(
             action_type=AuditActionType.ENTRY_CREATED
         )
-        self.assertGreaterEqual(entry_audits.count(), 2)  # At least 2, but may be more due to signals
+        self.assertGreaterEqual(
+            entry_audits.count(), 2
+        )  # At least 2, but may be more due to signals
 
         # Test filtering by date range - expect more records due to automatic audits
         start_date = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -562,14 +566,16 @@ class TestAuditLogViewWorkflows(TestCase):
         recent_audits = AuditLogSelector.get_audit_logs_with_filters(
             start_date=start_date, end_date=end_date
         )
-        self.assertGreaterEqual(recent_audits.count(), 3)  # At least 3, but may be more due to signals
+        self.assertGreaterEqual(
+            recent_audits.count(), 3
+        )  # At least 3, but may be more due to signals
 
     @pytest.mark.django_db
     def test_audit_log_search_workflow(self):
         """Test audit log search functionality."""
         # Clear any existing audit records to avoid conflicts with automatic signal-generated audits
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
 
         # Create searchable audit entries
@@ -589,20 +595,17 @@ class TestAuditLogViewWorkflows(TestCase):
 
         # Test search functionality - filter by user to isolate test data
         office_results = AuditLogSelector.get_audit_logs_with_filters(
-            search_query="office",
-            user_id=str(user.user_id)
+            search_query="office", user_id=str(user.user_id)
         )
         self.assertEqual(office_results.count(), 1)
 
         travel_results = AuditLogSelector.get_audit_logs_with_filters(
-            search_query="travel",
-            user_id=str(user.user_id)
+            search_query="travel", user_id=str(user.user_id)
         )
         self.assertEqual(travel_results.count(), 1)
 
         amount_results = AuditLogSelector.get_audit_logs_with_filters(
-            search_query="150.00",
-            user_id=str(user.user_id)
+            search_query="150.00", user_id=str(user.user_id)
         )
         self.assertEqual(amount_results.count(), 1)
 
@@ -644,7 +647,7 @@ class TestAuditLogDataIntegrityWorkflows(TestCase):
         """Test audit log integrity when user is deleted."""
         # Clear any existing audit records to avoid conflicts with automatic signal-generated audits
         AuditTrail.objects.all().delete()
-        
+
         user = CustomUserFactory()
 
         # Create audit entries for user
@@ -664,7 +667,9 @@ class TestAuditLogDataIntegrityWorkflows(TestCase):
 
         # Should still be queryable - expect more records due to automatic signal-generated audits
         audits = AuditTrail.objects.all()
-        self.assertGreaterEqual(audits.count(), 2)  # At least 2, but may be more due to signals
+        self.assertGreaterEqual(
+            audits.count(), 2
+        )  # At least 2, but may be more due to signals
 
     @pytest.mark.django_db
     def test_audit_log_metadata_consistency(self):
@@ -709,7 +714,7 @@ class TestAuditLogDataIntegrityWorkflows(TestCase):
         """Test handling of concurrent audit creation."""
         # Clear any existing audit records
         AuditTrail.objects.all().delete()
-        
+
         users = CustomUserFactory.create_batch(5)
         entry = EntryFactory()
 
@@ -784,13 +789,18 @@ class TestSignalIntegrationWorkflows(TestCase):
         )
 
         # Assert that audit record was created
-        self.assertGreater(audits.count(), 0, "No audit record was created for organization creation")
-        
+        self.assertGreater(
+            audits.count(), 0, "No audit record was created for organization creation"
+        )
+
         audit = audits.first()
         self.assertEqual(audit.action_type, AuditActionType.ORGANIZATION_CREATED)
         self.assertEqual(str(audit.target_entity_id), str(org.pk))
-        self.assertEqual(f"{audit.target_entity_type.app_label}.{audit.target_entity_type.model}", "organizations.organization")
-        
+        self.assertEqual(
+            f"{audit.target_entity_type.app_label}.{audit.target_entity_type.model}",
+            "organizations.organization",
+        )
+
         # Verify metadata contains creation information
         self.assertIn("automatic_logging", audit.metadata)
         self.assertTrue(audit.metadata["automatic_logging"])
@@ -813,25 +823,24 @@ class TestSignalIntegrationWorkflows(TestCase):
 
         # Verify that an audit trail was created for the update
         audits = AuditTrail.objects.filter(
-            target_entity_id=org.pk,
-            action_type=AuditActionType.ORGANIZATION_UPDATED
+            target_entity_id=org.pk, action_type=AuditActionType.ORGANIZATION_UPDATED
         )
-        
+
         # Should have at least one audit entry for the update
         self.assertGreater(audits.count(), 0)
-        
+
         # Get the most recent audit entry
-        audit = audits.latest('timestamp')
-        
+        audit = audits.latest("timestamp")
+
         # Verify the audit has correct attributes
         self.assertEqual(audit.user, user)
         self.assertEqual(audit.action_type, AuditActionType.ORGANIZATION_UPDATED)
         self.assertIsNotNone(audit.metadata)
-        
+
         # Verify the audit context was preserved
-        if 'source' in audit.metadata:
-            self.assertEqual(audit.metadata['source'], 'test')
-        
+        if "source" in audit.metadata:
+            self.assertEqual(audit.metadata["source"], "test")
+
         # Verify the organization was actually updated
         org.refresh_from_db()
         self.assertEqual(org.title, "Updated Organization")
@@ -902,34 +911,33 @@ class TestSignalIntegrationWorkflows(TestCase):
 
         # Verify that an audit trail was created
         audits = AuditTrail.objects.filter(
-            target_entity_id=org.pk,
-            action_type=AuditActionType.ORGANIZATION_UPDATED
+            target_entity_id=org.pk, action_type=AuditActionType.ORGANIZATION_UPDATED
         )
-        
+
         # Should have at least one audit entry
         self.assertGreater(audits.count(), 0)
-        
+
         # Get the most recent audit entry
-        audit = audits.latest('timestamp')
-        
+        audit = audits.latest("timestamp")
+
         # Verify the audit has the correct user
         self.assertEqual(audit.user, user)
-        
+
         # Verify the audit metadata contains the context information
         # Note: The exact preservation depends on signal handler implementation
         # At minimum, verify the audit was created with proper structure
         self.assertIsNotNone(audit.metadata)
-        
+
         # If context preservation is implemented, verify context fields
         # This assertion may need adjustment based on actual signal handler behavior
-        if 'source' in audit.metadata:
-            self.assertEqual(audit.metadata['source'], context['source'])
-        if 'request_id' in audit.metadata:
-            self.assertEqual(audit.metadata['request_id'], context['request_id'])
-        if 'user_agent' in audit.metadata:
-            self.assertEqual(audit.metadata['user_agent'], context['user_agent'])
-        if 'operation' in audit.metadata:
-            self.assertEqual(audit.metadata['operation'], context['operation'])
+        if "source" in audit.metadata:
+            self.assertEqual(audit.metadata["source"], context["source"])
+        if "request_id" in audit.metadata:
+            self.assertEqual(audit.metadata["request_id"], context["request_id"])
+        if "user_agent" in audit.metadata:
+            self.assertEqual(audit.metadata["user_agent"], context["user_agent"])
+        if "operation" in audit.metadata:
+            self.assertEqual(audit.metadata["operation"], context["operation"])
 
 
 @pytest.mark.integration
@@ -1020,7 +1028,7 @@ class TestAuditErrorHandlingWorkflows(TestCase):
             audits = AuditTrail.objects.filter(
                 target_entity_id=entry.pk,
                 action_type=AuditActionType.ENTRY_CREATED,
-                user=user
+                user=user,
             )
             self.assertEqual(audits.count(), 0)
         else:
@@ -1029,16 +1037,16 @@ class TestAuditErrorHandlingWorkflows(TestCase):
             self.assertEqual(audit.user, user)
             self.assertEqual(audit.action_type, AuditActionType.ENTRY_CREATED)
             self.assertIsNotNone(audit.metadata)
-            
+
             # Verify the audit was persisted to database
             db_audit = AuditTrail.objects.get(pk=audit.pk)
             self.assertEqual(db_audit.user, user)
-            
+
             # Check if metadata was truncated or handled appropriately
             # The normal field should be preserved if possible
             if "normal_field" in db_audit.metadata:
                 self.assertEqual(db_audit.metadata["normal_field"], "normal_value")
-            
+
             # Large field might be truncated or removed
             # This depends on the implementation's metadata size handling
 
@@ -1112,12 +1120,12 @@ class TestAuditErrorHandlingWorkflows(TestCase):
         audits = AuditTrail.objects.filter(
             target_entity_id=entry.pk, action_type=AuditActionType.ENTRY_UPDATED
         )
-        
+
         # Either we should have some successful audits, or the service should handle all failures gracefully
         # This tests that the concurrent access doesn't break the system
         total_attempts = len(successful_audits) + audits.count()
         self.assertGreaterEqual(total_attempts, 0)  # At minimum, no system crash
-        
+
         # If audits were created, verify they have proper structure
         if audits.exists():
             for audit in audits:

@@ -32,7 +32,6 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
-from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
 from apps.core.views.crud_base_views import (
     BaseCreateView,
@@ -243,14 +242,6 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
-        orgMember = get_orgMember_by_user_id_and_organization_id(
-            request.user.user_id, organization_id
-        )
-        if not orgMember.is_org_owner:
-            return permission_denied_view(
-                request,
-                "You do not have permission to access this organization.",
-            )
 
         owner = organization.owner.user if organization.owner else None
         context = {
@@ -274,10 +265,13 @@ def settings_view(request, organization_id):
             "can_delete_org_exchange_rate": request.user.has_perm(
                 OrganizationPermissions.DELETE_ORG_CURRENCY, organization
             ),
+            "can_change_organization": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORGANIZATION, organization
+            ),
+            "can_delete_organization": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORGANIZATION, organization
+            ),
         }
-
-        print(f"context: {context}")
-
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(

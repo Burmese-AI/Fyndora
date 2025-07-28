@@ -1,7 +1,7 @@
 from django.urls import path
 from .views.expense_views import (
     OrganizationExpenseListView,
-    # OrganizationExpenseCreateView,
+    OrganizationExpenseCreateView,
     # OrganizationExpenseUpdateView,
     # WorkspaceExpenseListView,
     # WorkspaceExpenseCreateView,
@@ -23,11 +23,11 @@ urlpatterns = [
         OrganizationExpenseListView.as_view(),
         name="organization_expenses",
     ),
-#     path(
-#         "expenses/create/",
-#         OrganizationExpenseCreateView.as_view(),
-#         name="organization_expense_create",
-#     ),
+    path(
+        "expenses/create/",
+        OrganizationExpenseCreateView.as_view(),
+        name="organization_expense_create",
+    ),
 #     path(
 #         "expenses/<uuid:pk>/",
 #         OrganizationExpenseUpdateView.as_view(),

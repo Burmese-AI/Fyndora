@@ -18,7 +18,7 @@
         </h2>
       <button 
         class="btn btn-neutral"
-        {% comment %} hx-get="{% url 'organization_expense_create' organization_id=organization.pk %}" {% endcomment %}
+        hx-get="{% url 'organization_expense_create' organization_id=organization.pk %}"
         hx-target="#modal-placeholder"
         hx-swap="innerHTML"
       >

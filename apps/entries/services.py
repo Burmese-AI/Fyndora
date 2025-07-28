@@ -6,15 +6,19 @@ from django.db import transaction
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
+from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.models import TeamMember
 from apps.attachments.services import replace_or_append_attachments, create_attachments
 from apps.teams.constants import TeamMemberRole
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
-
+from datetime import date
+from apps.currencies.selectors import get_currency_by_code
+from .selectors import get_closest_exchanged_rate
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
     """
@@ -63,30 +67,58 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
 
 def create_entry_with_attachments(
     *,
-    submitter,
     amount,
+    occurred_at,
     description,
     attachments,
     entry_type: EntryType,
-    workspace=None,
-    workspace_team=None,
+    organization: Organization,
+    workspace: Workspace = None,
+    workspace_team: WorkspaceTeam = None,
+    currency,
+    submitted_by_org_member = None,
+    submitted_by_team_member = None,
 ) -> Entry:
     """
     Service to create a new entry with attachments.
     """
 
     is_attachment_provided = True if attachments else False
+    
+    # Get the closest exchange rate
+    exchange_rate_used = get_closest_exchanged_rate(
+        currency=currency,
+        occurred_at=occurred_at if occurred_at else date.today(),
+        organization=organization,
+        workspace=workspace,
+    )
+    if not exchange_rate_used:
+        raise ValueError("No exchange rate is defined for the given currency and date.")
+    
+    # Potential Error
+    # NOTE: if currency is soft-deleted, currency obj can't be obtained 
+    # unless its similar object has been created
+    # currency = get_currency_by_code(currency_code)
+    # if not currency:
+    #     raise ValueError("Invalid currency code.")
+    
     with transaction.atomic():
         # Create the Entry
         entry = Entry.objects.create(
-            entry_type=entry_type,
-            amount=amount,
-            description=description,
-            submitter=submitter,
-            is_flagged=not is_attachment_provided,
-            workspace=workspace
-            or (workspace_team.workspace if workspace_team else None),
-            workspace_team=workspace_team,
+            entry_type = entry_type,
+            amount = amount,
+            occurred_at = occurred_at,
+            description = description,
+            organization = organization,
+            workspace = workspace or (workspace_team.workspace if workspace_team else None),
+            workspace_team = workspace_team,
+            currency = currency,
+            exchange_rate_used = exchange_rate_used.rate,
+            org_exchange_rate_ref = exchange_rate_used if isinstance(exchange_rate_used, OrganizationExchangeRate) else None,
+            workspace_exchange_rate_ref = exchange_rate_used if isinstance(exchange_rate_used, WorkspaceExchangeRate) else None,
+            submitted_by_org_member = submitted_by_org_member,
+            submitted_by_team_member = submitted_by_team_member,
+            is_flagged = not is_attachment_provided,
         )
 
         # Create the Attachments if any were provided

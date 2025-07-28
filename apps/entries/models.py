@@ -88,7 +88,7 @@ class Entry(baseModel, SoftDeleteModel):
     status = models.CharField(
         max_length=20, choices=EntryStatus.choices, default=EntryStatus.PENDING
     )
-    status_last_updated_at = models.DateTimeField()
+    status_last_updated_at = models.DateTimeField(null=True, blank=True)
     last_status_modified_by = models.ForeignKey(
         OrganizationMember,
         null=True,

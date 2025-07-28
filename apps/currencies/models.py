@@ -26,7 +26,7 @@ class Currency(baseModel, SoftDeleteModel):
             raise ValidationError({"code": "Invalid currency code."})
 
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        return self.code
 
     class Meta:
         verbose_name_plural = "Currencies"

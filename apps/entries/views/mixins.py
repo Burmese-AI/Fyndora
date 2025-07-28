@@ -85,38 +85,38 @@ from apps.core.permissions import WorkspacePermissions
 #         self.attachments = self.entry.attachments.all()
 
 
-# class EntryFormMixin:
-#     form_class = BaseEntryForm
+class EntryFormMixin:
+    form_class = None
 
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         kwargs["org_member"] = self.org_member
-#         kwargs["organization"] = self.organization
-#         kwargs["is_org_admin"] = self.is_org_admin
-#         kwargs["is_workspace_admin"] = (
-#             self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
-#         )
-#         kwargs["is_operation_reviewer"] = (
-#             self.is_operation_reviewer
-#             if hasattr(self, "is_operation_reviewer")
-#             else None
-#         )
-#         kwargs["is_team_coordinator"] = (
-#             self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
-#         )
-#         kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
-#         kwargs["workspace_team"] = (
-#             self.workspace_team if hasattr(self, "workspace_team") else None
-#         )
-#         kwargs["workspace_team_member"] = (
-#             self.workspace_team_member
-#             if hasattr(self, "workspace_team_member")
-#             else None
-#         )
-#         kwargs["workspace_team_role"] = (
-#             self.workspace_team_role if hasattr(self, "workspace_team_role") else None
-#         )
-#         return kwargs
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["org_member"] = self.org_member
+        kwargs["organization"] = self.organization
+        kwargs["is_org_admin"] = self.is_org_admin
+        kwargs["is_workspace_admin"] = (
+            self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
+        )
+        kwargs["is_operation_reviewer"] = (
+            self.is_operation_reviewer
+            if hasattr(self, "is_operation_reviewer")
+            else None
+        )
+        kwargs["is_team_coordinator"] = (
+            self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
+        )
+        kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        kwargs["workspace_team"] = (
+            self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        kwargs["workspace_team_member"] = (
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
+        )
+        kwargs["workspace_team_role"] = (
+            self.workspace_team_role if hasattr(self, "workspace_team_role") else None
+        )
+        return kwargs
 
 
 # class CreateEntryFormMixin(EntryFormMixin):

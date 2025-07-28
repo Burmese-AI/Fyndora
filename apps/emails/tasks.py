@@ -15,7 +15,7 @@ def send_email_task(to, subject, contents):
     A Celery task to send an email using one of the configured Gmail accounts, rotating between them.
     Logs the outcome using Django's logging framework.
     """
-    accounts = settings.GMAIL_ACCOUNTS
+    accounts = getattr(settings, 'GMAIL_ACCOUNTS')
     if not accounts:
         logger.critical(
             "CRITICAL: No Gmail accounts are configured in settings.GMAIL_ACCOUNTS."
@@ -34,8 +34,8 @@ def send_email_task(to, subject, contents):
     # Perform round-robin selection.
     selected_account_index = (account_index - 1) % len(accounts)
     selected_account = accounts[selected_account_index]
-    gmail_user = selected_account["user"]
-    oauth2_file = selected_account["oauth2_file"]
+    gmail_user = selected_account.get("user")
+    oauth2_file = selected_account.get("oauth2_file")
 
     try:
         yag = yagmail.SMTP(gmail_user, oauth2_file=oauth2_file)
@@ -45,5 +45,8 @@ def send_email_task(to, subject, contents):
             contents=contents,
         )
         logger.info(f"Email sent successfully to {to} from {gmail_user}.")
+    except (ImportError, FileNotFoundError):
+        # Re-raise critical errors that should not be silently handled
+        raise
     except Exception:
         logger.exception(f"Failed to send email to {to} from {gmail_user}.")

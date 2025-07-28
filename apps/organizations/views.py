@@ -266,10 +266,13 @@ def settings_view(request, organization_id):
             "can_delete_org_exchange_rate": request.user.has_perm(
                 OrganizationPermissions.DELETE_ORG_CURRENCY, organization
             ),
+            "can_change_organization": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORGANIZATION, organization
+            ),
+            "can_delete_organization": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORGANIZATION, organization
+            ),
         }
-
-        print(f"context: {context}")
-
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(

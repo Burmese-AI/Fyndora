@@ -4,6 +4,15 @@ Test factories for Fyndora models.
 Import all factories here for easy access in tests.
 """
 
+from .attachment_factories import (
+    AttachmentFactory,
+    AttachmentWithEntryFactory,
+    ImageAttachmentFactory,
+    MultipleAttachmentsFactory,
+    OtherAttachmentFactory,
+    PDFAttachmentFactory,
+    SpreadsheetAttachmentFactory,
+)
 from .auditlog_factories import (
     AuditTrailFactory,
     AuditWithComplexMetadataFactory,
@@ -97,6 +106,14 @@ __all__ = [
     "LargeAmountEntryFactory",
     "SmallAmountEntryFactory",
     "EntryWithReviewFactory",
+    # Attachment factories
+    "AttachmentFactory",
+    "ImageAttachmentFactory",
+    "PDFAttachmentFactory",
+    "SpreadsheetAttachmentFactory",
+    "OtherAttachmentFactory",
+    "AttachmentWithEntryFactory",
+    "MultipleAttachmentsFactory",
     # Auditlog factories
     "AuditTrailFactory",
     "EntryCreatedAuditFactory",

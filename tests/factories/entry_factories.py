@@ -34,6 +34,7 @@ class EntryFactory(DjangoModelFactory):
     description = factory.Faker("sentence", nb_words=8)
     status = EntryStatus.PENDING_REVIEW  # Default status
     workspace = factory.LazyAttribute(lambda obj: WorkspaceFactory())
+    is_flagged = False
 
     @factory.lazy_attribute
     def workspace_team(self):

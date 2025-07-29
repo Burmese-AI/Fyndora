@@ -117,7 +117,21 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     """
     try:
         team = model_update(team, form.cleaned_data)
+        if team.team_coordinator:
+            team_member = TeamMember.objects.create(
+                team=team,
+                organization_member=team.team_coordinator,
+                role="team_coordinator",
+            )
+
         new_team_coordinator = form.cleaned_data.get("team_coordinator")
+        if previous_team_coordinator:
+            team_member = TeamMember.objects.get(
+                team=team,
+                organization_member=previous_team_coordinator,
+                role="team_coordinator",
+            )
+            team_member.delete()
         update_team_coordinator_group(
             team, previous_team_coordinator, new_team_coordinator
         )
@@ -126,12 +140,15 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
         raise TeamUpdateError(f"Failed to update team: {str(e)}")
 
 
-def remove_team_member(team_member: TeamMember) -> None:
+def remove_team_member(team_member: TeamMember, team: Team) -> None:
     """
     Removes a team member.
     """
     try:
         team_member.delete()
+        team.team_coordinator = None
+        team.save()
+        update_team_coordinator_group(team, team_member.organization_member, None)
     except Exception as e:
         raise TeamMemberDeletionError(f"Failed to remove team member: {str(e)}")
 

@@ -382,7 +382,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
         if request.method == "POST":
             try:
                 team_member = get_team_member_by_id(team_member_id)
-                remove_team_member(team_member)
+                remove_team_member(team_member, team)
                 messages.success(request, "Team member removed successfully.")
 
                 # Get updated team members list

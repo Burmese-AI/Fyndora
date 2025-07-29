@@ -53,12 +53,13 @@ class WorkspaceTeamEntryListView(
     template_name = "entries/team_level_entry.html"
 
     def get_queryset(self) -> QuerySet[Any]:
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
             workspace = self.workspace,
             workspace_team = self.workspace_team,
-        ).filter(Q(entry_type=EntryType.INCOME) | Q(entry_type=EntryType.DISBURSEMENT) | Q(entry_type=EntryType.REMITTANCE))
-
+            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            annotate_attachment_count=True,
+        )
 
 class WorkspaceTeamEntryCreateView(
     WorkspaceTeamRequiredMixin,
@@ -75,12 +76,14 @@ class WorkspaceTeamEntryCreateView(
     context_object_name = CONTEXT_OBJECT_NAME
     
     def get_queryset(self) -> QuerySet[Any]:
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
             workspace = self.workspace,
             workspace_team = self.workspace_team,
-        ).filter(Q(entry_type=EntryType.INCOME) | Q(entry_type=EntryType.DISBURSEMENT) | Q(entry_type=EntryType.REMITTANCE))
-    
+            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            annotate_attachment_count=True,
+        )
+        
     def get_modal_title(self) -> str:
         return "Organization Expense"
     
@@ -180,11 +183,13 @@ class WorkspaceTeamEntryDeleteView(
     table_template_name = "entries/partials/table.html"
     
     def get_queryset(self):
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
             workspace = self.workspace,
             workspace_team = self.workspace_team,
-        ).filter(Q(entry_type=EntryType.INCOME) | Q(entry_type=EntryType.DISBURSEMENT) | Q(entry_type=EntryType.REMITTANCE))
+            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            annotate_attachment_count=True,
+        )
         
     def perform_service(self, form):
         from ..services import delete_entry

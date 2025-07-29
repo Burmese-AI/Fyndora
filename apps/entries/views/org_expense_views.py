@@ -62,9 +62,10 @@ class OrganizationExpenseListView(
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP
+            entry_types = [EntryType.ORG_EXP],
+            annotate_attachment_count=True,
         )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -90,9 +91,10 @@ class OrganizationExpenseCreateView(
     table_template_name = "entries/partials/table.html"
     
     def get_queryset(self):
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP
+            entry_types = [EntryType.ORG_EXP],
+            annotate_attachment_count=True,
         )
     
     def get_modal_title(self) -> str:
@@ -186,9 +188,10 @@ class OrganizationExpenseDeleteView(
     table_template_name = "entries/partials/table.html"
     
     def get_queryset(self):
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP,
+            entry_types = [EntryType.ORG_EXP],
+            annotate_attachment_count=True,
         )
         
     def perform_service(self, form):

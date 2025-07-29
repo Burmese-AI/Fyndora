@@ -1,9 +1,8 @@
 from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
-from django.template.loader import render_to_string
-from django.contrib import messages
 from django.urls import reverse
+from ..selectors import get_entries
 
 from apps.core.views.base_views import BaseGetModalFormView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
@@ -46,10 +45,11 @@ class WorkspaceExpenseListView(
     template_name = "entries/workspace_expense_index.html"
 
     def get_queryset(self) -> QuerySet[Any]:
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
             workspace = self.workspace,
-            entry_type = EntryType.WORKSPACE_EXP
+            entry_types = [EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
         )
         
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -73,10 +73,11 @@ class WorkspaceExpenseCreateView(
     table_template_name = "entries/partials/table.html"
 
     def get_queryset(self):
-        return Entry.objects.filter(
-            organization=self.organization,
-            workspace=self.workspace,
-            entry_type=EntryType.WORKSPACE_EXP,
+        return get_entries(
+            organization = self.organization,
+            workspace = self.workspace,
+            entry_types = [EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
         )
 
     def get_modal_title(self) -> str:
@@ -178,10 +179,11 @@ class WorkspaceExpenseDeleteView(
     table_template_name = "entries/partials/table.html"
 
     def get_queryset(self):
-        return Entry.objects.filter(
+        return get_entries(
             organization = self.organization,
             workspace = self.workspace,
-            entry_type = EntryType.WORKSPACE_EXP,
+            entry_types = [EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
         )
         
     def perform_service(self, form):

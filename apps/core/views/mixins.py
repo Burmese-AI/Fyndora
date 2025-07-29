@@ -121,7 +121,7 @@ class HtmxInvalidResponseMixin:
     
     message_template_name = "includes/message.html"
 
-    def _render_htmx_error_response(self) -> HttpResponse:
+    def _render_htmx_error_response(self, form) -> HttpResponse:
         """
             Render htmx error response.
             Note: Form is not required

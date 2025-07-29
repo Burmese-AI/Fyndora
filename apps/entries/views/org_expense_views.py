@@ -34,7 +34,7 @@ from apps.core.views.crud_base_views import (
 )
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
-    HtmxCreateServiceMixin,
+    HtmxTableServiceMixin,
 )
 
 
@@ -77,7 +77,7 @@ class OrganizationExpenseCreateView(
     OrganizationLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
-    HtmxCreateServiceMixin,
+    HtmxTableServiceMixin,
     BaseCreateView,
 ):
     model = Entry
@@ -101,7 +101,7 @@ class OrganizationExpenseCreateView(
             kwargs={"organization_id": self.organization.pk},
         )
         
-    def perform_create_service(self, form):
+    def perform_service(self, form):
         print("🧼 Cleaned Data:", form.cleaned_data)  # TEMP DEBUG
         create_entry_with_attachments(
             amount =form.cleaned_data["amount"],
@@ -201,9 +201,12 @@ class OrganizationExpenseDeleteView(
     OrganizationRequiredMixin,
     EntryRequiredMixin,
     OrganizationLevelEntryView,
+    HtmxTableServiceMixin,
     BaseDeleteView
 ):
     model = Entry
+    context_object_name = CONTEXT_OBJECT_NAME
+    table_template_name = "entries/partials/table.html"
     
     def get_queryset(self):
         return Entry.objects.filter(
@@ -211,33 +214,6 @@ class OrganizationExpenseDeleteView(
             entry_type = EntryType.ORG_EXP,
         )
         
-    def form_valid(self, form):
+    def perform_service(self, form):
         from ..services import delete_entry
-        try:
-            delete_entry(self.entry)
-        except Exception as e:
-            messages.error(self.request, f"Expense entry deletion failed: {e}")
-            return self._render_htmx_error_response()
-        messages.success(self.request, "Expense entry deleted successfully")
-        return self._render_htmx_success_response()
-    
-    def _render_htmx_success_response(self) -> HttpResponse:
-        base_context = self.get_context_data()
-        
-        from apps.core.utils import get_paginated_context
-
-        org_exp_entries = self.get_queryset()
-
-        table_context = get_paginated_context(
-            queryset=org_exp_entries,
-            context=base_context,
-            object_name=CONTEXT_OBJECT_NAME,
-        )
-        table_html = render_to_string(
-            "entries/partials/table.html", context=table_context, request=self.request
-        )
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-        response = HttpResponse(f"{message_html}{table_html}")
-        return response
+        delete_entry(self.entry)

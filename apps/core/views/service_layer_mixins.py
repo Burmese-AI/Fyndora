@@ -2,19 +2,19 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.contrib import messages
 
-class HtmxCreateServiceMixin:
+class HtmxTableServiceMixin:
     context_object_name = None
     table_template_name = None
 
     def get_queryset(self):
         raise NotImplementedError("get_queryset() must be implemented")
 
-    def perform_create_service(self, form):
+    def perform_service(self, form):
         """
         Override this to run your service logic.
         Should raise Exception if something goes wrong.
         """
-        raise NotImplementedError("perform_create_service() must be implemented")
+        raise NotImplementedError("perform_service() must be implemented")
 
     def get_partial_templates(self, context) -> list[tuple[str, dict]]:
         """
@@ -26,7 +26,7 @@ class HtmxCreateServiceMixin:
     def form_valid(self, form):
         try:
             print("============ FORM VALID ====")
-            self.perform_create_service(form)
+            self.perform_service(form)
         except Exception as e:
             messages.error(self.request, str(e))
             return self._render_htmx_error_response(form)

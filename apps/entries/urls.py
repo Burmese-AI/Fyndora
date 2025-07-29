@@ -1,22 +1,17 @@
 from django.urls import path
-from .views.expense_views import (
+from .views.org_expense_views import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
     OrganizationExpenseDeleteView,
-    # WorkspaceExpenseListView,
-    # WorkspaceExpenseCreateView,
-    # WorkspaceExpenseUpdateView,
-    # OrganizationExpenseDeleteView,
-    # WorkspaceExpenseDeleteView,
+)
+from .views.workspace_expense_views import (
+    WorkspaceExpenseListView,
+    WorkspaceExpenseCreateView,
+    WorkspaceExpenseUpdateView,
+    WorkspaceExpenseDeleteView,
 )
 from .views.base_views import EntryDetailView
-# from .views.entry_views import (
-#     WorkspaceTeamEntryListView,
-#     WorkspaceTeamEntryCreateView,
-#     WorkspaceTeamEntryUpdateView,
-#     WorkspaceTeamEntryDeleteView,
-# )
 
 urlpatterns = [
     path(
@@ -39,26 +34,26 @@ urlpatterns = [
         OrganizationExpenseDeleteView.as_view(),
         name="organization_expense_delete",
     ),
-#     path(
-#         "workspaces/<uuid:workspace_id>/expenses",
-#         WorkspaceExpenseListView.as_view(),
-#         name="workspace_expense_list",
-#     ),
-#     path(
-#         "workspaces/<uuid:workspace_id>/expenses/create",
-#         WorkspaceExpenseCreateView.as_view(),
-#         name="workspace_expense_create",
-#     ),
-#     path(
-#         "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/",
-#         WorkspaceExpenseUpdateView.as_view(),
-#         name="workspace_expense_update",
-#     ),
-#     path(
-#         "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/delete",
-#         WorkspaceExpenseDeleteView.as_view(),
-#         name="workspace_expense_delete",
-#     ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses",
+        WorkspaceExpenseListView.as_view(),
+        name="workspace_expense_list",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/create",
+        WorkspaceExpenseCreateView.as_view(),
+        name="workspace_expense_create",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/",
+        WorkspaceExpenseUpdateView.as_view(),
+        name="workspace_expense_update",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/<uuid:pk>/delete",
+        WorkspaceExpenseDeleteView.as_view(),
+        name="workspace_expense_delete",
+    ),
 #     path(
 #         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
 #         WorkspaceTeamEntryListView.as_view(),

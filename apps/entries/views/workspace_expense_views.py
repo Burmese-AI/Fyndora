@@ -12,17 +12,15 @@ from ..selectors import get_entries
 from ..services import delete_entry, get_org_expense_stats
 from apps.core.views.mixins import (
     OrganizationRequiredMixin,
+    WorkspaceRequiredMixin,
 )
 from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
-    # OrganizationRequiredMixin,
-    # WorkspaceRequiredMixin,
-    # OrganizationContextMixin,
-    # WorkspaceContextMixin,
 )
 from .base_views import (
     OrganizationLevelEntryView,
+    WorkspaceLevelEntryView,
 )
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
@@ -42,43 +40,31 @@ from apps.core.views.crud_base_views import (
 from ..models import Entry
 
 
-class OrganizationExpenseListView(
-    OrganizationRequiredMixin,
-    OrganizationLevelEntryView,
+class WorkspaceExpenseListView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
     BaseListView,
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
-    template_name = "entries/index.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perm(
-            OrganizationPermissions.VIEW_ORG_ENTRY, self.organization
-        ):
-            return permission_denied_view(
-                request,
-                "You do not have permission to view organization expenses.",
-            )
-        return super().dispatch(request, *args, **kwargs)
+    template_name = "entries/workspace_expense_index.html"
 
     def get_queryset(self) -> QuerySet[Any]:
         return Entry.objects.filter(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP
+            workspace = self.workspace,
+            entry_type = EntryType.WORKSPACE_EXP
         )
-
+        
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        if not self.request.htmx:
-            pass
-            # context["stats"] = get_org_expense_stats(self.organization)
+        context["view"] = "entries"
         return context
-
-
-class OrganizationExpenseCreateView(
-    OrganizationRequiredMixin,
-    OrganizationLevelEntryView,
+    
+class WorkspaceExpenseCreateView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
     BaseCreateView,
@@ -90,16 +76,20 @@ class OrganizationExpenseCreateView(
     def get_queryset(self):
         return Entry.objects.filter(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP
+            workspace = self.workspace,
+            entry_type = EntryType.WORKSPACE_EXP
         )
     
     def get_modal_title(self) -> str:
-        return "Organization Expense"
+        return "Workspace Expense"
     
     def get_post_url(self) -> str:
         return reverse(
-            "organization_expense_create",
-            kwargs={"organization_id": self.organization.pk},
+            "workspace_expense_create",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
         )
         
     def form_valid(self, form):
@@ -112,8 +102,9 @@ class OrganizationExpenseCreateView(
                 occurred_at = form.cleaned_data["occurred_at"],
                 description =form.cleaned_data["description"],
                 attachments = form.cleaned_data["attachment_files"],
-                entry_type = EntryType.ORG_EXP,
+                entry_type = EntryType.WORKSPACE_EXP,
                 organization = self.organization,
+                workspace = self.workspace,
                 currency = form.cleaned_data["currency"],
                 submitted_by_org_member = self.org_member
             )
@@ -127,11 +118,6 @@ class OrganizationExpenseCreateView(
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
 
-        # stat_context = {
-        #     **base_context,
-        #     "stats": get_org_expense_stats(self.organization),
-        # }
-
         from apps.core.utils import get_paginated_context
 
         org_exp_entries = self.get_queryset()
@@ -140,10 +126,7 @@ class OrganizationExpenseCreateView(
             context=base_context,
             object_name=CONTEXT_OBJECT_NAME,
         )
-
-        # stat_overview_html = render_to_string(
-        #     "components/stat_section.html", context=stat_context, request=self.request
-        # )
+        
         table_html = render_to_string(
             "entries/partials/table.html", context=table_context, request=self.request
         )
@@ -153,12 +136,12 @@ class OrganizationExpenseCreateView(
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
-    
-    
-class OrganizationExpenseUpdateView(
-    OrganizationRequiredMixin,
+ 
+ 
+class WorkspaceExpenseUpdateView(
+    WorkspaceRequiredMixin,
     EntryRequiredMixin,
-    OrganizationLevelEntryView,
+    WorkspaceLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
     BaseUpdateView
@@ -170,18 +153,20 @@ class OrganizationExpenseUpdateView(
     def get_queryset(self):
         return Entry.objects.filter(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP,
+            workspace = self.workspace,
+            entry_type = EntryType.WORKSPACE_EXP,
             entry_id = self.kwargs["pk"]
         )
     
     def get_modal_title(self) -> str:
-        return "Organization Expense"
+        return "Workspace Expense"
     
     def get_post_url(self) -> str:
         return reverse(
-            "organization_expense_update",
+            "workspace_expense_update",
             kwargs={
                 "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
                 "pk": self.instance.pk
             },
         )
@@ -237,18 +222,19 @@ class OrganizationExpenseUpdateView(
         return response
   
   
-class OrganizationExpenseDeleteView(
-    OrganizationRequiredMixin,
+class WorkspaceExpenseDeleteView(
+    WorkspaceRequiredMixin,
     EntryRequiredMixin,
-    OrganizationLevelEntryView,
+    WorkspaceLevelEntryView,
     BaseDeleteView
 ):
     model = Entry
-    
+
     def get_queryset(self):
         return Entry.objects.filter(
             organization = self.organization,
-            entry_type = EntryType.ORG_EXP,
+            workspace = self.workspace,
+            entry_type = EntryType.WORKSPACE_EXP,
         )
         
     def form_valid(self, form):

@@ -277,12 +277,16 @@ def get_team_members_view(request, organization_id, team_id):
     try:
         # Get the team and organization for context
         team = get_team_by_id(team_id)
-        organization = get_organization_by_id(organization_id)
-        team_members = get_team_members_by_team_id(team_id)
 
         permission_check = check_view_team_permission(request, team)
         if permission_check:
             return permission_check
+        
+        organization = get_organization_by_id(organization_id)
+        team_members = get_team_members_by_team_id(team_id)
+
+        for team_member in team_members:
+            print(team_member.role)
 
         context = {
             "team": team,

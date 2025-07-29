@@ -141,6 +141,8 @@ def edit_team_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
         previous_team_coordinator = team.team_coordinator
+        print("previous_team_coordinator is ", previous_team_coordinator)
+        print("new team coordinator is ", request.POST.get("team_coordinator"))
 
         permission_check = check_change_team_permission(request, team)
         if permission_check:
@@ -156,7 +158,21 @@ def edit_team_view(request, organization_id, team_id):
             }
             return render(request, "teams/partials/edit_team_form.html", context)
         else:
-            form = TeamForm(request.POST, instance=team, organization=organization)
+            if request.POST.get("team_coordinator") is not None:
+                if previous_team_coordinator != request.POST.get("team_coordinator"):
+                    permission_check = request.user.has_perm(
+                        OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
+                    )
+                    if not permission_check:
+                        return permission_denied_view(
+                            request,
+                            "You do not have permission to change the team coordinator.",
+                        )
+            form_data = request.POST.copy()
+            if "team_coordinator" not in form_data:
+                form_data["team_coordinator"] = previous_team_coordinator
+            
+            form = TeamForm(form_data, instance=team, organization=organization)
             if form.is_valid():
                 update_team_from_form(
                     form,

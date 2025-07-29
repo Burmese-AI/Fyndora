@@ -127,24 +127,34 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
         new_team_coordinator = team.team_coordinator
         if previous_team_coordinator == new_team_coordinator:
             return team
-        
-        if new_team_coordinator != previous_team_coordinator:
-            #create new team member
-            team_member = TeamMember.objects.create(
-                team=team,
-                organization_member=new_team_coordinator,
-                role="team_coordinator",
-            )
-            #remove previous team member
+
+        if new_team_coordinator is None:
+            team.team_coordinator = None
+            team.save()
+            update_team_coordinator_group(team, previous_team_coordinator, None)
             team_member = TeamMember.objects.get(
                 team=team,
                 organization_member=previous_team_coordinator,
                 role="team_coordinator",
             )
             team_member.delete()
-        update_team_coordinator_group(
-            team, previous_team_coordinator, new_team_coordinator
-        )
+            return team
+        
+        if new_team_coordinator is not None:
+            team_member = TeamMember.objects.create(
+                team=team,
+                organization_member=new_team_coordinator,
+                role="team_coordinator",
+            )
+            if previous_team_coordinator is not None:
+                team_member = TeamMember.objects.get(
+                    team=team,
+                    organization_member=previous_team_coordinator,
+                    role="team_coordinator",
+                )
+                team_member.delete()
+            update_team_coordinator_group(team, previous_team_coordinator, new_team_coordinator)
+            
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")

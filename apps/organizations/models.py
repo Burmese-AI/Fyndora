@@ -50,7 +50,8 @@ class Organization(baseModel):
                 OrganizationPermissions.ADD_WORKSPACE,
                 OrganizationPermissions.ADD_WORKSPACE.label,
             ),
-            (OrganizationPermissions.ADD_TEAM, OrganizationPermissions.ADD_TEAM.label),
+            (OrganizationPermissions.ADD_TEAM, 
+             OrganizationPermissions.ADD_TEAM.label),
             (
                 OrganizationPermissions.INVITE_ORG_MEMBER,
                 OrganizationPermissions.INVITE_ORG_MEMBER.label,
@@ -74,6 +75,10 @@ class Organization(baseModel):
             (
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN.label,
+            ),
+            (
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR,
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR.label,
             ),
             (
                 OrganizationPermissions.ADD_ORG_CURRENCY,

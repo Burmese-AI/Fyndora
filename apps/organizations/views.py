@@ -136,6 +136,12 @@ def create_organization_view(request):
             if form.is_valid():
                 create_organization_with_owner(form=form, user=request.user)
                 organizations = get_user_organizations(request.user)
+                for organization in organizations:
+                    organization.permissions = {
+                        "can_change_team_coordinator": can_manage_organization(
+                            request.user, organization
+                        ),
+                    }
                 paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
                 page = request.GET.get("page", 1)
                 organizations = paginator.page(page)

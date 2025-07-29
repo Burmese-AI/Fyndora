@@ -40,6 +40,7 @@ class TeamForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
+        self.can_change_team_coordinator = kwargs.pop("can_change_team_coordinator", False)
         super().__init__(*args, **kwargs)
         if self.organization:
             self.fields[
@@ -47,6 +48,8 @@ class TeamForm(forms.ModelForm):
             ].queryset = get_organization_members_by_organization_id(
                 self.organization.organization_id
             )
+        if not self.can_change_team_coordinator:
+            self.fields["team_coordinator"].widget.attrs["disabled"] = True
 
     def clean_title(self):
         title = self.cleaned_data.get("title")

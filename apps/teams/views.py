@@ -145,14 +145,16 @@ def edit_team_view(request, organization_id, team_id):
             return permission_check
 
         if request.method != "POST":
-            form = TeamForm(instance=team, organization=organization)
+            form = TeamForm(instance=team, organization=organization , can_change_team_coordinator=request.user.has_perm(
+                    OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
+                ),)
             context = {
                 "form": form,
                 "organization": organization,
             }
             return render(request, "teams/partials/edit_team_form.html", context)
         else:
-            form = TeamForm(request.POST, instance=team, organization=organization)
+            form = TeamForm(request.POST, instance=team, organization=organization, )
             if form.is_valid():
                 update_team_from_form(
                     form,

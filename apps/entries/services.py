@@ -102,9 +102,6 @@ def create_entry_with_attachments(
     # Potential Error
     # NOTE: if currency is soft-deleted, currency obj can't be obtained 
     # unless its similar object has been created
-    # currency = get_currency_by_code(currency_code)
-    # if not currency:
-    #     raise ValueError("Invalid currency code.")
     
     with transaction.atomic():
         # Create the Entry
@@ -205,15 +202,15 @@ def update_entry_status(
     entry.status_last_updated_at = timezone.now()
     entry.save()
 
-def delete_entry(entry):
+def delete_entry(entry: Entry):
     """
     Service to delete an entry.
     """
 
-    if entry.reviewed_by:
-        raise ValidationError("Cannot delete an entry that has been reviewed")
+    if entry.last_status_modified_by:
+        raise ValidationError("Cannot delete an entry when someone has already modified the status.")
 
-    if entry.status != EntryStatus.PENDING_REVIEW:
+    if entry.status != EntryStatus.PENDING:
         raise ValidationError("Cannot delete an entry that is not pending review")
 
     entry.delete()

@@ -3,6 +3,7 @@ from .views.expense_views import (
     OrganizationExpenseListView,
     OrganizationExpenseCreateView,
     OrganizationExpenseUpdateView,
+    OrganizationExpenseDeleteView,
     # WorkspaceExpenseListView,
     # WorkspaceExpenseCreateView,
     # WorkspaceExpenseUpdateView,
@@ -33,16 +34,11 @@ urlpatterns = [
         OrganizationExpenseUpdateView.as_view(),
         name="organization_expense_update",
     ),
-#     path(
-#         "expenses/<uuid:pk>/",
-#         OrganizationExpenseUpdateView.as_view(),
-#         name="organization_expense_update",
-#     ),
-#     path(
-#         "expenses/<uuid:pk>/delete",
-#         OrganizationExpenseDeleteView.as_view(),
-#         name="organization_expense_delete",
-#     ),
+    path(
+        "expenses/<uuid:pk>/delete",
+        OrganizationExpenseDeleteView.as_view(),
+        name="organization_expense_delete",
+    ),
 #     path(
 #         "workspaces/<uuid:workspace_id>/expenses",
 #         WorkspaceExpenseListView.as_view(),

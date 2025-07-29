@@ -114,9 +114,18 @@ class HtmxModalFormInvalidFormResponseMixin:
 
 
 class HtmxInvalidResponseMixin:
+    
+    """
+        Mixin for htmx invalid response.
+    """
+    
     message_template_name = "includes/message.html"
 
-    def _htmx_invalid_response(self, form) -> HttpResponse:
+    def _render_htmx_error_response(self) -> HttpResponse:
+        """
+            Render htmx error response.
+            Note: Form is not required
+        """
         base_context = self.get_context_data()
 
         message_html = render_to_string(

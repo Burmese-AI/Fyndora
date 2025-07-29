@@ -9,7 +9,7 @@ from django.urls import reverse
 from apps.core.views.base_views import BaseGetModalFormView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..selectors import get_entries
-from ..services import get_org_expense_stats
+from ..services import delete_entry, get_org_expense_stats
 from apps.core.views.mixins import (
     OrganizationRequiredMixin,
 )
@@ -35,6 +35,7 @@ from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
 from apps.core.utils import permission_denied_view
 from apps.core.views.crud_base_views import (
     BaseCreateView,
+    BaseDeleteView,
     BaseListView,
     BaseUpdateView,
 )
@@ -234,4 +235,49 @@ class OrganizationExpenseUpdateView(
         )
         response["HX-trigger"] = "success"
         return response
+  
+  
+class OrganizationExpenseDeleteView(
+    OrganizationRequiredMixin,
+    EntryRequiredMixin,
+    OrganizationLevelEntryView,
+    BaseDeleteView
+):
+    model = Entry
     
+    def get_queryset(self):
+        return Entry.objects.filter(
+            organization = self.organization,
+            entry_type = EntryType.ORG_EXP,
+        )
+        
+    def form_valid(self, form):
+        from ..services import delete_entry
+        try:
+            delete_entry(self.entry)
+        except Exception as e:
+            messages.error(self.request, f"Expense entry deletion failed: {e}")
+            return self._render_htmx_error_response()
+        messages.success(self.request, "Expense entry deleted successfully")
+        return self._render_htmx_success_response()
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+        
+        from apps.core.utils import get_paginated_context
+
+        org_exp_entries = self.get_queryset()
+
+        table_context = get_paginated_context(
+            queryset=org_exp_entries,
+            context=base_context,
+            object_name=CONTEXT_OBJECT_NAME,
+        )
+        table_html = render_to_string(
+            "entries/partials/table.html", context=table_context, request=self.request
+        )
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+        response = HttpResponse(f"{message_html}{table_html}")
+        return response

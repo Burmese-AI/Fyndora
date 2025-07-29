@@ -5,9 +5,9 @@ from django.db.models import Q, Count, QuerySet
 from django.contrib.contenttypes.prefetch import GenericPrefetch
 from django.db.models import Sum
 
-from apps.organizations.models import Organization, OrganizationMember
+from apps.organizations.models import Organization, OrganizationExchangeRate, OrganizationMember
 from apps.teams.models import TeamMember
-from apps.workspaces.models import Workspace, WorkspaceTeam
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -19,8 +19,8 @@ def get_entries(
     organization: Organization = None,
     workspace: Workspace = None,
     workspace_team: WorkspaceTeam = None,
-    entry_types: List[EntryType],
-    status: EntryStatus = None,
+    entry_types: List[str],
+    status: str = None,
     prefetch_attachments: bool = False,
     sort_by: str = None,
     annotate_attachment_count: bool = False,
@@ -32,17 +32,12 @@ def get_entries(
         organization: Organization object
         workspace: Workspace object
         workspace_team: WorkspaceTeam object
-        entry_types: List of EntryType objects
-        status: EntryStatus object
+        entry_types: List of EntryType strings (e.g., ["org_exp", "income"])
+        status: EntryStatus string
         prefetch_attachments: Boolean to prefetch attachments
 
     Returns:
         QuerySet: QuerySet of Entry objects
-
-    Notes:
-        For expense entries, the organization or workspace is required.
-        For team level entries, the workspace_team is required.
-        At least one entry type must be provided.
     """
 
     if not entry_types:
@@ -58,36 +53,26 @@ def get_entries(
 
     # Org/Workspace Expense Entries
     if expense_entry_types:
-        # Filter entries based on expense entry types
-        expense_entry_filters = Q(entry_type__in=expense_entry_types)
-        # Filter entries based on organization members since org/workspace expense entries are associated with only organization members
-        if organization:
-            expense_entry_filters &= Q(
-                organization_member_entries__organization=organization
-            )
-        elif workspace:
-            expense_entry_filters &= Q(
-                organization_member_entries__organization=workspace.organization
-            )
+        expense_filter = Q(entry_type__in=expense_entry_types)
 
-        # Add expense entry filters to the main filters
-        filters |= expense_entry_filters
+        if organization:
+            expense_filter &= Q(organization=organization)
+        elif workspace:
+            expense_filter &= Q(workspace=workspace)
+
+        filters |= expense_filter
 
     # Team Level Entries
-    if team_entry_types:
-        # Filter entries based on team entry types and workspace team using generic relation (team_member_entries)
+    if team_entry_types and workspace_team:
         team_filter = Q(
             entry_type__in=team_entry_types,
-            team_member_entries__team=workspace_team.team,
+            workspace_team=workspace_team,
         )
-        # Add team level filters to the main filters
         filters |= team_filter
 
-    # Final Query
     if not filters:
         return Entry.objects.none()
 
-    # Apply distinct to remove duplicate entries
     queryset = Entry.objects.filter(filters).distinct()
 
     if annotate_attachment_count:
@@ -102,20 +87,16 @@ def get_entries(
     if prefetch_attachments:
         queryset = queryset.prefetch_related("attachments")
 
-    # Select related and prefetch related to optimize the query
     queryset = queryset.select_related(
-        "submitter_content_type",
+        "organization",
         "workspace",
         "workspace_team",
-        "reviewed_by",
-    ).prefetch_related(
-        GenericPrefetch(
-            "submitter",
-            [
-                OrganizationMember.objects.select_related("user"),
-                TeamMember.objects.select_related("organization_member__user"),
-            ],
-        )
+        "currency",
+        "org_exchange_rate_ref",
+        "workspace_exchange_rate_ref",
+        "submitted_by_org_member__user",
+        "submitted_by_team_member__organization_member__user",
+        "last_status_modified_by__user",
     )
 
     return queryset
@@ -143,6 +124,30 @@ def get_total_amount_of_entries(
         or 0.00
     )
 
+
+def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace=None):
+    # Get the workspace lvl exchange rate whose effective date is closest to the occurred_at date
+    if workspace:
+        workspace_exchange_rate = WorkspaceExchangeRate.objects.filter(
+            workspace=workspace,
+            currency__code=currency.code,
+            effective_date__lte=occurred_at,
+            is_approved=True,
+        ).order_by("-effective_date").first()
+        if workspace_exchange_rate:
+            return workspace_exchange_rate
+
+    # Get the organization lvl exchange rate whose effective date is closest to the occurred_at date
+    organization_exchange_rate = OrganizationExchangeRate.objects.filter(
+        organization=organization,
+        currency__code=currency.code,
+        effective_date__lte=occurred_at,
+    ).order_by("-effective_date").first()
+    
+    if organization_exchange_rate:
+        return organization_exchange_rate
+    
+    return None
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

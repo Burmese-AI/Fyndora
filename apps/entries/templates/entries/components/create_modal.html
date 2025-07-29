@@ -21,15 +21,40 @@
 
     {% include "components/non_field_errors.html" %}
 
-    <!-- Amount Field -->
+    <!-- Entry Type Field -->
+    {% if form.entry_type %}
     <div>
-      <label for="{{ form.amount.id_for_label }}" class="block text-sm font-medium text-base-content">
-        Amount
+      <label for="{{ form.entry_type.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Entry Type
       </label>
       <div class="mt-2">
-        {{ form.amount }}
+        {{ form.entry_type }}
       </div>
-      {% include "components/field_error.html" with field=form.amount %}
+      {% include "components/field_error.html" with field=form.entry_type %}
+    </div>
+    {% endif %}
+
+    <!-- Amount & Currency Field -->
+    <div class="flex justify-between items-center gap-2">
+      <div class="w-1/2">
+        <label for="{{ form.amount.id_for_label }}" class="block text-sm font-medium text-base-content">
+          Amount
+        </label>
+        <div class="mt-2">
+          {{ form.amount }}
+        </div>
+        {% include "components/field_error.html" with field=form.amount %}
+      </div>
+
+      <div class="w-1/2">
+        <label for="{{ form.currency.id_for_label }}" class="block text-sm font-medium text-base-content">
+          Currency Code
+        </label>
+        <div class="mt-2">
+          {{ form.currency }}
+        </div>
+        {% include "components/field_error.html" with field=form.currency %}
+      </div>
     </div>
 
     <!-- Description Field -->
@@ -43,18 +68,16 @@
       {% include "components/field_error.html" with field=form.description %}
     </div>
 
-    <!-- Entry Type Field -->
-    {% if form.entry_type %}
+    <!-- Occurred At Field -->
     <div>
-      <label for="{{ form.entry_type.id_for_label }}" class="block text-sm font-medium text-base-content">
-        Entry Type
+      <label for="{{ form.occurred_at.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Occurred At
       </label>
       <div class="mt-2">
-        {{ form.entry_type }}
+        {{ form.occurred_at }}
       </div>
-      {% include "components/field_error.html" with field=form.entry_type %}
+      {% include "components/field_error.html" with field=form.occurred_at %}
     </div>
-    {% endif %}
 
     <!-- 📎 Attachment Upload Field -->
     <div>

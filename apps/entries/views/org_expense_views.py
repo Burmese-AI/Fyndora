@@ -1,6 +1,6 @@
 from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models.query import QuerySet, Q
+from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.template.loader import render_to_string
 from django.contrib import messages
@@ -11,19 +11,18 @@ from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..selectors import get_entries
 from ..services import delete_entry, get_org_expense_stats
 from apps.core.views.mixins import (
-    WorkspaceTeamRequiredMixin
+    OrganizationRequiredMixin,
 )
 from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
 )
 from .base_views import (
-    TeamLevelEntryView,
+    OrganizationLevelEntryView,
 )
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
-    UpdateOrganizationExpenseEntryForm,
-    CreateWorkspaceTeamEntryForm,
+    UpdateOrganizationExpenseEntryForm
 )
 from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
 from apps.core.utils import permission_denied_view
@@ -42,80 +41,89 @@ from ..services import create_entry_with_attachments
 
 
 
-class WorkspaceTeamEntryListView(
-    WorkspaceTeamRequiredMixin,
-    TeamLevelEntryView,
+class OrganizationExpenseListView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
     BaseListView,
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
-    template_name = "entries/team_level_entry.html"
+    template_name = "entries/index.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm(
+            OrganizationPermissions.VIEW_ORG_ENTRY, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view organization expenses.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
             organization = self.organization,
-            workspace = self.workspace,
-            workspace_team = self.workspace_team,
-            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            entry_types = [EntryType.ORG_EXP],
             annotate_attachment_count=True,
         )
 
-class WorkspaceTeamEntryCreateView(
-    WorkspaceTeamRequiredMixin,
-    TeamLevelEntryView,
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        if not self.request.htmx:
+            pass
+            # context["stats"] = get_org_expense_stats(self.organization)
+        return context
+
+
+class OrganizationExpenseCreateView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
     HtmxTableServiceMixin,
     BaseCreateView,
 ):
     model = Entry
-    form_class = CreateWorkspaceTeamEntryForm
+    form_class = CreateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/create_modal.html"
-    table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
+    table_template_name = "entries/partials/table.html"
     
-    def get_queryset(self) -> QuerySet[Any]:
+    def get_queryset(self):
         return get_entries(
             organization = self.organization,
-            workspace = self.workspace,
-            workspace_team = self.workspace_team,
-            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            entry_types = [EntryType.ORG_EXP],
             annotate_attachment_count=True,
         )
-        
+    
     def get_modal_title(self) -> str:
         return "Organization Expense"
     
     def get_post_url(self) -> str:
         return reverse(
-            "workspace_team_entry_create",
-            kwargs={
-                "organization_id": self.organization.pk,
-                "workspace_id": self.workspace.pk,
-                "workspace_team_id": self.workspace_team.pk,
-            },
+            "organization_expense_create",
+            kwargs={"organization_id": self.organization.pk},
         )
         
     def perform_service(self, form):
+        print("🧼 Cleaned Data:", form.cleaned_data)  # TEMP DEBUG
         create_entry_with_attachments(
             amount =form.cleaned_data["amount"],
             occurred_at = form.cleaned_data["occurred_at"],
             description =form.cleaned_data["description"],
             attachments = form.cleaned_data["attachment_files"],
-            entry_type = form.cleaned_data["entry_type"],
+            entry_type = EntryType.ORG_EXP,
             organization = self.organization,
-            workspace = self.workspace,
-            workspace_team = self.workspace_team,
             currency = form.cleaned_data["currency"],
             submitted_by_org_member = self.org_member
         )
     
     
-class WorkspaceTeamEntryUpdateView(
-    WorkspaceTeamRequiredMixin,
+class OrganizationExpenseUpdateView(
+    OrganizationRequiredMixin,
     EntryRequiredMixin,
-    TeamLevelEntryView,
+    OrganizationLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
     HtmxRowResponseMixin,
@@ -129,21 +137,18 @@ class WorkspaceTeamEntryUpdateView(
     def get_queryset(self):
         return Entry.objects.filter(
             organization = self.organization,
-            workspace = self.workspace,
-            workspace_team = self.workspace_team,
-            pk = self.entry.pk
+            entry_type = EntryType.ORG_EXP,
+            entry_id = self.kwargs["pk"]
         )
     
     def get_modal_title(self) -> str:
-        return ""
+        return "Organization Expense"
     
     def get_post_url(self) -> str:
         return reverse(
-            "workspace_team_entry_update",
+            "organization_expense_update",
             kwargs={
                 "organization_id": self.organization.pk,
-                "workspace_id": self.workspace.pk,
-                "workspace_team_id": self.workspace_team.pk,
                 "pk": self.instance.pk
             },
         )
@@ -171,10 +176,10 @@ class WorkspaceTeamEntryUpdateView(
                 status_note = form.cleaned_data["status_note"],
             )
   
-class WorkspaceTeamEntryDeleteView(
-    WorkspaceTeamRequiredMixin,
+class OrganizationExpenseDeleteView(
+    OrganizationRequiredMixin,
     EntryRequiredMixin,
-    TeamLevelEntryView,
+    OrganizationLevelEntryView,
     HtmxTableServiceMixin,
     BaseDeleteView
 ):
@@ -185,9 +190,7 @@ class WorkspaceTeamEntryDeleteView(
     def get_queryset(self):
         return get_entries(
             organization = self.organization,
-            workspace = self.workspace,
-            workspace_team = self.workspace_team,
-            entry_types = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            entry_types = [EntryType.ORG_EXP],
             annotate_attachment_count=True,
         )
         

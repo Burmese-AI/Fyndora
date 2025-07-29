@@ -4,9 +4,9 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from apps.organizations.models import Organization, OrganizationMember
 from django.template.loader import render_to_string
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.core.permissions import WorkspacePermissions
-
+from apps.workspaces.selectors import get_workspace_team_member_by_workspace_team_and_org_member
 
 class OrganizationRequiredMixin:
     """
@@ -73,6 +73,36 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
         return context
 
 
+class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
+    workspace_team = None
+    workspace_team_member = None
+    workspace_team_role = None
+    is_team_coordinator = None
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        workspace_team_id = kwargs.get("workspace_team_id")
+        self.workspace_team = get_object_or_404(
+            WorkspaceTeam, pk=workspace_team_id, workspace=self.workspace
+        )
+        self.workspace_team_member = (
+            get_workspace_team_member_by_workspace_team_and_org_member(
+                workspace_team=self.workspace_team, org_member=self.org_member
+            )
+        )
+        self.workspace_team_role = (
+            self.workspace_team_member.role if self.workspace_team_member else None
+        )
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["workspace_team"] = self.workspace_team
+        context["workspace_team_member"] = self.workspace_team_member
+        context["workspace_team_role"] = self.workspace_team_role
+        context["is_team_coordinator"] = self.is_team_coordinator
+        return context
+
+
 class UpdateFormMixin:
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -114,9 +144,18 @@ class HtmxModalFormInvalidFormResponseMixin:
 
 
 class HtmxInvalidResponseMixin:
+    
+    """
+        Mixin for htmx invalid response.
+    """
+    
     message_template_name = "includes/message.html"
 
-    def _htmx_invalid_response(self, form) -> HttpResponse:
+    def _render_htmx_error_response(self, form) -> HttpResponse:
+        """
+            Render htmx error response.
+            Note: Form is not required
+        """
         base_context = self.get_context_data()
 
         message_html = render_to_string(

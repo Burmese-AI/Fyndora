@@ -2,11 +2,12 @@
 {% load humanize %}
 
 {% block modal_content %}
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-4xl p-6 space-y-6">
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template"
+     class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-4xl p-6 space-y-6">
 
   <!-- Header -->
   <div class="flex justify-between items-start">
-    <h2 class="text-lg font-bold text-base-content">Entry Details</h2>
+    <h2 class="text-xl font-bold tracking-tight text-base-content">Entry Details</h2>
     <div class="space-x-2">
       <span class="badge badge-sm capitalize 
         {% if entry.status == 'approved' %}badge-success
@@ -22,50 +23,81 @@
     </div>
   </div>
 
-  <!-- Info Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    
-    <!-- Expense Info -->
-    <div class="bg-base-200 p-4 rounded-lg space-y-2">
-      <h3 class="text-sm font-semibold text-base-content mb-1">Expense Information</h3>
-      <p class="text-xs italic text-base-content/60">{{ entry.description }}</p>
-      <p class="text-sm"><span class="font-medium">Amount:</span> ${{ entry.amount|intcomma }}</p>
-      <p class="text-sm"><span class="font-medium">Entry Type:</span> {{ entry.get_entry_type_display }}</p>
+  <!-- Responsive Info Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Expense Card -->
+    <div class="bg-base-200 p-4 rounded-lg space-y-3">
+      <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">Expense</h3>
+      <p class="text-sm text-base-content/70 italic truncate" title="{{ entry.description }}">
+        {{ entry.description }}
+      </p>
+      <div class="text-sm space-y-1">
+        <div><span class="font-medium">Amount:</span> ${{ entry.amount|floatformat:2|intcomma }}</div>
+        <div><span class="font-medium">Currency:</span> {{ entry.currency.code }}</div>
+        <div><span class="font-medium">Exchange Rate:</span> {{ entry.exchange_rate_used|floatformat:2 }}</div>
+        <div><span class="font-medium">Converted:</span> ${{ entry.converted_amount|floatformat:2|intcomma }}</div>
+        <div><span class="font-medium">Occurred On:</span> {{ entry.occurred_at|date:"M d, Y" }}</div>
+        <div><span class="font-medium">Type:</span> {{ entry.get_entry_type_display }}</div>
+      </div>
     </div>
 
-    <!-- Submission Info -->
-    <div class="bg-base-200 p-4 rounded-lg space-y-2">
-      <h3 class="text-sm font-semibold text-base-content mb-1">Submission Details</h3>
-      <p class="text-sm"><span class="font-medium">Submitted By:</span> {{ entry.submitter_user_name }}</p>
-      <p class="text-sm"><span class="font-medium">Submitted At:</span> {{ entry.submitted_at|date:"Y-m-d H:i" }}</p>
-      <p class="text-sm"><span class="font-medium">Created At:</span> {{ entry.created_at|date:"Y-m-d H:i" }}</p>
-      <p class="text-sm"><span class="font-medium">Last Updated:</span> {{ entry.updated_at|date:"Y-m-d H:i" }}</p>
+    <!-- Submission Card -->
+    <div class="bg-base-200 p-4 rounded-lg space-y-3">
+      <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">Submission</h3>
+      <div class="text-sm space-y-1">
+        <div class="capitalize">
+          <span class="font-medium">Submitted By:</span>
+          {{ entry.submitted_by_team_member.user.username|default:entry.submitted_by_org_member.user.username|default:"-" }}
+        </div>
+        <div><span class="font-medium">Created:</span> {{ entry.created_at|date:"Y-m-d H:i" }}</div>
+        <div><span class="font-medium">Updated:</span> {{ entry.updated_at|date:"Y-m-d H:i" }}</div>
+        {% if entry.status_last_updated_at %}
+        <div><span class="font-medium">Status Updated:</span> {{ entry.status_last_updated_at|date:"Y-m-d H:i" }}</div>
+        {% endif %}
+      </div>
     </div>
 
-  </div>
-
-  <!-- Review Info -->
-  {% if entry.reviewed_by or entry.review_notes %}
-  <div class="bg-base-200 p-4 rounded-lg space-y-2">
-    <h3 class="text-sm font-semibold text-base-content mb-1">Review Information</h3>
-    {% if entry.reviewed_by %}
-      <p class="text-sm"><span class="font-medium">Reviewed By:</span> {{ entry.reviewed_by.user.get_full_name }}</p>
+    <!-- Review Card (Full Width) -->
+    {% if entry.last_status_modified_by or entry.status_note %}
+    <div class="md:col-span-2 bg-base-200 p-4 rounded-lg space-y-3">
+      <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">Review</h3>
+      <div class="text-sm space-y-1">
+        {% if entry.last_status_modified_by %}
+        <div class="capitalize"><span class="font-medium">Reviewed By:</span> {{ entry.last_status_modified_by.user.username }}</div>
+        {% endif %}
+        {% if entry.status_note %}
+        <div><span class="font-medium">Note:</span> {{ entry.status_note }}</div>
+        {% endif %}
+      </div>
+    </div>
     {% endif %}
-    {% if entry.review_notes %}
-      <p class="text-sm"><span class="font-medium">Review Notes:</span> {{ entry.review_notes }}</p>
+
+    <!-- Exchange Rate Ref (Full Width) -->
+    {% if entry.org_exchange_rate_ref or entry.workspace_exchange_rate_ref %}
+    <div class="md:col-span-2 bg-base-200 p-4 rounded-lg space-y-3">
+      <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">Exchange Rate Reference</h3>
+      <div class="text-sm space-y-1">
+        {% if entry.org_exchange_rate_ref %}
+        <div><span class="font-medium">Org Ref:</span> {{ entry.org_exchange_rate_ref.organization_exchange_rate_id }}</div>
+        {% endif %}
+        {% if entry.workspace_exchange_rate_ref %}
+        <div><span class="font-medium">Workspace Ref:</span> {{ entry.workspace_exchange_rate_ref.workspace_exchange_rate_id }}</div>
+        {% endif %}
+      </div>
+    </div>
     {% endif %}
-  </div>
-  {% endif %}
 
-  <!-- Attachments -->
-  <div class="p-4 rounded-lg bg-base-200 space-y-2">
-    <h3 class="text-sm font-semibold text-base-content mb-1">
-      Attachments ({{ entry.attachments.count }})
-    </h3>
-    {% include "attachments/index.html" %}
+    <!-- Attachments (Full Width) -->
+    <div class="md:col-span-2 p-4 rounded-lg bg-base-200 space-y-2">
+      <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">
+        Attachments ({{ entry.attachments.count }})
+      </h3>
+      {% include "attachments/index.html" %}
+    </div>
   </div>
 
-  <!-- Form Actions -->
+  <!-- Footer -->
   <div class="flex justify-end pt-2">
     <button
       type="button"

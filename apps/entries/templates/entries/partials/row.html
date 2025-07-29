@@ -1,12 +1,20 @@
 {% load humanize %}
 {% load entry_url_identifier %}
 
-<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.pk }}">
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.entry_id }}">
+  <!-- Checkbox -->
   <td>
     <label>
       <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />
     </label>
   </td>
+
+  <!-- Submitted By -->
+  <td class="capitalize">
+    {{ entry.submitted_by_team_member.user.username|default:entry.submitted_by_org_member.user.username|default:"-" }}
+  </td>
+
+  <!-- Description + attachments -->
   <td class="max-w-[200px]">
     <div class="font-medium truncate" title="{{ entry.description }}">
       {{ entry.description }}
@@ -20,58 +28,90 @@
       </div>
     {% endif %}
   </td>
-  <td class="capitalize">
-    {{ entry.submitter_user_name }}
-  </td>
-  <td>
-    {{ entry.submitted_at|naturaltime }}
-  </td>
-  <!-- Entry Type -->
-  <td class="max-w-xs">
-    <div class="tooltip" data-tip="{{ entry.get_entry_type_display }}">
-      <span class="badge badge-xs md:badge-sm xl:badge-md capitalize truncate
-        {% if entry.entry_type == 'income' %}bg-green-700 text-green-200
-        {% elif entry.entry_type == 'disbursement' %}bg-red-700 text-red-200
-        {% elif entry.entry_type == 'remittance' %}badge-neutral
-        {% elif entry.entry_type == 'workspace_exp' %}badge-accent
-        {% elif entry.entry_type == 'org_exp' %}badge-secondary
-        {% else %}badge-ghost{% endif %}
-      ">
-        {{ entry.get_entry_type_display }}
-      </span>
-    </div>
+
+  <td class="text-center">
+    <span
+      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm font-semibold rounded-full capitalize
+        {% if entry.entry_type == 'income' %}
+          bg-lime-100 text-lime-800
+        {% elif entry.entry_type == 'disbursement' %}
+          bg-rose-100 text-rose-800
+        {% elif entry.entry_type == 'remittance' %}
+          bg-cyan-100 text-cyan-800
+        {% elif entry.entry_type == 'workspace_exp' %}
+          bg-amber-100 text-amber-800
+        {% elif entry.entry_type == 'org_exp' %}
+          bg-violet-100 text-violet-800
+        {% else %}
+          bg-gray-100 text-gray-800
+        {% endif %}
+      "
+    >
+      {{ entry.get_entry_type_display }}
+    </span>
   </td>
 
-  <!-- Entry Status -->
+  <!-- Amount -->
+  <td class="text-right">
+    ${{ entry.amount|floatformat:2|intcomma }}
+  </td>
+
+  <!-- Currency -->
+  <td class="text-center uppercase">
+    {{ entry.currency.code }}
+  </td>
+
+  <!-- Exchange Rate -->
+  <td class="text-center">
+    {{ entry.exchange_rate_used|floatformat:2 }}
+  </td>
+
+  <!-- Converted Amount -->
+  <td class="text-right">
+    ${{ entry.converted_amount|floatformat:2|intcomma }}
+  </td>
+
+  <!-- Occurred On -->
+  <td>
+    {{ entry.occurred_at|date:"M d, Y" }}
+  </td>
+
+  <!-- Status -->
   <td class="text-center">
     <div class="tooltip tooltip-neutral" data-tip="{{ entry.get_status_display }}">
-      
       <button class="status md:status-md xl:status-lg animate-pulse
-      {% if entry.status == 'approved' %}bg-green-300
-      {% elif entry.status == 'pending' %}bg-yellow-500
-      {% elif entry.status == 'rejected' %}bg-red-700
-      {% elif entry.status == 'flagged' %}status-neutral
-      {% else %}status-ghost{% endif %}"></button>
+        {% if entry.status == 'approved' %}bg-green-300
+        {% elif entry.status == 'pending' %}bg-yellow-500
+        {% elif entry.status == 'rejected' %}bg-red-700
+        {% elif entry.status == 'flagged' %}status-neutral
+        {% else %}status-ghost{% endif %}">
+      </button>
     </div>
     {% if entry.is_flagged %}
       <span class="text-xs text-neutral flex gap-1 items-center text-red-700 mt-1 capitalize">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
         </svg>
-        
         Missing Attachments
       </span>
     {% endif %}
   </td>
-  <td class="text-center capitalize">
-    {{ entry.reviewed_by.user.username|default:"-" }}
-  </td>
-  <td class="text-right">
-    ${{ entry.amount|intcomma }}
-  </td>
-  <td class="text-center">
 
-    <div class="flex justify-center gap-2">
+  <!-- Last Reviewed By -->
+  <td class="text-center capitalize">
+    {{ entry.last_status_modified_by.user.username|default:"-" }}
+  </td>
+
+  <!-- Created At -->
+  <td class="whitespace-nowrap text-sm text-neutral text-center">
+    {{ entry.created_at|date:"M d, Y, P" }}
+  </td>
+
+
+  <!-- Actions -->
+  <td class="text-center whitespace-nowrap">
+    <div class="flex justify-center items-center gap-1">
+
       <!-- View -->
       <a
         hx-get="{% url 'entry_detail' organization_id=organization.pk pk=entry.pk %}"
@@ -86,24 +126,19 @@
         </svg>        
       </a>
 
-      <!-- Edit -->
-      {% if can_change_workspace_entry %}
       <a
-        hx-get="{% entry_update_url entry_type entry organization workspace workspace_team %}"
-        hx-target="#modal-placeholder"
-        hx-swap="innerHTML"
-        title="Edit"
-        class="btn btn-xs btn-ghost"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-        </svg>
+          hx-get="{% entry_update_url entry_type entry organization workspace workspace_team %}"
+          hx-target="#modal-placeholder"
+          hx-swap="innerHTML"
+          title="Edit"
+          class="btn btn-xs btn-ghost"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18v-4.5l1.13-.45a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+          </svg>
       </a>
-      {% endif %}
 
-      {% if can_delete_workspace_entry %}
       <!-- Delete -->
-       {% comment %} HTMX requires csrf {% endcomment %}
       <button
         type="button"
         class="btn btn-xs btn-ghost"
@@ -117,7 +152,6 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      {% endif %}
     </div>
   </td>
 </tr>

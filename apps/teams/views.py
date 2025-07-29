@@ -122,9 +122,12 @@ def create_team_view(request, organization_id):
                 )
                 return HttpResponse(f"{message_html} {modal_html}")
         else:
-            form = TeamForm(organization=organization, can_change_team_coordinator=request.user.has_perm(
+            form = TeamForm(
+                organization=organization,
+                can_change_team_coordinator=request.user.has_perm(
                     OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
-                ),)
+                ),
+            )
             context = {
                 "form": form,
                 "organization": organization,
@@ -149,9 +152,13 @@ def edit_team_view(request, organization_id, team_id):
             return permission_check
 
         if request.method != "POST":
-            form = TeamForm(instance=team, organization=organization , can_change_team_coordinator=request.user.has_perm(
+            form = TeamForm(
+                instance=team,
+                organization=organization,
+                can_change_team_coordinator=request.user.has_perm(
                     OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
-                ),)
+                ),
+            )
             context = {
                 "form": form,
                 "organization": organization,
@@ -171,7 +178,7 @@ def edit_team_view(request, organization_id, team_id):
             form_data = request.POST.copy()
             if "team_coordinator" not in form_data:
                 form_data["team_coordinator"] = previous_team_coordinator
-            
+
             form = TeamForm(form_data, instance=team, organization=organization)
             if form.is_valid():
                 update_team_from_form(
@@ -301,17 +308,21 @@ def get_team_members_view(request, organization_id, team_id):
         permission_check = check_view_team_permission(request, team)
         if permission_check:
             return permission_check
-        
+
         organization = get_organization_by_id(organization_id)
         team_members = get_team_members_by_team_id(team_id)
 
-        for team_member in team_members:
-            print(team_member.role)
+        permissions = {
+            "can_change_team_coordinator": request.user.has_perm(
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
+            ),
+        }
 
         context = {
             "team": team,
             "organization": organization,
             "team_members": team_members,
+            "permissions": permissions,
         }
         return render(request, "team_members/index.html", context)
     except Exception as e:
@@ -473,7 +484,12 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
         if request.method == "POST":
             form = EditTeamMemberRoleForm(request.POST, instance=team_member)
             if form.is_valid():
-                update_team_member_role(form=form, team_member=team_member, previous_role=previous_role, team=team)
+                update_team_member_role(
+                    form=form,
+                    team_member=team_member,
+                    previous_role=previous_role,
+                    team=team,
+                )
                 messages.success(request, "Team member role updated successfully.")
 
                 # Get the updated team member

@@ -110,7 +110,7 @@ def home_view(request):
             "page_obj": organizations,
             "paginator": paginator,
         }
-      
+
         template = "organizations/home.html"
 
         return render(request, template, context)
@@ -144,7 +144,6 @@ def create_organization_view(request):
                 paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
                 page = request.GET.get("page", 1)
                 organizations = paginator.page(page)
-               
 
                 context = {
                     "organizations": organizations,

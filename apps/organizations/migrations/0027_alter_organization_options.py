@@ -4,14 +4,59 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0026_merge_20250728_0702'),
+        ("organizations", "0026_merge_20250728_0702"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
-            options={'ordering': ['-created_at'], 'permissions': (('manage_organization', 'Can manage organization by higher level roles (Org Owner, WA, OR, TC)'), ('add_workspace', 'Can add workspace to organization by Org Owner'), ('add_team', 'Can add team to organization by Org Owner'), ('invite_org_member', 'Can invite org member to organization by Org Owner'), ('add_org_entry', 'Can add org entry to organization by Org Owner'), ('view_org_entry', 'Can view org entry to organization by Org Owner'), ('change_org_entry', 'Can change org entry to organization by Org Owner'), ('delete_org_entry', 'Can delete org entry to organization by Org Owner'), ('edit_workspace_admin', 'Can edit workspace admin by Org Owner'), ('change_team_coordinator', 'Can change team coordinator by Org Owner'), ('add_org_currency', 'Can add org currency to organization only by Org Owner'), ('change_org_currency', 'Can change org currency to organization only by Org Owner'), ('delete_org_currency', 'Can delete org currency to organization only by Org Owner')), 'verbose_name': 'organization', 'verbose_name_plural': 'organizations'},
+            name="organization",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    (
+                        "manage_organization",
+                        "Can manage organization by higher level roles (Org Owner, WA, OR, TC)",
+                    ),
+                    ("add_workspace", "Can add workspace to organization by Org Owner"),
+                    ("add_team", "Can add team to organization by Org Owner"),
+                    (
+                        "invite_org_member",
+                        "Can invite org member to organization by Org Owner",
+                    ),
+                    ("add_org_entry", "Can add org entry to organization by Org Owner"),
+                    (
+                        "view_org_entry",
+                        "Can view org entry to organization by Org Owner",
+                    ),
+                    (
+                        "change_org_entry",
+                        "Can change org entry to organization by Org Owner",
+                    ),
+                    (
+                        "delete_org_entry",
+                        "Can delete org entry to organization by Org Owner",
+                    ),
+                    ("edit_workspace_admin", "Can edit workspace admin by Org Owner"),
+                    (
+                        "change_team_coordinator",
+                        "Can change team coordinator by Org Owner",
+                    ),
+                    (
+                        "add_org_currency",
+                        "Can add org currency to organization only by Org Owner",
+                    ),
+                    (
+                        "change_org_currency",
+                        "Can change org currency to organization only by Org Owner",
+                    ),
+                    (
+                        "delete_org_currency",
+                        "Can delete org currency to organization only by Org Owner",
+                    ),
+                ),
+                "verbose_name": "organization",
+                "verbose_name_plural": "organizations",
+            },
         ),
     ]

@@ -17,7 +17,6 @@ from apps.teams.permissions import assign_team_permissions
 from .models import Team, TeamMember
 from apps.core.utils import model_update
 from apps.teams.permissions import update_team_coordinator_group
-from apps.teams.selectors import get_team_members_by_team_id
 
 
 def create_team_from_form(form, organization, orgMember):
@@ -26,15 +25,13 @@ def create_team_from_form(form, organization, orgMember):
         team.organization = organization
         team.created_by = orgMember
         team.save()
-        print(team.team_coordinator)
-        
-        if team.team_coordinator:
 
-            team_member = TeamMember.objects.create(
-            team=team,
-            organization_member=team.team_coordinator,
-            role="team_coordinator",
-        )
+        if team.team_coordinator:
+            TeamMember.objects.create(
+                team=team,
+                organization_member=team.team_coordinator,
+                role="team_coordinator",
+            )
 
         assign_team_permissions(team)
         return team
@@ -106,8 +103,8 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
     """
     try:
         new_role = form.cleaned_data["role"]
-        print ("previous_role", previous_role)
-        print ("new_role", new_role)
+        print("previous_role", previous_role)
+        print("new_role", new_role)
         if previous_role == "team_coordinator":
             team.team_coordinator = None
             team.save()
@@ -139,7 +136,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             )
             team_member.delete()
             return team
-        
+
         if new_team_coordinator is not None:
             team_member = TeamMember.objects.create(
                 team=team,
@@ -153,8 +150,10 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                     role="team_coordinator",
                 )
                 team_member.delete()
-            update_team_coordinator_group(team, previous_team_coordinator, new_team_coordinator)
-            
+            update_team_coordinator_group(
+                team, previous_team_coordinator, new_team_coordinator
+            )
+
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")

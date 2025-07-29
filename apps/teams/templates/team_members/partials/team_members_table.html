@@ -9,7 +9,9 @@
                 <th class="text-base font-semibold">Email</th>
                 <th class="text-base font-semibold">Role</th>
                 <th class="text-base font-semibold">Joined</th>
+                {% if permissions.can_change_team_coordinator %}
                 <th class="text-base font-semibold text-center">Actions</th>
+                {% endif %}
             </tr>
         </thead>
         <!-- Table body -->

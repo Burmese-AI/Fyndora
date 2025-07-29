@@ -40,7 +40,9 @@ class TeamForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.organization = kwargs.pop("organization", None)
-        self.can_change_team_coordinator = kwargs.pop("can_change_team_coordinator", False)
+        self.can_change_team_coordinator = kwargs.pop(
+            "can_change_team_coordinator", False
+        )
         super().__init__(*args, **kwargs)
         if self.organization:
             self.fields[

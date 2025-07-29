@@ -227,6 +227,8 @@ class BaseUpdateEntryForm(BaseEntryForm):
             self.fields["description"].disabled = True
             self.fields["attachment_files"].disabled = True
             self.fields["replace_attachments"].disabled = True
+            self.fields["currency"].disabled = True
+            self.fields["occurred_at"].disabled = True
             
     def get_allowed_statuses(self, current_status):
         transitions = {

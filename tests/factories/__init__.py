@@ -66,6 +66,14 @@ from .workspace_factories import (
     WorkspaceWithAdminFactory,
     WorkspaceWithTeamsFactory,
 )
+from .invitation_factories import (
+    InvitationFactory,
+    ExpiredInvitationFactory,
+    UsedInvitationFactory,
+    InactiveInvitationFactory,
+    InvitationWithSpecificEmailFactory,
+    InvitationForOrganizationFactory,
+)
 
 __all__ = [
     # User factories
@@ -123,4 +131,11 @@ __all__ = [
     "SystemAuditFactory",
     "AuditWithComplexMetadataFactory",
     "BulkAuditTrailFactory",
+    # Invitation factories
+    "InvitationFactory",
+    "ExpiredInvitationFactory",
+    "UsedInvitationFactory",
+    "InactiveInvitationFactory",
+    "InvitationWithSpecificEmailFactory",
+    "InvitationForOrganizationFactory",
 ]

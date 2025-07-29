@@ -1,5 +1,4 @@
 from typing import Any
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.template.loader import render_to_string
@@ -8,10 +7,7 @@ from django.urls import reverse
 
 from apps.core.views.base_views import BaseGetModalFormView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
-from ..selectors import get_entries
-from ..services import delete_entry, get_org_expense_stats
 from apps.core.views.mixins import (
-    OrganizationRequiredMixin,
     WorkspaceRequiredMixin,
 )
 from .mixins import (
@@ -19,7 +15,6 @@ from .mixins import (
     EntryRequiredMixin,
 )
 from .base_views import (
-    OrganizationLevelEntryView,
     WorkspaceLevelEntryView,
 )
 from ..forms import (
@@ -38,7 +33,9 @@ from apps.core.views.crud_base_views import (
     BaseUpdateView,
 )
 from ..models import Entry
-
+from apps.core.views.service_layer_mixins import (
+    HtmxCreateServiceMixin,
+)
 
 class WorkspaceExpenseListView(
     WorkspaceRequiredMixin,
@@ -67,22 +64,25 @@ class WorkspaceExpenseCreateView(
     WorkspaceLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    HtmxCreateServiceMixin,
     BaseCreateView,
 ):
     model = Entry
     form_class = CreateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/create_modal.html"
-    
+    context_object_name = CONTEXT_OBJECT_NAME
+    table_template_name = "entries/partials/table.html"
+
     def get_queryset(self):
         return Entry.objects.filter(
-            organization = self.organization,
-            workspace = self.workspace,
-            entry_type = EntryType.WORKSPACE_EXP
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_type=EntryType.WORKSPACE_EXP,
         )
-    
+
     def get_modal_title(self) -> str:
         return "Workspace Expense"
-    
+
     def get_post_url(self) -> str:
         return reverse(
             "workspace_expense_create",
@@ -91,52 +91,22 @@ class WorkspaceExpenseCreateView(
                 "workspace_id": self.workspace.pk,
             },
         )
-        
-    def form_valid(self, form):
+
+    def perform_create_service(self, form):
         from ..services import create_entry_with_attachments
-        from ..constants import EntryType
 
-        try:
-            create_entry_with_attachments(
-                amount =form.cleaned_data["amount"],
-                occurred_at = form.cleaned_data["occurred_at"],
-                description =form.cleaned_data["description"],
-                attachments = form.cleaned_data["attachment_files"],
-                entry_type = EntryType.WORKSPACE_EXP,
-                organization = self.organization,
-                workspace = self.workspace,
-                currency = form.cleaned_data["currency"],
-                submitted_by_org_member = self.org_member
-            )
-        except Exception as e:
-            messages.error(self.request, f"Expense entry submission failed: {e}")
-            return self._render_htmx_error_response(form)
-        
-        messages.success(self.request, "Expense entry submitted successfully")
-        return self._render_htmx_success_response()
-
-    def _render_htmx_success_response(self) -> HttpResponse:
-        base_context = self.get_context_data()
-
-        from apps.core.utils import get_paginated_context
-
-        org_exp_entries = self.get_queryset()
-        table_context = get_paginated_context(
-            queryset=org_exp_entries,
-            context=base_context,
-            object_name=CONTEXT_OBJECT_NAME,
+        create_entry_with_attachments(
+            amount=form.cleaned_data["amount"],
+            occurred_at=form.cleaned_data["occurred_at"],
+            description=form.cleaned_data["description"],
+            attachments=form.cleaned_data["attachment_files"],
+            entry_type=EntryType.WORKSPACE_EXP,
+            organization=self.organization,
+            workspace=self.workspace,
+            currency=form.cleaned_data["currency"],
+            submitted_by_org_member=self.org_member,
         )
-        
-        table_html = render_to_string(
-            "entries/partials/table.html", context=table_context, request=self.request
-        )
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-        response = HttpResponse(f"{message_html}{table_html}")
-        response["HX-trigger"] = "success"
-        return response
- 
+
  
 class WorkspaceExpenseUpdateView(
     WorkspaceRequiredMixin,

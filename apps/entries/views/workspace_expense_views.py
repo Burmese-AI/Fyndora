@@ -20,9 +20,6 @@ from .base_views import (
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
     UpdateOrganizationExpenseEntryForm
-    # CreateWorkspaceExpenseEntryForm,
-    # UpdateOrganizationExpenseEntryForm,
-    # UpdateWorkspaceExpenseEntryForm,
 )
 from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
 from apps.core.utils import permission_denied_view
@@ -35,6 +32,7 @@ from apps.core.views.crud_base_views import (
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
+    HtmxRowResponseMixin,
 )
 
 class WorkspaceExpenseListView(
@@ -58,6 +56,7 @@ class WorkspaceExpenseListView(
         context = super().get_context_data(**kwargs)
         context["view"] = "entries"
         return context
+    
     
 class WorkspaceExpenseCreateView(
     WorkspaceRequiredMixin,
@@ -114,11 +113,13 @@ class WorkspaceExpenseUpdateView(
     WorkspaceLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    HtmxRowResponseMixin,
     BaseUpdateView
 ):
     model = Entry
     form_class = UpdateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/update_modal.html"
+    row_template_name = "entries/partials/row.html",
     
     def get_queryset(self):
         return Entry.objects.filter(
@@ -141,56 +142,29 @@ class WorkspaceExpenseUpdateView(
             },
         )
         
-    def form_valid(self, form):
+    def perform_service(self, form):
+        from ..services import update_entry_status, update_entry_user_inputs
+        if self.entry.status == EntryStatus.PENDING:
+            update_entry_user_inputs(
+                entry = self.entry,
+                organization = self.organization,
+                amount = form.cleaned_data["amount"],
+                occurred_at = form.cleaned_data["occurred_at"],
+                description = form.cleaned_data["description"],
+                currency = form.cleaned_data["currency"],
+                attachments = form.cleaned_data["attachment_files"],
+                replace_attachments = True,
+            )
         
-        try:
-            from ..services import update_entry_status, update_entry_user_inputs
-            if self.entry.status == EntryStatus.PENDING:
-                update_entry_user_inputs(
-                    entry = self.entry,
-                    organization = self.organization,
-                    amount = form.cleaned_data["amount"],
-                    occurred_at = form.cleaned_data["occurred_at"],
-                    description = form.cleaned_data["description"],
-                    currency = form.cleaned_data["currency"],
-                    attachments = form.cleaned_data["attachment_files"],
-                    replace_attachments = True,
-                )
-            
-            # If the status has changed, update the status
-            if self.entry.status != form.cleaned_data["status"]:
-                update_entry_status(
-                    entry = self.entry,
-                    status = form.cleaned_data["status"],
-                    last_status_modified_by = self.org_member,
-                    status_note = form.cleaned_data["status_note"],
-                )
-            
-        except Exception as e:
-            messages.error(self.request, f"Expense entry update failed: {e}")
-            return self._render_htmx_error_response(form)
-        
-        messages.success(self.request, "Expense entry updated successfully")
-        return self._render_htmx_success_response()
-    
-    def _render_htmx_success_response(self) -> HttpResponse:
-        base_context = self.get_context_data()
-
-        row_html = render_to_string(
-            "entries/partials/row.html", context=base_context, request=self.request
-        )
-
-        message_html = render_to_string(
-            "includes/message.html", context=base_context, request=self.request
-        )
-
-        # Added table tag to the response to fix the issue of the row not being rendered
-        response = HttpResponse(
-            f"{message_html}<table>{row_html}</table>"
-        )
-        response["HX-trigger"] = "success"
-        return response
-  
+        # If the status has changed, update the status
+        if self.entry.status != form.cleaned_data["status"]:
+            update_entry_status(
+                entry = self.entry,
+                status = form.cleaned_data["status"],
+                last_status_modified_by = self.org_member,
+                status_note = form.cleaned_data["status_note"],
+            )
+          
   
 class WorkspaceExpenseDeleteView(
     WorkspaceRequiredMixin,

@@ -25,7 +25,6 @@ class HtmxTableServiceMixin:
 
     def form_valid(self, form):
         try:
-            print("============ FORM VALID ====")
             self.perform_service(form)
         except Exception as e:
             messages.error(self.request, str(e))
@@ -61,3 +60,31 @@ class HtmxTableServiceMixin:
         response = HttpResponse(f"{message_html}{extra_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+
+
+class HtmxRowResponseMixin(HtmxTableServiceMixin):
+    row_template_name = None
+    
+    def _render_htmx_success_response(self) -> HttpResponse:
+        base_context = self.get_context_data()
+        extra_html = ""
+
+        # Optional partial templates rendering
+        for template_path, context in self.get_partial_templates(base_context):
+            extra_html += render_to_string(template_path, context=context, request=self.request)
+
+        row_html = render_to_string(
+            self.row_template_name, context=base_context, request=self.request
+        )
+
+        message_html = render_to_string(
+            "includes/message.html", context=base_context, request=self.request
+        )
+
+        response = HttpResponse(
+            f"{message_html}{extra_html}<table>{row_html}</table>"
+        )
+        response["HX-trigger"] = "success"
+        return response
+    
+    

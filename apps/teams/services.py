@@ -100,11 +100,18 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(*, form, team_member) -> TeamMember:
+def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMember:
     """
     Updates a team member role from a form.
     """
     try:
+        new_role = form.cleaned_data["role"]
+        print ("previous_role", previous_role)
+        print ("new_role", new_role)
+        if previous_role == "team_coordinator":
+            team.team_coordinator = None
+            team.save()
+            update_team_coordinator_group(team, team_member.organization_member, None)
         team_member = model_update(team_member, {"role": form.cleaned_data["role"]})
         return team_member
     except Exception as e:

@@ -446,14 +446,14 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
 def edit_team_member_role_view(request, organization_id, team_id, team_member_id):
     try:
         team_member = get_team_member_by_id(team_member_id)
+        previous_role = team_member.role
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
 
         if request.method == "POST":
-            print("post action")
             form = EditTeamMemberRoleForm(request.POST, instance=team_member)
             if form.is_valid():
-                update_team_member_role(form=form, team_member=team_member)
+                update_team_member_role(form=form, team_member=team_member, previous_role=previous_role, team=team)
                 messages.success(request, "Team member role updated successfully.")
 
                 # Get the updated team member
@@ -475,9 +475,6 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
                 response = HttpResponse(f"{message_html} {team_members_table_html}")
                 response["HX-trigger"] = "success"
                 return response
-                # return HttpResponseClientRedirect(
-                #     f"/{organization_id}/teams/team_members/{team_id}/"
-                # )
             else:
                 messages.error(request, "Invalid form data.")
                 context = {

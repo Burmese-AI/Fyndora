@@ -143,8 +143,6 @@ class EditTeamMemberRoleForm(forms.ModelForm):
 
     def clean_role(self):
         role = self.cleaned_data.get("role")
-        print(role)
-        print(self.instance.role)
         if role == self.instance.role:
             raise forms.ValidationError(
                 "New role cannot be the same as the current role"

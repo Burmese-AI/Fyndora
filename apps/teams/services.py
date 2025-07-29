@@ -26,6 +26,13 @@ def create_team_from_form(form, organization, orgMember):
         team.created_by = orgMember
         team.save()
 
+        if team.team_coordinator:
+            TeamMember.objects.create(
+                team=team,
+                organization_member=team.team_coordinator,
+                role="team_coordinator",
+            )
+
         assign_team_permissions(team)
         return team
     except Exception as e:
@@ -90,11 +97,18 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(*, form, team_member) -> TeamMember:
+def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMember:
     """
     Updates a team member role from a form.
     """
     try:
+        new_role = form.cleaned_data["role"]
+        print("previous_role", previous_role)
+        print("new_role", new_role)
+        if previous_role == "team_coordinator":
+            team.team_coordinator = None
+            team.save()
+            update_team_coordinator_group(team, team_member.organization_member, None)
         team_member = model_update(team_member, {"role": form.cleaned_data["role"]})
         return team_member
     except Exception as e:
@@ -107,21 +121,53 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     """
     try:
         team = model_update(team, form.cleaned_data)
-        new_team_coordinator = form.cleaned_data.get("team_coordinator")
-        update_team_coordinator_group(
-            team, previous_team_coordinator, new_team_coordinator
-        )
+        new_team_coordinator = team.team_coordinator
+        if previous_team_coordinator == new_team_coordinator:
+            return team
+
+        if new_team_coordinator is None:
+            team.team_coordinator = None
+            team.save()
+            update_team_coordinator_group(team, previous_team_coordinator, None)
+            team_member = TeamMember.objects.get(
+                team=team,
+                organization_member=previous_team_coordinator,
+                role="team_coordinator",
+            )
+            team_member.delete()
+            return team
+
+        if new_team_coordinator is not None:
+            team_member = TeamMember.objects.create(
+                team=team,
+                organization_member=new_team_coordinator,
+                role="team_coordinator",
+            )
+            if previous_team_coordinator is not None:
+                team_member = TeamMember.objects.get(
+                    team=team,
+                    organization_member=previous_team_coordinator,
+                    role="team_coordinator",
+                )
+                team_member.delete()
+            update_team_coordinator_group(
+                team, previous_team_coordinator, new_team_coordinator
+            )
+
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")
 
 
-def remove_team_member(team_member: TeamMember) -> None:
+def remove_team_member(team_member: TeamMember, team: Team) -> None:
     """
     Removes a team member.
     """
     try:
         team_member.delete()
+        team.team_coordinator = None
+        team.save()
+        update_team_coordinator_group(team, team_member.organization_member, None)
     except Exception as e:
         raise TeamMemberDeletionError(f"Failed to remove team member: {str(e)}")
 

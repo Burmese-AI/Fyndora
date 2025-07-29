@@ -37,14 +37,15 @@
     
     <!-- Actions -->
     <td>
+        {% if permissions.can_change_team_coordinator %}
         <div class="flex justify-center space-x-2">
-            <button class="btn btn-ghost btn-sm hover:bg-secondary hover:bg-error hover:text-error-content" title="Edit Role" hx-get="{% url 'edit_team_member_role' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" hx-target="#modal-placeholder">
-                Edit
-            </button>
+                <button class="btn btn-ghost btn-sm hover:bg-secondary hover:bg-error hover:text-error-content" title="Edit Role" hx-get="{% url 'edit_team_member_role' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" hx-target="#modal-placeholder">
+                    Edit
+                </button>
             <button hx-get="{% url 'remove_team_member' organization_id=organization.organization_id team_id=team.team_id team_member_id=team_member.team_member_id %}" hx-target="#modal-placeholder" class="btn btn-ghost btn-sm hover:bg-error hover:text-error-content" title="Remove Member">
                 Remove
             </button>
         </div> 
-        
+        {% endif %}
     </td>
 </tr>

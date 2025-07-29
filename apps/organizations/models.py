@@ -76,6 +76,10 @@ class Organization(baseModel):
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN.label,
             ),
             (
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR,
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR.label,
+            ),
+            (
                 OrganizationPermissions.ADD_ORG_CURRENCY,
                 OrganizationPermissions.ADD_ORG_CURRENCY.label,
             ),

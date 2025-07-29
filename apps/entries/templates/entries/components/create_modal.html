@@ -21,6 +21,19 @@
 
     {% include "components/non_field_errors.html" %}
 
+    <!-- Entry Type Field -->
+    {% if form.entry_type %}
+    <div>
+      <label for="{{ form.entry_type.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Entry Type
+      </label>
+      <div class="mt-2">
+        {{ form.entry_type }}
+      </div>
+      {% include "components/field_error.html" with field=form.entry_type %}
+    </div>
+    {% endif %}
+
     <!-- Amount & Currency Field -->
     <div class="flex justify-between items-center gap-2">
       <div class="w-1/2">
@@ -65,19 +78,6 @@
       </div>
       {% include "components/field_error.html" with field=form.occurred_at %}
     </div>
-
-    <!-- Entry Type Field -->
-    {% if form.entry_type %}
-    <div>
-      <label for="{{ form.entry_type.id_for_label }}" class="block text-sm font-medium text-base-content">
-        Entry Type
-      </label>
-      <div class="mt-2">
-        {{ form.entry_type }}
-      </div>
-      {% include "components/field_error.html" with field=form.entry_type %}
-    </div>
-    {% endif %}
 
     <!-- 📎 Attachment Upload Field -->
     <div>

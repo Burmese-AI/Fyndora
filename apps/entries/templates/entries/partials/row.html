@@ -29,6 +29,28 @@
     {% endif %}
   </td>
 
+  <td class="text-center">
+    <span
+      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm font-semibold rounded-full capitalize
+        {% if entry.entry_type == 'income' %}
+          bg-lime-100 text-lime-800
+        {% elif entry.entry_type == 'disbursement' %}
+          bg-rose-100 text-rose-800
+        {% elif entry.entry_type == 'remittance' %}
+          bg-cyan-100 text-cyan-800
+        {% elif entry.entry_type == 'workspace_exp' %}
+          bg-amber-100 text-amber-800
+        {% elif entry.entry_type == 'org_exp' %}
+          bg-violet-100 text-violet-800
+        {% else %}
+          bg-gray-100 text-gray-800
+        {% endif %}
+      "
+    >
+      {{ entry.get_entry_type_display }}
+    </span>
+  </td>
+
   <!-- Amount -->
   <td class="text-right">
     ${{ entry.amount|floatformat:2|intcomma }}

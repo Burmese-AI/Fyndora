@@ -1,5 +1,3 @@
-# apps/workspaces/selectors.py
-
 from django.db.models import Q
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate
 from apps.organizations.models import Organization

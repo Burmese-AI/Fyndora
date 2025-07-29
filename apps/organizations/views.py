@@ -110,10 +110,8 @@ def home_view(request):
             "page_obj": organizations,
             "paginator": paginator,
         }
-        if request.headers.get("HX-Request"):
-            template = "organizations/partials/organization_list.html"
-        else:
-            template = "organizations/home.html"
+      
+        template = "organizations/home.html"
 
         return render(request, template, context)
     except Exception:
@@ -138,13 +136,15 @@ def create_organization_view(request):
                 organizations = get_user_organizations(request.user)
                 for organization in organizations:
                     organization.permissions = {
-                        "can_change_team_coordinator": can_manage_organization(
+                        "can_manage_organization": can_manage_organization(
                             request.user, organization
                         ),
                     }
+                print(organizations)
                 paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
                 page = request.GET.get("page", 1)
                 organizations = paginator.page(page)
+               
 
                 context = {
                     "organizations": organizations,

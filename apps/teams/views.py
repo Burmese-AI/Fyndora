@@ -122,7 +122,9 @@ def create_team_view(request, organization_id):
                 )
                 return HttpResponse(f"{message_html} {modal_html}")
         else:
-            form = TeamForm(organization=organization)
+            form = TeamForm(organization=organization, can_change_team_coordinator=request.user.has_perm(
+                    OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
+                ),)
             context = {
                 "form": form,
                 "organization": organization,
@@ -154,7 +156,7 @@ def edit_team_view(request, organization_id, team_id):
             }
             return render(request, "teams/partials/edit_team_form.html", context)
         else:
-            form = TeamForm(request.POST, instance=team, organization=organization, )
+            form = TeamForm(request.POST, instance=team, organization=organization)
             if form.is_valid():
                 update_team_from_form(
                     form,

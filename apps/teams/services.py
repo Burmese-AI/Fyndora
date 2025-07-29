@@ -124,15 +124,18 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     """
     try:
         team = model_update(team, form.cleaned_data)
-        if team.team_coordinator:
+        new_team_coordinator = team.team_coordinator
+        if previous_team_coordinator == new_team_coordinator:
+            return team
+        
+        if new_team_coordinator != previous_team_coordinator:
+            #create new team member
             team_member = TeamMember.objects.create(
                 team=team,
-                organization_member=team.team_coordinator,
+                organization_member=new_team_coordinator,
                 role="team_coordinator",
             )
-
-        new_team_coordinator = form.cleaned_data.get("team_coordinator")
-        if previous_team_coordinator:
+            #remove previous team member
             team_member = TeamMember.objects.get(
                 team=team,
                 organization_member=previous_team_coordinator,

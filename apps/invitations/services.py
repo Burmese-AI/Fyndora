@@ -29,6 +29,22 @@ def create_invitation(
 @transaction.atomic
 def accept_invitation(user: User, invitation: Invitation):
     """Accept an invitation and add user to organization"""
+    # Check if invitation is already used
+    if invitation.is_used:
+        return False
+    
+    # Check if invitation is expired or not valid
+    if not invitation.is_valid:
+        return False
+    
+    # Check if user email matches invitation email
+    if invitation.email != user.email:
+        return False
+    
+    # Check if user is already a member
+    if OrganizationMember.objects.filter(user=user, organization=invitation.organization).exists():
+        return False
+    
     # Add user to organization
     OrganizationMember.objects.create(user=user, organization=invitation.organization)
 
@@ -63,7 +79,7 @@ def verify_invitation_for_acceptance(user: User, invitation_token: str):
 
 def deactivate_all_unused_active_invitations(email: str, organization: Organization):
     """Deactivate all unused and active invitations for a given email and organization."""
-    Invitation.objects.filter(
+    return Invitation.objects.filter(
         email=email,
         organization=organization,
         is_used=False,

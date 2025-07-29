@@ -18,20 +18,24 @@ from .mixins import (
     EntryUrlIdentifierMixin,
 )
 from apps.entries.constants import EntryType
+from apps.core.views.crud_base_views import BaseDetailView
+from .mixins import EntryRequiredMixin
+from apps.core.views.mixins import OrganizationRequiredMixin
 
-
-class BaseEntryListView(ListView):
+class EntryDetailView(
+    OrganizationRequiredMixin,
+    BaseDetailView
+):
     model = Entry
-    paginate_by = PAGINATION_SIZE
-    context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
-
-    def render_to_response(
-        self, context: dict[str, Any], **response_kwargs: Any
-    ) -> HttpResponse:
-        if self.request.htmx:
-            return render(self.request, self.table_template_name, context)
-        return super().render_to_response(context, **response_kwargs)
+    template_name = "entries/components/detail_modal.html"
+    context_object_name = DETAIL_CONTEXT_OBJECT_NAME
+    
+    def get_queryset(self):
+        return Entry.objects.filter(
+            organization = self.organization
+        )
+    
+    
     
 class OrganizationLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):

@@ -10,7 +10,7 @@ from .views.expense_views import (
     # OrganizationExpenseDeleteView,
     # WorkspaceExpenseDeleteView,
 )
-# from .views.base_views import BaseEntryDetailView
+from .views.base_views import EntryDetailView
 # from .views.entry_views import (
 #     WorkspaceTeamEntryListView,
 #     WorkspaceTeamEntryCreateView,
@@ -86,3 +86,10 @@ urlpatterns = [
 #     ),
 ]
 
+urlpatterns += [
+    path(
+        "entries/<uuid:pk>/detail",
+        EntryDetailView.as_view(),
+        name="entry_detail",
+    ),
+]

@@ -74,6 +74,16 @@ from .invitation_factories import (
     InvitationWithSpecificEmailFactory,
     InvitationForOrganizationFactory,
 )
+from .remittance_factories import (
+    RemittanceFactory,
+    PendingRemittanceFactory,
+    PartiallyPaidRemittanceFactory,
+    PaidRemittanceFactory,
+    OverdueRemittanceFactory,
+    LargeAmountRemittanceFactory,
+    SmallAmountRemittanceFactory,
+    RemittanceWithNotesFactory,
+)
 
 __all__ = [
     # User factories
@@ -138,4 +148,13 @@ __all__ = [
     "InactiveInvitationFactory",
     "InvitationWithSpecificEmailFactory",
     "InvitationForOrganizationFactory",
+    # Remittance factories
+    "RemittanceFactory",
+    "PendingRemittanceFactory",
+    "PartiallyPaidRemittanceFactory",
+    "PaidRemittanceFactory",
+    "OverdueRemittanceFactory",
+    "LargeAmountRemittanceFactory",
+    "SmallAmountRemittanceFactory",
+    "RemittanceWithNotesFactory",
 ]

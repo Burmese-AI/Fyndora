@@ -324,7 +324,7 @@ class TestAuditBusinessWorkflowIntegration(TestCase):
 
         bulk_audit = bulk_audits.first()
         self.assertEqual(bulk_audit.metadata["operation_type"], "bulk_approve")
-        self.assertEqual(bulk_audit.metadata["total_affected"], 15)
+        self.assertEqual(bulk_audit.metadata["total_objects"], 15)
 
 
 @pytest.mark.integration
@@ -557,9 +557,9 @@ class TestAuditSystemEndToEnd(TestCase):
             action_type=AuditActionType.BULK_OPERATION.value
         ).first()
 
-        self.assertEqual(bulk_audit.metadata["total_affected"], 5)
-        self.assertEqual(len(bulk_audit.metadata["affected_object_ids"]), 5)
+        self.assertEqual(bulk_audit.metadata["total_objects"], 5)
+        self.assertEqual(len(bulk_audit.metadata["object_ids"]), 5)
 
         # Verify all entry IDs are captured
         expected_ids = [str(entry.entry_id) for entry in entries]
-        self.assertEqual(set(bulk_audit.metadata["affected_object_ids"]), set(expected_ids))
+        self.assertEqual(set(bulk_audit.metadata["object_ids"]), set(expected_ids))

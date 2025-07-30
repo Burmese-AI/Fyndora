@@ -42,6 +42,7 @@ from .organization_factories import (
     OrganizationFactory,
     OrganizationMemberFactory,
     OrganizationWithOwnerFactory,
+    OrganizationExchangeRateFactory,
 )
 from .team_factories import (
     AuditorMemberFactory,
@@ -97,6 +98,7 @@ __all__ = [
     "OrganizationMemberFactory",
     "InactiveOrganizationMemberFactory",
     "ArchivedOrganizationFactory",
+    "OrganizationExchangeRateFactory",
     # Team factories
     "TeamFactory",
     "TeamWithCoordinatorFactory",

@@ -2,12 +2,19 @@
 Factory Boy factories for Organization models.
 """
 
-import factory
-from factory.django import DjangoModelFactory
+from datetime import date
 from decimal import Decimal
 
-from apps.organizations.models import Organization, OrganizationMember
+import factory
+from factory.django import DjangoModelFactory
+
+from apps.currencies.models import Currency
 from apps.organizations.constants import StatusChoices
+from apps.organizations.models import (
+    Organization,
+    OrganizationExchangeRate,
+    OrganizationMember,
+)
 from tests.factories.user_factories import CustomUserFactory
 
 
@@ -78,3 +85,19 @@ class ArchivedOrganizationFactory(OrganizationFactory):
 
     title = factory.Sequence(lambda n: f"Archived Organization {n}")
     status = StatusChoices.ARCHIVED
+
+
+class OrganizationExchangeRateFactory(DjangoModelFactory):
+    """Factory for creating OrganizationExchangeRate instances."""
+
+    class Meta:
+        model = OrganizationExchangeRate
+
+    organization = factory.SubFactory(OrganizationFactory)
+    currency = factory.LazyFunction(
+        lambda: Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    )
+    rate = Decimal("1.25")
+    effective_date = factory.LazyFunction(lambda: date.today())
+    note = factory.Faker("text", max_nb_chars=100)
+    added_by = factory.SubFactory(OrganizationMemberFactory)

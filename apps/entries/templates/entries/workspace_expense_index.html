@@ -8,7 +8,7 @@
             <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
                 Workspace Expense Entries
             </h2>
-            {% comment %} {% if can_add_workspace_entry %} {% endcomment %}
+            {% if permissions.can_add_workspace_expense %}
             <button 
                 class="btn btn-neutral"
                 hx-get="{% url 'workspace_expense_create' organization_id=organization.pk workspace_id=workspace.pk %}"
@@ -21,7 +21,7 @@
                 
                 <span class="hidden sm:inline">Add Expense Entry</span>
             </button>
-            {% comment %} {% endif %} {% endcomment %}
+            {% endif %}
         </section>
 
         <div id="content-container">

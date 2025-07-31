@@ -16,7 +16,7 @@
             </svg>
             <span class="text-2xl font-bold">Exchange Rates</span>
         </div>
-        {% if user == organization.owner.user %}
+        {% if permissions.can_add_org_exchange_rate %}
         <button 
             class="btn btn-neutral" 
             hx-get="{% url 'organization_exchange_rate_create' organization_id=organization.pk %}" 

@@ -57,6 +57,7 @@
           <span>Dashboard</span>
         </a>
       </li>
+      
       {% if request.user == organization.owner.user %}
       <li>
         <a href="{% url 'organization_expenses' organization_id=request.resolver_match.kwargs.organization_id %}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">

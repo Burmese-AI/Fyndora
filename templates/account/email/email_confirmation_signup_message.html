@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Confirm your email address</title>
+</head>
+<body>
+    <h2>Hello {{ user.get_full_name|default:user.username }},</h2>
+    
+    <p>Please confirm your email address by clicking the link below:</p>
+    
+    <p><a href="{{ activate_url }}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Confirm Email Address</a></p>
+    
+    <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+    <p>{{ activate_url }}</p>
+    
+    <p>Thank you!</p>
+</body>
+</html>

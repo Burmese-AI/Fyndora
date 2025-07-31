@@ -4,6 +4,15 @@ Test factories for Fyndora models.
 Import all factories here for easy access in tests.
 """
 
+from .attachment_factories import (
+    AttachmentFactory,
+    AttachmentWithEntryFactory,
+    ImageAttachmentFactory,
+    MultipleAttachmentsFactory,
+    OtherAttachmentFactory,
+    PDFAttachmentFactory,
+    SpreadsheetAttachmentFactory,
+)
 from .auditlog_factories import (
     AuditTrailFactory,
     AuditWithComplexMetadataFactory,
@@ -33,6 +42,7 @@ from .organization_factories import (
     OrganizationFactory,
     OrganizationMemberFactory,
     OrganizationWithOwnerFactory,
+    OrganizationExchangeRateFactory,
 )
 from .team_factories import (
     AuditorMemberFactory,
@@ -57,6 +67,24 @@ from .workspace_factories import (
     WorkspaceWithAdminFactory,
     WorkspaceWithTeamsFactory,
 )
+from .invitation_factories import (
+    InvitationFactory,
+    ExpiredInvitationFactory,
+    UsedInvitationFactory,
+    InactiveInvitationFactory,
+    InvitationWithSpecificEmailFactory,
+    InvitationForOrganizationFactory,
+)
+from .remittance_factories import (
+    RemittanceFactory,
+    PendingRemittanceFactory,
+    PartiallyPaidRemittanceFactory,
+    PaidRemittanceFactory,
+    OverdueRemittanceFactory,
+    LargeAmountRemittanceFactory,
+    SmallAmountRemittanceFactory,
+    RemittanceWithNotesFactory,
+)
 
 __all__ = [
     # User factories
@@ -70,6 +98,7 @@ __all__ = [
     "OrganizationMemberFactory",
     "InactiveOrganizationMemberFactory",
     "ArchivedOrganizationFactory",
+    "OrganizationExchangeRateFactory",
     # Team factories
     "TeamFactory",
     "TeamWithCoordinatorFactory",
@@ -97,6 +126,14 @@ __all__ = [
     "LargeAmountEntryFactory",
     "SmallAmountEntryFactory",
     "EntryWithReviewFactory",
+    # Attachment factories
+    "AttachmentFactory",
+    "ImageAttachmentFactory",
+    "PDFAttachmentFactory",
+    "SpreadsheetAttachmentFactory",
+    "OtherAttachmentFactory",
+    "AttachmentWithEntryFactory",
+    "MultipleAttachmentsFactory",
     # Auditlog factories
     "AuditTrailFactory",
     "EntryCreatedAuditFactory",
@@ -106,4 +143,20 @@ __all__ = [
     "SystemAuditFactory",
     "AuditWithComplexMetadataFactory",
     "BulkAuditTrailFactory",
+    # Invitation factories
+    "InvitationFactory",
+    "ExpiredInvitationFactory",
+    "UsedInvitationFactory",
+    "InactiveInvitationFactory",
+    "InvitationWithSpecificEmailFactory",
+    "InvitationForOrganizationFactory",
+    # Remittance factories
+    "RemittanceFactory",
+    "PendingRemittanceFactory",
+    "PartiallyPaidRemittanceFactory",
+    "PaidRemittanceFactory",
+    "OverdueRemittanceFactory",
+    "LargeAmountRemittanceFactory",
+    "SmallAmountRemittanceFactory",
+    "RemittanceWithNotesFactory",
 ]

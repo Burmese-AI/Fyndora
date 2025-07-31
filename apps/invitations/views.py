@@ -34,6 +34,16 @@ class InvitationListView(LoginRequiredMixin, ListView):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
+        
+        # Check if user has permission to manage organization (view invitations)
+        if not request.user.has_perm(
+            OrganizationPermissions.MANAGE_ORGANIZATION, self.organization
+        ):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view invitations for this organization.",
+            )
+        
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -54,6 +64,7 @@ class InvitationListView(LoginRequiredMixin, ListView):
 class InvitationCreateView(LoginRequiredMixin, CreateView):
     model = Invitation
     form_class = InvitationCreateForm
+    template_name = "invitations/components/create_modal.html"
 
     def __init__(self):
         self.organization = None
@@ -73,7 +84,7 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        form = InvitationCreateForm()
+        form = InvitationCreateForm(organization=self.organization, user=self.request.user)
         context = {"form": form, "organization": self.organization}
         return render(
             request, "invitations/components/create_modal.html", context=context
@@ -90,11 +101,13 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context["is_oob"] = True
         context["messages"] = messages.get_messages(self.request)
+        context["organization"] = self.organization
         return context
 
     @transaction.atomic
     def form_valid(self, form):
-        create_invitation(
+        # Create invitation using the service instead of saving the form
+        invitation = create_invitation(
             email=form.cleaned_data["email"],
             expired_at=form.cleaned_data["expired_at"],
             organization=self.organization,
@@ -102,19 +115,26 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
                 user=self.request.user, organization=self.organization
             ),
         )
+        
+        # Set the created invitation as the object for the view
+        self.object = invitation
+        
         # For success, Send messages templates and invitation table with enabled OOB
         messages.success(self.request, "Invitation sent successfully")
         if self.request.htmx:
             return self._render_htmx_success_response()
 
-        return super().form_valid(form)
+        # Redirect to success URL instead of calling super().form_valid()
+        return redirect(self.get_success_url())
 
     def form_invalid(self, form):
         messages.error(self.request, "Failed to send invitation")
         if self.request.htmx:
             return self._render_htmx_error_response(form)
 
-        return super().form_invalid(form)
+        # For non-HTMX requests, render the form with errors
+        context = self.get_context_data(form=form)
+        return render(self.request, "invitations/components/create_modal.html", context)
 
     def _render_htmx_success_response(self):
         context = self.get_context_data()

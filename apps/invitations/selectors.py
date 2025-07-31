@@ -69,5 +69,5 @@ User = get_user_model()
 
 
 def get_user_by_email(email: str) -> Optional[User]:
-    """Get user by email"""
-    return User.objects.filter(email=email).first()
+    """Get user by email (case-insensitive)"""
+    return User.objects.filter(email__iexact=email).first()

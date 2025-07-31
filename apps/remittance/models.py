@@ -55,12 +55,21 @@ class Remittance(baseModel):
             models.Index(fields=["status"]),
             models.Index(fields=["paid_within_deadlines"]),
         ]
+        permissions = [
+            ("review_remittance", "Can review and confirm remittances"),
+            ("flag_remittance", "Can flag remittances"),
+        ]
 
     def update_status(self):
         """
         Update remittance status based on paid and due amounts.
         """
-        if self.due_amount == 0:
+
+        # Don't update status if it's already canceled
+        if self.status == RemittanceStatus.CANCELED:
+            return
+            
+        if self.paid_amount == 0.0:
             self.status = RemittanceStatus.PENDING
         elif self.paid_amount < self.due_amount:
             self.status = RemittanceStatus.PARTIAL

@@ -38,7 +38,7 @@ class TestWorkspaceFactories:
         assert isinstance(workspace.start_date, date)
         assert workspace.expense == Decimal("0.00")
         assert workspace.workspace_admin is None
-        assert workspace.operation_reviewer is None
+        assert workspace.operations_reviewer is None
         assert workspace.created_by is None
 
     def test_workspace_with_admin_factory(self):

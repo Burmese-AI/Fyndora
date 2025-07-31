@@ -153,7 +153,6 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             update_team_coordinator_group(
                 team, previous_team_coordinator, new_team_coordinator
             )
-
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")

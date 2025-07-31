@@ -130,19 +130,27 @@ def remittance_confirm_payment(*, remittance, user):
     """
     Confirms a remittance payment.
     """
-    if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE):
-        raise PermissionDenied("You do not have permission to confirm this remittance.")
+    if not skip_permissions:
+        workspace = remittance.workspace_team.workspace
+        if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
+            raise PermissionDenied("You do not have permission to confirm this remittance.")
 
     if remittance.paid_amount < remittance.due_amount:
         raise ValidationError(
             "Cannot confirm payment: The due amount has not been fully paid."
         )
 
+    # Get the OrganizationMember instance for the user
+    organization_member = get_organization_member_by_user_and_organization(
+        user=user, 
+        organization=remittance.workspace_team.workspace.organization
+    )
+
     updated_remittance = model_update(
         instance=remittance,
-        fields=["confirmed_by", "confirmed_at"],
+        update_fields=["confirmed_by", "confirmed_at"],
         data={
-            "confirmed_by": user,
+            "confirmed_by": organization_member,
             "confirmed_at": timezone.now(),
         },
     )
@@ -154,7 +162,8 @@ def remittance_record_payment(*, remittance, user, amount):
     """
     Records a payment against a remittance.
     """
-    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE):
+    workspace = remittance.workspace_team.workspace
+    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE, workspace):
         raise PermissionDenied(
             "You do not have permission to record a payment for this remittance."
         )
@@ -222,9 +231,10 @@ def remittance_create_or_update_from_income_entry(*, entry):
 
 def remittance_change_due_date(*, remittance, user, due_date):
     """
-    Updates the due date of a remittance.
+    Updates the due date of a remittance by changing the workspace end date.
     """
-    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE):
+    workspace = remittance.workspace_team.workspace
+    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE, workspace):
         raise PermissionDenied(
             "You do not have permission to change the due date for this remittance."
         )
@@ -234,20 +244,26 @@ def remittance_change_due_date(*, remittance, user, due_date):
             f"Cannot update a remittance with status '{remittance.status}'."
         )
 
-    remittance.due_date = due_date
-    remittance.full_clean()
-    remittance.save(update_fields=["due_date", "status"])
+    # Update the workspace end_date which serves as the due date
+    workspace = remittance.workspace_team.workspace
+    workspace.end_date = due_date
+    workspace.full_clean()
+    workspace.save(update_fields=["end_date"])
+
+    # Check if remittance is now overdue
+    remittance.check_if_overdue()
+    remittance.save(update_fields=["paid_within_deadlines"])
 
     return remittance
 
 
-def remittance_create(
-    *, user, workspace_team, due_amount, due_date, status=RemittanceStatus.PENDING
-):
+def remittance_create(user, workspace_team, due_amount, description=None):
     """
     Manually creates a new remittance record.
     """
-    if not user.has_perm(RemittancePermissions.ADD_REMITTANCE):
+    # For creation, we need to check against the workspace since remittance doesn't exist yet
+    workspace = workspace_team.workspace
+    if not user.has_perm(RemittancePermissions.ADD_REMITTANCE, workspace):
         raise PermissionDenied("You do not have permission to create a remittance.")
 
     if due_amount <= 0:
@@ -256,8 +272,7 @@ def remittance_create(
     remittance = Remittance(
         workspace_team=workspace_team,
         due_amount=due_amount,
-        due_date=due_date,
-        status=status,
+        status=RemittanceStatus.PENDING,
     )
 
     remittance.full_clean()
@@ -270,7 +285,8 @@ def remittance_cancel(*, remittance, user):
     """
     Cancels a remittance.
     """
-    if not user.has_perm(RemittancePermissions.DELETE_REMITTANCE):
+    workspace = remittance.workspace_team.workspace
+    if not user.has_perm(RemittancePermissions.DELETE_REMITTANCE, workspace):
         raise PermissionDenied("You do not have permission to cancel this remittance.")
 
     if remittance.paid_amount > 0:

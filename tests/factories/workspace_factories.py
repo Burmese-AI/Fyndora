@@ -7,8 +7,9 @@ from factory.django import DjangoModelFactory
 from decimal import Decimal
 from datetime import date, timedelta
 
-from apps.workspaces.models import Workspace, WorkspaceTeam
+from apps.workspaces.models import Workspace, WorkspaceTeam, WorkspaceExchangeRate
 from apps.workspaces.constants import StatusChoices
+from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
     OrganizationFactory,
     OrganizationMemberFactory,
@@ -144,3 +145,28 @@ class WorkspaceAdminMemberFactory(OrganizationMemberFactory):
         workspace.workspace_admin = self
         workspace.created_by = self
         workspace.save()
+
+
+class WorkspaceExchangeRateFactory(DjangoModelFactory):
+    """Factory for creating WorkspaceExchangeRate instances."""
+
+    class Meta:
+        model = WorkspaceExchangeRate
+
+    workspace = factory.SubFactory(WorkspaceFactory)
+    currency = factory.LazyFunction(
+        lambda: Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    )
+    rate = Decimal("1.25")
+    effective_date = factory.LazyFunction(lambda: date.today())
+    note = factory.Faker("text", max_nb_chars=100)
+    added_by = factory.SubFactory(OrganizationMemberFactory)
+    is_approved = False
+    # approved_by is None by default
+
+
+class ApprovedWorkspaceExchangeRateFactory(WorkspaceExchangeRateFactory):
+    """Factory for creating approved WorkspaceExchangeRate instances."""
+
+    is_approved = True
+    approved_by = factory.SubFactory(OrganizationMemberFactory)

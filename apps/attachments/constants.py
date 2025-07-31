@@ -6,6 +6,7 @@ class AttachmentType(models.TextChoices):
     IMAGE = "image", "Image"
     PDF = "pdf", "PDF"
     SPREADSHEET = "spreadsheet", "Spreadsheet"
+    OTHER = "other", "Other"
 
     @classmethod
     def get_extension_map(cls):

@@ -1,0 +1,10 @@
+Hello {{ user.first_name|default:user.email }},
+
+Please confirm your email address by clicking the link below:
+
+{{ activate_url }}
+
+If you didn't create an account, please ignore this email.
+
+Best regards,
+The Fyndora Team

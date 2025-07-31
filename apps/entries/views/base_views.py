@@ -1,14 +1,5 @@
-from typing import Any
-from django.views.generic import ListView, CreateView, UpdateView
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
-from django.contrib import messages
-from django.template.loader import render_to_string
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import DetailView, DeleteView
-from apps.core.constants import PAGINATION_SIZE
 from ..models import Entry
-from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
+from ..constants import DETAIL_CONTEXT_OBJECT_NAME
 from .mixins import (
     # EntryRequiredMixin,
     # HtmxModalFormInvalidFormResponseMixin,
@@ -19,31 +10,27 @@ from .mixins import (
 )
 from apps.entries.constants import EntryType
 from apps.core.views.crud_base_views import BaseDetailView
-from .mixins import EntryRequiredMixin
 from apps.core.views.mixins import OrganizationRequiredMixin
 
-class EntryDetailView(
-    OrganizationRequiredMixin,
-    BaseDetailView
-):
+
+class EntryDetailView(OrganizationRequiredMixin, BaseDetailView):
     model = Entry
     template_name = "entries/components/detail_modal.html"
     context_object_name = DETAIL_CONTEXT_OBJECT_NAME
-    
+
     def get_queryset(self):
-        return Entry.objects.filter(
-            organization = self.organization
-        )
-    
-    
-    
+        return Entry.objects.filter(organization=self.organization)
+
+
 class OrganizationLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):
         return EntryType.ORG_EXP
 
+
 class WorkspaceLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):
         return EntryType.WORKSPACE_EXP
+
 
 class TeamLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):

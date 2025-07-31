@@ -82,19 +82,20 @@ def process_due_amount(workspace_team: WorkspaceTeam, remittance: Remittance):
     due_amount = 0
     if final_total > 0:
         due_amount = final_total * (remittance_rate * Decimal("0.01"))
-        
+
     return due_amount
 
 
 def update_remittance_based_on_entry_status_change(
     *, remittance: Remittance, due_amount=None, paid_amount=None
 ):
-    
-    print(f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}")
+    print(
+        f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
+    )
 
     # Debug: Show the values we’re about to apply
     print(f"Values to update with: {due_amount} | {paid_amount}")
-    
+
     # Update only the fields that are provided
     remittance.due_amount = (
         due_amount if due_amount is not None else remittance.due_amount
@@ -107,13 +108,22 @@ def update_remittance_based_on_entry_status_change(
     remittance.check_if_overpaid()
 
     # Debug: Show values before saving
-    
+
     # Save the updated fields to the database
-    remittance.save(update_fields=["due_amount", "paid_amount", "status", "paid_within_deadlines", "is_overpaid"])
+    remittance.save(
+        update_fields=[
+            "due_amount",
+            "paid_amount",
+            "status",
+            "paid_within_deadlines",
+            "is_overpaid",
+        ]
+    )
 
     # Debug: Confirm saved values
-    print(f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}")
-
+    print(
+        f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
+    )
 
 
 def remittance_confirm_payment(*, remittance, user):

@@ -4,10 +4,12 @@ from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Count, QuerySet, F, Sum, DecimalField, ExpressionWrapper
 
-from django.contrib.contenttypes.prefetch import GenericPrefetch
-from django.db.models import Sum
 
-from apps.organizations.models import Organization, OrganizationExchangeRate, OrganizationMember
+from apps.organizations.models import (
+    Organization,
+    OrganizationExchangeRate,
+    OrganizationMember,
+)
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
@@ -104,7 +106,6 @@ def get_entries(
     return queryset
 
 
-
 def get_total_amount_of_entries(
     *, entry_type: EntryType, entry_status: EntryStatus, workspace_team: WorkspaceTeam
 ) -> Decimal:
@@ -120,46 +121,52 @@ def get_total_amount_of_entries(
     Returns:
         Decimal: The total converted amount of matching entries.
     """
-    total = (
-        workspace_team.entries
-        .filter(entry_type=entry_type, status=entry_status)
-        .aggregate(
-            total=Sum(
-                ExpressionWrapper(
-                    F("amount") * F("exchange_rate_used"),
-                    output_field=DecimalField(max_digits=20, decimal_places=2),
-                )
+    total = workspace_team.entries.filter(
+        entry_type=entry_type, status=entry_status
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F("amount") * F("exchange_rate_used"),
+                output_field=DecimalField(max_digits=20, decimal_places=2),
             )
-        )["total"]
-    )
+        )
+    )["total"]
 
     return total or Decimal("0.00")
-
 
 
 def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace=None):
     # Get the workspace lvl exchange rate whose effective date is closest to the occurred_at date
     if workspace:
-        workspace_exchange_rate = WorkspaceExchangeRate.objects.filter(
-            workspace=workspace,
-            currency__code=currency.code,
-            effective_date__lte=occurred_at,
-            is_approved=True,
-        ).order_by("-effective_date").first()
+        workspace_exchange_rate = (
+            WorkspaceExchangeRate.objects.filter(
+                workspace=workspace,
+                currency__code=currency.code,
+                effective_date__lte=occurred_at,
+                is_approved=True,
+            )
+            .order_by("-effective_date")
+            .first()
+        )
         if workspace_exchange_rate:
             return workspace_exchange_rate
 
     # Get the organization lvl exchange rate whose effective date is closest to the occurred_at date
-    organization_exchange_rate = OrganizationExchangeRate.objects.filter(
-        organization=organization,
-        currency__code=currency.code,
-        effective_date__lte=occurred_at,
-    ).order_by("-effective_date").first()
-    
+    organization_exchange_rate = (
+        OrganizationExchangeRate.objects.filter(
+            organization=organization,
+            currency__code=currency.code,
+            effective_date__lte=occurred_at,
+        )
+        .order_by("-effective_date")
+        .first()
+    )
+
     if organization_exchange_rate:
         return organization_exchange_rate
-    
+
     return None
+
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

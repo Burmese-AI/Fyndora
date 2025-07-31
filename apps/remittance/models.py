@@ -1,6 +1,5 @@
 import uuid
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -76,9 +75,9 @@ class Remittance(baseModel):
         ):
             if self.paid_within_deadlines:
                 self.paid_within_deadlines = False
-                
+
     def check_if_overpaid(self):
         self.is_overpaid = self.paid_amount > self.due_amount
-            
+
     def __str__(self):
         return f"Remittance {self.remittance_id} - {self.workspace.title} (Status: {self.get_status_display()})"

@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0024_alter_organizationexchangerate_rate'),
-        ('organizations', '0027_alter_organization_options'),
+        ("organizations", "0024_alter_organizationexchangerate_rate"),
+        ("organizations", "0027_alter_organization_options"),
     ]
 
-    operations = [
-    ]
+    operations = []

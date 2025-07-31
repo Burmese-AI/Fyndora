@@ -6,6 +6,7 @@ from apps.remittance.services import (
     handle_remittance_update,
 )
 
+
 @receiver(post_save, sender=Entry)
 def keep_remittance_updated_with_entry(sender, instance, created, **kwargs):
     # Only handle relevant entry types
@@ -19,7 +20,8 @@ def keep_remittance_updated_with_entry(sender, instance, created, **kwargs):
     print("About to update remittance")
     handle_remittance_update(
         updated_entry=instance,
-        update_due_amount=instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT],
+        update_due_amount=instance.entry_type
+        in [EntryType.INCOME, EntryType.DISBURSEMENT],
     )
 
 
@@ -40,5 +42,6 @@ def revert_remittance_on_entry_delete(sender, instance, **kwargs):
     print("Recalculating remittance after entry deletion")
     handle_remittance_update(
         updated_entry=instance,
-        update_due_amount=instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT],
+        update_due_amount=instance.entry_type
+        in [EntryType.INCOME, EntryType.DISBURSEMENT],
     )

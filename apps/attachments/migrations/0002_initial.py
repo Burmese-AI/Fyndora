@@ -5,18 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('attachments', '0001_initial'),
-        ('entries', '0001_initial'),
+        ("attachments", "0001_initial"),
+        ("entries", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='attachment',
-            name='entry',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to='entries.entry'),
+            model_name="attachment",
+            name="entry",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="attachments",
+                to="entries.entry",
+            ),
         ),
     ]

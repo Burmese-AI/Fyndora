@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0008_remove_remittance_remittance__due_dat_b70eef_idx_and_more'),
+        (
+            "remittance",
+            "0008_remove_remittance_remittance__due_dat_b70eef_idx_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='remittance',
-            name='is_overpaid',
+            model_name="remittance",
+            name="is_overpaid",
             field=models.BooleanField(default=False),
         ),
     ]

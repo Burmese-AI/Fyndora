@@ -6,4 +6,4 @@ class RemittanceConfig(AppConfig):
     name = "apps.remittance"
 
     def ready(self):
-        pass
+        import apps.remittance.signals  # noqa: F401

@@ -84,7 +84,6 @@ class EntryRequiredMixin:
         entry_id = kwargs.get("pk")
         self.entry = get_object_or_404(Entry, pk=entry_id)
         self.instance = self.entry
-        print(f"Update entry note: {self.instance}")
         self.attachments = self.entry.attachments.all()
         
     def get_context_data(self, **kwargs) -> dict[str, Any]:

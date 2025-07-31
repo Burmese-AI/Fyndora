@@ -40,6 +40,7 @@ class Remittance(baseModel):
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
     paid_within_deadlines = models.BooleanField(default=True)
+    is_overpaid = models.BooleanField(default=False)
     review_notes = models.TextField(blank=True, null=True)
 
     @property
@@ -58,14 +59,15 @@ class Remittance(baseModel):
 
     def update_status(self):
         """
-        Update remittance status based on payment and confirmation.
+        Update remittance status based on paid and due amounts.
         """
-        if self.paid_amount == 0.0:
+        if self.due_amount == 0:
             self.status = RemittanceStatus.PENDING
-        elif self.due_amount > self.paid_amount:
+        elif self.paid_amount < self.due_amount:
             self.status = RemittanceStatus.PARTIAL
         else:
             self.status = RemittanceStatus.PAID
+        print(f"Debugging status => {self.status}")
 
     def check_if_overdue(self):
         if (
@@ -74,16 +76,9 @@ class Remittance(baseModel):
         ):
             if self.paid_within_deadlines:
                 self.paid_within_deadlines = False
-
-    def clean(self):
-        if self.paid_amount > self.due_amount:
-            raise ValidationError("Paid amount cannot exceed the due amount.")
-
-    def save(self, *args, **kwargs):
-        """Save the remittance and update the status."""
-        self.update_status()
-        self.check_if_overdue()
-        super().save(*args, **kwargs)
-
+                
+    def check_if_overpaid(self):
+        self.is_overpaid = self.paid_amount > self.due_amount
+            
     def __str__(self):
         return f"Remittance {self.remittance_id} - {self.workspace.title} (Status: {self.get_status_display()})"

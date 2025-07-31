@@ -1,7 +1,9 @@
 from typing import List
+from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Count, QuerySet
+from django.db.models import Q, Count, QuerySet, F, Sum, DecimalField, ExpressionWrapper
+
 from django.contrib.contenttypes.prefetch import GenericPrefetch
 from django.db.models import Sum
 
@@ -102,27 +104,37 @@ def get_entries(
     return queryset
 
 
+
 def get_total_amount_of_entries(
     *, entry_type: EntryType, entry_status: EntryStatus, workspace_team: WorkspaceTeam
-):
+) -> Decimal:
     """
-    Get the total amount of entries for a specific entry type and status.
+    Get the total converted amount of entries (amount * exchange_rate_used)
+    for a specific entry type and status within the given workspace team.
 
     Args:
-        entry_type: EntryType object
-        entry_status: EntryStatus object
-        workspace_team: WorkspaceTeam object
+        entry_type (EntryType): The type of entry to filter by.
+        entry_status (EntryStatus): The status of the entries to include.
+        workspace_team (WorkspaceTeam): The team whose entries to aggregate.
 
     Returns:
-        Decimal: Total amount of entries
+        Decimal: The total converted amount of matching entries.
     """
-    return (
-        workspace_team.entries.filter(
-            status=entry_status,
-            entry_type=entry_type,
-        ).aggregate(total=Sum("amount"))["total"]
-        or 0.00
+    total = (
+        workspace_team.entries
+        .filter(entry_type=entry_type, status=entry_status)
+        .aggregate(
+            total=Sum(
+                ExpressionWrapper(
+                    F("amount") * F("exchange_rate_used"),
+                    output_field=DecimalField(max_digits=20, decimal_places=2),
+                )
+            )
+        )["total"]
     )
+
+    return total or Decimal("0.00")
+
 
 
 def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace=None):

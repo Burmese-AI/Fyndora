@@ -6,4 +6,4 @@ class EntriesConfig(AppConfig):
     name = "apps.entries"
 
     def ready(self):
-        pass
+        import apps.entries.signals # noqa: F401

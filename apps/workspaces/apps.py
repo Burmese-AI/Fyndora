@@ -6,4 +6,4 @@ class WorkspacesConfig(AppConfig):
     name = "apps.workspaces"
 
     def ready(self):
-        pass
+        import apps.workspaces.signals # noqa: F401

@@ -6,4 +6,4 @@ class InvitationsConfig(AppConfig):
     name = "apps.invitations"
 
     def ready(self):
-        pass
+        import apps.invitations.signals # noqa: F401

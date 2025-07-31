@@ -6,7 +6,10 @@ from apps.organizations.models import Organization, OrganizationMember
 from django.template.loader import render_to_string
 from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.core.permissions import WorkspacePermissions
-from apps.workspaces.selectors import get_workspace_team_member_by_workspace_team_and_org_member
+from apps.workspaces.selectors import (
+    get_workspace_team_member_by_workspace_team_and_org_member,
+)
+
 
 class OrganizationRequiredMixin:
     """
@@ -93,7 +96,7 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
         self.workspace_team_role = (
             self.workspace_team_member.role if self.workspace_team_member else None
         )
-        
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["workspace_team"] = self.workspace_team
@@ -144,17 +147,16 @@ class HtmxModalFormInvalidFormResponseMixin:
 
 
 class HtmxInvalidResponseMixin:
-    
     """
-        Mixin for htmx invalid response.
+    Mixin for htmx invalid response.
     """
-    
+
     message_template_name = "includes/message.html"
 
     def _render_htmx_error_response(self, form) -> HttpResponse:
         """
-            Render htmx error response.
-            Note: Form is not required
+        Render htmx error response.
+        Note: Form is not required
         """
         base_context = self.get_context_data()
 

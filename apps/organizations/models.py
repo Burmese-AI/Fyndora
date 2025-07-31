@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericRelation
 
 from apps.core.models import baseModel, SoftDeleteModel
 from apps.organizations.constants import StatusChoices

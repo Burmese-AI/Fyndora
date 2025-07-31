@@ -1,17 +1,20 @@
 import uuid
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator
 
 from apps.core.models import baseModel, SoftDeleteModel
 from apps.currencies.models import Currency
 from apps.entries.constants import EntryType, EntryStatus
-from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
-from apps.organizations.models import OrganizationMember, Organization, OrganizationExchangeRate
+from apps.organizations.models import (
+    OrganizationMember,
+    Organization,
+    OrganizationExchangeRate,
+)
+
 
 class Entry(baseModel, SoftDeleteModel):
     entry_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -37,11 +40,7 @@ class Entry(baseModel, SoftDeleteModel):
         related_name="entries",
     )
     amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        validators=[
-            MinValueValidator(Decimal("0.01"))
-        ]
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
     )
     occurred_at = models.DateField()
     currency = models.ForeignKey(
@@ -54,7 +53,7 @@ class Entry(baseModel, SoftDeleteModel):
         decimal_places=2,
         validators=[
             MinValueValidator(Decimal("0.01")),
-        ]
+        ],
     )
     org_exchange_rate_ref = models.ForeignKey(
         OrganizationExchangeRate,
@@ -98,7 +97,7 @@ class Entry(baseModel, SoftDeleteModel):
     )
     status_note = models.TextField(null=True, blank=True)
     is_flagged = models.BooleanField(default=False)
-    
+
     @property
     def converted_amount(self):
         return self.amount * self.exchange_rate_used
@@ -149,20 +148,20 @@ class Entry(baseModel, SoftDeleteModel):
         ]
         indexes = [
             # Context
-            models.Index(fields=['organization']),
-            models.Index(fields=['workspace']),
-            models.Index(fields=['workspace_team']),
+            models.Index(fields=["organization"]),
+            models.Index(fields=["workspace"]),
+            models.Index(fields=["workspace_team"]),
             # Time
-            models.Index(fields=['occurred_at']),
-            models.Index(fields=['status_last_updated_at']),
+            models.Index(fields=["occurred_at"]),
+            models.Index(fields=["status_last_updated_at"]),
             # Status
-            models.Index(fields=['status']),
+            models.Index(fields=["status"]),
             # Submitters
-            models.Index(fields=['submitted_by_org_member']),
-            models.Index(fields=['submitted_by_team_member']),
+            models.Index(fields=["submitted_by_org_member"]),
+            models.Index(fields=["submitted_by_team_member"]),
             # Exchange rate sources
-            models.Index(fields=['org_exchange_rate_ref']),
-            models.Index(fields=['workspace_exchange_rate_ref']),
+            models.Index(fields=["org_exchange_rate_ref"]),
+            models.Index(fields=["workspace_exchange_rate_ref"]),
         ]
 
     def __str__(self):

@@ -1,19 +1,10 @@
 from typing import Any
 
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.contrib import messages
 
-from apps.workspaces.models import Workspace, WorkspaceTeam
-from apps.organizations.models import Organization, OrganizationMember
-from apps.workspaces.selectors import (
-    get_workspace_team_member_by_workspace_team_and_org_member,
-)
 
 # from ..forms import BaseEntryForm, UpdateEntryForm
 from ..models import Entry
-from apps.core.permissions import WorkspacePermissions
 
 
 # class OrganizationRequiredMixin:
@@ -84,9 +75,8 @@ class EntryRequiredMixin:
         entry_id = kwargs.get("pk")
         self.entry = get_object_or_404(Entry, pk=entry_id)
         self.instance = self.entry
-        print(f"Update entry note: {self.instance}")
         self.attachments = self.entry.attachments.all()
-        
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["entry"] = self.entry

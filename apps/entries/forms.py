@@ -5,10 +5,9 @@ from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
 from datetime import date
-from pprint import pprint
 from apps.currencies.models import Currency
-from apps.organizations.models import OrganizationExchangeRate
 from django.utils import timezone
+
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -20,7 +19,7 @@ class BaseEntryForm(forms.ModelForm):
             }
         ),
     )
-    
+
     currency = forms.ModelChoiceField(
         queryset=Currency.objects.all(),
         required=True,
@@ -31,7 +30,7 @@ class BaseEntryForm(forms.ModelForm):
             }
         ),
     )
-    
+
     occurred_at = forms.DateField(
         widget=forms.DateInput(
             attrs={
@@ -84,24 +83,25 @@ class BaseEntryForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # Validate Currency
         currency = cleaned_data.get("currency")
         if not currency:
             raise forms.ValidationError("Currency is required.")
-                
+
         # Validate attachment files
         attachment_files = cleaned_data.get("attachment_files")
         if attachment_files:
             validate_uploaded_files(attachment_files)
 
         return cleaned_data
-    
+
     def get_org_defined_currencies(self):
         return Currency.objects.filter(
             organizations_organizationexchangerate__organization=self.organization,
         )
-    
+
+
 class CreateOrganizationExpenseEntryForm(BaseEntryForm):
     def clean(self):
         cleaned_data = super().clean()
@@ -110,7 +110,8 @@ class CreateOrganizationExpenseEntryForm(BaseEntryForm):
                 "You are not authorized to create organization expenses"
             )
         return cleaned_data
-    
+
+
 class CreateWorkspaceTeamEntryForm(BaseEntryForm):
     class Meta(BaseEntryForm.Meta):
         fields = BaseEntryForm.Meta.fields + ["entry_type"]
@@ -188,7 +189,8 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
             ]
         else:
             return []
-    
+
+
 class BaseUpdateEntryForm(BaseEntryForm):
     replace_attachments = forms.BooleanField(
         label="Replace existing attachments",
@@ -198,7 +200,7 @@ class BaseUpdateEntryForm(BaseEntryForm):
             attrs={"class": "checkbox checkbox-neutral checkbox-xs"}
         ),
     )
-    
+
     class Meta(BaseEntryForm.Meta):
         fields = BaseEntryForm.Meta.fields + ["status", "status_note"]
         widgets = {
@@ -217,7 +219,7 @@ class BaseUpdateEntryForm(BaseEntryForm):
                 }
             ),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
@@ -229,7 +231,7 @@ class BaseUpdateEntryForm(BaseEntryForm):
             self.fields["replace_attachments"].disabled = True
             self.fields["currency"].disabled = True
             self.fields["occurred_at"].disabled = True
-            
+
     def get_allowed_statuses(self, current_status):
         transitions = {
             EntryStatus.PENDING: [
@@ -257,6 +259,7 @@ class BaseUpdateEntryForm(BaseEntryForm):
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
 
+
 class UpdateOrganizationExpenseEntryForm(BaseUpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
@@ -268,4 +271,3 @@ class UpdateOrganizationExpenseEntryForm(BaseUpdateEntryForm):
             )
 
         return cleaned_data
-    

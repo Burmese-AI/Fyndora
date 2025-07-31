@@ -38,6 +38,8 @@ from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin
 )
 from ..services import create_entry_with_attachments
+from ..utils import can_view_org_expense
+
 
 
 
@@ -52,9 +54,7 @@ class OrganizationExpenseListView(
     template_name = "entries/index.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perm(
-            OrganizationPermissions.VIEW_ORG_ENTRY, self.organization
-        ):
+        if not can_view_org_expense(request.user, self.organization):
             return permission_denied_view(
                 request,
                 "You do not have permission to view organization expenses.",

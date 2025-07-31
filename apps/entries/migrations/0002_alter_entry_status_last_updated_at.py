@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('entries', '0001_initial'),
+        ("entries", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='entry',
-            name='status_last_updated_at',
+            model_name="entry",
+            name="status_last_updated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

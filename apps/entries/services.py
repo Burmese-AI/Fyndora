@@ -3,7 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
@@ -20,7 +19,6 @@ from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
 from datetime import date
-from apps.currencies.selectors import get_currency_by_code
 from .selectors import get_closest_exchanged_rate
 
 
@@ -80,15 +78,15 @@ def create_entry_with_attachments(
     workspace: Workspace = None,
     workspace_team: WorkspaceTeam = None,
     currency,
-    submitted_by_org_member = None,
-    submitted_by_team_member = None,
+    submitted_by_org_member=None,
+    submitted_by_team_member=None,
 ) -> Entry:
     """
     Service to create a new entry with attachments.
     """
 
     is_attachment_provided = True if attachments else False
-    
+
     # Get the closest exchange rate
     exchange_rate_used = get_closest_exchanged_rate(
         currency=currency,
@@ -98,28 +96,33 @@ def create_entry_with_attachments(
     )
     if not exchange_rate_used:
         raise ValueError("No exchange rate is defined for the given currency and date.")
-    
+
     # Potential Error
-    # NOTE: if currency is soft-deleted, currency obj can't be obtained 
+    # NOTE: if currency is soft-deleted, currency obj can't be obtained
     # unless its similar object has been created
-    
+
     with transaction.atomic():
         # Create the Entry
         entry = Entry.objects.create(
-            entry_type = entry_type,
-            amount = amount,
-            occurred_at = occurred_at,
-            description = description,
-            organization = organization,
-            workspace = workspace or (workspace_team.workspace if workspace_team else None),
-            workspace_team = workspace_team,
-            currency = currency,
-            exchange_rate_used = exchange_rate_used.rate,
-            org_exchange_rate_ref = exchange_rate_used if isinstance(exchange_rate_used, OrganizationExchangeRate) else None,
-            workspace_exchange_rate_ref = exchange_rate_used if isinstance(exchange_rate_used, WorkspaceExchangeRate) else None,
-            submitted_by_org_member = submitted_by_org_member,
-            submitted_by_team_member = submitted_by_team_member,
-            is_flagged = not is_attachment_provided,
+            entry_type=entry_type,
+            amount=amount,
+            occurred_at=occurred_at,
+            description=description,
+            organization=organization,
+            workspace=workspace
+            or (workspace_team.workspace if workspace_team else None),
+            workspace_team=workspace_team,
+            currency=currency,
+            exchange_rate_used=exchange_rate_used.rate,
+            org_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, OrganizationExchangeRate)
+            else None,
+            workspace_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+            else None,
+            submitted_by_org_member=submitted_by_org_member,
+            submitted_by_team_member=submitted_by_team_member,
+            is_flagged=not is_attachment_provided,
         )
 
         # Create the Attachments if any were provided
@@ -142,12 +145,13 @@ def update_entry_user_inputs(
     description,
     currency: Currency,
     attachments,
-    replace_attachments: bool
+    replace_attachments: bool,
 ):
-    
     if entry.status != EntryStatus.PENDING:
-        raise ValidationError("User can only update Entry info during the pending stage.")
-    
+        raise ValidationError(
+            "User can only update Entry info during the pending stage."
+        )
+
     # Check if currency or occurred_at values are changed or not
     is_currency_changed = entry.currency.code != currency.code
     is_occurred_at_changed = entry.occurred_at != occurred_at
@@ -161,21 +165,31 @@ def update_entry_user_inputs(
             workspace=workspace,
         )
         if not new_exchange_rate_used:
-            raise ValueError("No exchange rate is defined for the given currency and date.")
-    
+            raise ValueError(
+                "No exchange rate is defined for the given currency and date."
+            )
+
     # Update Provided Fields
     entry.amount = amount
     entry.currency = currency
     entry.occurred_at = occurred_at
     entry.description = description
-    
+
     if new_exchange_rate_used:
         entry.exchange_rate_used = new_exchange_rate_used.rate
-        entry.org_exchange_rate_ref = new_exchange_rate_used if isinstance(new_exchange_rate_used, OrganizationExchangeRate) else None
-        entry.workspace_exchange_rate_ref = new_exchange_rate_used if isinstance(new_exchange_rate_used, WorkspaceExchangeRate) else None
-            
+        entry.org_exchange_rate_ref = (
+            new_exchange_rate_used
+            if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
+            else None
+        )
+        entry.workspace_exchange_rate_ref = (
+            new_exchange_rate_used
+            if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
+            else None
+        )
+
     entry.save()
-    
+
     # If new attachments were provided, replace existing ones or append the new ones
     if attachments:
         replace_or_append_attachments(
@@ -189,18 +203,14 @@ def update_entry_user_inputs(
             entry.is_flagged = False
             entry.save(update_fields=["is_flagged"])
 
-def update_entry_status(
-    *,
-    entry: Entry,
-    status,
-    status_note,
-    last_status_modified_by
-):
+
+def update_entry_status(*, entry: Entry, status, status_note, last_status_modified_by):
     entry.status = status
     entry.status_note = status_note
     entry.last_status_modified_by = last_status_modified_by
     entry.status_last_updated_at = timezone.now()
     entry.save()
+
 
 def delete_entry(entry: Entry):
     """
@@ -208,7 +218,9 @@ def delete_entry(entry: Entry):
     """
 
     if entry.last_status_modified_by:
-        raise ValidationError("Cannot delete an entry when someone has already modified the status.")
+        raise ValidationError(
+            "Cannot delete an entry when someone has already modified the status."
+        )
 
     if entry.status != EntryStatus.PENDING:
         raise ValidationError("Cannot delete an entry that is not pending review")

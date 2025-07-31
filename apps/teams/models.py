@@ -4,7 +4,6 @@ from apps.organizations.models import OrganizationMember
 import uuid
 from apps.teams.constants import TeamMemberRole
 from apps.organizations.models import Organization
-from django.contrib.contenttypes.fields import GenericRelation
 from apps.core.permissions import TeamPermissions
 
 
@@ -61,7 +60,6 @@ class TeamMember(baseModel):
     role = models.CharField(
         max_length=32, choices=TeamMemberRole.choices, default=TeamMemberRole.SUBMITTER
     )
-
 
     class Meta:
         verbose_name = "team member"

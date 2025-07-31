@@ -40,6 +40,7 @@ class BaseCreateView(LoginRequiredMixin, HtmxOobResponseMixin, CreateView):
     model = None
     form_class = None
 
+
 class BaseUpdateView(LoginRequiredMixin, HtmxOobResponseMixin, UpdateView):
     model = None
     form_class = None

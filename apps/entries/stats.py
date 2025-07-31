@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import List
 from django.db.models import Sum
 from django.utils.timezone import now
-from .constants import EntryStatus, EntryType
+from .constants import EntryStatus
 from .selectors import get_entries
 
 

@@ -67,6 +67,7 @@ from .mixins.workspace_exchange_rate.required_mixins import (
     WorkspaceExchangeRateRequiredMixin,
 )
 from apps.core.utils import can_manage_organization
+from apps.remittance.services import process_due_amount, update_remittance_based_on_entry_status_change
 
 
 @login_required
@@ -460,8 +461,16 @@ def change_workspace_team_remittance_rate_view(
                 request.POST, instance=workspace_team
             )
             if form.is_valid():
+                # Updating Team Lvl Remittance Rate
                 update_workspace_team_remittance_rate_from_form(
                     form=form, workspace_team=workspace_team, workspace=workspace
+                )
+                # Updating due amount of remittance
+                remittance = workspace_team.remittance
+                new_due_amount = process_due_amount(workspace_team, remittance)
+                update_remittance_based_on_entry_status_change(
+                    remittance=remittance,
+                    due_amount=new_due_amount,
                 )
                 messages.success(request, "Remittance rate updated successfully.")
                 workspace_team = get_workspace_team_by_workspace_team_id(

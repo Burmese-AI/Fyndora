@@ -19,6 +19,7 @@ ROLES = {
         OrganizationPermissions.CHANGE_ORG_ENTRY,
         OrganizationPermissions.DELETE_ORG_ENTRY,
         OrganizationPermissions.CHANGE_WORKSPACE_ADMIN,
+        OrganizationPermissions.CHANGE_TEAM_COORDINATOR,
         OrganizationPermissions.ADD_ORG_CURRENCY,
         OrganizationPermissions.CHANGE_ORG_CURRENCY,
         OrganizationPermissions.DELETE_ORG_CURRENCY,

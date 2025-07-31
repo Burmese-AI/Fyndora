@@ -50,7 +50,10 @@ class Command(BaseCommand):
             self.stdout.write(f"Cleaning up logs for action type: {specific_action}")
 
         stats = audit_cleanup_expired_logs(
-            dry_run=dry_run, batch_size=batch_size, action_type=specific_action, override_days=override_days
+            dry_run=dry_run,
+            batch_size=batch_size,
+            action_type=specific_action,
+            override_days=override_days,
         )
 
         total_deleted = stats.get("total_deleted", 0)

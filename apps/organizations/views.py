@@ -32,7 +32,6 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from apps.core.constants import PAGINATION_SIZE_GRID
 from apps.organizations.services import update_organization_from_form
-from apps.workspaces.selectors import get_orgMember_by_user_id_and_organization_id
 from django_htmx.http import HttpResponseClientRedirect
 from apps.core.views.crud_base_views import (
     BaseCreateView,
@@ -111,10 +110,8 @@ def home_view(request):
             "page_obj": organizations,
             "paginator": paginator,
         }
-        if request.headers.get("HX-Request"):
-            template = "organizations/partials/organization_list.html"
-        else:
-            template = "organizations/home.html"
+
+        template = "organizations/home.html"
 
         return render(request, template, context)
     except Exception:
@@ -137,6 +134,13 @@ def create_organization_view(request):
             if form.is_valid():
                 create_organization_with_owner(form=form, user=request.user)
                 organizations = get_user_organizations(request.user)
+                for organization in organizations:
+                    organization.permissions = {
+                        "can_manage_organization": can_manage_organization(
+                            request.user, organization
+                        ),
+                    }
+                print(organizations)
                 paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
                 page = request.GET.get("page", 1)
                 organizations = paginator.page(page)
@@ -243,20 +247,18 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
 def settings_view(request, organization_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
-        orgMember = get_orgMember_by_user_id_and_organization_id(
-            request.user.user_id, organization_id
-        )
-        if not orgMember.is_org_owner:
-            return permission_denied_view(
-                request,
-                "You do not have permission to access this organization.",
-            )
 
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
             "owner": owner,
         }
+        if not can_manage_organization(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to access this organization.",
+            )
+
         org_exchanage_rates = get_org_exchange_rates(organization=organization)
         context = get_paginated_context(
             queryset=org_exchanage_rates,
@@ -274,10 +276,13 @@ def settings_view(request, organization_id):
             "can_delete_org_exchange_rate": request.user.has_perm(
                 OrganizationPermissions.DELETE_ORG_CURRENCY, organization
             ),
+            "can_change_organization": request.user.has_perm(
+                OrganizationPermissions.CHANGE_ORGANIZATION, organization
+            ),
+            "can_delete_organization": request.user.has_perm(
+                OrganizationPermissions.DELETE_ORGANIZATION, organization
+            ),
         }
-
-        print(f"context: {context}")
-
         return render(request, "organizations/settings.html", context)
     except Exception:
         messages.error(

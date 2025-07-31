@@ -426,7 +426,9 @@ class TestAuditLogSystemIntegration(TestCase):
         # Verify workflow relationships
         user_audits = AuditLogSelector.get_audit_logs_with_filters(user_id=user.user_id)
         # Account for automatic audit logs (4 manual + automatic from factories)
-        self.assertGreaterEqual(user_audits.count(), 4)  # User performed at least 4 actions
+        self.assertGreaterEqual(
+            user_audits.count(), 4
+        )  # User performed at least 4 actions
 
         entry_audits = AuditLogSelector.get_audit_logs_with_filters(
             target_entity_id=entry.entry_id
@@ -459,9 +461,7 @@ class TestAuditLogSystemIntegration(TestCase):
                     audit_count += 1
 
         # Verify data integrity
-        total_audits = AuditTrail.objects.filter(
-            user__in=users
-        ).count()
+        total_audits = AuditTrail.objects.filter(user__in=users).count()
         self.assertEqual(
             total_audits, audit_count
         )  # 3 users * 5 entities * 20 rounds = 300
@@ -997,8 +997,7 @@ class TestAuditLogSystemScalability(TestCase):
 
         # Verify audit was created and metadata preserved
         audit = AuditTrail.objects.filter(
-            user=self.user,
-            action_type=AuditActionType.ENTRY_CREATED
+            user=self.user, action_type=AuditActionType.ENTRY_CREATED
         ).first()
         self.assertIsNotNone(audit)
         self.assertEqual(audit.metadata["description"], "A" * 1000)
@@ -1026,9 +1025,7 @@ class TestAuditLogSystemScalability(TestCase):
         self.assertLess(duration, 10.0, f"Bulk operation logging took {duration:.3f}s")
 
         # Verify audit was created
-        audit = AuditTrail.objects.filter(
-            user=self.user
-        ).first()
+        audit = AuditTrail.objects.filter(user=self.user).first()
         self.assertIsNotNone(audit)
         self.assertEqual(audit.metadata["total_affected"], 500)
 

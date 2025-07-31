@@ -2,25 +2,24 @@ from datetime import timedelta
 from typing import List
 from django.db.models import Sum
 from django.utils.timezone import now
-from .constants import EntryStatus, EntryType
+from .constants import EntryStatus
 from .selectors import get_entries
 
 
 class EntryStats:
     """
     A simple stats helper for entries.
-    Can be used for any entry types like ORG_EXP, TEAM_EXP, etc.
-    Filters by organization, workspace, or workspace_team depending on the type.
+    Works with any entry types (e.g., ORG_EXP, TEAM_EXP, etc.).
     """
 
     def __init__(
         self,
         *,
-        entry_types: List[EntryType],
+        entry_types: List[str],
         organization=None,
         workspace=None,
         workspace_team=None,
-        status: EntryStatus = EntryStatus.APPROVED,
+        status: str = EntryStatus.APPROVED,
     ):
         """
         Initialize and filter queryset based on entry types and context.
@@ -48,7 +47,7 @@ class EntryStats:
         """
         start_of_month = now().date().replace(day=1)
         return self._aggregate_total(
-            self.queryset.filter(created_at__gte=start_of_month)
+            self.queryset.filter(occurred_at__gte=start_of_month)
         )
 
     def last_month(self):
@@ -62,8 +61,8 @@ class EntryStats:
 
         return self._aggregate_total(
             self.queryset.filter(
-                created_at__date__gte=start_of_last_month,
-                created_at__date__lte=end_of_last_month,
+                occurred_at__gte=start_of_last_month,
+                occurred_at__lte=end_of_last_month,
             )
         )
 
@@ -72,13 +71,13 @@ class EntryStats:
         Average monthly amount based on past 12 months.
         """
         one_year_ago = now().date() - timedelta(days=365)
-        past_year_entries = self.queryset.filter(created_at__gte=one_year_ago)
+        past_year_entries = self.queryset.filter(occurred_at__gte=one_year_ago)
         total = self._aggregate_total(past_year_entries)
         return total / 12
 
     def to_dict(self):
         """
-        Return all stats as a dict (good for APIs).
+        Return all stats as a dict (useful for APIs).
         """
         return {
             "total": self.total(),

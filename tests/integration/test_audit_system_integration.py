@@ -66,10 +66,7 @@ class TestAuditAuthenticationIntegration(TestCase):
             user=self.user,
             action_type=AuditActionType.LOGIN_SUCCESS,
             target_entity=self.user,
-            metadata={
-                "ip_address": "127.0.0.1",
-                "user_agent": "TestClient"
-            }
+            metadata={"ip_address": "127.0.0.1", "user_agent": "TestClient"},
         )
 
         # Verify audit trail was created
@@ -99,10 +96,7 @@ class TestAuditAuthenticationIntegration(TestCase):
             user=self.user,
             action_type=AuditActionType.LOGOUT,
             target_entity=self.user,
-            metadata={
-                "ip_address": "127.0.0.1",
-                "user_agent": "TestClient"
-            }
+            metadata={"ip_address": "127.0.0.1", "user_agent": "TestClient"},
         )
 
         # Verify audit trail was created
@@ -158,9 +152,7 @@ class TestAuditBusinessWorkflowIntegration(TestCase):
     def test_entry_lifecycle_audit_integration(self):
         """Test complete entry lifecycle with audit logging."""
         # 1. Entry creation (should be audited by signals)
-        new_entry = EntryFactory(
-            workspace=self.workspace, amount=500.00
-        )
+        new_entry = EntryFactory(workspace=self.workspace, amount=500.00)
 
         # 2. Entry submission (business workflow)
         BusinessAuditLogger.log_entry_action(
@@ -183,7 +175,9 @@ class TestAuditBusinessWorkflowIntegration(TestCase):
 
         # 4. Entry update (should be audited by signals)
         new_entry.description = "Updated Integration Test Entry"
-        new_entry.amount = 600.00  # Change a tracked field to ensure update signal triggers
+        new_entry.amount = (
+            600.00  # Change a tracked field to ensure update signal triggers
+        )
         new_entry.save()
 
         # Verify complete audit trail
@@ -251,14 +245,18 @@ class TestAuditBusinessWorkflowIntegration(TestCase):
         self.assertEqual(permission_audits.count(), 2)
 
         grant_audit = permission_audits.first()
-        self.assertEqual(grant_audit.action_type, AuditActionType.PERMISSION_GRANTED.value)
+        self.assertEqual(
+            grant_audit.action_type, AuditActionType.PERMISSION_GRANTED.value
+        )
         self.assertEqual(grant_audit.metadata["permission"], "admin_access")
         self.assertEqual(
             grant_audit.metadata["change_reason"], "Promotion to admin role"
         )
 
         revoke_audit = permission_audits.last()
-        self.assertEqual(revoke_audit.action_type, AuditActionType.PERMISSION_REVOKED.value)
+        self.assertEqual(
+            revoke_audit.action_type, AuditActionType.PERMISSION_REVOKED.value
+        )
         self.assertEqual(revoke_audit.metadata["permission"], "admin_access")
         self.assertEqual(revoke_audit.metadata["change_reason"], "Role change")
 
@@ -362,7 +360,7 @@ class TestAuditSignalIntegration(TestCase):
         signal_audits = AuditTrail.objects.filter(
             metadata__automatic_logging=True,
             target_entity_type__model="entry",
-            target_entity_id=str(entry_id)
+            target_entity_id=str(entry_id),
         ).order_by("timestamp")
 
         self.assertEqual(signal_audits.count(), 3)
@@ -378,7 +376,9 @@ class TestAuditSignalIntegration(TestCase):
         self.assertEqual(audit_actions, expected_actions)
 
         # Verify update audit metadata
-        update_audit = signal_audits.filter(action_type=AuditActionType.ENTRY_UPDATED.value).first()
+        update_audit = signal_audits.filter(
+            action_type=AuditActionType.ENTRY_UPDATED.value
+        ).first()
         self.assertIn("changed_fields", update_audit.metadata)
         self.assertEqual(update_audit.metadata["operation_type"], "update")
 
@@ -401,19 +401,19 @@ class TestAuditSignalIntegration(TestCase):
         workspace_audits = AuditTrail.objects.filter(
             metadata__automatic_logging=True,
             target_entity_type__model="workspace",
-            target_entity_id=str(workspace.workspace_id)
+            target_entity_id=str(workspace.workspace_id),
         ).order_by("timestamp")
-        
+
         entry_audits = AuditTrail.objects.filter(
             metadata__automatic_logging=True,
             target_entity_type__model="entry",
-            target_entity_id=str(entry.entry_id)
+            target_entity_id=str(entry.entry_id),
         ).order_by("timestamp")
-        
+
         # Verify different model types are audited
         self.assertEqual(workspace_audits.count(), 2)  # creation and update
-        self.assertEqual(entry_audits.count(), 1)     # creation
-        
+        self.assertEqual(entry_audits.count(), 1)  # creation
+
         # Total should be 3
         total_test_audits = workspace_audits.count() + entry_audits.count()
         self.assertEqual(total_test_audits, 3)
@@ -445,17 +445,19 @@ class TestAuditSystemEndToEnd(TestCase):
             # First create a team in the same organization as the workspace
             team = TeamFactory(organization=self.workspace.organization)
             # Explicitly pass the team to prevent WorkspaceTeamFactory from creating a new one
-            workspace_team = WorkspaceTeamFactory.create(workspace=self.workspace, team=team)
-            
+            workspace_team = WorkspaceTeamFactory.create(
+                workspace=self.workspace, team=team
+            )
+
             # Create a team member for this team
             submitter = TeamMemberFactory(team=team, role=TeamMemberRole.SUBMITTER)
-            
+
             # Create entry with proper workspace_team relationship and audit user context
             # Set _audit_user BEFORE creation so the signal handler can capture it
             entry = EntryFactory.build(
-                workspace=self.workspace, 
+                workspace=self.workspace,
                 workspace_team=workspace_team,
-                submitter=submitter
+                submitter=submitter,
             )
             entry._audit_user = self.user
             entry.save()  # This will trigger the post_save signal with the correct user
@@ -487,7 +489,7 @@ class TestAuditSystemEndToEnd(TestCase):
 
         # Verify complete audit trail - filter to only audits with user set (manual audits and some automatic ones)
         user_audits = AuditTrail.objects.filter(user=self.user).order_by("timestamp")
-        
+
         # We expect: LOGIN_SUCCESS, ENTRY_CREATED, ENTRY_SUBMITTED, ENTRY_APPROVED, DATA_EXPORTED, LOGOUT
         # But we might get additional audits from workspace creation in setUp
         expected_actions = [
@@ -498,15 +500,15 @@ class TestAuditSystemEndToEnd(TestCase):
             AuditActionType.DATA_EXPORTED.value,
             AuditActionType.LOGOUT.value,
         ]
-        
+
         # Filter to only the expected audit types
         filtered_audits = user_audits.filter(action_type__in=expected_actions)
-        
+
         self.assertEqual(filtered_audits.count(), 6)
 
         # Verify audit sequence represents complete workflow
         audit_actions = [audit.action_type for audit in filtered_audits]
-        
+
         self.assertEqual(audit_actions, expected_actions)
 
         # Verify audit metadata integrity
@@ -537,19 +539,20 @@ class TestAuditSystemEndToEnd(TestCase):
         # Count all audits created during this test (automatic entry creation + manual bulk operation)
         entry_creation_audits = AuditTrail.objects.filter(
             action_type=AuditActionType.ENTRY_CREATED.value,
-            target_entity_type__model="entry"
+            target_entity_type__model="entry",
         )
-        
+
         bulk_operation_audits = AuditTrail.objects.filter(
-            action_type=AuditActionType.BULK_OPERATION.value,
-            user=self.user
+            action_type=AuditActionType.BULK_OPERATION.value, user=self.user
         )
-        
+
         # Should have 5 entry creation audits + 1 bulk operation audit
         self.assertEqual(entry_creation_audits.count(), 5)
         self.assertEqual(bulk_operation_audits.count(), 1)
-        
-        total_relevant_audits = entry_creation_audits.count() + bulk_operation_audits.count()
+
+        total_relevant_audits = (
+            entry_creation_audits.count() + bulk_operation_audits.count()
+        )
         self.assertEqual(total_relevant_audits, 6)  # 5 individual + 1 bulk
 
         # Verify bulk operation references all entries

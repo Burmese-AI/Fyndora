@@ -11,22 +11,7 @@ from apps.remittance.constants import RemittanceStatus
 from apps.entries.models import Entry
 from apps.entries.constants import EntryType, EntryStatus
 from apps.entries.selectors import get_total_amount_of_entries
-from apps.invitations.selectors import get_organization_member_by_user_and_organization
-
-
-def update_remittance_based_on_entry_status_change(
-    *, remittance: Remittance, due_amount=None, paid_amount=None
-):
-    print(f"Values to update with: {due_amount} | {paid_amount}")
-    remittance.due_amount = (
-        due_amount if due_amount is not None else remittance.due_amount
-    )
-    remittance.paid_amount = (
-        paid_amount if paid_amount is not None else remittance.paid_amount
-    )
-    print(f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount}")
-    remittance.save(update_fields=["due_amount", "paid_amount"])
-    print(f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount}")
+from apps.workspaces.models import WorkspaceTeam
 
 
 def handle_remittance_update(*, updated_entry: Entry, update_due_amount: bool):
@@ -34,52 +19,114 @@ def handle_remittance_update(*, updated_entry: Entry, update_due_amount: bool):
     remittance = workspace_team.remittance
 
     if update_due_amount:
-        print("Update Due Amount")
-        # Get the total of all approved INCOME entries and DISBURSEMENT entries
-        income_total = get_total_amount_of_entries(
-            entry_type=EntryType.INCOME,
-            entry_status=EntryStatus.APPROVED,
-            workspace_team=workspace_team,
-        )
-        disbursement_total = get_total_amount_of_entries(
-            entry_type=EntryType.DISBURSEMENT,
-            entry_status=EntryStatus.APPROVED,
-            workspace_team=workspace_team,
-        )
-        # Get the final total amount (INCOME - DISBURSEMENT)
-        final_total = Decimal(income_total) - Decimal(disbursement_total)
-        # Multiply it by the remittance rate (Org or Team)
-        remittance_rate = (
-            workspace_team.custom_remittance_rate
-            if workspace_team.custom_remittance_rate != 0.00
-            else workspace_team.workspace.remittance_rate
-        )
-        print(f"Income Total: {income_total}")
-        print(f"Disbursement Total: {disbursement_total}")
-        print(f"Remittance Rate: {remittance_rate} {type(remittance_rate)}")
-        print(f"Final Total: {final_total} {type(final_total)}")
-        due_amount = final_total * (remittance_rate * Decimal("0.01"))
-        # Call update_remittance_based_on_entry_status_change
+        # Process due amount
+        due_amount = process_due_amount(workspace_team, remittance)
+        # Update the remittance record with the new due amount
         update_remittance_based_on_entry_status_change(
             remittance=remittance,
             due_amount=due_amount,
         )
+
     else:
-        print("Update Paid Amount")
-        # Get the total of all approved REMITTANCE entries
+        # Process paid amount
         remittance_total = get_total_amount_of_entries(
             entry_type=EntryType.REMITTANCE,
             entry_status=EntryStatus.APPROVED,
             workspace_team=workspace_team,
         )
-        # Call update_remittance_based_on_entry_status_change
+
+        # Update the remittance record with the new paid amount
         update_remittance_based_on_entry_status_change(
             remittance=remittance,
             paid_amount=remittance_total,
         )
 
 
-def remittance_confirm_payment(*, remittance, user, skip_permissions=False):
+def process_due_amount(workspace_team: WorkspaceTeam, remittance: Remittance):
+    # 1. Sum all APPROVED INCOME entries for this team
+    income_total = get_total_amount_of_entries(
+        entry_type=EntryType.INCOME,
+        entry_status=EntryStatus.APPROVED,
+        workspace_team=workspace_team,
+    )
+
+    # 2. Sum all APPROVED DISBURSEMENT entries for this team
+    disbursement_total = get_total_amount_of_entries(
+        entry_type=EntryType.DISBURSEMENT,
+        entry_status=EntryStatus.APPROVED,
+        workspace_team=workspace_team,
+    )
+
+    # 3. Calculate final total: income - disbursements
+    final_total = Decimal(income_total) - Decimal(disbursement_total)
+
+    # 4. Get remittance rate from team or workspace
+    print(f"===== > {workspace_team}")
+    team_lvl_remittance_rate = workspace_team.custom_remittance_rate
+    print(f"Team lvl remittance => {team_lvl_remittance_rate}")
+    workspace_lvl_remittance_rate = workspace_team.workspace.remittance_rate
+    print(f"Workspace lvl => {workspace_lvl_remittance_rate}")
+    remittance_rate = (
+        workspace_team.custom_remittance_rate
+        if team_lvl_remittance_rate and team_lvl_remittance_rate != 0.00
+        else workspace_team.workspace.remittance_rate
+    )
+
+    # Debug: Print calculation info
+    print(f"Income Total: {income_total}")
+    print(f"Disbursement Total: {disbursement_total}")
+    print(f"Remittance Rate: {remittance_rate} {type(remittance_rate)}")
+    print(f"Final Total: {final_total} {type(final_total)}")
+
+    # 5. Apply rate to get due amount
+    due_amount = 0
+    if final_total > 0:
+        due_amount = final_total * (remittance_rate * Decimal("0.01"))
+
+    return due_amount
+
+
+def update_remittance_based_on_entry_status_change(
+    *, remittance: Remittance, due_amount=None, paid_amount=None
+):
+    print(
+        f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
+    )
+
+    # Debug: Show the values we’re about to apply
+    print(f"Values to update with: {due_amount} | {paid_amount}")
+
+    # Update only the fields that are provided
+    remittance.due_amount = (
+        due_amount if due_amount is not None else remittance.due_amount
+    )
+    remittance.paid_amount = (
+        paid_amount if paid_amount is not None else remittance.paid_amount
+    )
+    remittance.update_status()
+    remittance.check_if_overdue()
+    remittance.check_if_overpaid()
+
+    # Debug: Show values before saving
+
+    # Save the updated fields to the database
+    remittance.save(
+        update_fields=[
+            "due_amount",
+            "paid_amount",
+            "status",
+            "paid_within_deadlines",
+            "is_overpaid",
+        ]
+    )
+
+    # Debug: Confirm saved values
+    print(
+        f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
+    )
+
+
+def remittance_confirm_payment(*, remittance, user):
     """
     Confirms a remittance payment.
     """

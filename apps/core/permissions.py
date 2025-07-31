@@ -100,6 +100,10 @@ class OrganizationPermissions(models.TextChoices):
         "edit_workspace_admin",
         "Can edit workspace admin by Org Owner",  # can edit workspace admin
     )
+    CHANGE_TEAM_COORDINATOR = (
+        "change_team_coordinator",
+        "Can change team coordinator by Org Owner",
+    )
 
     ADD_WORKSPACE = (
         "add_workspace",

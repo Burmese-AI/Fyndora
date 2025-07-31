@@ -40,9 +40,6 @@ class BaseCreateView(LoginRequiredMixin, HtmxOobResponseMixin, CreateView):
     model = None
     form_class = None
 
-    def form_valid(self, form):
-        raise NotImplementedError("form_valid must be implemented")
-
 
 class BaseUpdateView(LoginRequiredMixin, HtmxOobResponseMixin, UpdateView):
     model = None

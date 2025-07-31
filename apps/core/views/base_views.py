@@ -33,9 +33,10 @@ class BaseGetModalView:
 
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
-        form = self.form_class(
-            instance=self.instance if hasattr(self, "instance") else None
-        )
+        form_kwargs = self.get_form_kwargs()
+        if hasattr(self, "instance"):
+            form_kwargs["instance"] = self.instance
+        form = self.form_class(**form_kwargs)
         context = self.get_context_data()
         context.update(
             {

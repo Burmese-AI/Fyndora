@@ -158,8 +158,8 @@ class AuditTrail(models.Model):
 
         formatted_parts = []
         for key, value in display_fields.items():
-            formatted_key = key.replace('_', ' ').title()
-            
+            formatted_key = key.replace("_", " ").title()
+
             # Handle nested dictionaries
             if isinstance(value, dict):
                 # For nested dictionaries, just include the section title
@@ -258,7 +258,7 @@ class AuditTrail(models.Model):
         now = timezone.now()
         retention_days = AuditConfig.get_retention_days_for_action(self.action_type)
         cutoff_date = now - timedelta(days=retention_days)
-        
+
         return self.timestamp < cutoff_date
 
     def __str__(self):

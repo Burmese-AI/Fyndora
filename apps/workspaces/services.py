@@ -38,7 +38,11 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
 
 @transaction.atomic
 def update_workspace_from_form(
-    *, form, workspace, previous_workspace_admin, previous_operations_reviewer
+    *,
+    form,
+    workspace: Workspace,
+    previous_workspace_admin,
+    previous_operations_reviewer,
 ) -> Workspace:
     """
     Updates a workspace from a form.

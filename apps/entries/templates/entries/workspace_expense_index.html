@@ -8,7 +8,7 @@
             <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
                 Workspace Expense Entries
             </h2>
-            {% if can_add_workspace_entry %}
+            {% if permissions.can_add_workspace_expense %}
             <button 
                 class="btn btn-neutral"
                 hx-get="{% url 'workspace_expense_create' organization_id=organization.pk workspace_id=workspace.pk %}"

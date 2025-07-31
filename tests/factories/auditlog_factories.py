@@ -26,9 +26,13 @@ class AuditTrailFactory(DjangoModelFactory):
     action_type = factory.Iterator([choice[0] for choice in AuditActionType.choices])
     # Accept a model instance as target_entity and extract ContentType and PK
     target_entity = None
-    target_entity_id = factory.LazyAttribute(lambda o: o.target_entity.pk if o.target_entity else None)
+    target_entity_id = factory.LazyAttribute(
+        lambda o: o.target_entity.pk if o.target_entity else None
+    )
     target_entity_type = factory.LazyAttribute(
-        lambda o: ContentType.objects.get_for_model(o.target_entity) if o.target_entity else None
+        lambda o: ContentType.objects.get_for_model(o.target_entity)
+        if o.target_entity
+        else None
     )
     metadata = factory.LazyAttribute(
         lambda obj: {
@@ -129,8 +133,12 @@ class AuditWithComplexMetadataFactory(AuditTrailFactory):
                 "ip_address": "192.168.1.100",
             },
             "entity_details": {
-                "entity_type": str(obj.target_entity_type) if obj.target_entity_type else None,
-                "entity_id": str(obj.target_entity_id) if obj.target_entity_id else None,
+                "entity_type": str(obj.target_entity_type)
+                if obj.target_entity_type
+                else None,
+                "entity_id": str(obj.target_entity_id)
+                if obj.target_entity_id
+                else None,
                 "previous_values": {"status": "draft", "amount": "500.00"},
                 "new_values": {"status": "submitted", "amount": "750.00"},
             },

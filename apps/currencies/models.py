@@ -2,7 +2,7 @@ from uuid import uuid4
 from decimal import Decimal
 from iso4217 import Currency as ISO4217Currency
 
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone  # this is causing ruff error , but neglected for now
@@ -26,7 +26,7 @@ class Currency(baseModel, SoftDeleteModel):
             raise ValidationError({"code": "Invalid currency code."})
 
     def __str__(self):
-        return f"{self.name} ({self.code})"
+        return self.code
 
     class Meta:
         verbose_name_plural = "Currencies"
@@ -47,12 +47,10 @@ class ExchangeRateBaseModel(baseModel):
         related_query_name="%(app_label)s_%(class)s",
     )
     rate = models.DecimalField(
-        max_digits=5,  # 0.00 - 100.00
+        max_digits=10,  # 0.00 - 999999999.99
         decimal_places=2,
-        default=Decimal("0.00"),
         validators=[
-            MinValueValidator(Decimal("0.00")),
-            MaxValueValidator(Decimal("999.99")),
+            MinValueValidator(Decimal("0.01")),
         ],
     )
     effective_date = models.DateField(

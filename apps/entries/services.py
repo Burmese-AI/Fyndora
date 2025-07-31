@@ -2,18 +2,24 @@ from guardian.shortcuts import assign_perm
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
+from apps.currencies.models import Currency
+from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.models import TeamMember
 from apps.attachments.services import replace_or_append_attachments, create_attachments
 from apps.teams.constants import TeamMemberRole
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
+from datetime import date
+from .selectors import get_closest_exchanged_rate
 
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
@@ -63,30 +69,60 @@ def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspac
 
 def create_entry_with_attachments(
     *,
-    submitter,
     amount,
+    occurred_at,
     description,
     attachments,
     entry_type: EntryType,
-    workspace=None,
-    workspace_team=None,
+    organization: Organization,
+    workspace: Workspace = None,
+    workspace_team: WorkspaceTeam = None,
+    currency,
+    submitted_by_org_member=None,
+    submitted_by_team_member=None,
 ) -> Entry:
     """
     Service to create a new entry with attachments.
     """
 
     is_attachment_provided = True if attachments else False
+
+    # Get the closest exchange rate
+    exchange_rate_used = get_closest_exchanged_rate(
+        currency=currency,
+        occurred_at=occurred_at if occurred_at else date.today(),
+        organization=organization,
+        workspace=workspace,
+    )
+    if not exchange_rate_used:
+        raise ValueError("No exchange rate is defined for the given currency and date.")
+
+    # Potential Error
+    # NOTE: if currency is soft-deleted, currency obj can't be obtained
+    # unless its similar object has been created
+
     with transaction.atomic():
         # Create the Entry
         entry = Entry.objects.create(
             entry_type=entry_type,
             amount=amount,
+            occurred_at=occurred_at,
             description=description,
-            submitter=submitter,
-            is_flagged=not is_attachment_provided,
+            organization=organization,
             workspace=workspace
             or (workspace_team.workspace if workspace_team else None),
             workspace_team=workspace_team,
+            currency=currency,
+            exchange_rate_used=exchange_rate_used.rate,
+            org_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, OrganizationExchangeRate)
+            else None,
+            workspace_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+            else None,
+            submitted_by_org_member=submitted_by_org_member,
+            submitted_by_team_member=submitted_by_team_member,
+            is_flagged=not is_attachment_provided,
         )
 
         # Create the Attachments if any were provided
@@ -99,80 +135,94 @@ def create_entry_with_attachments(
     return entry
 
 
-def update_entry_with_attachments(
+def update_entry_user_inputs(
     *,
-    entry,
+    entry: Entry,
+    organization: Organization,
+    workspace: Workspace = None,
     amount,
+    occurred_at,
     description,
-    status,
-    reviewed_by,
-    review_notes,
+    currency: Currency,
     attachments,
     replace_attachments: bool,
-) -> Entry:
-    """
-    Service to update an existing entry with attachments.
-    """
-
-    with transaction.atomic():
-        # Update basic fields
-        update_entry(
-            entry=entry,
-            amount=amount,
-            description=description,
-            status=status,
-            reviewed_by=reviewed_by,
-            review_notes=review_notes,
+):
+    if entry.status != EntryStatus.PENDING:
+        raise ValidationError(
+            "User can only update Entry info during the pending stage."
         )
 
-        # If new attachments were provided, replace existing ones or append the new ones
-        if attachments:
-            replace_or_append_attachments(
-                entry=entry,
-                attachments=attachments,
-                replace_attachments=replace_attachments,
+    # Check if currency or occurred_at values are changed or not
+    is_currency_changed = entry.currency.code != currency.code
+    is_occurred_at_changed = entry.occurred_at != occurred_at
+    # If changed, update exchange_rate_used, org_exchange_rate_ref, workspace_exchange_rate_ref
+    new_exchange_rate_used = None
+    if is_currency_changed or is_occurred_at_changed:
+        new_exchange_rate_used = get_closest_exchanged_rate(
+            currency=currency,
+            occurred_at=occurred_at,
+            organization=organization,
+            workspace=workspace,
+        )
+        if not new_exchange_rate_used:
+            raise ValueError(
+                "No exchange rate is defined for the given currency and date."
             )
 
-            # If the entry was flagged, unflag it
-            if entry.is_flagged:
-                entry.is_flagged = False
-                entry.save(update_fields=["is_flagged"])
-
-    return entry
-
-
-def update_entry(
-    *,
-    entry,
-    amount,
-    description,
-    status,
-    review_notes,
-    reviewed_by,
-):
-    """
-    Service to update an existing entry.
-    """
-
+    # Update Provided Fields
     entry.amount = amount
+    entry.currency = currency
+    entry.occurred_at = occurred_at
     entry.description = description
+
+    if new_exchange_rate_used:
+        entry.exchange_rate_used = new_exchange_rate_used.rate
+        entry.org_exchange_rate_ref = (
+            new_exchange_rate_used
+            if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
+            else None
+        )
+        entry.workspace_exchange_rate_ref = (
+            new_exchange_rate_used
+            if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
+            else None
+        )
+
+    entry.save()
+
+    # If new attachments were provided, replace existing ones or append the new ones
+    if attachments:
+        replace_or_append_attachments(
+            entry=entry,
+            attachments=attachments,
+            replace_attachments=replace_attachments,
+        )
+
+        # If the entry was flagged, unflag it
+        if entry.is_flagged:
+            entry.is_flagged = False
+            entry.save(update_fields=["is_flagged"])
+
+
+def update_entry_status(*, entry: Entry, status, status_note, last_status_modified_by):
     entry.status = status
-    entry.review_notes = review_notes
-    entry.reviewed_by = reviewed_by
-    entry.save(
-        update_fields=["amount", "description", "status", "review_notes", "reviewed_by"]
-    )
+    entry.status_note = status_note
+    entry.last_status_modified_by = last_status_modified_by
+    entry.status_last_updated_at = timezone.now()
+    entry.save()
 
 
-def delete_entry(entry):
+def delete_entry(entry: Entry):
     """
     Service to delete an entry.
     """
 
-    if entry.reviewed_by:
-        raise ValidationError("Cannot delete an entry that has been reviewed")
+    if entry.last_status_modified_by:
+        raise ValidationError(
+            "Cannot delete an entry when someone has already modified the status."
+        )
 
-    if entry.status != EntryStatus.PENDING_REVIEW:
+    if entry.status != EntryStatus.PENDING:
         raise ValidationError("Cannot delete an entry that is not pending review")
 
     entry.delete()

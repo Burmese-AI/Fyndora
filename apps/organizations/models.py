@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericRelation
 
 from apps.core.models import baseModel, SoftDeleteModel
 from apps.organizations.constants import StatusChoices
@@ -76,6 +75,10 @@ class Organization(baseModel):
                 OrganizationPermissions.CHANGE_WORKSPACE_ADMIN.label,
             ),
             (
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR,
+                OrganizationPermissions.CHANGE_TEAM_COORDINATOR.label,
+            ),
+            (
                 OrganizationPermissions.ADD_ORG_CURRENCY,
                 OrganizationPermissions.ADD_ORG_CURRENCY.label,
             ),
@@ -112,12 +115,6 @@ class OrganizationMember(baseModel):
         related_name="organization_memberships",
     )
     is_active = models.BooleanField(default=True)
-    entries = GenericRelation(
-        "entries.Entry",
-        content_type_field="submitter_content_type",
-        object_id_field="submitter_object_id",
-        related_query_name="organization_member_entries",
-    )
 
     @property
     def is_org_owner(self):

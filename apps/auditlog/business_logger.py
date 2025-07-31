@@ -37,20 +37,22 @@ class BusinessAuditLogger:
         if request is None:
             return {
                 "ip_address": "unknown",
-                "user_agent": "unknown", 
+                "user_agent": "unknown",
                 "http_method": "unknown",
                 "request_path": "unknown",
                 "session_key": None,
-                "source": "service_call"
+                "source": "service_call",
             }
-        
+
         return {
             "ip_address": request.META.get("REMOTE_ADDR", "unknown"),
             "user_agent": request.META.get("HTTP_USER_AGENT", "unknown"),
             "http_method": request.method,
             "request_path": request.path,
-            "session_key": getattr(getattr(request, "session", None), "session_key", None),
-            "source": "web_request"
+            "session_key": getattr(
+                getattr(request, "session", None), "session_key", None
+            ),
+            "source": "web_request",
         }
 
     @staticmethod
@@ -91,8 +93,12 @@ class BusinessAuditLogger:
                 {
                     "approver_id": str(user.user_id),
                     "approver_email": user.email,
-                    "approval_notes": request.POST.get("notes", "") if request else kwargs.get("notes", ""),
-                    "approval_level": request.POST.get("level", "standard") if request else kwargs.get("level", "standard"),
+                    "approval_notes": request.POST.get("notes", "")
+                    if request
+                    else kwargs.get("notes", ""),
+                    "approval_level": request.POST.get("level", "standard")
+                    if request
+                    else kwargs.get("level", "standard"),
                     "approval_timestamp": timezone.now().isoformat(),
                 }
             )
@@ -101,18 +107,30 @@ class BusinessAuditLogger:
                 {
                     "rejector_id": str(user.user_id),
                     "rejector_email": user.email,
-                    "rejection_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
-                    "rejection_notes": request.POST.get("notes", "") if request else kwargs.get("notes", ""),
-                    "can_resubmit": request.POST.get("can_resubmit", True) if request else kwargs.get("can_resubmit", True),
+                    "rejection_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "rejection_notes": request.POST.get("notes", "")
+                    if request
+                    else kwargs.get("notes", ""),
+                    "can_resubmit": request.POST.get("can_resubmit", True)
+                    if request
+                    else kwargs.get("can_resubmit", True),
                     "rejection_timestamp": timezone.now().isoformat(),
                 }
             )
         elif action in ["flag", "unflag"]:
             metadata.update(
                 {
-                    "flag_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
-                    "flag_notes": request.POST.get("notes", "") if request else kwargs.get("notes", ""),
-                    "flag_severity": request.POST.get("severity", "medium") if request else kwargs.get("severity", "medium"),
+                    "flag_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "flag_notes": request.POST.get("notes", "")
+                    if request
+                    else kwargs.get("notes", ""),
+                    "flag_severity": request.POST.get("severity", "medium")
+                    if request
+                    else kwargs.get("severity", "medium"),
                 }
             )
 
@@ -128,7 +146,9 @@ class BusinessAuditLogger:
 
     @staticmethod
     @safe_audit_log
-    def log_permission_change(user, target_user, permission, action, request=None, **kwargs):
+    def log_permission_change(
+        user, target_user, permission, action, request=None, **kwargs
+    ):
         """Log permission changes with full context"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
@@ -141,10 +161,14 @@ class BusinessAuditLogger:
             "target_user_email": target_user.email,
             "permission": permission,
             "action": action,
-            "change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
+            "change_reason": request.POST.get("reason", "")
+            if request
+            else kwargs.get("reason", ""),
             "effective_date": request.POST.get(
                 "effective_date", timezone.now().isoformat()
-            ) if request else kwargs.get("effective_date", timezone.now().isoformat()),
+            )
+            if request
+            else kwargs.get("effective_date", timezone.now().isoformat()),
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
         }
@@ -163,7 +187,9 @@ class BusinessAuditLogger:
 
     @staticmethod
     @safe_audit_log
-    def log_data_export(user, export_type, filters, result_count, request=None, **kwargs):
+    def log_data_export(
+        user, export_type, filters, result_count, request=None, **kwargs
+    ):
         """Log data export operations with detailed context"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
@@ -174,8 +200,12 @@ class BusinessAuditLogger:
             "export_type": export_type,
             "export_filters": serializable_filters,
             "result_count": result_count,
-            "export_format": request.GET.get("format", "csv") if request else kwargs.get("format", "csv"),
-            "export_reason": request.POST.get("reason", "business_analysis") if request else kwargs.get("reason", "business_analysis"),
+            "export_format": request.GET.get("format", "csv")
+            if request
+            else kwargs.get("format", "csv"),
+            "export_reason": request.POST.get("reason", "business_analysis")
+            if request
+            else kwargs.get("reason", "business_analysis"),
             "file_size_estimate": f"{result_count * 100}B",  # Rough estimate
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
@@ -192,7 +222,9 @@ class BusinessAuditLogger:
 
     @staticmethod
     @safe_audit_log
-    def log_bulk_operation(user, operation_type, affected_objects, request=None, **kwargs):
+    def log_bulk_operation(
+        user, operation_type, affected_objects, request=None, **kwargs
+    ):
         """Log bulk operations with sampling for large datasets"""
         BusinessAuditLogger._validate_request_and_user(request, user)
 
@@ -203,13 +235,13 @@ class BusinessAuditLogger:
             pk_field = obj._meta.pk.name
             pk_value = getattr(obj, pk_field)
             object_ids.append(str(pk_value))
-        
+
         total_objects = len(object_ids)
-        
+
         # Use AuditConfig values for threshold and sampling
         if total_objects > AuditConfig.BULK_OPERATION_THRESHOLD:
             # For large operations, sample only the first N objects
-            sampled_ids = object_ids[:AuditConfig.BULK_SAMPLE_SIZE]
+            sampled_ids = object_ids[: AuditConfig.BULK_SAMPLE_SIZE]
         else:
             # For small operations, include all object IDs
             sampled_ids = object_ids
@@ -218,8 +250,12 @@ class BusinessAuditLogger:
             "operation_type": operation_type,
             "total_objects": total_objects,
             "object_ids": sampled_ids,
-            "operation_criteria": request.POST.get("criteria", "manual_selection") if request else kwargs.get("criteria", "manual_selection"),
-            "batch_size": request.POST.get("batch_size", total_objects) if request else kwargs.get("batch_size", total_objects),
+            "operation_criteria": request.POST.get("criteria", "manual_selection")
+            if request
+            else kwargs.get("criteria", "manual_selection"),
+            "batch_size": request.POST.get("batch_size", total_objects)
+            if request
+            else kwargs.get("batch_size", total_objects),
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
             **kwargs,
@@ -245,7 +281,9 @@ class BusinessAuditLogger:
             "entity_id": str(getattr(entity, entity._meta.pk.name)),
             "old_status": old_status,
             "new_status": new_status,
-            "status_change_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
+            "status_change_reason": request.POST.get("reason", "")
+            if request
+            else kwargs.get("reason", ""),
             "manual_logging": True,
             **BusinessAuditLogger._extract_request_metadata(request),
             **kwargs,
@@ -291,14 +329,20 @@ class BusinessAuditLogger:
         if operation == "upload":
             metadata.update(
                 {
-                    "upload_source": request.POST.get("source", "web_interface") if request else kwargs.get("source", "web_interface"),
-                    "upload_purpose": request.POST.get("purpose", "") if request else kwargs.get("purpose", ""),
+                    "upload_source": request.POST.get("source", "web_interface")
+                    if request
+                    else kwargs.get("source", "web_interface"),
+                    "upload_purpose": request.POST.get("purpose", "")
+                    if request
+                    else kwargs.get("purpose", ""),
                 }
             )
         elif operation == "download":
             metadata.update(
                 {
-                    "download_reason": request.POST.get("reason", "") if request else kwargs.get("reason", ""),
+                    "download_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
                 }
             )
 
@@ -308,6 +352,8 @@ class BusinessAuditLogger:
         audit_create(
             user=user,
             action_type=operation_mapping[operation],
-            target_entity=file_obj if hasattr(file_obj, '_meta') and hasattr(file_obj._meta, 'pk') else None,
+            target_entity=file_obj
+            if hasattr(file_obj, "_meta") and hasattr(file_obj._meta, "pk")
+            else None,
             metadata=serializable_metadata,
         )

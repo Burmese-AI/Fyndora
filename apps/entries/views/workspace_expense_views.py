@@ -31,7 +31,12 @@ from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
     HtmxRowResponseMixin,
 )
-from ..utils import can_add_workspace_expense, can_update_workspace_expense, can_delete_workspace_expense
+from ..utils import (
+    can_add_workspace_expense,
+    can_update_workspace_expense,
+    can_delete_workspace_expense,
+)
+from apps.core.utils import permission_denied_view
 
 
 class WorkspaceExpenseListView(
@@ -53,11 +58,12 @@ class WorkspaceExpenseListView(
         )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
-
         context = super().get_context_data(**kwargs)
         context["view"] = "entries"
         context["permissions"] = {
-            "can_add_workspace_expense": can_add_workspace_expense(self.request.user, self.workspace),
+            "can_add_workspace_expense": can_add_workspace_expense(
+                self.request.user, self.workspace
+            ),
         }
         return context
 
@@ -132,7 +138,7 @@ class WorkspaceExpenseUpdateView(
     model = Entry
     form_class = UpdateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/update_modal.html"
-    row_template_name = "entries/partials/row.html",
+    row_template_name = ("entries/partials/row.html",)
 
     def dispatch(self, request, *args, **kwargs):
         if not can_update_workspace_expense(request.user, self.workspace):

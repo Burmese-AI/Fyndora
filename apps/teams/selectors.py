@@ -50,6 +50,8 @@ def get_team_member_by_id(team_member_id):
         return TeamMember.objects.get(team_member_id=team_member_id)
     except TeamMember.DoesNotExist:
         return None
+    except Exception:
+        return None
 
 
 def get_team_members_by_team_id(team_id):

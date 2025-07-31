@@ -26,7 +26,7 @@ def create_team_from_form(form, organization, orgMember):
         team.created_by = orgMember
         team.save()
 
-        assign_team_permissions(team)
+        assign_team_permissions(team, team.team_coordinator)
         return team
     except Exception as e:
         raise TeamCreationError(f"An error occurred while creating team: {str(e)}")
@@ -108,9 +108,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     try:
         team = model_update(team, form.cleaned_data)
         new_team_coordinator = form.cleaned_data.get("team_coordinator")
-        update_team_coordinator_group(
-            team, previous_team_coordinator, new_team_coordinator
-        )
+        update_team_coordinator_group(team, new_team_coordinator)
         return team
     except Exception as e:
         raise TeamUpdateError(f"Failed to update team: {str(e)}")

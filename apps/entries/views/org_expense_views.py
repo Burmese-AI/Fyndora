@@ -38,7 +38,7 @@ from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin
 )
 from ..services import create_entry_with_attachments
-from ..utils import can_view_org_expense
+from ..utils import can_view_org_expense, can_add_org_expense, can_update_org_expense, can_delete_org_expense
 
 
 
@@ -53,13 +53,13 @@ class OrganizationExpenseListView(
     table_template_name = "entries/partials/table.html"
     template_name = "entries/index.html"
 
-    def dispatch(self, request, *args, **kwargs):
-        if not can_view_org_expense(request.user, self.organization):
-            return permission_denied_view(
-                request,
-                "You do not have permission to view organization expenses.",
-            )
-        return super().dispatch(request, *args, **kwargs)
+    # def dispatch(self, request, *args, **kwargs):
+    #     if not can_view_org_expense(request.user, self.organization):
+    #         return permission_denied_view(
+    #             request,
+    #             "You do not have permission to view organization expenses.",
+    #         )
+    #     return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -70,6 +70,9 @@ class OrganizationExpenseListView(
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        context["permissions"] = {
+            "can_add_org_expense": can_add_org_expense(self.request.user, self.organization),
+        }
         if not self.request.htmx:
             pass
             # context["stats"] = get_org_expense_stats(self.organization)
@@ -90,6 +93,14 @@ class OrganizationExpenseCreateView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     
+    def dispatch(self, request, *args, **kwargs):
+        if not can_add_org_expense(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to add organization expenses.",
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_entries(
             organization = self.organization,
@@ -107,7 +118,7 @@ class OrganizationExpenseCreateView(
         )
         
     def perform_service(self, form):
-        print("🧼 Cleaned Data:", form.cleaned_data)  # TEMP DEBUG
+        # print("🧼 Cleaned Data:", form.cleaned_data)  # TEMP DEBUG
         create_entry_with_attachments(
             amount =form.cleaned_data["amount"],
             occurred_at = form.cleaned_data["occurred_at"],
@@ -134,6 +145,13 @@ class OrganizationExpenseUpdateView(
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
     
+    def dispatch(self, request, *args, **kwargs):
+        if not can_update_org_expense(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to update organization expenses.",
+            )
+        return super().dispatch(request, *args, **kwargs)
     def get_queryset(self):
         return Entry.objects.filter(
             organization = self.organization,
@@ -186,6 +204,14 @@ class OrganizationExpenseDeleteView(
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_delete_org_expense(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to delete organization expenses.",
+            )
+        return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
         return get_entries(

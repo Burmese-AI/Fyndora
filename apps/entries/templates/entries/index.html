@@ -16,6 +16,7 @@
         <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
             Organization Expense Entries
         </h2>
+        {% if permissions.can_add_org_expense %}
       <button 
         class="btn btn-neutral"
         hx-get="{% url 'organization_expense_create' organization_id=organization.pk %}"
@@ -28,6 +29,7 @@
           
         <span class="hidden sm:inline">Add Expense Entry</span>
       </button>
+      {% endif %}
     </section>
 
     <div id="content-container">

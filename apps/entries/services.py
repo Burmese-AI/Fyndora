@@ -1,25 +1,25 @@
-from guardian.shortcuts import assign_perm
-from django.contrib.contenttypes.models import ContentType
+from datetime import date
+
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
+from guardian.shortcuts import assign_perm
 
+from apps.attachments.services import create_attachments, replace_or_append_attachments
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
+from apps.entries.selectors import get_closest_exchanged_rate
 from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.teams.models import TeamMember
-from apps.attachments.services import replace_or_append_attachments, create_attachments
 from apps.teams.constants import TeamMemberRole
+from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
-from datetime import date
-from .selectors import get_closest_exchanged_rate
 
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
@@ -237,12 +237,31 @@ def entry_create(
     description,
     workspace=None,
     workspace_team=None,
+    organization=None,
+    occurred_at=None,
+    currency=None,
 ):
     """
     Service to create a new entry.
     """
+
     # Get workspace from workspace_team if workspace is not provided
     workspace = workspace or (workspace_team.workspace if workspace_team else None)
+
+    # Get organization from submitted_by if not provided
+    if not organization:
+        if isinstance(submitted_by, TeamMember):
+            organization = submitted_by.organization_member.organization
+        else:
+            organization = submitted_by.organization
+
+    # Set default occurred_at to today if not provided
+    if not occurred_at:
+        occurred_at = date.today()
+
+    # Set default currency to USD if not provided
+    if not currency:
+        currency, _ = Currency.objects.get_or_create(code="USD", name="US Dollar")
 
     # Validate workspace requirements based on entry type
     if entry_type == EntryType.WORKSPACE_EXP and not workspace:
@@ -263,14 +282,42 @@ def entry_create(
     ):
         raise ValidationError("Workspace team is required for team-based entries")
 
+    # Get the closest exchange rate
+    exchange_rate_used = get_closest_exchanged_rate(
+        currency=currency,
+        occurred_at=occurred_at,
+        organization=organization,
+        workspace=workspace,
+    )
+    if not exchange_rate_used:
+        raise ValueError("No exchange rate is defined for the given currency and date.")
+
+    # Determine submitter fields
+    submitted_by_org_member = None
+    submitted_by_team_member = None
+    if isinstance(submitted_by, TeamMember):
+        submitted_by_team_member = submitted_by
+    else:
+        submitted_by_org_member = submitted_by
+
     entry_data = {
         "entry_type": entry_type,
         "amount": amount,
         "description": description,
-        "submitter_content_type": ContentType.objects.get_for_model(submitted_by),
-        "submitter_object_id": submitted_by.pk,
+        "organization": organization,
         "workspace": workspace,
         "workspace_team": workspace_team,
+        "occurred_at": occurred_at,
+        "currency": currency,
+        "exchange_rate_used": exchange_rate_used.rate,
+        "org_exchange_rate_ref": exchange_rate_used
+        if isinstance(exchange_rate_used, OrganizationExchangeRate)
+        else None,
+        "workspace_exchange_rate_ref": exchange_rate_used
+        if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+        else None,
+        "submitted_by_org_member": submitted_by_org_member,
+        "submitted_by_team_member": submitted_by_team_member,
     }
 
     entry = Entry()
@@ -284,9 +331,15 @@ def entry_create(
             else submitted_by.user
         )
 
-        assign_perm(EntryPermissions.CHANGE_ENTRY, user, entry)
-        assign_perm(EntryPermissions.DELETE_ENTRY, user, entry)
-        assign_perm(EntryPermissions.UPLOAD_ATTACHMENTS, user, entry)
+        # Assign permissions to the submitter for this workspace (if not already assigned)
+        if workspace and not user.has_perm(EntryPermissions.CHANGE_ENTRY, workspace):
+            assign_perm(EntryPermissions.CHANGE_ENTRY, user, workspace)
+        if workspace and not user.has_perm(EntryPermissions.DELETE_ENTRY, workspace):
+            assign_perm(EntryPermissions.DELETE_ENTRY, user, workspace)
+        if workspace and not user.has_perm(
+            EntryPermissions.UPLOAD_ATTACHMENTS, workspace
+        ):
+            assign_perm(EntryPermissions.UPLOAD_ATTACHMENTS, user, workspace)
 
         audit_create(
             user=user,
@@ -332,16 +385,17 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
         _validate_review_data(status=status, notes=notes)
 
     if not (
-        entry.status == EntryStatus.PENDING_REVIEW
-        or (is_flagged and entry.status == status)
+        entry.status == EntryStatus.PENDING or (is_flagged and entry.status == status)
     ):
         raise ValidationError(f"Cannot review entry with status: {entry.status}")
 
     entry.status = status
-    entry.reviewed_by = reviewer
-    entry.review_notes = notes or ""
+    entry.last_status_modified_by = reviewer
+    entry.status_note = notes or ""
     entry.is_flagged = is_flagged
-    entry.save(update_fields=["status", "reviewed_by", "review_notes", "is_flagged"])
+    entry.save(
+        update_fields=["status", "last_status_modified_by", "status_note", "is_flagged"]
+    )
 
     audit_log_message = f"Entry {status.label.lower()} by {reviewer.user.username}"
     if notes:
@@ -349,7 +403,7 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
 
     audit_create(
         user=reviewer.user,
-        action_type=AuditActionType.STATUS_CHANGED,
+        action_type=AuditActionType.ENTRY_STATUS_CHANGED,
         target_entity=entry,
         metadata={"message": audit_log_message},
     )
@@ -400,13 +454,13 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
         for entry in entries:
             old_status = entry.status
 
-            if entry.status != EntryStatus.PENDING_REVIEW and not entry.is_flagged:
+            if entry.status != EntryStatus.PENDING and not entry.is_flagged:
                 continue  # Skip entries that can't be reviewed
 
             entry_data = {
                 "status": status,
-                "reviewed_by": reviewer,
-                "review_notes": notes or "",
+                "last_status_modified_by": reviewer,
+                "status_note": notes or "",
             }
 
             entry = model_update(entry, entry_data)
@@ -424,7 +478,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
                 metadata={
                     "old_status": old_status,
                     "new_status": status,
-                    "review_notes": notes or "",
+                    "status_note": notes or "",
                     "bulk_operation": True,
                 },
             )

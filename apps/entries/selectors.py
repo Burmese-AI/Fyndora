@@ -1,7 +1,6 @@
 from typing import List
 from decimal import Decimal
 
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Count, QuerySet, F, Sum, DecimalField, ExpressionWrapper
 
 
@@ -205,9 +204,6 @@ def get_user_workspace_entries(*, user, workspace: Workspace, status=None):
     """
     Get entries submitted by a specific user in a specific workspace.
     """
-    org_member_type = ContentType.objects.get_for_model(OrganizationMember)
-    team_member_type = ContentType.objects.get_for_model(TeamMember)
-
     # Get organization memberships for the user
     org_member_ids = OrganizationMember.objects.filter(user=user).values_list(
         "pk", flat=True
@@ -220,14 +216,8 @@ def get_user_workspace_entries(*, user, workspace: Workspace, status=None):
 
     # Base queryset filtering by the user's memberships as submitters and workspace
     queryset = Entry.objects.filter(
-        Q(
-            submitter_content_type=org_member_type,
-            submitter_object_id__in=org_member_ids,
-        )
-        | Q(
-            submitter_content_type=team_member_type,
-            submitter_object_id__in=team_member_ids,
-        ),
+        Q(submitted_by_org_member__in=org_member_ids)
+        | Q(submitted_by_team_member__in=team_member_ids),
         workspace=workspace,
     )
 

@@ -294,7 +294,7 @@ class BusinessAuditLogger:
 
         audit_create(
             user=user,
-            action_type=AuditActionType.STATUS_CHANGED,
+            action_type=AuditActionType.ENTRY_STATUS_CHANGED,
             target_entity=entity,
             metadata=serializable_metadata,
         )

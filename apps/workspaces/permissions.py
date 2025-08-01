@@ -161,11 +161,9 @@ def assign_workspace_team_permissions(workspace_team):
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     for perm in workspace_team_permissions:
         assign_perm(perm, workspace_team_group, workspace_team)
-
     # adding the team members to the workspace team group
     for member in workspace_team.team.members.all():
-        print(member)
-        workspace_team_group.user_set.add(member.user)
+        workspace_team_group.user_set.add(member.organization_member.user)
 
    # adding owner to the workspace team group
     if workspace_team.workspace.organization.owner is not None:
@@ -173,3 +171,18 @@ def assign_workspace_team_permissions(workspace_team):
         workspace_team_group.user_set.add(workspace_team.workspace.organization.owner.user)
 
     return workspace_team_group
+
+
+def remove_workspace_team_permissions(workspace_team):
+    """
+    Removes the necessary permissions from the group for the workspace team.
+    """
+    try:
+        workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+        workspace_team_group = Group.objects.filter(name=workspace_team_group_name).first()
+        print("workspace_team_group", workspace_team_group)
+        workspace_team_group.delete()
+        print("workspace_team_group deleted")
+    except Exception as e:
+        print(f"Error in remove_workspace_team_permissions: {str(e)}")
+

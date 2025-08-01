@@ -71,8 +71,8 @@ from apps.remittance.services import (
     process_due_amount,
     update_remittance_based_on_entry_status_change,
 )
-from apps.workspaces.permissions import assign_workspace_team_permissions
-
+from apps.workspaces.permissions import assign_workspace_team_permissions, remove_workspace_team_permissions
+from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
 
 @login_required
 def get_workspaces_view(request, organization_id):
@@ -363,7 +363,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         "organization": organization,
                         "is_oob": True,
                     }
-                    # workspace_team = get_workspace_team_by_workspace_team_id(workspace_team.workspace_team_id)
+                    workspace_team = get_workspace_team_by_workspace_team_id(workspace_team.workspace_team_id)
                     assign_workspace_team_permissions(workspace_team)
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
@@ -438,8 +438,11 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         team = get_team_by_id(team_id)
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
+        workspace_team = get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id)
+        print("workspace_team", workspace_team)
         if request.method == "POST":
-            remove_team_from_workspace(workspace_id, team_id)
+            remove_team_from_workspace(workspace_team)
+            remove_workspace_team_permissions(workspace_team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {

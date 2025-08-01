@@ -10,7 +10,7 @@ from apps.workspaces.permissions import (
     update_workspace_admin_group,
 )
 from django.db.utils import IntegrityError
-
+from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
 
 @transaction.atomic
 def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
@@ -64,12 +64,13 @@ def update_workspace_from_form(
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")
 
 
-def remove_team_from_workspace(workspace_id, team_id):
-    workspace_team = WorkspaceTeam.objects.get(
-        workspace_id=workspace_id, team_id=team_id
-    )
-    workspace_team.delete()
-    return workspace_team
+def remove_team_from_workspace(workspace_team):
+    try:
+        workspace_team.delete()
+        print("workspace_team deleted")
+        return workspace_team
+    except Exception as e:
+        raise ValidationError(f"Failed to remove team from workspace: {str(e)}")
 
 
 def add_team_to_workspace(workspace_id, team_id, custom_remittance_rate):

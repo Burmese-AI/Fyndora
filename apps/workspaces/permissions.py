@@ -148,3 +148,28 @@ def check_change_workspace_permission(request, workspace):
             request,
             "You do not have permission to change the workspace in this organization.",
         )
+
+
+
+def assign_workspace_team_permissions(workspace_team):
+    """
+    Assigns the necessary permissions to the group for the workspace team.
+    """
+    workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+    workspace_team_group, _ = Group.objects.get_or_create(name=workspace_team_group_name)
+
+    workspace_team_permissions = get_permissions_for_role("SUBMITTER")
+    for perm in workspace_team_permissions:
+        assign_perm(perm, workspace_team_group, workspace_team)
+
+    # adding the team members to the workspace team group
+    for member in workspace_team.team.members.all():
+        print(member)
+        workspace_team_group.user_set.add(member.user)
+
+   # adding owner to the workspace team group
+    if workspace_team.workspace.organization.owner is not None:
+        print("the owner is", workspace_team.workspace.organization.owner)
+        workspace_team_group.user_set.add(workspace_team.workspace.organization.owner.user)
+
+    return workspace_team_group

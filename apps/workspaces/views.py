@@ -71,6 +71,7 @@ from apps.remittance.services import (
     process_due_amount,
     update_remittance_based_on_entry_status_change,
 )
+from apps.workspaces.permissions import assign_workspace_team_permissions
 
 
 @login_required
@@ -351,7 +352,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
             )
             try:
                 if form.is_valid():
-                    add_team_to_workspace(
+                    workspace_team =add_team_to_workspace(
                         workspace_id,
                         form.cleaned_data["team"].team_id,
                         form.cleaned_data["custom_remittance_rate"],
@@ -362,6 +363,8 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         "organization": organization,
                         "is_oob": True,
                     }
+                    workspace_team = get_workspace_team_by_workspace_team_id(workspace_team.workspace_team_id)
+                    assign_workspace_team_permissions(workspace_team)
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request

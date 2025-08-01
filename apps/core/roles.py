@@ -2,6 +2,7 @@ from apps.core.permissions import (
     OrganizationPermissions,
     WorkspacePermissions,
     TeamPermissions,
+    WorkspaceTeamPermissions,
 )
 
 
@@ -56,6 +57,11 @@ ROLES = {
         TeamPermissions.DELETE_TEAM,
         TeamPermissions.VIEW_TEAM,
         TeamPermissions.ADD_TEAM_MEMBER,
+    ],
+    "SUBMITTER": [
+        WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY,
+        WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY,
+        WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY,
     ],
 }
 

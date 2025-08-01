@@ -67,7 +67,6 @@ def update_workspace_from_form(
 def remove_team_from_workspace(workspace_team):
     try:
         workspace_team.delete()
-        print("workspace_team deleted")
         return workspace_team
     except Exception as e:
         raise ValidationError(f"Failed to remove team from workspace: {str(e)}")

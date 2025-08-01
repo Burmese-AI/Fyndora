@@ -167,7 +167,6 @@ def assign_workspace_team_permissions(workspace_team):
 
    # adding owner to the workspace team group
     if workspace_team.workspace.organization.owner is not None:
-        print("the owner is", workspace_team.workspace.organization.owner)
         workspace_team_group.user_set.add(workspace_team.workspace.organization.owner.user)
 
     return workspace_team_group
@@ -180,9 +179,12 @@ def remove_workspace_team_permissions(workspace_team):
     try:
         workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
         workspace_team_group = Group.objects.filter(name=workspace_team_group_name).first()
-        print("workspace_team_group", workspace_team_group)
-        workspace_team_group.delete()
-        print("workspace_team_group deleted")
+        
+        if workspace_team_group is not None:
+            workspace_team_group.delete()
+        else:
+            print(f"Workspace team group '{workspace_team_group_name}' not found - may have been already deleted")
+            
     except Exception as e:
         print(f"Error in remove_workspace_team_permissions: {str(e)}")
 

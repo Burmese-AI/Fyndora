@@ -439,10 +439,9 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         workspace_team = get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id)
-        print("workspace_team", workspace_team)
         if request.method == "POST":
-            remove_team_from_workspace(workspace_team)
             remove_workspace_team_permissions(workspace_team)
+            remove_team_from_workspace(workspace_team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {

@@ -1,5 +1,5 @@
 from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
-
+from apps.core.permissions import WorkspaceTeamPermissions
 
 def can_view_org_expense(user, organization):
     """
@@ -48,3 +48,27 @@ def can_delete_workspace_expense(user, workspace):
     Returns True if the user has the permission to delete the workspace expense.
     """
     return user.has_perm(WorkspacePermissions.DELETE_WORKSPACE_ENTRY, workspace)
+
+def can_view_workspace_team_entry(user, workspace_team):
+    """
+    Returns True if the user has the permission to view the workspace team entry.
+    """
+    return user.has_perm(WorkspaceTeamPermissions.VIEW_WORKSPACE_TEAM, workspace_team)
+
+def can_add_workspace_team_entry(user, workspace_team):
+    """
+    Returns True if the user has the permission to add the workspace team entry.
+    """
+    return user.has_perm(WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY, workspace_team)
+
+def can_update_workspace_team_entry(user, workspace_team):
+    """
+    Returns True if the user has the permission to update the workspace team entry.
+    """
+    return user.has_perm(WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY, workspace_team)
+
+def can_delete_workspace_team_entry(user, workspace_team):
+    """
+    Returns True if the user has the permission to delete the workspace team entry.
+    """
+    return user.has_perm(WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY, workspace_team)

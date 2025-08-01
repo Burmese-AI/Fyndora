@@ -21,12 +21,12 @@ from apps.organizations.selectors import get_orgMember_by_user_id_and_organizati
 from apps.teams.services import update_team_from_form, remove_team_member
 from apps.core.permissions import OrganizationPermissions
 from apps.teams.permissions import (
-    check_add_team_permission_view,
-    check_change_team_permission_view,
-    check_delete_team_permission_view,
-    check_add_team_member_permission_view,
-    check_view_team_permission_view,
     remove_team_permissions,
+    check_add_team_permission,
+    check_change_team_permission,
+    check_delete_team_permission,
+    check_add_team_member_permission,
+    check_view_team_permission,
 )
 from apps.core.utils import can_manage_organization, permission_denied_view
 from django.contrib.auth.decorators import login_required
@@ -73,7 +73,7 @@ def create_team_view(request, organization_id):
         orgMember = get_orgMember_by_user_id_and_organization_id(
             request.user.user_id, organization_id
         )
-        permission_check = check_add_team_permission_view(request, organization)
+        permission_check = check_add_team_permission(request, organization)
         if permission_check:
             return permission_check
 
@@ -108,10 +108,7 @@ def create_team_view(request, organization_id):
                     response = HttpResponse(f"{message_html} {teams_grid_html}")
                     response["HX-trigger"] = "success"
                     return response
-                if request.htmx:
-                    return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-                else:
-                    return redirect("teams", organization_id=organization_id)
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
             else:
                 messages.error(request, "Invalid form data.")
                 context = {"form": form, "is_oob": True}
@@ -139,10 +136,7 @@ def create_team_view(request, organization_id):
     except Exception as e:
         print(e)
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        if request.htmx:
-            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-        else:
-            return redirect("teams", organization_id=organization_id)
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
 def edit_team_view(request, organization_id, team_id):
@@ -153,7 +147,7 @@ def edit_team_view(request, organization_id, team_id):
         print("previous_team_coordinator is ", previous_team_coordinator)
         print("new team coordinator is ", request.POST.get("team_coordinator"))
 
-        permission_check = check_change_team_permission_view(request, team)
+        permission_check = check_change_team_permission(request, team)
         if permission_check:
             return permission_check
 
@@ -236,10 +230,7 @@ def edit_team_view(request, organization_id, team_id):
                 return HttpResponse(f"{message_html} {modal_html}")
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        if request.htmx:
-            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-        else:
-            return redirect("teams", organization_id=organization_id)
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
 def delete_team_view(request, organization_id, team_id):
@@ -248,19 +239,22 @@ def delete_team_view(request, organization_id, team_id):
         organization = get_organization_by_id(organization_id)
         workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
 
-        permission_check = check_delete_team_permission_view(request, team)
+        permission_check = check_delete_team_permission(request, team)
         if permission_check:
             return permission_check
 
         # Check if team exists
         if not team:
             messages.error(request, "Team not found.")
-            if request.htmx:
-                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-            else:
-                return redirect("teams", organization_id=organization_id)
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
-        # Note: WorkspaceTeam objects will be deleted along with the team due to CASCADE relationship
+        # Check if team is attached to workspaces
+        if workspace_teams.exists():
+            messages.error(
+                request,
+                "Team is attached to workspaces. Please remove the team from all workspaces before deleting.",
+            )
+            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
         # Delete team and workspace teams
         if request.method == "POST":
@@ -294,10 +288,7 @@ def delete_team_view(request, organization_id, team_id):
                 return response
             except Exception as e:
                 messages.error(request, f"Failed to delete team: {str(e)}")
-                if request.htmx:
-                    return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-                else:
-                    return redirect("teams", organization_id=organization_id)
+                return HttpResponseClientRedirect(f"/{organization_id}/teams/")
         else:
             context = {
                 "team": team,
@@ -306,10 +297,7 @@ def delete_team_view(request, organization_id, team_id):
             return render(request, "teams/partials/delete_team_form.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        if request.htmx:
-            return HttpResponseClientRedirect(f"/{organization_id}/teams/")
-        else:
-            return redirect("teams", organization_id=organization_id)
+        return HttpResponseClientRedirect(f"/{organization_id}/teams/")
 
 
 def get_team_members_view(request, organization_id, team_id):
@@ -317,7 +305,7 @@ def get_team_members_view(request, organization_id, team_id):
         # Get the team and organization for context
         team = get_team_by_id(team_id)
 
-        permission_check = check_view_team_permission_view(request, team)
+        permission_check = check_view_team_permission(request, team)
         if permission_check:
             return permission_check
 
@@ -347,7 +335,7 @@ def add_team_member_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
 
-        permission_check = check_add_team_member_permission_view(request, team)
+        permission_check = check_add_team_member_permission(request, team)
         if permission_check:
             return permission_check
 
@@ -399,12 +387,9 @@ def add_team_member_view(request, organization_id, team_id):
                     return HttpResponse(f"{message_html} {modal_html}")
             except TeamMemberCreationError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
-                if request.htmx:
-                    return HttpResponseClientRedirect(
-                        f"/{organization_id}/teams/team_members/{team_id}/"
-                    )
-                else:
-                    return redirect("team_members", organization_id=organization_id, team_id=team_id)
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
         else:
             form = TeamMemberForm(team=team, organization=organization)
             context = {
@@ -454,20 +439,14 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
 
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
-                if request.htmx:
-                    return HttpResponseClientRedirect(
-                        f"/{organization_id}/teams/team_members/{team_id}/"
-                    )
-                else:
-                    return redirect("team_members", organization_id=organization_id, team_id=team_id)
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
             except TeamMemberDeletionError as e:
                 messages.error(request, f"An error occurred: {str(e)}")
-                if request.htmx:
-                    return HttpResponseClientRedirect(
-                        f"/{organization_id}/teams/team_members/{team_id}/"
-                    )
-                else:
-                    return redirect("team_members", organization_id=organization_id, team_id=team_id)
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
         else:
             try:
                 team_member = TeamMember.objects.get(
@@ -485,20 +464,14 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                 )
             except TeamMember.DoesNotExist:
                 messages.error(request, "Team member not found.")
-                if request.htmx:
-                    return HttpResponseClientRedirect(
-                        f"/{organization_id}/teams/team_members/{team_id}/"
-                    )
-                else:
-                    return redirect("team_members", organization_id=organization_id, team_id=team_id)
+                return HttpResponseClientRedirect(
+                    f"/{organization_id}/teams/team_members/{team_id}/"
+                )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        if request.htmx:
-            return HttpResponseClientRedirect(
-                f"/{organization_id}/teams/team_members/{team_id}/"
-            )
-        else:
-            return redirect("team_members", organization_id=organization_id, team_id=team_id)
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )
 
 
 def edit_team_member_role_view(request, organization_id, team_id, team_member_id):
@@ -571,9 +544,6 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        if request.htmx:
-            return HttpResponseClientRedirect(
-                f"/{organization_id}/teams/team_members/{team_id}/"
-            )
-        else:
-            return redirect("team_members", organization_id=organization_id, team_id=team_id)
+        return HttpResponseClientRedirect(
+            f"/{organization_id}/teams/team_members/{team_id}/"
+        )

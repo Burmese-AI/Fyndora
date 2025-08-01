@@ -246,9 +246,7 @@ class TestRemittanceCreateOrUpdateFromIncomeEntry:
     def test_no_remittance_rate_returns_none(self):
         """Test workspace team without workspace returns None."""
         # Create an entry with a workspace team that has no workspace
-        entry = IncomeEntryFactory(
-            workspace_team=None, amount=Decimal("1000.00")
-        )
+        entry = IncomeEntryFactory(workspace_team=None, amount=Decimal("1000.00"))
 
         result = services.remittance_create_or_update_from_income_entry(entry=entry)
 

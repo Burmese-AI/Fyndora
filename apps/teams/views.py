@@ -30,8 +30,11 @@ from apps.teams.permissions import (
 )
 from apps.core.utils import can_manage_organization, permission_denied_view
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
-from apps.teams.utils import add_user_to_workspace_team_group, remove_user_from_workspace_team_group
+from apps.teams.utils import (
+    add_user_to_workspace_team_group,
+    remove_user_from_workspace_team_group,
+)
+
 
 # Create your views here.
 @login_required
@@ -350,14 +353,19 @@ def add_team_member_view(request, organization_id, team_id):
                         form, team=team, organization=organization
                     )
                     # adding the user to the workspace team group if the team is attached to any workspace
-                    joined_workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
-                    if joined_workspace_teams.exists(): 
+                    joined_workspace_teams = WorkspaceTeam.objects.filter(
+                        team_id=team_id
+                    )
+                    if joined_workspace_teams.exists():
                         # adding the user to the workspace team group
-                        add_user_to_workspace_team_group(joined_workspace_teams, new_team_member)
+                        add_user_to_workspace_team_group(
+                            joined_workspace_teams, new_team_member
+                        )
                     messages.success(request, "Team member added successfully.")
                     permissions = {
                         "can_change_team_coordinator": request.user.has_perm(
-                            OrganizationPermissions.CHANGE_TEAM_COORDINATOR, organization
+                            OrganizationPermissions.CHANGE_TEAM_COORDINATOR,
+                            organization,
                         ),
                     }
                     team_members = get_team_members_by_team_id(team_id)
@@ -429,7 +437,9 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                 # removing the user from the workspace team group if the team is attached to any workspace
                 joined_workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
                 if joined_workspace_teams.exists():
-                    remove_user_from_workspace_team_group(joined_workspace_teams, team_member)
+                    remove_user_from_workspace_team_group(
+                        joined_workspace_teams, team_member
+                    )
                 remove_team_member(team_member, team)
                 messages.success(request, "Team member removed successfully.")
 

@@ -265,7 +265,9 @@ class TestWorkspaceExchangeRateModel(TestCase):
     def test_workspace_exchange_rate_approval(self):
         """Test workspace exchange rate approval."""
         exchange_rate = WorkspaceExchangeRateFactory()
-        approver = OrganizationMemberFactory(organization=exchange_rate.workspace.organization)
+        approver = OrganizationMemberFactory(
+            organization=exchange_rate.workspace.organization
+        )
 
         exchange_rate.is_approved = True
         exchange_rate.approved_by = approver
@@ -385,4 +387,6 @@ class TestWorkspaceExchangeRateModel(TestCase):
         )
 
         self.assertIsNotNone(rate2)
-        self.assertNotEqual(rate1.workspace_exchange_rate_id, rate2.workspace_exchange_rate_id)
+        self.assertNotEqual(
+            rate1.workspace_exchange_rate_id, rate2.workspace_exchange_rate_id
+        )

@@ -150,13 +150,14 @@ def check_change_workspace_permission(request, workspace):
         )
 
 
-
 def assign_workspace_team_permissions(workspace_team):
     """
     Assigns the necessary permissions to the group for the workspace team.
     """
     workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
-    workspace_team_group, _ = Group.objects.get_or_create(name=workspace_team_group_name)
+    workspace_team_group, _ = Group.objects.get_or_create(
+        name=workspace_team_group_name
+    )
 
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     for perm in workspace_team_permissions:
@@ -165,9 +166,11 @@ def assign_workspace_team_permissions(workspace_team):
     for member in workspace_team.team.members.all():
         workspace_team_group.user_set.add(member.organization_member.user)
 
-   # adding owner to the workspace team group
+    # adding owner to the workspace team group
     if workspace_team.workspace.organization.owner is not None:
-        workspace_team_group.user_set.add(workspace_team.workspace.organization.owner.user)
+        workspace_team_group.user_set.add(
+            workspace_team.workspace.organization.owner.user
+        )
 
     return workspace_team_group
 
@@ -177,14 +180,19 @@ def remove_workspace_team_permissions(workspace_team):
     Removes the necessary permissions from the group for the workspace team.
     """
     try:
-        workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
-        workspace_team_group = Group.objects.filter(name=workspace_team_group_name).first()
-        
+        workspace_team_group_name = (
+            f"Workspace Team - {workspace_team.workspace_team_id}"
+        )
+        workspace_team_group = Group.objects.filter(
+            name=workspace_team_group_name
+        ).first()
+
         if workspace_team_group is not None:
             workspace_team_group.delete()
         else:
-            print(f"Workspace team group '{workspace_team_group_name}' not found - may have been already deleted")
-            
+            print(
+                f"Workspace team group '{workspace_team_group_name}' not found - may have been already deleted"
+            )
+
     except Exception as e:
         print(f"Error in remove_workspace_team_permissions: {str(e)}")
-

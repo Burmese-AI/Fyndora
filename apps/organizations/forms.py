@@ -65,15 +65,16 @@ class OrganizationExchangeRateCreateForm(BaseExchangeRateCreateForm):
             }
         ),
     )
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from apps.currencies.models import Currency
-        self.fields['currency'].queryset = Currency.objects.all()
+
+        self.fields["currency"].queryset = Currency.objects.all()
         # Remove currency_code field since we're using currency instead
-        if 'currency_code' in self.fields:
-            del self.fields['currency_code']
-    
+        if "currency_code" in self.fields:
+            del self.fields["currency_code"]
+
     class Meta:
         model = OrganizationExchangeRate
         fields = ["currency", "rate", "effective_date", "note"]
@@ -113,7 +114,7 @@ class OrganizationExchangeRateUpdateForm(BaseExchangeRateUpdateForm):
             }
         ),
     )
-    
+
     class Meta(BaseExchangeRateUpdateForm.Meta):
         model = OrganizationExchangeRate
         fields = ["rate", "note"]

@@ -165,11 +165,13 @@ class TeamPermissions(models.TextChoices):
         "Can add team member by Team Admin and Org Owner",
     )
 
+
 class WorkspaceTeamPermissions(models.TextChoices):
     """
     Permissions for the WorkspaceTeam model.
     Permissions that are tied with workspace team ID Object
     """
+
     VIEW_WORKSPACE_TEAM = (
         "view_workspace_team",
         "Can view workspace team by WA and Org Owner",

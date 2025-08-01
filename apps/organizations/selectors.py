@@ -6,7 +6,6 @@ from apps.organizations.models import (
     OrganizationMember,
 )
 from apps.teams.models import Team
-from apps.workspaces.models import StatusChoices
 
 
 # get all organizations when user is a member
@@ -58,9 +57,11 @@ def get_teams_count(organization):
     """
     try:
         # Get distinct teams through workspace_teams relationship
-        count = Team.objects.filter(
-            workspace_teams__workspace__organization=organization
-        ).distinct().count()
+        count = (
+            Team.objects.filter(workspace_teams__workspace__organization=organization)
+            .distinct()
+            .count()
+        )
         return int(count) if count is not None else 0
     except Exception:
         return 0
@@ -84,7 +85,7 @@ def get_org_members(*, organization=None, workspace=None, prefetch_user=False):
     """
     if not organization and not workspace:
         raise ValueError("Either organization or workspace must be provided")
-    
+
     queryset = OrganizationMember.objects.filter(is_active=True)
     if organization:
         queryset = queryset.filter(organization=organization)

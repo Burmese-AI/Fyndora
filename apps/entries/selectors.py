@@ -7,11 +7,10 @@ from django.db.models import Q, Count, QuerySet, F, Sum, DecimalField, Expressio
 
 from apps.organizations.models import (
     Organization,
-    OrganizationExchangeRate,
     OrganizationMember,
 )
 from apps.teams.models import TeamMember
-from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
+from apps.workspaces.models import Workspace, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
@@ -133,6 +132,7 @@ def get_total_amount_of_entries(
     )["total"]
 
     return total or Decimal("0.00")
+
 
 # Selectors for Tests
 def get_workspace_entries(*, workspace: Workspace):

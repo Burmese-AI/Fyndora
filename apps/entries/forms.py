@@ -1,4 +1,3 @@
-from xml.dom import ValidationErr
 from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
@@ -10,7 +9,7 @@ from apps.currencies.models import Currency
 from django.utils import timezone
 from apps.currencies.selectors import get_org_defined_currencies
 from pprint import pprint
-from apps.teams.constants import TeamMemberRole
+
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -144,17 +143,18 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
             )
 
         # Role-based validation
-        if (
-            cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
-            and not (self.is_org_admin or self.workspace_team_role == TeamMemberRole.SUBMITTER) 
+        if cleaned_data["entry_type"] in [
+            EntryType.INCOME,
+            EntryType.DISBURSEMENT,
+        ] and not (
+            self.is_org_admin or self.workspace_team_role == TeamMemberRole.SUBMITTER
         ):
             raise forms.ValidationError(
                 "Only Admin and Submitters are authorized for this action."
             )
 
-        if (
-            cleaned_data["entry_type"] == EntryType.REMITTANCE
-            and not (self.is_team_coordinator or self.is_org_admin)
+        if cleaned_data["entry_type"] == EntryType.REMITTANCE and not (
+            self.is_team_coordinator or self.is_org_admin
         ):
             raise forms.ValidationError(
                 "Only Admin and Team Coordinator are authorized for this action."
@@ -162,7 +162,6 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
         return cleaned_data
 
-        
     def get_allowed_entry_types(self):
         # If submitter, return Income, disbursement
         if self.workspace_team_role == TeamMemberRole.SUBMITTER:
@@ -249,8 +248,8 @@ class BaseUpdateEntryForm(BaseEntryForm):
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
 
+
 class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
-    
     def clean(self):
         cleaned_data = super().clean()
         new_status = cleaned_data.get("status")
@@ -259,12 +258,17 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
             if not (self.is_org_admin or self.is_operation_reviewer):
                 raise forms.ValidationError(
                     "Only Admin and Operation Review can approve entries."
-                ) 
+                )
         # for other statuses, user can be OA, OR, TC, WA
         else:
-            if not (self.is_org_admin or self.is_operation_reviewer or self.is_team_coordinator or self.is_workspace_admin):
+            if not (
+                self.is_org_admin
+                or self.is_operation_reviewer
+                or self.is_team_coordinator
+                or self.is_workspace_admin
+            ):
                 raise forms.ValidationError(
                     "You are not allowed to update entry status."
                 )
-                
+
         return cleaned_data

@@ -4,14 +4,31 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0029_merge_20250801_0435'),
+        ("workspaces", "0029_merge_20250801_0435"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='workspaceteam',
-            options={'ordering': ['-created_at'], 'permissions': (('add_workspace_team_entry', 'Can add workspace team entry by WA and Org Owner'), ('change_workspace_team_entry', 'Can change workspace team entry by WA and Org Owner'), ('delete_workspace_team_entry', 'Can delete workspace team entry by WA and Org Owner')), 'verbose_name': 'workspace team', 'verbose_name_plural': 'workspace teams'},
+            name="workspaceteam",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    (
+                        "add_workspace_team_entry",
+                        "Can add workspace team entry by WA and Org Owner",
+                    ),
+                    (
+                        "change_workspace_team_entry",
+                        "Can change workspace team entry by WA and Org Owner",
+                    ),
+                    (
+                        "delete_workspace_team_entry",
+                        "Can delete workspace team entry by WA and Org Owner",
+                    ),
+                ),
+                "verbose_name": "workspace team",
+                "verbose_name_plural": "workspace teams",
+            },
         ),
     ]

@@ -72,7 +72,7 @@ def update_organization_from_form(*, form, organization) -> Organization:
         # Validate the form first
         if not form.is_valid():
             raise OrganizationUpdateError(f"Form validation failed: {form.errors}")
-        
+
         organization = model_update(organization, form.cleaned_data)
         return organization
     except Exception as e:

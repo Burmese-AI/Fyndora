@@ -309,6 +309,7 @@ class TestCustomAccountAdapter(TestCase):
         self, mock_render_to_string, mock_send_email_task
     ):
         """Test that newlines are removed from email subject."""
+
         # Mock template rendering with multiline subject
         def side_effect(template_name, context):
             if template_name.endswith("_subject.txt"):
@@ -335,6 +336,7 @@ class TestCustomAccountAdapter(TestCase):
         self, mock_render_to_string, mock_send_email_task
     ):
         """Test that template context is properly passed to render_to_string."""
+
         # Mock template rendering with proper side_effect function
         def side_effect(template_name, context):
             if template_name.endswith("_subject.txt"):

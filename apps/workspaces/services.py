@@ -10,7 +10,7 @@ from apps.workspaces.permissions import (
     update_workspace_admin_group,
 )
 from django.db.utils import IntegrityError
-from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
+
 
 @transaction.atomic
 def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:

@@ -102,7 +102,9 @@ class TestDeleteAttachmentService:
         """Test exception handling during attachment deletion."""
         entry = EntryFactory()
         attachment1 = AttachmentFactory(entry=entry)
-        AttachmentFactory(entry=entry)  # Create second attachment to avoid "last attachment" protection
+        AttachmentFactory(
+            entry=entry
+        )  # Create second attachment to avoid "last attachment" protection
 
         with (
             patch("apps.attachments.services.messages") as mock_messages,
@@ -366,8 +368,13 @@ class TestCreateAttachmentsService:
         # Test each file type individually by checking the extension logic
         for filename, expected_type in test_cases:
             # Use the same logic as the service to determine expected type
-            actual_type = AttachmentType.get_file_type_by_extension(filename) or AttachmentType.OTHER
-            assert actual_type == expected_type, f"Extension logic failed for {filename}: expected {expected_type}, got {actual_type}"
+            actual_type = (
+                AttachmentType.get_file_type_by_extension(filename)
+                or AttachmentType.OTHER
+            )
+            assert actual_type == expected_type, (
+                f"Extension logic failed for {filename}: expected {expected_type}, got {actual_type}"
+            )
 
         # Verify all attachments have valid file types
         for attachment in created_attachments:

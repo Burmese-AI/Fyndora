@@ -55,8 +55,10 @@ class TestInvitationWorkflow(TransactionTestCase):
 
         # Step 2: Create user and verify invitation
         new_user = CustomUserFactory(email=email)
-        is_verified, message, verified_invitation = services.verify_invitation_for_acceptance(
-            user=new_user, invitation_token=invitation.token
+        is_verified, message, verified_invitation = (
+            services.verify_invitation_for_acceptance(
+                user=new_user, invitation_token=invitation.token
+            )
         )
 
         self.assertTrue(is_verified)
@@ -145,8 +147,10 @@ class TestInvitationWorkflow(TransactionTestCase):
 
         # Create user and try to verify expired invitation
         user = CustomUserFactory(email=email)
-        is_verified, message, verified_invitation = services.verify_invitation_for_acceptance(
-            user=user, invitation_token=invitation.token
+        is_verified, message, verified_invitation = (
+            services.verify_invitation_for_acceptance(
+                user=user, invitation_token=invitation.token
+            )
         )
 
         self.assertFalse(is_verified)
@@ -180,8 +184,10 @@ class TestInvitationWorkflow(TransactionTestCase):
 
         # Try to verify with wrong email
         wrong_user = CustomUserFactory(email=wrong_email)
-        is_verified, message, verified_invitation = services.verify_invitation_for_acceptance(
-            user=wrong_user, invitation_token=invitation.token
+        is_verified, message, verified_invitation = (
+            services.verify_invitation_for_acceptance(
+                user=wrong_user, invitation_token=invitation.token
+            )
         )
 
         self.assertFalse(is_verified)
@@ -214,8 +220,10 @@ class TestInvitationWorkflow(TransactionTestCase):
         )
 
         # Verify invitation is created but validation fails
-        is_verified, message, verified_invitation = services.verify_invitation_for_acceptance(
-            user=existing_user, invitation_token=invitation.token
+        is_verified, message, verified_invitation = (
+            services.verify_invitation_for_acceptance(
+                user=existing_user, invitation_token=invitation.token
+            )
         )
 
         self.assertFalse(is_verified)

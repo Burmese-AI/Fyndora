@@ -32,9 +32,9 @@ class TestInvitationModel(TestCase):
         invitation = InvitationFactory(
             organization=self.organization,
             invited_by=self.invited_by,
-            email="test@example.com"
+            email="test@example.com",
         )
-        
+
         self.assertIsNotNone(invitation.invitation_id)
         self.assertIsNotNone(invitation.token)
         self.assertEqual(invitation.organization, self.organization)
@@ -49,9 +49,9 @@ class TestInvitationModel(TestCase):
         invitation = InvitationFactory(
             organization=self.organization,
             invited_by=self.invited_by,
-            email="test@example.com"
+            email="test@example.com",
         )
-        
+
         expected_str = f"{invitation.pk} - {self.organization.title} - test@example.com - {invitation.token} - True"
         self.assertEqual(str(invitation), expected_str)
 
@@ -61,94 +61,83 @@ class TestInvitationModel(TestCase):
         invitation = InvitationFactory(
             organization=self.organization,
             invited_by=self.invited_by,
-            expired_at=future_date
+            expired_at=future_date,
         )
-        
+
         self.assertFalse(invitation.is_expired)
 
     def test_is_expired_property_true(self):
         """Test is_expired property returns True for expired invitation."""
         invitation = ExpiredInvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertTrue(invitation.is_expired)
 
     def test_is_valid_property_true(self):
         """Test is_valid property returns True for valid invitation."""
         invitation = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertTrue(invitation.is_valid)
 
     def test_is_valid_property_false_expired(self):
         """Test is_valid property returns False for expired invitation."""
         invitation = ExpiredInvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertFalse(invitation.is_valid)
 
     def test_is_valid_property_false_used(self):
         """Test is_valid property returns False for used invitation."""
         invitation = UsedInvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertFalse(invitation.is_valid)
 
     def test_is_valid_property_false_inactive(self):
         """Test is_valid property returns False for inactive invitation."""
         invitation = InactiveInvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertFalse(invitation.is_valid)
 
     def test_invitation_token_uniqueness(self):
         """Test that invitation tokens are unique."""
         invitation1 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
         invitation2 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertNotEqual(invitation1.token, invitation2.token)
 
     def test_invitation_id_uniqueness(self):
         """Test that invitation IDs are unique."""
         invitation1 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
         invitation2 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         self.assertNotEqual(invitation1.invitation_id, invitation2.invitation_id)
 
     def test_invitation_ordering(self):
         """Test that invitations are ordered by created_at descending."""
         # Create invitations with slight time differences
         invitation1 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
         invitation2 = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
-        
+
         invitations = Invitation.objects.all()
         # The most recently created should be first
         self.assertEqual(invitations.first(), invitation2)
@@ -157,14 +146,13 @@ class TestInvitationModel(TestCase):
     def test_invitation_cascade_delete_organization(self):
         """Test that invitations are deleted when organization is deleted."""
         invitation = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
         invitation_id = invitation.invitation_id
-        
+
         # Delete the organization
         self.organization.delete()
-        
+
         # Invitation should be deleted
         with self.assertRaises(Invitation.DoesNotExist):
             Invitation.objects.get(invitation_id=invitation_id)
@@ -172,14 +160,13 @@ class TestInvitationModel(TestCase):
     def test_invitation_set_null_invited_by(self):
         """Test that invitation.invited_by is set to null when OrganizationMember is deleted."""
         invitation = InvitationFactory(
-            organization=self.organization,
-            invited_by=self.invited_by
+            organization=self.organization, invited_by=self.invited_by
         )
         invitation_id = invitation.invitation_id
-        
+
         # Delete the invited_by member
         self.invited_by.delete()
-        
+
         # Invitation should still exist but invited_by should be null
         invitation.refresh_from_db()
         self.assertIsNone(invitation.invited_by)

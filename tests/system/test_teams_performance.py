@@ -129,7 +129,8 @@ class TestTeamMemberPerformance(TransactionTestCase):
         """Test performance of creating multiple team members."""
         # Create organization members first
         members = [
-            OrganizationMemberFactory(organization=self.organization) for _ in range(100)
+            OrganizationMemberFactory(organization=self.organization)
+            for _ in range(100)
         ]
 
         start_time = time.time()
@@ -184,7 +185,7 @@ class TestTeamViewsPerformance(TestCase):
     def test_large_team_member_list_performance(self):
         """Test performance with large number of team members."""
         team = TeamFactory(organization=self.organization)
-        
+
         # Create multiple team members
         members = []
         for i in range(100):  # Large dataset for performance testing
@@ -192,7 +193,7 @@ class TestTeamViewsPerformance(TestCase):
             team_member = TeamMemberFactory(
                 organization_member=org_member,
                 team=team,
-                role=TeamMemberRole.SUBMITTER if i % 2 == 0 else TeamMemberRole.AUDITOR
+                role=TeamMemberRole.SUBMITTER if i % 2 == 0 else TeamMemberRole.AUDITOR,
             )
             members.append(team_member)
 
@@ -321,7 +322,8 @@ class TestTeamSystemWorkflows(TransactionTestCase):
         for i in range(teams_count):
             # Create team
             create_url = reverse(
-                "create_team", kwargs={"organization_id": self.organization.organization_id}
+                "create_team",
+                kwargs={"organization_id": self.organization.organization_id},
             )
 
             team_data = {
@@ -349,7 +351,9 @@ class TestTeamSystemWorkflows(TransactionTestCase):
                 member = OrganizationMemberFactory(organization=self.organization)
                 member_data = {
                     "organization_member": member.pk,
-                    "role": TeamMemberRole.SUBMITTER if j % 2 == 0 else TeamMemberRole.AUDITOR,
+                    "role": TeamMemberRole.SUBMITTER
+                    if j % 2 == 0
+                    else TeamMemberRole.AUDITOR,
                 }
 
                 response = self.client.post(
@@ -393,7 +397,9 @@ class TestTeamSystemWorkflows(TransactionTestCase):
                 "role": TeamMemberRole.SUBMITTER,
             }
 
-            response = self.client.post(add_url, data=member_data, HTTP_HX_REQUEST="true")
+            response = self.client.post(
+                add_url, data=member_data, HTTP_HX_REQUEST="true"
+            )
             self.assertEqual(response.status_code, 200)
 
         end_time = time.time()
@@ -415,7 +421,7 @@ class TestTeamSystemWorkflows(TransactionTestCase):
             team_member = TeamMemberFactory(
                 organization_member=org_member,
                 team=team,
-                role=TeamMemberRole.SUBMITTER if i % 2 == 0 else TeamMemberRole.AUDITOR
+                role=TeamMemberRole.SUBMITTER if i % 2 == 0 else TeamMemberRole.AUDITOR,
             )
             members.append(team_member)
 
@@ -452,9 +458,7 @@ class TestTeamSystemWorkflows(TransactionTestCase):
     def test_organization_with_many_teams_system_test(self):
         """Test system behavior with organization containing many teams."""
         # Create many teams
-        teams = [
-            TeamFactory(organization=self.organization) for _ in range(100)
-        ]
+        teams = [TeamFactory(organization=self.organization) for _ in range(100)]
 
         # Add members to some teams
         for i, team in enumerate(teams[:20]):  # Add members to first 20 teams
@@ -463,7 +467,9 @@ class TestTeamSystemWorkflows(TransactionTestCase):
                 TeamMemberFactory(
                     organization_member=org_member,
                     team=team,
-                    role=TeamMemberRole.SUBMITTER if j % 2 == 0 else TeamMemberRole.AUDITOR
+                    role=TeamMemberRole.SUBMITTER
+                    if j % 2 == 0
+                    else TeamMemberRole.AUDITOR,
                 )
 
         # Test teams listing performance
@@ -482,7 +488,9 @@ class TestTeamSystemWorkflows(TransactionTestCase):
         self.assertEqual(len(response.context["teams"]), 100)
 
         # Verify database integrity
-        self.assertEqual(Team.objects.filter(organization=self.organization).count(), 100)
+        self.assertEqual(
+            Team.objects.filter(organization=self.organization).count(), 100
+        )
         self.assertEqual(
             TeamMember.objects.filter(team__organization=self.organization).count(), 100
         )  # 20 teams * 5 members each

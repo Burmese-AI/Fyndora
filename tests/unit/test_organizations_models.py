@@ -89,8 +89,7 @@ class TestOrganizationModel(TestCase):
         # Try to create another organization with same title and same owner - should fail
         with self.assertRaises(IntegrityError):
             org2 = Organization.objects.create(
-                title="Unique Organization",
-                owner=member
+                title="Unique Organization", owner=member
             )
 
     @pytest.mark.django_db
@@ -99,16 +98,16 @@ class TestOrganizationModel(TestCase):
         # Create two different owners
         member1 = OrganizationMemberFactory()
         member2 = OrganizationMemberFactory()
-        
+
         # Create organizations with same title but different owners - should work
         org1 = OrganizationFactory(title="Same Title")
         org1.owner = member1
         org1.save()
-        
+
         org2 = OrganizationFactory(title="Same Title")
         org2.owner = member2
         org2.save()
-        
+
         # Both should exist
         self.assertEqual(Organization.objects.filter(title="Same Title").count(), 2)
 

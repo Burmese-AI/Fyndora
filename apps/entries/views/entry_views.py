@@ -8,7 +8,11 @@ from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..selectors import get_entries
 from ..services import delete_entry
 from apps.core.views.mixins import WorkspaceTeamRequiredMixin
-from ..utils import can_add_workspace_team_entry, can_update_workspace_team_entry, can_delete_workspace_team_entry
+from ..utils import (
+    can_add_workspace_team_entry,
+    can_update_workspace_team_entry,
+    can_delete_workspace_team_entry,
+)
 from apps.core.utils import permission_denied_view
 from .mixins import (
     EntryFormMixin,
@@ -75,9 +79,12 @@ class WorkspaceTeamEntryCreateView(
 
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
-            print (request.user)
-            print (self.workspace_team)
-            return permission_denied_view(request, "You do not have permission to add an entry to this workspace team.")
+            print(request.user)
+            print(self.workspace_team)
+            return permission_denied_view(
+                request,
+                "You do not have permission to add an entry to this workspace team.",
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
@@ -118,7 +125,7 @@ class WorkspaceTeamEntryCreateView(
             workspace_team=self.workspace_team,
             currency=form.cleaned_data["currency"],
             submitted_by_org_member=self.org_member if self.is_org_admin else None,
-            submitted_by_team_member=self.workspace_team_member
+            submitted_by_team_member=self.workspace_team_member,
         )
 
 
@@ -138,7 +145,9 @@ class WorkspaceTeamEntryUpdateView(
 
     def dispatch(self, request, *args, **kwargs):
         if not can_update_workspace_team_entry(request.user, self.workspace_team):
-            return permission_denied_view(request, "You do not have permission to update this entry.")
+            return permission_denied_view(
+                request, "You do not have permission to update this entry."
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -201,7 +210,9 @@ class WorkspaceTeamEntryDeleteView(
 
     def dispatch(self, request, *args, **kwargs):
         if not can_delete_workspace_team_entry(request.user, self.workspace_team):
-            return permission_denied_view(request, "You do not have permission to delete this entry.")
+            return permission_denied_view(
+                request, "You do not have permission to delete this entry."
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):

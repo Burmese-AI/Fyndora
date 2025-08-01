@@ -75,6 +75,8 @@ class WorkspaceTeamEntryCreateView(
 
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
+            print (request.user)
+            print (self.workspace_team)
             return permission_denied_view(request, "You do not have permission to add an entry to this workspace team.")
         return super().dispatch(request, *args, **kwargs)
 

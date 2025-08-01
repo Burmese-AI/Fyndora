@@ -30,7 +30,7 @@ from apps.teams.permissions import (
 )
 from apps.core.utils import can_manage_organization, permission_denied_view
 from django.contrib.auth.decorators import login_required
-
+from django.contrib.auth.models import Group
 
 # Create your views here.
 @login_required
@@ -345,9 +345,24 @@ def add_team_member_view(request, organization_id, team_id):
                     request.POST, team=team, organization=organization
                 )
                 if form.is_valid():
-                    create_team_member_from_form(
+                    new_team_member = create_team_member_from_form(
                         form, team=team, organization=organization
                     )
+                    joined_workspace_teams = WorkspaceTeam.objects.filter(team_id=team_id)
+                   
+                    if joined_workspace_teams.exists(): 
+                        print("joined_workspace_teams", joined_workspace_teams)
+                        for workspace_team in joined_workspace_teams:
+                            workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+                            workspace_team_group = Group.objects.filter(name=workspace_team_group_name).first()
+                            print("workspace_team_group", workspace_team_group)
+                            if workspace_team_group is not None:
+                                try:
+                                    print("new_team_member", new_team_member.organization_member.user)
+                                    workspace_team_group.user_set.add(new_team_member.organization_member.user)
+                                    print("user added to workspace_team_group")
+                                except Exception as e:
+                                    print(f"Error in adding user to workspace_team_group: {str(e)}")
                     messages.success(request, "Team member added successfully.")
                     team_members = get_team_members_by_team_id(team_id)
                     context = {

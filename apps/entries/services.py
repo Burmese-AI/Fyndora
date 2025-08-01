@@ -10,7 +10,7 @@ from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
 from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
-from apps.entries.selectors import get_closest_exchanged_rate
+from apps.currencies.selectors import get_closest_exchanged_rate
 from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember

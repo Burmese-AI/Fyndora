@@ -164,18 +164,19 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
         
     def get_allowed_entry_types(self):
-        # If submitter, return Income, disbursement
-        if self.workspace_team_role == TeamMemberRole.SUBMITTER:
+        # If team coordinator, return Income, disbursement, remittance
+        if self.is_team_coordinator:
             return [
                 (EntryType.INCOME, "Income"),
                 (EntryType.DISBURSEMENT, "Disbursement"),
+                (EntryType.REMITTANCE, "Remittance"),
             ]
+          
         # If admin or team coordinator, return Income, disbursement, remittance
         elif self.is_org_admin or self.is_team_coordinator:
             return [
                 (EntryType.INCOME, "Income"),
                 (EntryType.DISBURSEMENT, "Disbursement"),
-                (EntryType.REMITTANCE, "Remittance"),
             ]
         else:
             return []

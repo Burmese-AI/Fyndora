@@ -1,3 +1,4 @@
+from xml.dom import ValidationErr
 from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
@@ -7,7 +8,9 @@ from apps.teams.constants import TeamMemberRole
 from datetime import date
 from apps.currencies.models import Currency
 from django.utils import timezone
-
+from apps.currencies.selectors import get_org_defined_currencies
+from pprint import pprint
+from apps.teams.constants import TeamMemberRole
 
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
@@ -65,7 +68,7 @@ class BaseEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         # print("+++++++++++++ DEBUGGING +++++++++++++")
-        # pprint(kwargs)
+        pprint(kwargs)
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
@@ -79,7 +82,7 @@ class BaseEntryForm(forms.ModelForm):
         # Initializes all the form fields from the model or declared fields to modify them
         super().__init__(*args, **kwargs)
         # Set the queryset for the currency field to only include currencies defined for the organization
-        self.fields["currency"].queryset = self.get_org_defined_currencies()
+        self.fields["currency"].queryset = get_org_defined_currencies(self.organization)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -95,11 +98,6 @@ class BaseEntryForm(forms.ModelForm):
             validate_uploaded_files(attachment_files)
 
         return cleaned_data
-
-    def get_org_defined_currencies(self):
-        return Currency.objects.filter(
-            organizations_organizationexchangerate__organization=self.organization,
-        )
 
 
 class CreateOrganizationExpenseEntryForm(BaseEntryForm):
@@ -132,47 +130,39 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        # If today is after the end date of workspace, don't allow to create Income, Disbursement Entries
+        occurred_at = cleaned_data.get("occurred_at")
+        today = date.today()
+
+        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "The occurred date must be within the workspace period."
+            )
+
+        if not (self.workspace.start_date <= today <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "Entries can only be submitted during the workspace period."
+            )
+
+        # Role-based validation
         if (
             cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
-            and self.workspace.end_date
-            and date.today() > self.workspace.end_date
+            and not (self.is_org_admin or self.workspace_team_role == TeamMemberRole.SUBMITTER) 
         ):
             raise forms.ValidationError(
-                "No more entries can be created for this workspace"
+                "Only Admin and Submitters are authorized for this action."
             )
 
-        # If today is before end date of workspace, don't allow remittance entries to create
         if (
             cleaned_data["entry_type"] == EntryType.REMITTANCE
-            and self.workspace.end_date
-            and date.today() < self.workspace.end_date
+            and not (self.is_team_coordinator or self.is_org_admin)
         ):
             raise forms.ValidationError(
-                "Remittance Entries are not allowed to be uploaded yet"
+                "Only Admin and Team Coordinator are authorized for this action."
             )
-
-        # Only team coordinator is allowed to create remittance entries
-        if (
-            cleaned_data["entry_type"] == EntryType.REMITTANCE
-            and not self.is_team_coordinator
-        ):
-            raise forms.ValidationError(
-                "You are not authorized to create remittance entries"
-            )
-
-        # Only team coordinator and submitter are allowed to upload entries
-        # if (
-        #     cleaned_data["entry_type"] in [EntryType.INCOME, EntryType.DISBURSEMENT]
-        #     and not self.is_team_coordinator
-        #     and not self.workspace_team_role == TeamMemberRole.SUBMITTER
-        # ):
-        #     raise forms.ValidationError(
-        #         "You are not authorized to create entries for this workspace team"
-        #     )
 
         return cleaned_data
 
+        
     def get_allowed_entry_types(self):
         # If team coordinator, return Income, disbursement, remittance
         if self.is_team_coordinator:
@@ -181,8 +171,9 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
                 (EntryType.DISBURSEMENT, "Disbursement"),
                 (EntryType.REMITTANCE, "Remittance"),
             ]
-        # If submitter, return Income, disbursement
-        elif self.workspace_team_role == TeamMemberRole.SUBMITTER:
+          
+        # If admin or team coordinator, return Income, disbursement, remittance
+        elif self.is_org_admin or self.is_team_coordinator:
             return [
                 (EntryType.INCOME, "Income"),
                 (EntryType.DISBURSEMENT, "Disbursement"),
@@ -259,15 +250,22 @@ class BaseUpdateEntryForm(BaseEntryForm):
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
 
-
-class UpdateOrganizationExpenseEntryForm(BaseUpdateEntryForm):
+class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
+    
     def clean(self):
         cleaned_data = super().clean()
-
-        # If the user is not an org admin, raise validation error
-        if not self.is_org_admin:
-            raise forms.ValidationError(
-                "You are not authorized to update organization expenses"
-            )
-
+        new_status = cleaned_data.get("status")
+        # if new status is 'Approved', user must be OR, OA
+        if new_status is EntryStatus.APPROVED:
+            if not (self.is_org_admin or self.is_operation_reviewer):
+                raise forms.ValidationError(
+                    "Only Admin and Operation Review can approve entries."
+                ) 
+        # for other statuses, user can be OA, OR, TC, WA
+        else:
+            if not (self.is_org_admin or self.is_operation_reviewer or self.is_team_coordinator or self.is_workspace_admin):
+                raise forms.ValidationError(
+                    "You are not allowed to update entry status."
+                )
+                
         return cleaned_data

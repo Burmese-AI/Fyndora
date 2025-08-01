@@ -19,7 +19,7 @@ from .base_views import (
 )
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
-    UpdateOrganizationExpenseEntryForm,
+    BaseUpdateEntryForm,
 )
 from apps.core.utils import permission_denied_view
 from apps.core.views.crud_base_views import (
@@ -142,7 +142,7 @@ class OrganizationExpenseUpdateView(
     BaseUpdateView,
 ):
     model = Entry
-    form_class = UpdateOrganizationExpenseEntryForm
+    form_class = BaseUpdateEntryForm
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
 

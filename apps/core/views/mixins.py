@@ -96,6 +96,9 @@ class WorkspaceTeamRequiredMixin(WorkspaceRequiredMixin):
         self.workspace_team_role = (
             self.workspace_team_member.role if self.workspace_team_member else None
         )
+        self.is_team_coordinator = (
+            self.org_member == self.workspace_team.team.team_coordinator
+        )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)

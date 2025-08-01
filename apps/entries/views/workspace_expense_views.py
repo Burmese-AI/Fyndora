@@ -18,7 +18,7 @@ from .base_views import (
 )
 from ..forms import (
     CreateOrganizationExpenseEntryForm,
-    UpdateOrganizationExpenseEntryForm,
+    BaseUpdateEntryForm,
 )
 from apps.core.views.crud_base_views import (
     BaseCreateView,
@@ -136,7 +136,7 @@ class WorkspaceExpenseUpdateView(
     BaseUpdateView,
 ):
     model = Entry
-    form_class = UpdateOrganizationExpenseEntryForm
+    form_class = BaseUpdateEntryForm
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = ("entries/partials/row.html",)
 

@@ -16,7 +16,7 @@ from .base_views import (
     TeamLevelEntryView,
 )
 from ..forms import (
-    UpdateOrganizationExpenseEntryForm,
+    UpdateWorkspaceTeamEntryForm,
     CreateWorkspaceTeamEntryForm,
 )
 from apps.core.views.crud_base_views import (
@@ -108,7 +108,8 @@ class WorkspaceTeamEntryCreateView(
             workspace=self.workspace,
             workspace_team=self.workspace_team,
             currency=form.cleaned_data["currency"],
-            submitted_by_org_member=self.org_member,
+            submitted_by_org_member=self.org_member if self.is_org_admin else None,
+            submitted_by_team_member=self.workspace_team_member
         )
 
 
@@ -122,7 +123,7 @@ class WorkspaceTeamEntryUpdateView(
     BaseUpdateView,
 ):
     model = Entry
-    form_class = UpdateOrganizationExpenseEntryForm
+    form_class = UpdateWorkspaceTeamEntryForm
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
 

@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 
 from apps.core.models import baseModel, SoftDeleteModel
 from apps.currencies.models import Currency
@@ -102,40 +103,22 @@ class Entry(baseModel, SoftDeleteModel):
     def converted_amount(self):
         return self.amount * self.exchange_rate_used
 
-    def clean(self):
-        super().clean()
+    # Can't work with current form flow
+    # def clean(self):
+    #     if not self.submitted_by_org_member and not self.submitted_by_team_member:
+    #         raise ValidationError("An entry must be submitted by either an org member or a team member.")
 
-        # # 1. Reviewer cannot be the same as the submitter
-        # if self.reviewed_by and self.submitter:
-        #     if (
-        #         isinstance(self.submitter, OrganizationMember)
-        #         and self.reviewed_by == self.submitter
-        #     ) or (
-        #         isinstance(self.submitter, TeamMember)
-        #         and self.reviewed_by == self.submitter.organization_member
-        #     ):
-        #         raise ValidationError(
-        #             "Reviewer and submitter cannot be the same person."
-        #         )
+    #     if not self.currency:
+    #         raise ValidationError("Currency is required.")
 
-        # # 2. Auditors are not allowed to submit entries
-        # if isinstance(self.submitter, TeamMember):
-        #     if self.submitter.role == TeamMemberRole.AUDITOR:
-        #         raise ValidationError("Auditors are not allowed to submit entries.")
+    #     if not self.exchange_rate_used:
+    #         raise ValidationError("Exchange rate used must be specified.")
 
-        # # 3. Reviewer must belong to the same organization as the entry
-        # if self.reviewed_by and self.organization:
-        #     if self.reviewed_by.organization != self.organization:
-        #         raise ValidationError(
-        #             "Reviewer must belong to the same organization as the entry."
-        #         )
+    #     if not self.org_exchange_rate_ref and not self.workspace_exchange_rate_ref:
+    #         raise ValidationError("Either organization or workspace exchange rate reference must be set.")
 
-        # # 4. Submitter must belong to the team linked to this Workspace Team
-        # if isinstance(self.submitter, TeamMember) and self.workspace_team:
-        #     if self.submitter.team != self.workspace_team.team:
-        #         raise ValidationError(
-        #             "Submitter must belong to the team linked to this Workspace Team"
-        #         )
+    #     super().clean()
+
 
     class Meta:
         verbose_name = "entry"

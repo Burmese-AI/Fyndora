@@ -64,13 +64,6 @@ class ExchangeRateBaseModel(baseModel):
     )
     note = models.TextField(blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        if self.currency.code == "MMK":
-            self.is_approved = True
-            if self.added_by:
-                self.approved_by = self.added_by
-        super().save(*args, **kwargs)
-
     class Meta:
         abstract = True
         indexes = [

@@ -108,7 +108,8 @@ class WorkspaceTeamEntryCreateView(
             workspace=self.workspace,
             workspace_team=self.workspace_team,
             currency=form.cleaned_data["currency"],
-            submitted_by_org_member=self.org_member,
+            submitted_by_org_member=self.org_member if self.is_org_admin else None,
+            submitted_by_team_member=self.workspace_team_member
         )
 
 

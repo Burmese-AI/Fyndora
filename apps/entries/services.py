@@ -19,7 +19,7 @@ from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
 from datetime import date
-from .selectors import get_closest_exchanged_rate
+from apps.currencies.selectors import get_closest_exchanged_rate
 
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):

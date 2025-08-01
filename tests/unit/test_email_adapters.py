@@ -30,9 +30,11 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             "domain": "example.com",
         }
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_complex_context(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_complex_context(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test sending mail with complex context data."""
         mock_render_to_string.side_effect = [
             f"Welcome {self.user.username}!\n",
@@ -52,9 +54,11 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents=f"<html><body><h1>Welcome {self.user.username}!</h1></body></html>",
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_template_prefix_variations(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_template_prefix_variations(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test different template prefix patterns."""
         test_cases = [
             "account/email/email_confirmation",
@@ -67,14 +71,16 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             with self.subTest(template_prefix=template_prefix):
                 mock_render_to_string.reset_mock()
                 mock_send_email_task.reset_mock()
-                
+
                 mock_render_to_string.side_effect = [
                     "Subject",
                     "Text body",
                     TemplateDoesNotExist("html template"),
                 ]
 
-                self.adapter.send_mail(template_prefix, self.test_email, self.test_context)
+                self.adapter.send_mail(
+                    template_prefix, self.test_email, self.test_context
+                )
 
                 # Verify correct template names are used
                 expected_calls = [
@@ -82,27 +88,36 @@ class TestCustomAccountAdapterAdvanced(TestCase):
                     f"{template_prefix}_message.txt",
                     f"{template_prefix}_message.html",
                 ]
-                
-                actual_calls = [call[0][0] for call in mock_render_to_string.call_args_list]
+
+                actual_calls = [
+                    call[0][0] for call in mock_render_to_string.call_args_list
+                ]
                 self.assertEqual(actual_calls, expected_calls)
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_template_rendering_error(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_template_rendering_error(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling of template rendering errors."""
         # Subject template fails
         mock_render_to_string.side_effect = Exception("Template syntax error")
 
         with self.assertRaises(Exception):
-            self.adapter.send_mail("broken_template", self.test_email, self.test_context)
+            self.adapter.send_mail(
+                "broken_template", self.test_email, self.test_context
+            )
 
         # Email task should not be called if template rendering fails
         mock_send_email_task.assert_not_called()
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_text_template_missing(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_text_template_missing(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling when text template is missing."""
+
         def side_effect(template_name, context):
             if template_name.endswith("_subject.txt"):
                 return "Test Subject"
@@ -113,7 +128,9 @@ class TestCustomAccountAdapterAdvanced(TestCase):
 
         mock_render_to_string.side_effect = side_effect
 
-        self.adapter.send_mail("signup_confirmation", self.test_email, self.test_context)
+        self.adapter.send_mail(
+            "signup_confirmation", self.test_email, self.test_context
+        )
 
         # Should use HTML content when text template is missing
         mock_send_email_task.assert_called_once_with(
@@ -122,10 +139,13 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents="<html><body>HTML content</body></html>",
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_both_templates_missing(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_both_templates_missing(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling when both text and HTML templates are missing."""
+
         def side_effect(template_name, context):
             if template_name.endswith("_subject.txt"):
                 return "Test Subject"
@@ -135,15 +155,19 @@ class TestCustomAccountAdapterAdvanced(TestCase):
         mock_render_to_string.side_effect = side_effect
 
         with self.assertRaises(TemplateDoesNotExist):
-            self.adapter.send_mail("missing_template", self.test_email, self.test_context)
+            self.adapter.send_mail(
+                "missing_template", self.test_email, self.test_context
+            )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_whitespace_handling(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_whitespace_handling(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling of whitespace in templates."""
         mock_render_to_string.side_effect = [
             "   Subject with spaces   \n\n",  # Subject with whitespace
-            "   Text body with spaces   ",     # Text with whitespace
+            "   Text body with spaces   ",  # Text with whitespace
             "   <html><body>HTML with spaces</body></html>   ",  # HTML with whitespace
         ]
 
@@ -156,9 +180,11 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents="   <html><body>HTML with spaces</body></html>   ",
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_unicode_templates(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_unicode_templates(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling of Unicode characters in templates."""
         mock_render_to_string.side_effect = [
             "Wëlcömë tö öür plätförm! 🎉\n",
@@ -174,9 +200,11 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents="<html><body><h1>Wëlcömë! 🚀</h1></body></html>",
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_empty_templates(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_empty_templates(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test handling of empty template content."""
         mock_render_to_string.side_effect = [
             "",  # Empty subject
@@ -193,12 +221,12 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents="",  # Falls back to empty text when HTML is also empty
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
     def test_send_mail_long_content(self, mock_render_to_string, mock_send_email_task):
         """Test handling of long email content."""
         long_subject = "A" * 1000  # Very long subject
-        long_text = "B" * 10000    # Very long text
+        long_text = "B" * 10000  # Very long text
         long_html = f"<html><body>{'C' * 10000}</body></html>"  # Very long HTML
 
         mock_render_to_string.side_effect = [
@@ -215,9 +243,11 @@ class TestCustomAccountAdapterAdvanced(TestCase):
             contents=long_html,
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_special_characters_in_email(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_special_characters_in_email(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test sending mail to email addresses with special characters."""
         special_emails = [
             "test+tag@example.com",
@@ -231,22 +261,24 @@ class TestCustomAccountAdapterAdvanced(TestCase):
         for email in special_emails:
             with self.subTest(email=email):
                 mock_send_email_task.reset_mock()
-                
+
                 self.adapter.send_mail("test_template", email, self.test_context)
-                
+
                 mock_send_email_task.assert_called_once()
                 call_args = mock_send_email_task.call_args[1]
                 self.assertEqual(call_args["to"], email)
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_context_isolation(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_context_isolation(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test that context modifications don't affect subsequent calls."""
         original_context = {"key": "original_value"}
-        
+
         # Track contexts passed to render_to_string without modifying them
         contexts_received = []
-        
+
         def track_context_side_effect(template_name, context):
             # Store a copy of the context to check later
             contexts_received.append(copy.deepcopy(context))
@@ -257,8 +289,10 @@ class TestCustomAccountAdapterAdvanced(TestCase):
         mock_render_to_string.side_effect = track_context_side_effect
 
         # First call
-        self.adapter.send_mail("signup_confirmation", self.test_email, original_context.copy())
-        
+        self.adapter.send_mail(
+            "signup_confirmation", self.test_email, original_context.copy()
+        )
+
         # Second call with fresh context
         fresh_context = {"key": "original_value"}
         self.adapter.send_mail("signup_confirmation", self.test_email, fresh_context)
@@ -266,9 +300,12 @@ class TestCustomAccountAdapterAdvanced(TestCase):
         # Verify that all contexts received had the original value
         # This tests that our adapter properly isolates contexts
         for i, context in enumerate(contexts_received):
-            self.assertEqual(context["key"], "original_value", 
-                           f"Context {i} was modified before being passed to render_to_string")
-        
+            self.assertEqual(
+                context["key"],
+                "original_value",
+                f"Context {i} was modified before being passed to render_to_string",
+            )
+
         # Verify we received the expected number of calls (3 per send_mail call = 6 total)
         self.assertEqual(len(contexts_received), 6)
 
@@ -284,11 +321,14 @@ class TestCustomAccountAdapterInheritance(TestCase):
     def test_adapter_inherits_from_default(self):
         """Test that adapter properly inherits from DefaultAccountAdapter."""
         from allauth.account.adapter import DefaultAccountAdapter
+
         self.assertIsInstance(self.adapter, DefaultAccountAdapter)
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_method_override(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_method_override(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test that send_mail method is properly overridden."""
         mock_render_to_string.side_effect = [
             "Subject",
@@ -305,18 +345,20 @@ class TestCustomAccountAdapterInheritance(TestCase):
     def test_adapter_other_methods_inherited(self):
         """Test that other adapter methods are properly inherited."""
         # These methods should exist from the parent class
-        self.assertTrue(hasattr(self.adapter, 'get_login_redirect_url'))
-        self.assertTrue(hasattr(self.adapter, 'get_logout_redirect_url'))
-        self.assertTrue(hasattr(self.adapter, 'add_message'))
+        self.assertTrue(hasattr(self.adapter, "get_login_redirect_url"))
+        self.assertTrue(hasattr(self.adapter, "get_logout_redirect_url"))
+        self.assertTrue(hasattr(self.adapter, "add_message"))
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_send_mail_signature_compatibility(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_send_mail_signature_compatibility(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test that send_mail signature is compatible with parent class."""
         mock_render_to_string.side_effect = [
             "Subject",  # subject template
             "Text body",  # text template
-            "<html><body>HTML body</body></html>"  # html template
+            "<html><body>HTML body</body></html>",  # html template
         ]
 
         # Should accept the same parameters as parent class
@@ -324,7 +366,7 @@ class TestCustomAccountAdapterInheritance(TestCase):
             self.adapter.send_mail(
                 template_prefix="signup_confirmation",
                 email="test@example.com",
-                context={"key": "value"}
+                context={"key": "value"},
             )
         except TypeError:
             self.fail("send_mail signature is not compatible with parent class")
@@ -341,9 +383,11 @@ class TestEmailAdapterIntegration(TestCase):
         self.adapter = CustomAccountAdapter()
         self.user = CustomUserFactory()
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_adapter_with_allauth_context(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_adapter_with_allauth_context(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test adapter with typical allauth context data."""
         allauth_context = {
             "user": self.user,
@@ -360,9 +404,7 @@ class TestEmailAdapterIntegration(TestCase):
         ]
 
         self.adapter.send_mail(
-            "account/email/email_confirmation",
-            self.user.email,
-            allauth_context
+            "account/email/email_confirmation", self.user.email, allauth_context
         )
 
         mock_send_email_task.assert_called_once_with(
@@ -371,10 +413,13 @@ class TestEmailAdapterIntegration(TestCase):
             contents=f"<html><body>Hello {self.user.username}!</body></html>",
         )
 
-    @patch('apps.emails.adapters.send_email_task.delay')
-    @patch('apps.emails.adapters.render_to_string')
-    def test_adapter_template_not_found_fallback(self, mock_render_to_string, mock_send_email_task):
+    @patch("apps.emails.adapters.send_email_task.delay")
+    @patch("apps.emails.adapters.render_to_string")
+    def test_adapter_template_not_found_fallback(
+        self, mock_render_to_string, mock_send_email_task
+    ):
         """Test adapter fallback when templates are not found."""
+
         def side_effect(template_name, context):
             if "subject" in template_name:
                 return "Default Subject"
@@ -386,9 +431,7 @@ class TestEmailAdapterIntegration(TestCase):
         mock_render_to_string.side_effect = side_effect
 
         self.adapter.send_mail(
-            "nonexistent/template",
-            self.user.email,
-            {"user": self.user}
+            "nonexistent/template", self.user.email, {"user": self.user}
         )
 
         # Should fall back to text content

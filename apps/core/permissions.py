@@ -164,3 +164,27 @@ class TeamPermissions(models.TextChoices):
         "add_team_member",
         "Can add team member by Team Admin and Org Owner",
     )
+
+
+class WorkspaceTeamPermissions(models.TextChoices):
+    """
+    Permissions for the WorkspaceTeam model.
+    Permissions that are tied with workspace team ID Object
+    """
+
+    VIEW_WORKSPACE_TEAM = (
+        "view_workspace_team",
+        "Can view workspace team by WA and Org Owner",
+    )
+    ADD_WORKSPACE_TEAM_ENTRY = (
+        "add_workspace_team_entry",
+        "Can add workspace team entry by WA and Org Owner",
+    )
+    CHANGE_WORKSPACE_TEAM_ENTRY = (
+        "change_workspace_team_entry",
+        "Can change workspace team entry by WA and Org Owner",
+    )
+    DELETE_WORKSPACE_TEAM_ENTRY = (
+        "delete_workspace_team_entry",
+        "Can delete workspace team entry by WA and Org Owner",
+    )

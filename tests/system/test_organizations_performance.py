@@ -6,13 +6,12 @@ including bulk operations, concurrent access, and large dataset handling.
 """
 
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 
 from apps.organizations.constants import StatusChoices
 from apps.currencies.models import Currency
@@ -125,7 +124,7 @@ class TestOrganizationCreationPerformance(TestCase):
     def test_concurrent_organization_creation_performance(self):
         """Test performance of creating multiple organizations (sequential due to SQLite limitations)."""
         num_organizations = 10
-        
+
         # Pre-create users
         users = CustomUserFactory.create_batch(num_organizations)
 
@@ -154,13 +153,13 @@ class TestOrganizationCreationPerformance(TestCase):
 
         # Assert organizations were created
         actual_count = len(all_organizations)
-        
+
         # Expect at least 80% success rate
         min_expected = int(num_organizations * 0.8)
         self.assertGreaterEqual(
-            actual_count, 
+            actual_count,
             min_expected,
-            f"Expected at least {min_expected} organizations, got {actual_count}"
+            f"Expected at least {min_expected} organizations, got {actual_count}",
         )
 
         # Performance assertion - should be fast for sequential creation
@@ -321,12 +320,14 @@ class TestOrganizationUpdatePerformance(TestCase):
             "status": StatusChoices.ACTIVE,
         }
         form = OrganizationForm(data=form_data, instance=organization)
-        
+
         # Validate the form before using it
         self.assertTrue(form.is_valid(), f"Form validation failed: {form.errors}")
 
         start_time = time.time()
-        updated_org = update_organization_from_form(form=form, organization=organization)
+        updated_org = update_organization_from_form(
+            form=form, organization=organization
+        )
         end_time = time.time()
 
         execution_time = end_time - start_time
@@ -353,10 +354,12 @@ class TestOrganizationUpdatePerformance(TestCase):
                 "status": StatusChoices.ACTIVE,
             }
             form = OrganizationForm(data=form_data, instance=org)
-            
+
             # Validate the form before using it
-            self.assertTrue(form.is_valid(), f"Form validation failed for org {i}: {form.errors}")
-            
+            self.assertTrue(
+                form.is_valid(), f"Form validation failed for org {i}: {form.errors}"
+            )
+
             updated_org = update_organization_from_form(form=form, organization=org)
             updated_organizations.append(updated_org)
 
@@ -502,8 +505,8 @@ class TestOrganizationExchangeRatePerformance(TestCase):
             currency = self.currencies[i % len(self.currencies)]
             effective_date = date.today() - timedelta(days=i)  # Different dates
             rate = OrganizationExchangeRateFactory(
-                organization=self.organization, 
-                currency=currency, 
+                organization=self.organization,
+                currency=currency,
                 added_by=self.member,
                 effective_date=effective_date,
             )
@@ -582,7 +585,9 @@ class TestOrganizationSystemPerformance(TestCase):
         phase3_time = time.time()
 
         # Phase 4: Create exchange rates
-        currency = Currency.objects.get_or_create(code="USD", defaults={"name": "US Dollar"})[0]
+        currency = Currency.objects.get_or_create(
+            code="USD", defaults={"name": "US Dollar"}
+        )[0]
         for org in organizations:
             member = OrganizationMember.objects.filter(organization=org).first()
             for i in range(5):
@@ -650,14 +655,14 @@ class TestOrganizationSystemPerformance(TestCase):
 
         # Verify data integrity - check that we created the expected number of records
         self.assertEqual(len(organizations), 10)  # 10 organizations created
-        
+
         # Count total members across all organizations
         total_members = sum(
-            OrganizationMember.objects.filter(organization=org).count() 
+            OrganizationMember.objects.filter(organization=org).count()
             for org in organizations
         )
         self.assertGreaterEqual(total_members, 50)  # At least 50 memberships
-        
+
         # Count total exchange rates across all organizations
         total_rates = sum(
             OrganizationExchangeRate.objects.filter(organization=org).count()
@@ -724,9 +729,9 @@ class TestOrganizationSystemPerformance(TestCase):
         # Assert most operations completed successfully
         min_expected = 8  # Allow for some failures
         self.assertGreaterEqual(
-            len(org_ids), 
+            len(org_ids),
             min_expected,
-            f"Expected at least {min_expected} successful operations, got {len(org_ids)}"
+            f"Expected at least {min_expected} successful operations, got {len(org_ids)}",
         )
 
         # Performance assertion - should be fast for sequential operations

@@ -213,3 +213,15 @@ def get_workspace_exchange_rates(*, organization, workspace):
     except Exception as e:
         print(f"Error in get_workspace_exchange_rates: {str(e)}")
         return None
+
+
+def get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id):
+    """
+    Return a workspace team by its workspace ID and team ID.
+    """
+    try:
+        return WorkspaceTeam.objects.get(workspace_id=workspace_id, team_id=team_id)
+
+    except Exception as e:
+        print(f"Error in get_workspace_team_by_workspace_id_and_team_id: {str(e)}")
+        return None

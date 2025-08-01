@@ -32,19 +32,21 @@ def accept_invitation(user: User, invitation: Invitation):
     # Check if invitation is already used
     if invitation.is_used:
         return False
-    
+
     # Check if invitation is expired or not valid
     if not invitation.is_valid:
         return False
-    
+
     # Check if user email matches invitation email
     if invitation.email != user.email:
         return False
-    
+
     # Check if user is already a member
-    if OrganizationMember.objects.filter(user=user, organization=invitation.organization).exists():
+    if OrganizationMember.objects.filter(
+        user=user, organization=invitation.organization
+    ).exists():
         return False
-    
+
     # Add user to organization
     OrganizationMember.objects.create(user=user, organization=invitation.organization)
 

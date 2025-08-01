@@ -15,7 +15,7 @@ def send_email_task(to, subject, contents):
     A Celery task to send an email using one of the configured Gmail accounts, rotating between them.
     Logs the outcome using Django's logging framework.
     """
-    accounts = getattr(settings, 'GMAIL_ACCOUNTS')
+    accounts = getattr(settings, "GMAIL_ACCOUNTS")
     if not accounts:
         logger.critical(
             "CRITICAL: No Gmail accounts are configured in settings.GMAIL_ACCOUNTS."

@@ -360,7 +360,10 @@ class TestOrganizationExchangeRateUpdateForm(TestCase):
         self.assertTrue(form.is_valid())
         updated_rate = form.save()
 
-        self.assertEqual(updated_rate.organization_exchange_rate_id, self.exchange_rate.organization_exchange_rate_id)
+        self.assertEqual(
+            updated_rate.organization_exchange_rate_id,
+            self.exchange_rate.organization_exchange_rate_id,
+        )
         self.assertEqual(updated_rate.rate, Decimal("1.45"))
         self.assertEqual(updated_rate.note, "Final updated note")
 

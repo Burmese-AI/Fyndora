@@ -68,7 +68,7 @@ class Remittance(baseModel):
         # Don't update status if it's already canceled
         if self.status == RemittanceStatus.CANCELED:
             return
-            
+
         if self.paid_amount == 0.0:
             self.status = RemittanceStatus.PENDING
         elif self.paid_amount < self.due_amount:

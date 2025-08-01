@@ -14,20 +14,26 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         """
         # Ensure we never modify the original context by creating a base copy first
         base_context = copy.deepcopy(context) if context else {}
-        
+
         # Create completely independent copies for each template rendering
         # This ensures that modifications in one template don't affect others
-        subject = render_to_string(f"{template_prefix}_subject.txt", copy.deepcopy(base_context))
+        subject = render_to_string(
+            f"{template_prefix}_subject.txt", copy.deepcopy(base_context)
+        )
         # Email subject *must not* contain newlines
         subject = "".join(subject.splitlines())
 
         try:
-            text_body = render_to_string(f"{template_prefix}_message.txt", copy.deepcopy(base_context))
+            text_body = render_to_string(
+                f"{template_prefix}_message.txt", copy.deepcopy(base_context)
+            )
         except TemplateDoesNotExist:
             text_body = None
 
         try:
-            html_body = render_to_string(f"{template_prefix}_message.html", copy.deepcopy(base_context))
+            html_body = render_to_string(
+                f"{template_prefix}_message.html", copy.deepcopy(base_context)
+            )
         except TemplateDoesNotExist:
             html_body = None
 
@@ -38,6 +44,8 @@ class CustomAccountAdapter(DefaultAccountAdapter):
             contents = text_body
         else:
             # If both templates are missing (not just empty), raise the exception
-            raise TemplateDoesNotExist(f"Neither {template_prefix}_message.txt nor {template_prefix}_message.html found")
+            raise TemplateDoesNotExist(
+                f"Neither {template_prefix}_message.txt nor {template_prefix}_message.html found"
+            )
 
         send_email_task.delay(to=email, subject=subject, contents=contents)

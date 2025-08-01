@@ -258,9 +258,9 @@ class TestEmailTasksConfiguration(TestCase):
     def test_send_email_task_no_setting(self):
         """Test handling when GMAIL_ACCOUNTS setting doesn't exist."""
         # Actually remove the setting to test AttributeError
-        if hasattr(settings, 'GMAIL_ACCOUNTS'):
-            delattr(settings, 'GMAIL_ACCOUNTS')
-        
+        if hasattr(settings, "GMAIL_ACCOUNTS"):
+            delattr(settings, "GMAIL_ACCOUNTS")
+
         with self.assertRaises(AttributeError):
             send_email_task(self.test_email, self.test_subject, self.test_contents)
 

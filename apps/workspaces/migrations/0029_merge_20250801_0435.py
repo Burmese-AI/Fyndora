@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0027_alter_workspaceexchangerate_rate'),
-        ('workspaces', '0028_alter_workspace_options'),
+        ("workspaces", "0027_alter_workspaceexchangerate_rate"),
+        ("workspaces", "0028_alter_workspace_options"),
     ]
 
-    operations = [
-    ]
+    operations = []

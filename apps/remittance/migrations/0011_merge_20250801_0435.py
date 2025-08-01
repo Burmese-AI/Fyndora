@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0009_remittance_is_overpaid'),
-        ('remittance', '0010_alter_remittance_options'),
+        ("remittance", "0009_remittance_is_overpaid"),
+        ("remittance", "0010_alter_remittance_options"),
     ]
 
-    operations = [
-    ]
+    operations = []

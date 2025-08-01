@@ -4,14 +4,21 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0009_alter_remittance_status'),
+        ("remittance", "0009_alter_remittance_status"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='remittance',
-            options={'ordering': ['-created_at'], 'permissions': [('review_remittance', 'Can review and confirm remittances'), ('flag_remittance', 'Can flag remittances')], 'verbose_name': 'remittance', 'verbose_name_plural': 'remittances'},
+            name="remittance",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": [
+                    ("review_remittance", "Can review and confirm remittances"),
+                    ("flag_remittance", "Can flag remittances"),
+                ],
+                "verbose_name": "remittance",
+                "verbose_name_plural": "remittances",
+            },
         ),
     ]

@@ -133,7 +133,9 @@ def remittance_confirm_payment(*, remittance, user):
     if not skip_permissions:
         workspace = remittance.workspace_team.workspace
         if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
-            raise PermissionDenied("You do not have permission to confirm this remittance.")
+            raise PermissionDenied(
+                "You do not have permission to confirm this remittance."
+            )
 
     if remittance.paid_amount < remittance.due_amount:
         raise ValidationError(
@@ -142,8 +144,7 @@ def remittance_confirm_payment(*, remittance, user):
 
     # Get the OrganizationMember instance for the user
     organization_member = get_organization_member_by_user_and_organization(
-        user=user, 
-        organization=remittance.workspace_team.workspace.organization
+        user=user, organization=remittance.workspace_team.workspace.organization
     )
 
     updated_remittance = model_update(

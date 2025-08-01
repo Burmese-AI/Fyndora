@@ -53,14 +53,12 @@ class TestWorkspaceTeamSelectors(TestCase):
         self.organization = OrganizationFactory()
         self.user = CustomUserFactory()
         self.org_member = OrganizationMemberFactory(
-            organization=self.organization,
-            user=self.user
+            organization=self.organization, user=self.user
         )
         self.team = TeamFactory(organization=self.organization)
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace,
-            team=self.team
+            workspace=self.workspace, team=self.team
         )
 
     @pytest.mark.django_db
@@ -69,12 +67,11 @@ class TestWorkspaceTeamSelectors(TestCase):
         team_member = TeamMemberFactory(
             organization_member=self.org_member,
             team=self.team,
-            role=TeamMemberRole.SUBMITTER
+            role=TeamMemberRole.SUBMITTER,
         )
 
         result = get_workspace_team_member_by_workspace_team_and_org_member(
-            self.workspace_team,
-            self.org_member
+            self.workspace_team, self.org_member
         )
 
         self.assertEqual(result, team_member)
@@ -85,8 +82,7 @@ class TestWorkspaceTeamSelectors(TestCase):
         other_org_member = OrganizationMemberFactory(organization=self.organization)
 
         result = get_workspace_team_member_by_workspace_team_and_org_member(
-            self.workspace_team,
-            other_org_member
+            self.workspace_team, other_org_member
         )
 
         self.assertIsNone(result)
@@ -97,12 +93,11 @@ class TestWorkspaceTeamSelectors(TestCase):
         TeamMemberFactory(
             organization_member=self.org_member,
             team=self.team,
-            role=TeamMemberRole.AUDITOR
+            role=TeamMemberRole.AUDITOR,
         )
 
         result = get_workspace_team_role_by_workspace_team_and_org_member(
-            self.workspace_team,
-            self.org_member
+            self.workspace_team, self.org_member
         )
 
         self.assertEqual(result, TeamMemberRole.AUDITOR)
@@ -111,14 +106,10 @@ class TestWorkspaceTeamSelectors(TestCase):
     def test_get_user_workspace_teams_under_organization(self):
         """Test getting user workspace teams under organization."""
         # Create team member
-        TeamMemberFactory(
-            organization_member=self.org_member,
-            team=self.team
-        )
+        TeamMemberFactory(organization_member=self.org_member, team=self.team)
 
         result = get_user_workspace_teams_under_organization(
-            self.organization.organization_id,
-            self.user
+            self.organization.organization_id, self.user
         )
 
         self.assertEqual(result.count(), 1)
@@ -132,8 +123,7 @@ class TestWorkspaceTeamSelectors(TestCase):
         self.team.save()
 
         result = get_user_workspace_teams_under_organization(
-            self.organization.organization_id,
-            self.user
+            self.organization.organization_id, self.user
         )
 
         self.assertEqual(result.count(), 1)
@@ -148,9 +138,7 @@ class TestWorkspaceTeamSelectors(TestCase):
         workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
 
         result = get_all_related_workspace_teams(
-            org_with_owner,
-            org_with_owner.owner.user,
-            group_by_workspace=False
+            org_with_owner, org_with_owner.owner.user, group_by_workspace=False
         )
 
         self.assertEqual(result.count(), 1)
@@ -167,9 +155,7 @@ class TestWorkspaceTeamSelectors(TestCase):
         workspace_team2 = WorkspaceTeamFactory(workspace=workspace, team=team2)
 
         result = get_all_related_workspace_teams(
-            org_with_owner,
-            org_with_owner.owner.user,
-            group_by_workspace=True
+            org_with_owner, org_with_owner.owner.user, group_by_workspace=True
         )
 
         self.assertIsInstance(result, dict)
@@ -184,16 +170,13 @@ class TestWorkspaceTeamSelectors(TestCase):
         # Create workspace admin
         workspace_admin = OrganizationMemberFactory(organization=self.organization)
         workspace = WorkspaceFactory(
-            organization=self.organization,
-            workspace_admin=workspace_admin
+            organization=self.organization, workspace_admin=workspace_admin
         )
         team = TeamFactory(organization=self.organization)
         workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
 
         result = get_all_related_workspace_teams(
-            self.organization,
-            workspace_admin.user,
-            group_by_workspace=False
+            self.organization, workspace_admin.user, group_by_workspace=False
         )
 
         self.assertEqual(result.count(), 1)
@@ -231,9 +214,9 @@ class TestBasicSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_user_workspaces_under_organization_error(self):
         """Test getting workspaces with invalid organization ID."""
-        with patch('builtins.print') as mock_print:
+        with patch("builtins.print") as mock_print:
             result = get_user_workspaces_under_organization("invalid-id")
-            
+
             self.assertEqual(result.count(), 0)
             mock_print.assert_called()
 
@@ -246,9 +229,9 @@ class TestBasicSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_organization_by_id_not_found(self):
         """Test getting organization by invalid ID."""
-        with patch('builtins.print') as mock_print:
+        with patch("builtins.print") as mock_print:
             result = get_organization_by_id("invalid-id")
-            
+
             self.assertIsNone(result)
             mock_print.assert_called()
 
@@ -276,9 +259,9 @@ class TestBasicSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_workspace_by_id_not_found(self):
         """Test getting workspace by invalid ID."""
-        with patch('builtins.print') as mock_print:
+        with patch("builtins.print") as mock_print:
             result = get_workspace_by_id("invalid-id")
-            
+
             self.assertIsNone(result)
             mock_print.assert_called()
 
@@ -287,13 +270,11 @@ class TestBasicSelectors(TestCase):
         """Test getting organization member by user ID and organization ID."""
         user = CustomUserFactory()
         org_member = OrganizationMemberFactory(
-            organization=self.organization,
-            user=user
+            organization=self.organization, user=user
         )
 
         result = get_orgMember_by_user_id_and_organization_id(
-            user.user_id,
-            self.organization.organization_id
+            user.user_id, self.organization.organization_id
         )
 
         self.assertEqual(result, org_member)
@@ -335,10 +316,7 @@ class TestBasicSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_workspace_team_by_workspace_team_id(self):
         """Test getting workspace team by ID."""
-        workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace,
-            team=self.team
-        )
+        workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=self.team)
 
         result = get_workspace_team_by_workspace_team_id(
             workspace_team.workspace_team_id
@@ -360,13 +338,13 @@ class TestAggregateSelectors(TestCase):
         """Test getting workspaces with team counts."""
         workspace1 = WorkspaceFactory(organization=self.organization)
         workspace2 = WorkspaceFactory(organization=self.organization)
-        
+
         # Add teams to workspace1
         team1 = TeamFactory(organization=self.organization)
         team2 = TeamFactory(organization=self.organization)
         WorkspaceTeamFactory(workspace=workspace1, team=team1)
         WorkspaceTeamFactory(workspace=workspace1, team=team2)
-        
+
         # Add one team to workspace2
         team3 = TeamFactory(organization=self.organization)
         WorkspaceTeamFactory(workspace=workspace2, team=team3)
@@ -374,8 +352,12 @@ class TestAggregateSelectors(TestCase):
         result = get_workspaces_with_team_counts(self.organization.organization_id)
 
         # Find our workspaces in the result
-        workspace1_result = next(w for w in result if w.workspace_id == workspace1.workspace_id)
-        workspace2_result = next(w for w in result if w.workspace_id == workspace2.workspace_id)
+        workspace1_result = next(
+            w for w in result if w.workspace_id == workspace1.workspace_id
+        )
+        workspace2_result = next(
+            w for w in result if w.workspace_id == workspace2.workspace_id
+        )
 
         self.assertEqual(workspace1_result.teams_count, 2)
         self.assertEqual(workspace2_result.teams_count, 1)
@@ -384,7 +366,7 @@ class TestAggregateSelectors(TestCase):
     def test_get_single_workspace_with_team_counts(self):
         """Test getting single workspace with team count."""
         workspace = WorkspaceFactory(organization=self.organization)
-        
+
         # Add teams
         team1 = TeamFactory(organization=self.organization)
         team2 = TeamFactory(organization=self.organization)
@@ -402,22 +384,21 @@ class TestAggregateSelectors(TestCase):
     def test_get_workspace_exchange_rates(self):
         """Test getting workspace exchange rates."""
         workspace = WorkspaceFactory(organization=self.organization)
-        
+
         # Create currencies to avoid unique constraint violation
         currency1 = Currency.objects.create(code="EUR", name="Euro")
         currency2 = Currency.objects.create(code="GBP", name="British Pound")
-        
+
         # Create exchange rates with different currencies
         rate1 = WorkspaceExchangeRateFactory(workspace=workspace, currency=currency1)
         rate2 = WorkspaceExchangeRateFactory(workspace=workspace, currency=currency2)
-        
+
         # Different workspace
         other_workspace = WorkspaceFactory(organization=self.organization)
         WorkspaceExchangeRateFactory(workspace=other_workspace)
 
         result = get_workspace_exchange_rates(
-            organization=self.organization,
-            workspace=workspace
+            organization=self.organization, workspace=workspace
         )
 
         self.assertEqual(result.count(), 2)
@@ -428,10 +409,7 @@ class TestAggregateSelectors(TestCase):
     @pytest.mark.django_db
     def test_get_workspace_exchange_rates_error(self):
         """Test getting workspace exchange rates with None parameters."""
-        result = get_workspace_exchange_rates(
-            organization=None,
-            workspace=None
-        )
-        
+        result = get_workspace_exchange_rates(organization=None, workspace=None)
+
         # Should return empty queryset, not None, since Django handles None gracefully
         self.assertEqual(result.count(), 0)

@@ -34,7 +34,7 @@ class InvitationListView(LoginRequiredMixin, ListView):
         # Get ORG ID from URL
         organization_id = self.kwargs["organization_id"]
         self.organization = get_object_or_404(Organization, pk=organization_id)
-        
+
         # Check if user has permission to manage organization (view invitations)
         if not request.user.has_perm(
             OrganizationPermissions.MANAGE_ORGANIZATION, self.organization
@@ -43,7 +43,7 @@ class InvitationListView(LoginRequiredMixin, ListView):
                 request,
                 "You do not have permission to view invitations for this organization.",
             )
-        
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -84,7 +84,9 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        form = InvitationCreateForm(organization=self.organization, user=self.request.user)
+        form = InvitationCreateForm(
+            organization=self.organization, user=self.request.user
+        )
         context = {"form": form, "organization": self.organization}
         return render(
             request, "invitations/components/create_modal.html", context=context
@@ -115,10 +117,10 @@ class InvitationCreateView(LoginRequiredMixin, CreateView):
                 user=self.request.user, organization=self.organization
             ),
         )
-        
+
         # Set the created invitation as the object for the view
         self.object = invitation
-        
+
         # For success, Send messages templates and invitation table with enabled OOB
         messages.success(self.request, "Invitation sent successfully")
         if self.request.htmx:

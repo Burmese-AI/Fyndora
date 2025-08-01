@@ -56,20 +56,22 @@ class TestWorkspaceServices(TestCase):
         mock_workspace = WorkspaceFactory.build(organization=self.organization)
         mock_form.save.return_value = mock_workspace
 
-        with patch('apps.workspaces.services.assign_workspace_permissions') as mock_assign:
+        with patch(
+            "apps.workspaces.services.assign_workspace_permissions"
+        ) as mock_assign:
             result = create_workspace_from_form(
                 form=mock_form,
                 orgMember=self.org_member,
-                organization=self.organization
+                organization=self.organization,
             )
 
             # Verify form.save was called with commit=False
             mock_form.save.assert_called_once_with(commit=False)
-            
+
             # Verify workspace attributes were set
             self.assertEqual(result.organization, self.organization)
             self.assertEqual(result.created_by, self.org_member)
-            
+
             # Verify permissions were assigned
             mock_assign.assert_called_once_with(result)
 
@@ -83,7 +85,7 @@ class TestWorkspaceServices(TestCase):
             create_workspace_from_form(
                 form=mock_form,
                 orgMember=self.org_member,
-                organization=self.organization
+                organization=self.organization,
             )
 
         self.assertIn("Failed to create workspace", str(context.exception))
@@ -99,30 +101,29 @@ class TestWorkspaceServices(TestCase):
 
         mock_form = Mock()
         mock_form.cleaned_data = {
-            'title': 'Updated Title',
-            'workspace_admin': new_admin,
-            'operations_reviewer': new_reviewer,
+            "title": "Updated Title",
+            "workspace_admin": new_admin,
+            "operations_reviewer": new_reviewer,
         }
 
-        with patch('apps.workspaces.services.model_update') as mock_update, \
-             patch('apps.workspaces.services.update_workspace_admin_group') as mock_update_group:
-            
+        with (
+            patch("apps.workspaces.services.model_update") as mock_update,
+            patch(
+                "apps.workspaces.services.update_workspace_admin_group"
+            ) as mock_update_group,
+        ):
             mock_update.return_value = workspace
-            
+
             result = update_workspace_from_form(
                 form=mock_form,
                 workspace=workspace,
                 previous_workspace_admin=previous_admin,
-                previous_operations_reviewer=previous_reviewer
+                previous_operations_reviewer=previous_reviewer,
             )
 
             mock_update.assert_called_once_with(workspace, mock_form.cleaned_data)
             mock_update_group.assert_called_once_with(
-                workspace,
-                previous_admin,
-                new_admin,
-                previous_reviewer,
-                new_reviewer
+                workspace, previous_admin, new_admin, previous_reviewer, new_reviewer
             )
             self.assertEqual(result, workspace)
 
@@ -133,7 +134,7 @@ class TestWorkspaceServices(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {}
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.side_effect = Exception("Update error")
 
             with self.assertRaises(WorkspaceUpdateError) as context:
@@ -141,7 +142,7 @@ class TestWorkspaceServices(TestCase):
                     form=mock_form,
                     workspace=workspace,
                     previous_workspace_admin=None,
-                    previous_operations_reviewer=None
+                    previous_operations_reviewer=None,
                 )
 
             self.assertIn("Failed to update workspace", str(context.exception))
@@ -161,8 +162,7 @@ class TestWorkspaceServices(TestCase):
         self.assertIsInstance(result, WorkspaceTeam)
         self.assertFalse(
             WorkspaceTeam.objects.filter(
-                workspace_id=workspace_id,
-                team_id=team_id
+                workspace_id=workspace_id, team_id=team_id
             ).exists()
         )
 
@@ -183,9 +183,7 @@ class TestWorkspaceServices(TestCase):
         custom_rate = Decimal("85.00")
 
         result = add_team_to_workspace(
-            workspace.workspace_id,
-            team.team_id,
-            custom_rate
+            workspace.workspace_id, team.team_id, custom_rate
         )
 
         self.assertIsInstance(result, WorkspaceTeam)
@@ -200,9 +198,7 @@ class TestWorkspaceServices(TestCase):
 
         with self.assertRaises(IntegrityError):
             add_team_to_workspace(
-                workspace_team.workspace.workspace_id,
-                workspace_team.team.team_id,
-                None
+                workspace_team.workspace.workspace_id, workspace_team.team.team_id, None
             )
 
     @pytest.mark.django_db
@@ -210,18 +206,16 @@ class TestWorkspaceServices(TestCase):
         """Test successful workspace team remittance rate update."""
         workspace = WorkspaceFactory(remittance_rate=Decimal("90.00"))
         workspace_team = WorkspaceTeamFactory(workspace=workspace)
-        
-        mock_form = Mock()
-        mock_form.cleaned_data = {'custom_remittance_rate': Decimal("85.00")}
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        mock_form = Mock()
+        mock_form.cleaned_data = {"custom_remittance_rate": Decimal("85.00")}
+
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.return_value = workspace_team
             workspace_team.custom_remittance_rate = Decimal("85.00")
 
             result = update_workspace_team_remittance_rate_from_form(
-                form=mock_form,
-                workspace_team=workspace_team,
-                workspace=workspace
+                form=mock_form, workspace_team=workspace_team, workspace=workspace
             )
 
             mock_update.assert_called_once_with(workspace_team, mock_form.cleaned_data)
@@ -232,18 +226,16 @@ class TestWorkspaceServices(TestCase):
         """Test workspace team remittance rate update when same as workspace default."""
         workspace = WorkspaceFactory(remittance_rate=Decimal("90.00"))
         workspace_team = WorkspaceTeamFactory(workspace=workspace)
-        
-        mock_form = Mock()
-        mock_form.cleaned_data = {'custom_remittance_rate': Decimal("90.00")}
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        mock_form = Mock()
+        mock_form.cleaned_data = {"custom_remittance_rate": Decimal("90.00")}
+
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.return_value = workspace_team
             workspace_team.custom_remittance_rate = Decimal("90.00")
 
             result = update_workspace_team_remittance_rate_from_form(
-                form=mock_form,
-                workspace_team=workspace_team,
-                workspace=workspace
+                form=mock_form, workspace_team=workspace_team, workspace=workspace
             )
 
             # Should be set to None when same as workspace default
@@ -274,13 +266,12 @@ class TestWorkspaceExchangeRateServices(TestCase):
             currency_code=currency_code,
             rate=rate,
             note=note,
-            effective_date=effective_date
+            effective_date=effective_date,
         )
 
         # Verify exchange rate was created
         exchange_rate = WorkspaceExchangeRate.objects.get(
-            workspace=self.workspace,
-            currency__code=currency_code
+            workspace=self.workspace, currency__code=currency_code
         )
         self.assertEqual(exchange_rate.rate, rate)
         self.assertEqual(exchange_rate.note, note)
@@ -303,13 +294,12 @@ class TestWorkspaceExchangeRateServices(TestCase):
             currency_code=currency.code,
             rate=rate,
             note="Test rate",
-            effective_date=date.today()
+            effective_date=date.today(),
         )
 
         # Should use existing currency
         exchange_rate = WorkspaceExchangeRate.objects.get(
-            workspace=self.workspace,
-            currency=currency
+            workspace=self.workspace, currency=currency
         )
         self.assertEqual(exchange_rate.currency, currency)
 
@@ -326,7 +316,7 @@ class TestWorkspaceExchangeRateServices(TestCase):
             currency_code=currency_code,
             rate=Decimal("1.00"),
             note="First rate",
-            effective_date=effective_date
+            effective_date=effective_date,
         )
 
         # Try to create duplicate
@@ -337,10 +327,12 @@ class TestWorkspaceExchangeRateServices(TestCase):
                 currency_code=currency_code,
                 rate=Decimal("1.10"),
                 note="Duplicate rate",
-                effective_date=effective_date
+                effective_date=effective_date,
             )
 
-        self.assertIn("Failed to create workspace exchange rate", str(context.exception))
+        self.assertIn(
+            "Failed to create workspace exchange rate", str(context.exception)
+        )
 
     @pytest.mark.django_db
     def test_update_workspace_exchange_rate_success(self):
@@ -349,14 +341,14 @@ class TestWorkspaceExchangeRateServices(TestCase):
         approver = OrganizationMemberFactory(organization=self.organization)
         new_note = "Updated note"
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.return_value = exchange_rate
-            
+
             result = update_workspace_exchange_rate(
                 workspace_exchange_rate=exchange_rate,
                 note=new_note,
                 is_approved=True,
-                org_member=approver
+                org_member=approver,
             )
 
             expected_data = {
@@ -373,14 +365,14 @@ class TestWorkspaceExchangeRateServices(TestCase):
         exchange_rate = WorkspaceExchangeRateFactory(workspace=self.workspace)
         new_note = "Updated note"
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.return_value = exchange_rate
-            
+
             update_workspace_exchange_rate(
                 workspace_exchange_rate=exchange_rate,
                 note=new_note,
                 is_approved=False,
-                org_member=self.org_member
+                org_member=self.org_member,
             )
 
             expected_data = {
@@ -395,7 +387,7 @@ class TestWorkspaceExchangeRateServices(TestCase):
         """Test workspace exchange rate update failure."""
         exchange_rate = WorkspaceExchangeRateFactory()
 
-        with patch('apps.workspaces.services.model_update') as mock_update:
+        with patch("apps.workspaces.services.model_update") as mock_update:
             mock_update.side_effect = Exception("Update error")
 
             with self.assertRaises(ValidationError) as context:
@@ -403,10 +395,12 @@ class TestWorkspaceExchangeRateServices(TestCase):
                     workspace_exchange_rate=exchange_rate,
                     note="New note",
                     is_approved=True,
-                    org_member=self.org_member
+                    org_member=self.org_member,
                 )
 
-            self.assertIn("Failed to update workspace exchange rate", str(context.exception))
+            self.assertIn(
+                "Failed to update workspace exchange rate", str(context.exception)
+            )
 
     @pytest.mark.django_db
     def test_delete_workspace_exchange_rate_success(self):
@@ -428,10 +422,12 @@ class TestWorkspaceExchangeRateServices(TestCase):
         """Test workspace exchange rate deletion failure."""
         exchange_rate = WorkspaceExchangeRateFactory()
 
-        with patch.object(exchange_rate, 'delete') as mock_delete:
+        with patch.object(exchange_rate, "delete") as mock_delete:
             mock_delete.side_effect = Exception("Delete error")
 
             with self.assertRaises(ValidationError) as context:
                 delete_workspace_exchange_rate(workspace_exchange_rate=exchange_rate)
 
-            self.assertIn("Failed to delete workspace exchange rate", str(context.exception))
+            self.assertIn(
+                "Failed to delete workspace exchange rate", str(context.exception)
+            )

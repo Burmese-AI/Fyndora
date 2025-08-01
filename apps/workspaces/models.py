@@ -10,7 +10,7 @@ from apps.organizations.models import Organization, OrganizationMember
 from apps.workspaces.constants import StatusChoices
 from apps.teams.models import Team
 from apps.currencies.models import ExchangeRateBaseModel
-from apps.core.permissions import WorkspacePermissions
+from apps.core.permissions import WorkspacePermissions, WorkspaceTeamPermissions
 
 
 # Create your models here.
@@ -170,6 +170,24 @@ class WorkspaceTeam(baseModel):
         verbose_name = "workspace team"
         verbose_name_plural = "workspace teams"
         ordering = ["-created_at"]
+        permissions = (
+            (
+                WorkspaceTeamPermissions.VIEW_WORKSPACE_TEAM,
+                WorkspaceTeamPermissions.VIEW_WORKSPACE_TEAM.label,
+            ),
+            (
+                WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY,
+                WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY.label,
+            ),
+            (
+                WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY,
+                WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY.label,
+            ),
+            (
+                WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY,
+                WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY.label,
+            ),
+        )
         constraints = [
             models.UniqueConstraint(
                 fields=["team", "workspace"], name="unique_team_in_workspace"

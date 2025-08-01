@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from django.db import models
 from django.core.validators import MinValueValidator
-from django.core.exceptions import ValidationError
 
 from apps.core.models import baseModel, SoftDeleteModel
 from apps.currencies.models import Currency
@@ -121,7 +120,6 @@ class Entry(baseModel, SoftDeleteModel):
     #         raise ValidationError("Either organization or workspace exchange rate reference must be set.")
 
     #     super().clean()
-
 
     class Meta:
         verbose_name = "entry"

@@ -41,13 +41,13 @@ class TeamViewsIntegrationTest(TestCase):
         org_owner_group, _ = Group.objects.get_or_create(
             name=f"Org Owner - {self.organization.organization_id}"
         )
-        
+
         # Get org owner permissions and assign them
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
         for perm in org_owner_permissions:
             if "workspace_currency" not in perm:
                 assign_perm(perm, org_owner_group, self.organization)
-        
+
         # Add user to the org owner group
         org_owner_group.user_set.add(self.user)
 
@@ -56,8 +56,8 @@ class TeamViewsIntegrationTest(TestCase):
 
     def create_team_with_permissions(self, **kwargs):
         """Helper method to create a team with proper permissions assigned."""
-        if 'organization' not in kwargs:
-            kwargs['organization'] = self.organization
+        if "organization" not in kwargs:
+            kwargs["organization"] = self.organization
         team = TeamFactory(**kwargs)
         assign_team_permissions(team)
         return team
@@ -350,8 +350,6 @@ class TeamViewsIntegrationTest(TestCase):
             team = Team.objects.get(title="Permission Test Team")
             self.assertIsNotNone(team)
 
-
-
     def test_team_member_addition_with_groups_integration(self):
         """Test team member addition with group assignment integration."""
         team = self.create_team_with_permissions()
@@ -439,13 +437,13 @@ class TeamEdgeCasesIntegrationTest(TestCase):
         org_owner_group, _ = Group.objects.get_or_create(
             name=f"Org Owner - {self.organization.organization_id}"
         )
-        
+
         # Get org owner permissions and assign them
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
         for perm in org_owner_permissions:
             if "workspace_currency" not in perm:
                 assign_perm(perm, org_owner_group, self.organization)
-        
+
         # Add user to the org owner group
         org_owner_group.user_set.add(self.user)
 
@@ -454,9 +452,9 @@ class TeamEdgeCasesIntegrationTest(TestCase):
     def create_team_with_permissions(self, **kwargs):
         """Helper method to create a team with proper permissions assigned."""
         # Set default organization if not provided
-        if 'organization' not in kwargs:
-            kwargs['organization'] = self.organization
-        
+        if "organization" not in kwargs:
+            kwargs["organization"] = self.organization
+
         team = TeamFactory(**kwargs)
         assign_team_permissions(team)
         return team
@@ -489,13 +487,13 @@ class TeamEdgeCasesIntegrationTest(TestCase):
 
     def test_team_deletion_with_workspace_attachments(self):
         """Test team deletion when team is attached to workspaces."""
-        
+
         team = self.create_team_with_permissions(created_by=self.org_member)
-        
+
         # Create a workspace team attachment (simulating team attached to workspace)
         # Note: This would require creating a workspace first in a real scenario
         # For now, we'll test the error handling path
-        
+
         url = reverse(
             "delete_team",
             kwargs={
@@ -617,18 +615,21 @@ class TeamEdgeCasesIntegrationTest(TestCase):
         # Mock a TeamMemberCreationError
         with patch("apps.teams.views.create_team_member_from_form") as mock_create:
             from apps.teams.exceptions import TeamMemberCreationError
+
             mock_create.side_effect = TeamMemberCreationError("Mocked error")
 
             response = self.client.post(url, data=form_data, HTTP_HX_REQUEST="true")
-            self.assertEqual(response.status_code, 200)  # HTMX requests should return 200
+            self.assertEqual(
+                response.status_code, 200
+            )  # HTMX requests should return 200
 
     def test_invalid_organization_id_access(self):
         """Test accessing team views with invalid organization ID."""
         fake_org_id = "00000000-0000-0000-0000-000000000000"
-        
+
         url = reverse("teams", kwargs={"organization_id": fake_org_id})
         response = self.client.get(url)
-        
+
         # Should handle the error gracefully
         self.assertIn(response.status_code, [302, 404, 500])
 
@@ -647,7 +648,7 @@ class TeamEdgeCasesIntegrationTest(TestCase):
         """Test handling of concurrent team member operations."""
         team = self.create_team_with_permissions()
         member = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Add member
         add_url = reverse(
             "add_team_member",
@@ -687,13 +688,13 @@ class TeamWorkflowIntegrationTest(TestCase):
         org_owner_group, _ = Group.objects.get_or_create(
             name=f"Org Owner - {self.organization.organization_id}"
         )
-        
+
         # Get org owner permissions and assign them
         org_owner_permissions = get_permissions_for_role("ORG_OWNER")
         for perm in org_owner_permissions:
             if "workspace_currency" not in perm:
                 assign_perm(perm, org_owner_group, self.organization)
-        
+
         # Add user to the org owner group
         org_owner_group.user_set.add(self.user)
 
@@ -703,9 +704,9 @@ class TeamWorkflowIntegrationTest(TestCase):
     def create_team_with_permissions(self, **kwargs):
         """Helper method to create a team with proper permissions assigned."""
         # Set default organization if not provided
-        if 'organization' not in kwargs:
-            kwargs['organization'] = self.organization
-        
+        if "organization" not in kwargs:
+            kwargs["organization"] = self.organization
+
         team = TeamFactory(**kwargs)
         assign_team_permissions(team)
         return team
@@ -868,7 +869,9 @@ class TeamWorkflowIntegrationTest(TestCase):
             "role": TeamMemberRole.AUDITOR,
         }
 
-        response = self.client.post(edit_role_url, data=role_change_data, HTTP_HX_REQUEST="true")
+        response = self.client.post(
+            edit_role_url, data=role_change_data, HTTP_HX_REQUEST="true"
+        )
         self.assertEqual(response.status_code, 200)
 
         # Verify role was changed

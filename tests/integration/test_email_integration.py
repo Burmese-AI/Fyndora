@@ -41,46 +41,46 @@ class TestEmailFlowIntegration(TestCase):
         """Test complete signup confirmation email flow."""
         # Setup
         mock_task.return_value = Mock(id="task_123")
-        
+
         user = self.users[0]
         # Mock the user method directly on the instance
         user.get_confirmation_url = Mock(return_value="http://example.com/confirm/123")
-        
+
         # Execute
         send_signup_confirmation_email(user)
-        
+
         # Verify task was called with correct parameters
         mock_task.assert_called_once()
         call_args = mock_task.call_args[1]
-        
-        self.assertEqual(call_args['to'], user.email)
-        self.assertEqual(call_args['subject'], "Confirm your email address")
-        self.assertIn("http://example.com/confirm/123", call_args['contents'])
-        
+
+        self.assertEqual(call_args["to"], user.email)
+        self.assertEqual(call_args["subject"], "Confirm your email address")
+        self.assertIn("http://example.com/confirm/123", call_args["contents"])
+
         # Verify user method was called
         user.get_confirmation_url.assert_called_once()
 
-    @patch('apps.emails.services.send_email_task.delay')
+    @patch("apps.emails.services.send_email_task.delay")
     def test_complete_password_reset_flow(self, mock_task):
         """Test complete password reset email flow."""
         # Setup
         mock_task.return_value = Mock(id="task_456")
-        
+
         user = self.users[0]
         # Mock the user method directly on the instance
         user.get_password_reset_url = Mock(return_value="http://example.com/reset/456")
-        
+
         # Execute
         send_password_reset_email(user)
-        
+
         # Verify task was called with correct parameters
         mock_task.assert_called_once()
         call_args = mock_task.call_args[1]
-        
-        self.assertEqual(call_args['to'], user.email)
-        self.assertEqual(call_args['subject'], "Reset your password")
-        self.assertIn("http://example.com/reset/456", call_args['contents'])
-        
+
+        self.assertEqual(call_args["to"], user.email)
+        self.assertEqual(call_args["subject"], "Reset your password")
+        self.assertIn("http://example.com/reset/456", call_args["contents"])
+
         # Verify user method was called
         user.get_password_reset_url.assert_called_once()
 
@@ -172,34 +172,34 @@ class TestEmailFlowIntegration(TestCase):
         """Test sending multiple types of emails."""
         # Setup
         mock_task.return_value = Mock(id="multi_task")
-        
+
         user = self.users[0]
         # Mock the user methods directly on the instance
         user.get_confirmation_url = Mock(return_value="http://example.com/confirm/123")
         user.get_password_reset_url = Mock(return_value="http://example.com/reset/456")
-        
+
         # Send both types of emails
         send_signup_confirmation_email(user)
         send_password_reset_email(user)
-        
+
         # Verify both tasks were called
         self.assertEqual(mock_task.call_count, 2)
-        
+
         # Get all call arguments
         calls = mock_task.call_args_list
-        
+
         # Verify first call (confirmation email)
         confirm_call = calls[0][1]
-        self.assertEqual(confirm_call['to'], user.email)
-        self.assertEqual(confirm_call['subject'], "Confirm your email address")
-        self.assertIn("http://example.com/confirm/123", confirm_call['contents'])
-        
+        self.assertEqual(confirm_call["to"], user.email)
+        self.assertEqual(confirm_call["subject"], "Confirm your email address")
+        self.assertIn("http://example.com/confirm/123", confirm_call["contents"])
+
         # Verify second call (password reset email)
         reset_call = calls[1][1]
-        self.assertEqual(reset_call['to'], user.email)
-        self.assertEqual(reset_call['subject'], "Reset your password")
-        self.assertIn("http://example.com/reset/456", reset_call['contents'])
-        
+        self.assertEqual(reset_call["to"], user.email)
+        self.assertEqual(reset_call["subject"], "Reset your password")
+        self.assertIn("http://example.com/reset/456", reset_call["contents"])
+
         # Verify user methods were called
         user.get_confirmation_url.assert_called_once()
         user.get_password_reset_url.assert_called_once()
@@ -394,19 +394,18 @@ class TestEmailValidationIntegration(TestCase):
         mock_smtp = Mock()
         mock_smtp.send.side_effect = Exception("SMTP connection failed")
         mock_smtp_class.return_value = mock_smtp
-        
+
         # Test that exception is properly handled and logged
-        with self.assertLogs('emails', level='ERROR') as log:
+        with self.assertLogs("emails", level="ERROR") as log:
             # Task should handle the exception gracefully and not re-raise it
             send_email_task(
-                to="test@example.com",
-                subject="Test Subject", 
-                contents="Test content"
+                to="test@example.com", subject="Test Subject", contents="Test content"
             )
-        
+
         # Verify error was logged
-        self.assertTrue(any('Failed to send email' in record.getMessage()
-                           for record in log.records))
+        self.assertTrue(
+            any("Failed to send email" in record.getMessage() for record in log.records)
+        )
 
     @patch("apps.emails.services.send_email_task.delay")
     def test_email_validation_integration(self, mock_task):
@@ -418,7 +417,7 @@ class TestEmailValidationIntegration(TestCase):
         user.email = "valid@example.com"
         # Mock the user method
         user.get_confirmation_url = Mock(return_value="http://example.com/confirm/123")
-        
+
         send_signup_confirmation_email(user)
 
         # Verify email was sent
@@ -439,8 +438,10 @@ class TestEmailValidationIntegration(TestCase):
         for email in edge_case_emails:
             user.email = email
             # Mock the user method for each iteration
-            user.get_confirmation_url = Mock(return_value="http://example.com/confirm/123")
-            
+            user.get_confirmation_url = Mock(
+                return_value="http://example.com/confirm/123"
+            )
+
             send_signup_confirmation_email(user)
 
             call_args = mock_task.call_args[1]
@@ -481,32 +482,36 @@ class TestEmailValidationIntegration(TestCase):
         mock_smtp.send.assert_called_once()
         mock_cache.set.assert_called_once_with("last_gmail_account_index", 1)
 
-    @patch('apps.emails.services.send_email_task.delay')
+    @patch("apps.emails.services.send_email_task.delay")
     def test_user_method_integration(self, mock_task):
         """Test integration with user model methods."""
         mock_task.return_value = Mock(id="user_method_task")
-        
+
         user = self.users[0]
         # Mock the user methods directly on the instance
-        user.get_confirmation_url = Mock(return_value="http://example.com/confirm/abc123")
-        user.get_password_reset_url = Mock(return_value="http://example.com/reset/def456")
-        
+        user.get_confirmation_url = Mock(
+            return_value="http://example.com/confirm/abc123"
+        )
+        user.get_password_reset_url = Mock(
+            return_value="http://example.com/reset/def456"
+        )
+
         # Test confirmation email
         send_signup_confirmation_email(user)
         user.get_confirmation_url.assert_called_once()
-        
+
         # Test password reset email
         send_password_reset_email(user)
         user.get_password_reset_url.assert_called_once()
-        
+
         # Verify both tasks were called
         self.assertEqual(mock_task.call_count, 2)
-        
+
         # Verify URLs are included in email contents
         calls = mock_task.call_args_list
-        confirm_contents = calls[0][1]['contents']
-        reset_contents = calls[1][1]['contents']
-        
+        confirm_contents = calls[0][1]["contents"]
+        reset_contents = calls[1][1]["contents"]
+
         self.assertIn("http://example.com/confirm/abc123", confirm_contents)
         self.assertIn("http://example.com/reset/def456", reset_contents)
 
@@ -524,14 +529,15 @@ class TestEmailValidationIntegration(TestCase):
         mock_smtp_class.return_value = mock_smtp
 
         # Test that timeout is handled gracefully and logged
-        with self.assertLogs('emails', level='ERROR') as log:
+        with self.assertLogs("emails", level="ERROR") as log:
             send_email_task(
                 to="user@example.com", subject="Test Subject", contents="Test content"
             )
 
         # Verify SMTP was attempted
         mock_smtp.send.assert_called_once()
-        
+
         # Verify timeout error was logged
-        self.assertTrue(any('Failed to send email' in record.getMessage()
-                           for record in log.records))
+        self.assertTrue(
+            any("Failed to send email" in record.getMessage() for record in log.records)
+        )

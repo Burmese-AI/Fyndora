@@ -68,6 +68,8 @@ class BusinessAuditLogger:
             "reject": AuditActionType.ENTRY_REJECTED,
             "flag": AuditActionType.ENTRY_FLAGGED,
             "unflag": AuditActionType.ENTRY_UNFLAGGED,
+            "update": AuditActionType.ENTRY_UPDATED,
+            "delete": AuditActionType.ENTRY_DELETED,
         }
 
         if action not in action_mapping:
@@ -131,6 +133,33 @@ class BusinessAuditLogger:
                     "flag_severity": request.POST.get("severity", "medium")
                     if request
                     else kwargs.get("severity", "medium"),
+                }
+            )
+        elif action == "update":
+            metadata.update(
+                {
+                    "updater_id": str(user.user_id),
+                    "updater_email": user.email,
+                    "updated_fields": kwargs.get("updated_fields", []),
+                    "original_values": kwargs.get("original_values", {}),
+                    "new_values": kwargs.get("new_values", {}),
+                    "update_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "update_timestamp": timezone.now().isoformat(),
+                }
+            )
+        elif action == "delete":
+            metadata.update(
+                {
+                    "deleter_id": str(user.user_id),
+                    "deleter_email": user.email,
+                    "deletion_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "soft_delete": kwargs.get("soft_delete", False),
+                    "deletion_timestamp": timezone.now().isoformat(),
+                    "entry_status_at_deletion": kwargs.get("entry_status", "unknown"),
                 }
             )
 

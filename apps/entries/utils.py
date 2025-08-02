@@ -1,5 +1,8 @@
-from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
-from apps.core.permissions import WorkspaceTeamPermissions
+from apps.core.permissions import (
+    OrganizationPermissions,
+    WorkspacePermissions,
+    WorkspaceTeamPermissions,
+)
 
 
 def can_view_org_expense(user, organization):
@@ -83,3 +86,19 @@ def can_delete_workspace_team_entry(user, workspace_team):
     return user.has_perm(
         WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY, workspace_team
     )
+
+
+def extract_entry_business_context(entry):
+    """
+    Extract business context from an entry for audit logging.
+    """
+    if not entry:
+        return {}
+    
+    return {
+        "entry_id": str(entry.entry_id),
+        "entry_type": entry.entry_type,
+        "workspace_id": str(entry.workspace.workspace_id),
+        "workspace_name": entry.workspace.title,
+        "organization_id": str(entry.workspace.organization.organization_id),
+    }

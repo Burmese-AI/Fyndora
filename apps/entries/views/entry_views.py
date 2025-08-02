@@ -1,42 +1,43 @@
 from typing import Any
+
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
 
-from apps.core.views.base_views import BaseGetModalFormView
-from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
-from ..selectors import get_entries
-from ..services import delete_entry
-from apps.core.views.mixins import WorkspaceTeamRequiredMixin
-from ..utils import (
-    can_add_workspace_team_entry,
-    can_update_workspace_team_entry,
-    can_delete_workspace_team_entry,
-)
 from apps.core.utils import permission_denied_view
-from .mixins import (
-    EntryFormMixin,
-    EntryRequiredMixin,
-)
-from .base_views import (
-    TeamLevelEntryView,
-)
-from ..forms import (
-    UpdateWorkspaceTeamEntryForm,
-    CreateWorkspaceTeamEntryForm,
-)
+from apps.core.views.base_views import BaseGetModalFormView
 from apps.core.views.crud_base_views import (
     BaseCreateView,
     BaseDeleteView,
     BaseListView,
     BaseUpdateView,
 )
-from ..models import Entry
+from apps.core.views.mixins import WorkspaceTeamRequiredMixin
 from apps.core.views.service_layer_mixins import (
-    HtmxTableServiceMixin,
     HtmxRowResponseMixin,
+    HtmxTableServiceMixin,
 )
-from ..services import create_entry_with_attachments
+
+from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
+from ..forms import (
+    CreateWorkspaceTeamEntryForm,
+    UpdateWorkspaceTeamEntryForm,
+)
+from ..models import Entry
+from ..selectors import get_entries
+from ..services import create_entry_with_attachments, delete_entry
+from ..utils import (
+    can_add_workspace_team_entry,
+    can_delete_workspace_team_entry,
+    can_update_workspace_team_entry,
+)
+from .base_views import (
+    TeamLevelEntryView,
+)
+from .mixins import (
+    EntryFormMixin,
+    EntryRequiredMixin,
+)
 
 
 class WorkspaceTeamEntryListView(
@@ -126,6 +127,8 @@ class WorkspaceTeamEntryCreateView(
             currency=form.cleaned_data["currency"],
             submitted_by_org_member=self.org_member if self.is_org_admin else None,
             submitted_by_team_member=self.workspace_team_member,
+            user=self.request.user,
+            request=self.request,
         )
 
 
@@ -185,6 +188,8 @@ class WorkspaceTeamEntryUpdateView(
                 currency=form.cleaned_data["currency"],
                 attachments=form.cleaned_data["attachment_files"],
                 replace_attachments=True,
+                user=self.request.user,
+                request=self.request,
             )
 
         # If the status has changed, update the status

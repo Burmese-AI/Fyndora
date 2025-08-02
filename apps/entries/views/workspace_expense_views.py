@@ -123,6 +123,8 @@ class WorkspaceExpenseCreateView(
             workspace=self.workspace,
             currency=form.cleaned_data["currency"],
             submitted_by_org_member=self.org_member,
+            user=self.request.user,
+            request=self.request,
         )
 
 
@@ -182,6 +184,8 @@ class WorkspaceExpenseUpdateView(
                 currency=form.cleaned_data["currency"],
                 attachments=form.cleaned_data["attachment_files"],
                 replace_attachments=True,
+                user=self.request.user,
+                request=self.request,
             )
 
         # If the status has changed, update the status

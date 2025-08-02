@@ -6,8 +6,7 @@ from django.utils import timezone
 from guardian.shortcuts import assign_perm
 
 from apps.attachments.services import create_attachments, replace_or_append_attachments
-from apps.auditlog.constants import AuditActionType
-from apps.auditlog.services import audit_create
+from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_closest_exchanged_rate
@@ -20,6 +19,18 @@ from .constants import EntryStatus, EntryType
 from .models import Entry
 from .permissions import EntryPermissions
 from .stats import EntryStats
+
+
+def _extract_user_from_actor(actor):
+    """
+    Extract user from actor (TeamMember or OrganizationMember).
+    """
+    if isinstance(actor, TeamMember):
+        return actor.organization_member.user
+    elif hasattr(actor, 'user'):
+        return actor.user
+    else:
+        return actor
 
 
 def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
@@ -80,6 +91,8 @@ def create_entry_with_attachments(
     currency,
     submitted_by_org_member=None,
     submitted_by_team_member=None,
+    user=None,
+    request=None,
 ) -> Entry:
     """
     Service to create a new entry with attachments.
@@ -130,6 +143,23 @@ def create_entry_with_attachments(
             create_attachments(
                 entry=entry,
                 attachments=attachments,
+                user=user,
+                request=request,
+            )
+
+        # Log entry creation with rich context
+        if user:
+            BusinessAuditLogger.log_entry_action(
+                user=user,
+                entry=entry,
+                action="submit",
+                request=request,
+                entry_amount=str(amount),
+                currency_code=currency.code,
+                exchange_rate=exchange_rate_used.rate,
+                has_attachments=is_attachment_provided,
+                attachment_count=len(attachments) if attachments else 0,
+                submitter_type="org_member" if submitted_by_org_member else "team_member",
             )
 
     return entry
@@ -146,6 +176,8 @@ def update_entry_user_inputs(
     currency: Currency,
     attachments,
     replace_attachments: bool,
+    user=None,
+    request=None,
 ):
     if entry.status != EntryStatus.PENDING:
         raise ValidationError(
@@ -196,6 +228,8 @@ def update_entry_user_inputs(
             entry=entry,
             attachments=attachments,
             replace_attachments=replace_attachments,
+            user=user,
+            request=request,
         )
 
         # If the entry was flagged, unflag it
@@ -203,16 +237,46 @@ def update_entry_user_inputs(
             entry.is_flagged = False
             entry.save(update_fields=["is_flagged"])
 
+    # Log entry update with rich context
+    if user:
+        BusinessAuditLogger.log_entry_action(
+            user=user,
+            entry=entry,
+            action="update",
+            request=request,
+            updated_fields=["amount", "currency", "occurred_at", "description"],
+            currency_changed=is_currency_changed,
+            occurred_at_changed=is_occurred_at_changed,
+            exchange_rate_updated=new_exchange_rate_used is not None,
+            attachments_updated=bool(attachments),
+            replace_attachments=replace_attachments if attachments else False,
+            was_flagged=entry.is_flagged,
+        )
 
-def update_entry_status(*, entry: Entry, status, status_note, last_status_modified_by):
+
+def update_entry_status(*, entry: Entry, status, status_note, last_status_modified_by, request=None):
+    old_status = entry.status
     entry.status = status
     entry.status_note = status_note
     entry.last_status_modified_by = last_status_modified_by
     entry.status_last_updated_at = timezone.now()
     entry.save()
 
+    # Log status change with rich context
+    user = _extract_user_from_actor(last_status_modified_by)
+    
+    BusinessAuditLogger.log_status_change(
+        user=user,
+        entity=entry,
+        old_status=old_status,
+        new_status=status,
+        request=request,
+        status_note=status_note,
+        modifier_type="org_member" if hasattr(last_status_modified_by, 'organization') else "team_member",
+    )
 
-def delete_entry(entry: Entry):
+
+def delete_entry(entry: Entry, user=None, request=None):
     """
     Service to delete an entry.
     """
@@ -224,6 +288,19 @@ def delete_entry(entry: Entry):
 
     if entry.status != EntryStatus.PENDING:
         raise ValidationError("Cannot delete an entry that is not pending review")
+
+    # Log entry deletion before deleting
+    if user:
+        BusinessAuditLogger.log_entry_action(
+            user=user,
+            entry=entry,
+            action="delete",
+            request=request,
+            entry_amount=str(entry.amount),
+            entry_status=entry.status,
+            had_attachments=entry.attachments.exists(),
+            deletion_reason="user_initiated",
+        )
 
     entry.delete()
     return entry
@@ -341,15 +418,17 @@ def entry_create(
         ):
             assign_perm(EntryPermissions.UPLOAD_ATTACHMENTS, user, workspace)
 
-        audit_create(
+        # Log entry creation with rich business context
+        BusinessAuditLogger.log_entry_action(
             user=user,
-            action_type="entry_created",
-            target_entity=entry,
-            metadata={
-                "entry_type": entry_type,
-                "amount": str(amount),
-                "description": description,
-            },
+            entry=entry,
+            action="submit",
+            entry_amount=str(amount),
+            currency_code=currency.code,
+            exchange_rate=exchange_rate_used.rate,
+            submitter_type="org_member" if submitted_by_org_member else "team_member",
+            workspace_required=entry_type == EntryType.WORKSPACE_EXP,
+            team_based_entry=entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
         )
 
     return entry
@@ -367,7 +446,7 @@ def _validate_review_data(*, status, notes=None):
         raise ValidationError(f"Notes are required when {status} an entry")
 
 
-def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
+def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None, request=None):
     """
     Service to review an entry (approve, reject, flag).
     """
@@ -397,39 +476,51 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None):
         update_fields=["status", "last_status_modified_by", "status_note", "is_flagged"]
     )
 
-    audit_log_message = f"Entry {status.label.lower()} by {reviewer.user.username}"
-    if notes:
-        audit_log_message += f" with notes: {notes}"
+    # Log review action with rich business context
+    user = _extract_user_from_actor(reviewer)
+    
+    if is_flagged:
+        action = "flag"
+    elif status == EntryStatus.APPROVED:
+        action = "approve"
+    elif status == EntryStatus.REJECTED:
+        action = "reject"
+    else:
+        action = "review"
 
-    audit_create(
-        user=reviewer.user,
-        action_type=AuditActionType.ENTRY_STATUS_CHANGED,
-        target_entity=entry,
-        metadata={"message": audit_log_message},
+    BusinessAuditLogger.log_entry_action(
+        user=user,
+        entry=entry,
+        action=action,
+        request=request,
+        notes=notes,
+        reviewer_type="org_member" if hasattr(reviewer, 'organization') else "team_member",
+        previous_status=entry.status,
+        flagged=is_flagged,
     )
 
     return entry
 
 
-def approve_entry(*, entry, reviewer, notes=None):
+def approve_entry(*, entry, reviewer, notes=None, request=None):
     """
     Service to approve an entry.
     """
     return entry_review(
-        entry=entry, reviewer=reviewer, status=EntryStatus.APPROVED, notes=notes
+        entry=entry, reviewer=reviewer, status=EntryStatus.APPROVED, notes=notes, request=request
     )
 
 
-def reject_entry(*, entry, reviewer, notes):
+def reject_entry(*, entry, reviewer, notes, request=None):
     """
     Service to reject an entry.
     """
     return entry_review(
-        entry=entry, reviewer=reviewer, status=EntryStatus.REJECTED, notes=notes
+        entry=entry, reviewer=reviewer, status=EntryStatus.REJECTED, notes=notes, request=request
     )
 
 
-def flag_entry(*, entry, reviewer, notes):
+def flag_entry(*, entry, reviewer, notes, request=None):
     """
     Service to flag an entry for further review.
     """
@@ -439,21 +530,22 @@ def flag_entry(*, entry, reviewer, notes):
         status=entry.status,
         is_flagged=True,
         notes=notes,
+        request=request,
     )
 
 
-def bulk_review_entries(*, entries, reviewer, status, notes=None):
+def bulk_review_entries(*, entries, reviewer, status, notes=None, request=None):
     """
     Service to review multiple entries at once.
     """
     _validate_review_data(status=status, notes=notes)
 
     reviewed_entries = []
+    
+    audit_user = _extract_user_from_actor(reviewer)
 
     with transaction.atomic():
         for entry in entries:
-            old_status = entry.status
-
             if entry.status != EntryStatus.PENDING and not entry.is_flagged:
                 continue  # Skip entries that can't be reviewed
 
@@ -466,27 +558,25 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None):
             entry = model_update(entry, entry_data)
             reviewed_entries.append(entry)
 
-            if hasattr(reviewer, "organization_member"):
-                audit_user = reviewer.organization_member.user
-            else:
-                audit_user = reviewer.user
-
-            audit_create(
+        # Log bulk operation with rich context
+        if reviewed_entries:
+            operation_type = f"bulk_{status.lower()}_entries"
+            BusinessAuditLogger.log_bulk_operation(
                 user=audit_user,
-                action_type="status_changed",
-                target_entity=entry,
-                metadata={
-                    "old_status": old_status,
-                    "new_status": status,
-                    "status_note": notes or "",
-                    "bulk_operation": True,
-                },
+                operation_type=operation_type,
+                affected_objects=reviewed_entries,
+                request=request,
+                review_status=status,
+                review_notes=notes,
+                reviewer_type="org_member" if hasattr(reviewer, 'organization') else "team_member",
+                total_processed=len(reviewed_entries),
+                total_requested=len(entries),
             )
 
     return reviewed_entries
 
 
-def entry_update(*, entry, updated_by, **fields_to_update):
+def entry_update(*, entry, updated_by, request=None, **fields_to_update):
     """
     Service to update an existing entry.
     """
@@ -514,16 +604,25 @@ def entry_update(*, entry, updated_by, **fields_to_update):
         else updated_by.user
     )
 
+    # Store original values for audit logging
+    original_values = {}
+    for field in update_data.keys():
+        original_values[field] = getattr(entry, field)
+
     with transaction.atomic():
         entry = model_update(entry, update_data)
 
-        audit_create(
+        # Log entry update with rich business context
+        BusinessAuditLogger.log_entry_action(
             user=user,
-            action_type="entry_updated",
-            target_entity=entry,
-            metadata={
-                "updated_fields": list(update_data.keys()),
-            },
+            entry=entry,
+            action="update",
+            request=request,
+            updated_fields=list(update_data.keys()),
+            original_values=original_values,
+            new_values=update_data,
+            updater_type="org_member" if hasattr(updated_by, 'organization') else "team_member",
+            entry_status=entry.status,
         )
 
     return entry

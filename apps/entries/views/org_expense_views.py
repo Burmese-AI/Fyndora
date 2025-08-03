@@ -1,44 +1,45 @@
 from typing import Any
+
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
 
-from apps.core.views.base_views import BaseGetModalFormView
-from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
-from ..selectors import get_entries
-from ..services import delete_entry
-from apps.core.views.mixins import (
-    OrganizationRequiredMixin,
-)
-from .mixins import (
-    EntryFormMixin,
-    EntryRequiredMixin,
-)
-from .base_views import (
-    OrganizationLevelEntryView,
-)
-from ..forms import (
-    CreateOrganizationExpenseEntryForm,
-    BaseUpdateEntryForm,
-)
 from apps.core.utils import permission_denied_view
+from apps.core.views.base_views import BaseGetModalFormView
 from apps.core.views.crud_base_views import (
     BaseCreateView,
     BaseDeleteView,
     BaseListView,
     BaseUpdateView,
 )
-from ..models import Entry
-from apps.core.views.service_layer_mixins import (
-    HtmxTableServiceMixin,
-    HtmxRowResponseMixin,
+from apps.core.views.mixins import (
+    OrganizationRequiredMixin,
 )
-from ..services import create_entry_with_attachments
+from apps.core.views.service_layer_mixins import (
+    HtmxRowResponseMixin,
+    HtmxTableServiceMixin,
+)
+
+from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
+from ..forms import (
+    BaseUpdateEntryForm,
+    CreateOrganizationExpenseEntryForm,
+)
+from ..models import Entry
+from ..selectors import get_entries
+from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
-    can_view_org_expense,
     can_add_org_expense,
-    can_update_org_expense,
     can_delete_org_expense,
+    can_update_org_expense,
+    can_view_org_expense,
+)
+from .base_views import (
+    OrganizationLevelEntryView,
+)
+from .mixins import (
+    EntryFormMixin,
+    EntryRequiredMixin,
 )
 
 
@@ -129,6 +130,8 @@ class OrganizationExpenseCreateView(
             organization=self.organization,
             currency=form.cleaned_data["currency"],
             submitted_by_org_member=self.org_member,
+            user=self.request.user,
+            request=self.request,
         )
 
 
@@ -183,6 +186,8 @@ class OrganizationExpenseUpdateView(
                 currency=form.cleaned_data["currency"],
                 attachments=form.cleaned_data["attachment_files"],
                 replace_attachments=True,
+                user=self.request.user,
+                request=self.request,
             )
 
         # If the status has changed, update the status

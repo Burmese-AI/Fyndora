@@ -68,6 +68,8 @@ class BusinessAuditLogger:
             "reject": AuditActionType.ENTRY_REJECTED,
             "flag": AuditActionType.ENTRY_FLAGGED,
             "unflag": AuditActionType.ENTRY_UNFLAGGED,
+            "update": AuditActionType.ENTRY_UPDATED,
+            "delete": AuditActionType.ENTRY_DELETED,
         }
 
         if action not in action_mapping:
@@ -131,6 +133,33 @@ class BusinessAuditLogger:
                     "flag_severity": request.POST.get("severity", "medium")
                     if request
                     else kwargs.get("severity", "medium"),
+                }
+            )
+        elif action == "update":
+            metadata.update(
+                {
+                    "updater_id": str(user.user_id),
+                    "updater_email": user.email,
+                    "updated_fields": kwargs.get("updated_fields", []),
+                    "original_values": kwargs.get("original_values", {}),
+                    "new_values": kwargs.get("new_values", {}),
+                    "update_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "update_timestamp": timezone.now().isoformat(),
+                }
+            )
+        elif action == "delete":
+            metadata.update(
+                {
+                    "deleter_id": str(user.user_id),
+                    "deleter_email": user.email,
+                    "deletion_reason": request.POST.get("reason", "")
+                    if request
+                    else kwargs.get("reason", ""),
+                    "soft_delete": kwargs.get("soft_delete", False),
+                    "deletion_timestamp": timezone.now().isoformat(),
+                    "entry_status_at_deletion": kwargs.get("entry_status", "unknown"),
                 }
             )
 
@@ -355,5 +384,541 @@ class BusinessAuditLogger:
             target_entity=file_obj
             if hasattr(file_obj, "_meta") and hasattr(file_obj._meta, "pk")
             else None,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_organization_action(user, organization, action, request=None, **kwargs):
+        """Log organization-specific actions with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "create": AuditActionType.ORGANIZATION_CREATED,
+            "update": AuditActionType.ORGANIZATION_UPDATED,
+            "delete": AuditActionType.ORGANIZATION_DELETED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown organization action: {action}")
+            return
+
+        # Base metadata for organization actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add organization-specific metadata if organization exists
+        if organization:
+            metadata.update({
+                "organization_id": str(organization.organization_id),
+                "organization_title": organization.title,
+                "organization_status": getattr(organization, 'status', None),
+                "organization_description": getattr(organization, 'description', ''),
+            })
+
+        # Add action-specific metadata
+        if action == "create":
+            metadata.update({
+                "creator_id": str(user.user_id),
+                "creator_email": user.email,
+                "creation_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "update":
+            metadata.update({
+                "updater_id": str(user.user_id),
+                "updater_email": user.email,
+                "updated_fields": kwargs.get("updated_fields", []),
+                "update_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "delete":
+            metadata.update({
+                "deleter_id": str(user.user_id),
+                "deleter_email": user.email,
+                "deletion_timestamp": timezone.now().isoformat(),
+                "soft_delete": kwargs.get("soft_delete", False),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=organization,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_organization_exchange_rate_action(user, exchange_rate, action, request=None, **kwargs):
+        """Log organization exchange rate actions with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        # Custom action types for exchange rate operations
+        action_mapping = {
+            "create": AuditActionType.ORGANIZATION_UPDATED,  # Using existing action type
+            "update": AuditActionType.ORGANIZATION_UPDATED,
+            "delete": AuditActionType.ORGANIZATION_UPDATED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown exchange rate action: {action}")
+            return
+
+        # Base metadata for exchange rate actions
+        metadata = {
+            "action": action,
+            "operation_type": f"organization_exchange_rate_{action}",
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add exchange rate-specific metadata if exchange rate exists
+        if exchange_rate:
+            metadata.update({
+                "exchange_rate_id": str(exchange_rate.id),
+                "organization_id": str(exchange_rate.organization.organization_id),
+                "currency_code": exchange_rate.currency.code,
+                "rate": str(exchange_rate.rate),
+                "effective_date": exchange_rate.effective_date.isoformat() if exchange_rate.effective_date else None,
+                "note": exchange_rate.note,
+            })
+
+        # Add action-specific metadata
+        if action == "create":
+            metadata.update({
+                "creator_id": str(user.user_id),
+                "creator_email": user.email,
+                "creation_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "update":
+            metadata.update({
+                "updater_id": str(user.user_id),
+                "updater_email": user.email,
+                "update_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "delete":
+            metadata.update({
+                "deleter_id": str(user.user_id),
+                "deleter_email": user.email,
+                "deletion_timestamp": timezone.now().isoformat(),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=exchange_rate,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_team_action(user, team, action, request=None, **kwargs):
+        """Log team-specific actions with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "create": AuditActionType.TEAM_CREATED,
+            "update": AuditActionType.TEAM_UPDATED,
+            "delete": AuditActionType.TEAM_DELETED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown team action: {action}")
+            return
+
+        # Base metadata for team actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add team-specific metadata if team exists
+        if team:
+            metadata.update({
+                "team_id": str(team.team_id),
+                "team_title": team.title,
+                "team_description": getattr(team, 'description', ''),
+                "organization_id": str(team.organization.organization_id),
+                "organization_title": team.organization.title,
+                "workspace_id": str(team.workspace.workspace_id) if hasattr(team, 'workspace') and team.workspace else None,
+                "workspace_title": team.workspace.title if hasattr(team, 'workspace') and team.workspace else None,
+                "team_coordinator_id": str(team.team_coordinator.organization_member_id) if team.team_coordinator else None,
+                "team_coordinator_email": team.team_coordinator.user.email if team.team_coordinator else None,
+            })
+
+        # Add action-specific metadata
+        if action == "create":
+            metadata.update({
+                "creator_id": str(user.user_id),
+                "creator_email": user.email,
+                "creation_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "update":
+            metadata.update({
+                "updater_id": str(user.user_id),
+                "updater_email": user.email,
+                "updated_fields": kwargs.get("updated_fields", []),
+                "update_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "delete":
+            metadata.update({
+                "deleter_id": str(user.user_id),
+                "deleter_email": user.email,
+                "deletion_timestamp": timezone.now().isoformat(),
+                "soft_delete": kwargs.get("soft_delete", False),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=team,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_team_member_action(user, team_member, action, request=None, **kwargs):
+        """Log team member actions with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "add": AuditActionType.TEAM_MEMBER_ADDED,
+            "remove": AuditActionType.TEAM_MEMBER_REMOVED,
+            "role_change": AuditActionType.TEAM_MEMBER_ROLE_CHANGED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown team member action: {action}")
+            return
+
+        # Base metadata for team member actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add team member-specific metadata if team_member exists
+        if team_member:
+            metadata.update({
+                "team_member_id": str(team_member.id),
+                "team_id": str(team_member.team.team_id),
+                "team_title": team_member.team.title,
+                "organization_id": str(team_member.team.organization.organization_id),
+                "organization_title": team_member.team.organization.title,
+                "member_user_id": str(team_member.organization_member.user.user_id),
+                "member_email": team_member.organization_member.user.email,
+                "member_role": team_member.role,
+                "workspace_id": str(team_member.team.workspace.workspace_id) if hasattr(team_member.team, 'workspace') and team_member.team.workspace else None,
+                "workspace_title": team_member.team.workspace.title if hasattr(team_member.team, 'workspace') and team_member.team.workspace else None,
+            })
+
+        # Add action-specific metadata
+        if action == "add":
+            metadata.update({
+                "added_by_id": str(user.user_id),
+                "added_by_email": user.email,
+                "addition_timestamp": timezone.now().isoformat(),
+                "assigned_role": kwargs.get("role", team_member.role if team_member else None),
+            })
+        elif action == "remove":
+            metadata.update({
+                "removed_by_id": str(user.user_id),
+                "removed_by_email": user.email,
+                "removal_timestamp": timezone.now().isoformat(),
+                "removal_reason": kwargs.get("reason", ""),
+            })
+        elif action == "role_change":
+            metadata.update({
+                "changed_by_id": str(user.user_id),
+                "changed_by_email": user.email,
+                "role_change_timestamp": timezone.now().isoformat(),
+                "previous_role": kwargs.get("previous_role", ""),
+                "new_role": kwargs.get("new_role", team_member.role if team_member else ""),
+                "role_change_reason": kwargs.get("reason", ""),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=team_member,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_workspace_action(user, workspace, action, request=None, **kwargs):
+        """Log workspace-specific actions with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "create": AuditActionType.WORKSPACE_CREATED,
+            "update": AuditActionType.WORKSPACE_UPDATED,
+            "delete": AuditActionType.WORKSPACE_DELETED,
+            "archive": AuditActionType.WORKSPACE_ARCHIVED,
+            "activate": AuditActionType.WORKSPACE_ACTIVATED,
+            "close": AuditActionType.WORKSPACE_CLOSED,
+            "status_change": AuditActionType.WORKSPACE_STATUS_CHANGED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown workspace action: {action}")
+            return
+
+        # Base metadata for workspace actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add workspace-specific metadata if workspace exists
+        if workspace:
+            metadata.update({
+                "workspace_id": str(workspace.workspace_id),
+                "workspace_title": workspace.title,
+                "workspace_description": getattr(workspace, 'description', ''),
+                "organization_id": str(workspace.organization.organization_id),
+                "organization_title": workspace.organization.title,
+                "workspace_status": getattr(workspace, 'status', ''),
+                "workspace_admin_id": str(workspace.admin.organization_member_id) if workspace.admin else None,
+                "workspace_admin_email": workspace.admin.user.email if workspace.admin else None,
+                "workspace_reviewer_id": str(workspace.reviewer.organization_member_id) if workspace.reviewer else None,
+                "workspace_reviewer_email": workspace.reviewer.user.email if workspace.reviewer else None,
+            })
+
+        # Add action-specific metadata
+        if action == "create":
+            metadata.update({
+                "creator_id": str(user.user_id),
+                "creator_email": user.email,
+                "creation_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "update":
+            metadata.update({
+                "updater_id": str(user.user_id),
+                "updater_email": user.email,
+                "updated_fields": kwargs.get("updated_fields", []),
+                "update_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "delete":
+            metadata.update({
+                "deleter_id": str(user.user_id),
+                "deleter_email": user.email,
+                "deletion_timestamp": timezone.now().isoformat(),
+                "soft_delete": kwargs.get("soft_delete", False),
+            })
+        elif action in ["archive", "activate", "close", "status_change"]:
+            metadata.update({
+                "status_changer_id": str(user.user_id),
+                "status_changer_email": user.email,
+                "status_change_timestamp": timezone.now().isoformat(),
+                "previous_status": kwargs.get("previous_status", ""),
+                "new_status": kwargs.get("new_status", ""),
+                "status_change_reason": kwargs.get("reason", ""),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=workspace,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_workspace_team_action(user, workspace, team, action, request=None, **kwargs):
+        """Log workspace team operations with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "add": AuditActionType.WORKSPACE_TEAM_ADDED,
+            "remove": AuditActionType.WORKSPACE_TEAM_REMOVED,
+            "remittance_rate_update": AuditActionType.WORKSPACE_TEAM_REMITTANCE_RATE_UPDATED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown workspace team action: {action}")
+            return
+
+        # Base metadata for workspace team actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add workspace and team metadata
+        if workspace:
+            metadata.update({
+                "workspace_id": str(workspace.workspace_id),
+                "workspace_title": workspace.title,
+                "organization_id": str(workspace.organization.organization_id),
+                "organization_title": workspace.organization.title,
+            })
+
+        if team:
+            metadata.update({
+                "team_id": str(team.team_id),
+                "team_title": team.title,
+                "team_coordinator_id": str(team.team_coordinator.organization_member_id) if team.team_coordinator else None,
+                "team_coordinator_email": team.team_coordinator.user.email if team.team_coordinator else None,
+            })
+
+        # Add action-specific metadata
+        if action == "add":
+            metadata.update({
+                "added_by_id": str(user.user_id),
+                "added_by_email": user.email,
+                "addition_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "remove":
+            metadata.update({
+                "removed_by_id": str(user.user_id),
+                "removed_by_email": user.email,
+                "removal_timestamp": timezone.now().isoformat(),
+                "removal_reason": kwargs.get("reason", ""),
+            })
+        elif action == "remittance_rate_update":
+            metadata.update({
+                "updated_by_id": str(user.user_id),
+                "updated_by_email": user.email,
+                "update_timestamp": timezone.now().isoformat(),
+                "previous_rate": kwargs.get("previous_rate", ""),
+                "new_rate": kwargs.get("new_rate", ""),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=workspace,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_workspace_exchange_rate_action(user, exchange_rate, action, request=None, **kwargs):
+        """Log workspace exchange rate operations with rich business context"""
+        BusinessAuditLogger._validate_request_and_user(request, user)
+
+        action_mapping = {
+            "create": AuditActionType.WORKSPACE_EXCHANGE_RATE_CREATED,
+            "update": AuditActionType.WORKSPACE_EXCHANGE_RATE_UPDATED,
+            "delete": AuditActionType.WORKSPACE_EXCHANGE_RATE_DELETED,
+        }
+
+        if action not in action_mapping:
+            logger.warning(f"Unknown workspace exchange rate action: {action}")
+            return
+
+        # Base metadata for workspace exchange rate actions
+        metadata = {
+            "action": action,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add exchange rate-specific metadata if exchange_rate exists
+        if exchange_rate:
+            metadata.update({
+                "exchange_rate_id": str(exchange_rate.id),
+                "workspace_id": str(exchange_rate.workspace.workspace_id),
+                "workspace_title": exchange_rate.workspace.title,
+                "organization_id": str(exchange_rate.workspace.organization.organization_id),
+                "organization_title": exchange_rate.workspace.organization.title,
+                "from_currency": getattr(exchange_rate, 'from_currency', ''),
+                "to_currency": getattr(exchange_rate, 'to_currency', ''),
+                "rate": str(getattr(exchange_rate, 'rate', '')),
+                "effective_date": getattr(exchange_rate, 'effective_date', ''),
+            })
+
+        # Add action-specific metadata
+        if action == "create":
+            metadata.update({
+                "creator_id": str(user.user_id),
+                "creator_email": user.email,
+                "creation_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "update":
+            metadata.update({
+                "updater_id": str(user.user_id),
+                "updater_email": user.email,
+                "updated_fields": kwargs.get("updated_fields", []),
+                "update_timestamp": timezone.now().isoformat(),
+            })
+        elif action == "delete":
+            metadata.update({
+                "deleter_id": str(user.user_id),
+                "deleter_email": user.email,
+                "deletion_timestamp": timezone.now().isoformat(),
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=action_mapping[action],
+            target_entity=exchange_rate,
+            metadata=serializable_metadata,
+        )
+
+    @staticmethod
+    @safe_audit_log
+    def log_operation_failure(user, operation_type, error, request=None, **kwargs):
+        """Log failed operations with error context"""
+        if user and not user.is_authenticated:
+            logger.warning("Cannot log operation failure for unauthenticated user")
+            return
+
+        metadata = {
+            "operation_type": operation_type,
+            "error_message": str(error),
+            "error_type": type(error).__name__,
+            "manual_logging": True,
+            **BusinessAuditLogger._extract_request_metadata(request),
+            **kwargs,
+        }
+
+        # Add user info if available
+        if user:
+            metadata.update({
+                "user_id": str(user.user_id),
+                "user_email": user.email,
+            })
+
+        # Ensure all metadata is JSON serializable
+        serializable_metadata = make_json_serializable(metadata)
+
+        audit_create(
+            user=user,
+            action_type=AuditActionType.SYSTEM_ERROR,
             metadata=serializable_metadata,
         )

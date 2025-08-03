@@ -370,7 +370,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     workspace_team = get_workspace_team_by_workspace_team_id(
                         workspace_team.workspace_team_id
                     )
-                    assign_workspace_team_permissions(workspace_team)
+                    assign_workspace_team_permissions(workspace_team, request_user=request.user)
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request
@@ -448,7 +448,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            remove_workspace_team_permissions(workspace_team)
+            remove_workspace_team_permissions(workspace_team, request_user=request.user)
             remove_team_from_workspace(workspace_team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)

@@ -56,6 +56,9 @@ class AuditActionType(models.TextChoices):
         "workspace_reviewer_assigned",
         "Workspace Reviewer Assigned",
     )
+    WORKSPACE_EXCHANGE_RATE_CREATED = "workspace_exchange_rate_created", "Workspace Exchange Rate Created"
+    WORKSPACE_EXCHANGE_RATE_UPDATED = "workspace_exchange_rate_updated", "Workspace Exchange Rate Updated"
+    WORKSPACE_EXCHANGE_RATE_DELETED = "workspace_exchange_rate_deleted", "Workspace Exchange Rate Deleted"
 
     # Team Management
     TEAM_CREATED = "team_created", "Team Created"
@@ -67,6 +70,9 @@ class AuditActionType(models.TextChoices):
     WORKSPACE_TEAM_CREATED = "workspace_team_created", "Workspace Team Created"
     WORKSPACE_TEAM_UPDATED = "workspace_team_updated", "Workspace Team Updated"
     WORKSPACE_TEAM_DELETED = "workspace_team_deleted", "Workspace Team Deleted"
+    WORKSPACE_TEAM_ADDED = "workspace_team_added", "Workspace Team Added"
+    WORKSPACE_TEAM_REMOVED = "workspace_team_removed", "Workspace Team Removed"
+    WORKSPACE_TEAM_REMITTANCE_RATE_UPDATED = "workspace_team_remittance_rate_updated", "Workspace Team Remittance Rate Updated"
 
     # Entry Management
     ENTRY_CREATED = "entry_created", "Entry Created"

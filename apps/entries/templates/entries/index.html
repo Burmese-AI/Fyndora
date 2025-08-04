@@ -38,9 +38,9 @@
           <li><a>Item 2</a></li>
           <li>
             <a 
-              {% comment %} hx-post="{% url 'entry_bulk_reject' organization.pk %}" {% endcomment %}
+              hx-post="{% url 'test' organization.pk %}"
               hx-include=".bulk-checkbox:checked"
-              hx-confirm="Reject all selected entries?"
+              {% comment %} hx-confirm="Reject all selected entries?" {% endcomment %}
               hx-swap="none"
               hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             >

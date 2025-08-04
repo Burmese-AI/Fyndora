@@ -1,8 +1,11 @@
 from typing import Any
+import json
 
 from django.db.models.query import QuerySet
+from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
+from django.views import View
 
 from apps.core.utils import permission_denied_view
 from apps.core.views.base_views import BaseGetModalFormView
@@ -36,6 +39,7 @@ from ..utils import (
 )
 from .base_views import (
     OrganizationLevelEntryView,
+    BaseEntryBulkActionView,
 )
 from .mixins import (
     EntryFormMixin,
@@ -228,3 +232,30 @@ class OrganizationExpenseDeleteView(
 
     def perform_service(self, form):
         delete_entry(self.entry)
+
+
+class OrganizationExpenseBulkDeleteView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
+    BaseEntryBulkActionView
+):
+    table_template_name = "entries/partials/table.html"
+    
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+            annotate_attachment_count=True,
+        )
+        
+    def perform_action(self, entries, user):
+        return entries.delete()
+    
+    def validate_entry(self, entry, user):
+        #True if
+        #1. Entry status pending
+        #2. Entry hasn't been reviewed
+        if entry.status == EntryStatus.PENDING and not entry.status_last_updated_at and not entry.last_status_modified_by:
+            return True
+        return False
+        

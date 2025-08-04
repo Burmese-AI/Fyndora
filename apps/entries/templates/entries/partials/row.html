@@ -5,7 +5,13 @@
   <!-- Checkbox -->
   <td>
     <label>
-      <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />
+      <input
+        type="checkbox"
+        name="entries"
+        value="{{ entry.pk }}"
+        class="bulk-checkbox checkbox checkbox-xs md:checkbox-sm checkbox-secondary"
+        hx-trigger="click changed"
+      />
     </label>
   </td>
 

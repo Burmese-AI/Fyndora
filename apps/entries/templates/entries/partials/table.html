@@ -8,7 +8,7 @@
             <input
               type="checkbox"
               id="select-all"
-              class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary"
+              class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary/25"
               onclick="toggleSelectAll(this)"
             />
           </label>
@@ -100,4 +100,5 @@
     checkboxes.forEach(cb => cb.addEventListener('change', updateBulkActions));
     updateBulkActions();
   });
+
 </script>

@@ -1,0 +1,34 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6 space-y-6">
+
+  <!-- Title -->
+  <h2 class="text-xl font-semibold text-base-content">
+    Are you sure you want to delete {{ custom_title }}?
+  </h2>
+
+  <!-- (Optional) Description/message could go here -->
+  {# <p class="text-sm text-base-content/70">This action cannot be undone.</p> #}
+
+  <!-- Buttons -->
+  <div class="flex justify-end gap-3">
+    <button 
+        class="btn btn-ghost btn-sm"
+        onclick="this.closest('.modal').removeAttribute('open')"
+    >
+      Cancel
+    </button>
+
+    <button 
+        class="btn bg-red-700 hover:bg-red-800 text-white btn-sm"
+        hx-post="{{ post_url }}"
+        hx-target="#modal_content_template"
+        hx-swap="innerHTML"
+    >
+      Delete
+    </button>
+  </div>
+
+</div>
+{% endblock modal_content %}

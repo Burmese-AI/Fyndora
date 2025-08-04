@@ -4,6 +4,7 @@ import json
 from django.views import View
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
+from django.views.generic import TemplateView
 
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
@@ -55,7 +56,7 @@ import json
 class BaseEntryBulkActionView(
     HtmxInvalidResponseMixin,
     HtmxOobResponseMixin,
-    View
+    TemplateView
 ):
     
     table_template_name = None

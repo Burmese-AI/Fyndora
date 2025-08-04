@@ -34,15 +34,13 @@
         </button>
         <ul class="dropdown menu w-52 rounded-box bg-base-100 shadow-sm"
           popover id="bulk-menu" style="position-anchor:--bulk-anchor">
-          <li><a>Item 1</a></li>
-          <li><a>Item 2</a></li>
           <li>
             <a 
-              hx-post="{% url 'test' organization.pk %}"
+              hx-get="{% url 'organization_expense_bulk_delete' organization.pk %}"
               hx-include=".bulk-checkbox:checked"
-              {% comment %} hx-confirm="Reject all selected entries?" {% endcomment %}
-              hx-swap="none"
-              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-target="#modal-placeholder"
+              hx-swap="innerHTML"
+              onclick="document.getElementById('bulk-menu').hidePopover()"
             >
               Reject
             </a>

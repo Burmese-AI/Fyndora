@@ -5,6 +5,7 @@ from django.views import View
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
 from django.views.generic import TemplateView
+from django.template.loader import render_to_string
 
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
@@ -81,7 +82,7 @@ class BaseEntryBulkActionView(
         Optional per-entry validation (e.g., status checks).
         Can be overridden.
         """
-        pass
+        return True
 
     def parse_entry_ids(self, request):
         """Parse entry IDs from request (form or JSON)"""
@@ -96,18 +97,12 @@ class BaseEntryBulkActionView(
 
     def post(self, request, *args, **kwargs):
         try:
+            
             # Parse IDs
-            raw_ids = self.parse_entry_ids(request)
-            if not raw_ids:
-                raise Exception("No entries selected")
-
-            try:
-                entry_ids = [int(x) for x in raw_ids if x.isdigit()]
-            except ValueError:
-                raise Exception("Invalid entry IDs")
-
+            entry_ids = self.parse_entry_ids(request)
+            
             if not entry_ids:
-                raise Exception("No valid entry IDs")
+                raise Exception("No entries selected")
 
             # Get base queryset
             base_qs = self.get_queryset()
@@ -127,22 +122,22 @@ class BaseEntryBulkActionView(
                 if self.validate_entry(entry, request.user):
                     valid_entries.append(entry)
 
-            # If no valid entries, fail
-            if not valid_entries:
+            # After validation
+            valid_ids = [entry.pk for entry in valid_entries]
+            if not valid_ids:
                 raise Exception("No valid entries")
 
-            # Perform the action
-            
-            self.perform_action(valid_entries, request.user)
-            
-            # How many Entries were successfully operated
-            messages.success(self.request, f"performed the bulk action on {valid_entries.count()} entries successfully")
+            qs_valid_entries = base_qs.filter(pk__in=valid_ids)
+
+            self.perform_action(qs_valid_entries, request.user)
+
+            messages.success(self.request, f"Performed the bulk action on {qs_valid_entries.count()} entries successfully")
 
             return self._render_htmx_success_response()
 
         except Exception as e:
             messages.error(self.request, str(e))
-            return _htmx_render_htmx_error_response()
+            return self._render_htmx_error_response()
 
     def _render_htmx_success_response(self) -> HttpResponse:
         base_context = self.get_context_data()
@@ -163,6 +158,6 @@ class BaseEntryBulkActionView(
             "includes/message.html", context=base_context, request=self.request
         )
 
-        response = HttpResponse(f"{message_html}{extra_html}{table_html}")
+        response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response

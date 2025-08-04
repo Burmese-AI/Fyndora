@@ -1,34 +1,59 @@
+<!-- components/delete_confirmation_modal.html -->
 {% extends "components/new_base_modal.html" %}
 
 {% block modal_content %}
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="modal_content_template" class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6 space-y-6">
+<div 
+  {% if is_oob %}hx-swap-oob="true"{% endif %}
+  id="modal_content_template"
+  class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6 space-y-6"
+>
 
-  <!-- Title -->
   <h2 class="text-xl font-semibold text-base-content">
-    Are you sure you want to delete {{ custom_title }}?
+    Delete {{ entry_count }} Entry{{ entry_count|pluralize }}?
   </h2>
 
-  <!-- (Optional) Description/message could go here -->
-  {# <p class="text-sm text-base-content/70">This action cannot be undone.</p> #}
+  <p class="text-sm text-base-content/80">
+    Are you sure you want to delete the selected {{ entry_count }} expense entry{{ entry_count|pluralize }}? This action cannot be undone.
+  </p>
 
-  <!-- Buttons -->
-  <div class="flex justify-end gap-3">
-    <button 
+  <!-- Hidden Form with IDs -->
+  <form
+    hx-post="{{ post_url }}"
+    hx-swap="none"
+    hx-on::after-request="if (event.detail.successful) { this.reset(); }"
+    @click.outside="open = false"
+    class="space-y-4"
+  >
+    {% csrf_token %}
+
+    <!-- 👉 Hidden inputs for each selected entry -->
+    {% for entry_id in selected_entry_ids %}
+      <input type="hidden" name="entries" value="{{ entry_id }}" />
+    {% endfor %}
+
+    <!-- Confirmation Message -->
+    <div class="text-sm bg-red-800/10 border border-red-800/30 rounded-md p-3 text-red-400">
+      This action is permanent.
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex justify-end gap-3 pt-2">
+      <button 
+        type="button"
         class="btn btn-ghost btn-sm"
         onclick="this.closest('.modal').removeAttribute('open')"
-    >
-      Cancel
-    </button>
+      >
+        Cancel
+      </button>
 
-    <button 
-        class="btn bg-red-700 hover:bg-red-800 text-white btn-sm"
-        hx-post="{{ post_url }}"
-        hx-target="#modal_content_template"
-        hx-swap="innerHTML"
-    >
-      Delete
-    </button>
-  </div>
+      <button 
+        type="submit"
+        class="btn bg-red-800 text-white btn-sm"
+      >
+        Delete
+      </button>
+    </div>
+  </form>
 
 </div>
 {% endblock modal_content %}

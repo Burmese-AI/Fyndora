@@ -269,4 +269,10 @@ class OrganizationExpenseBulkDeleteView(
 
     def get_modal_title(self) -> str:
         return ""
-        
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        selected_ids = self.request.GET.getlist("entries")
+        context["selected_entry_ids"] = selected_ids
+        context["entry_count"] = len(selected_ids)
+        return context

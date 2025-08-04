@@ -7,7 +7,7 @@ from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.selectors import get_teams_by_organization_id
 from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 from django.core.exceptions import ValidationError
-from apps.workspaces.selectors import get_org_members_without_owner
+from apps.core.selectors import get_org_members_without_owner
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(

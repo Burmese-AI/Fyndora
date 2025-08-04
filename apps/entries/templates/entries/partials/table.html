@@ -1,10 +1,16 @@
 <div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto w-full">
+
   <table class="table w-full">
     <thead>
       <tr>
         <th>
           <label>
-            <input type="checkbox" class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary" />
+            <input
+              type="checkbox"
+              id="select-all"
+              class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary"
+              onclick="toggleSelectAll(this)"
+            />
           </label>
         </th>
         <th>Submitted By</th>
@@ -40,3 +46,58 @@
     {% include "components/pagination.html" %}
   {% endif %}
 </div>
+
+<script>
+  function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    const checked = document.querySelectorAll('.bulk-checkbox:checked');
+    const button = document.getElementById('bulk-select-button');
+    const countSpan = document.getElementById('selected-count');
+    const selectAll = document.getElementById('select-all');
+
+    const count = checked.length;
+
+    // Update button visibility and text
+    if (count > 0) {
+      button.classList.remove('hidden');
+      document.getElementById('selected-count').textContent = count;
+    } else {
+      button.classList.add('hidden');
+    }
+
+    // Update "Select All" checkbox
+    if (count === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else if (count === checkboxes.length) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.checked = false;
+      selectAll.indeterminate = true;
+    }
+  }
+
+  function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    const isChecked = source.checked;
+    checkboxes.forEach(cb => {
+      cb.checked = isChecked;
+    });
+    updateBulkActions();
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.bulk-checkbox:checked').forEach(cb => {
+      cb.checked = false;
+    });
+    updateBulkActions();
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => {
+    const checkboxes = document.querySelectorAll('.bulk-checkbox');
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkActions));
+    updateBulkActions();
+  });
+</script>

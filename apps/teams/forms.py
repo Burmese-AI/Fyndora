@@ -109,9 +109,7 @@ class TeamMemberForm(forms.ModelForm):
         if self.organization:
             self.fields[
                 "organization_member"
-            ].queryset = get_organization_members_by_organization_id(
-                self.organization.organization_id
-            )
+            ].queryset = get_org_members_without_owner(self.organization)
 
     def clean(self):
         cleaned_data = super().clean()

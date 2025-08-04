@@ -394,7 +394,6 @@ def add_team_member_view(request, organization_id, team_id):
                         "team": team,
                         "organization": organization,
                         "is_oob": True,
-                        "permissions": permissions,
                     }
 
                     message_html = render_to_string(

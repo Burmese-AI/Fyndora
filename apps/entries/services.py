@@ -27,7 +27,7 @@ def _extract_user_from_actor(actor):
     """
     if isinstance(actor, TeamMember):
         return actor.organization_member.user
-    elif hasattr(actor, 'user'):
+    elif hasattr(actor, "user"):
         return actor.user
     else:
         return actor
@@ -159,7 +159,9 @@ def create_entry_with_attachments(
                 exchange_rate=exchange_rate_used.rate,
                 has_attachments=is_attachment_provided,
                 attachment_count=len(attachments) if attachments else 0,
-                submitter_type="org_member" if submitted_by_org_member else "team_member",
+                submitter_type="org_member"
+                if submitted_by_org_member
+                else "team_member",
             )
 
     return entry
@@ -254,7 +256,9 @@ def update_entry_user_inputs(
         )
 
 
-def update_entry_status(*, entry: Entry, status, status_note, last_status_modified_by, request=None):
+def update_entry_status(
+    *, entry: Entry, status, status_note, last_status_modified_by, request=None
+):
     old_status = entry.status
     entry.status = status
     entry.status_note = status_note
@@ -264,7 +268,7 @@ def update_entry_status(*, entry: Entry, status, status_note, last_status_modifi
 
     # Log status change with rich context
     user = _extract_user_from_actor(last_status_modified_by)
-    
+
     BusinessAuditLogger.log_status_change(
         user=user,
         entity=entry,
@@ -272,7 +276,9 @@ def update_entry_status(*, entry: Entry, status, status_note, last_status_modifi
         new_status=status,
         request=request,
         status_note=status_note,
-        modifier_type="org_member" if hasattr(last_status_modified_by, 'organization') else "team_member",
+        modifier_type="org_member"
+        if hasattr(last_status_modified_by, "organization")
+        else "team_member",
     )
 
 
@@ -428,7 +434,8 @@ def entry_create(
             exchange_rate=exchange_rate_used.rate,
             submitter_type="org_member" if submitted_by_org_member else "team_member",
             workspace_required=entry_type == EntryType.WORKSPACE_EXP,
-            team_based_entry=entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
+            team_based_entry=entry_type
+            in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE],
         )
 
     return entry
@@ -446,7 +453,9 @@ def _validate_review_data(*, status, notes=None):
         raise ValidationError(f"Notes are required when {status} an entry")
 
 
-def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None, request=None):
+def entry_review(
+    *, entry, reviewer, status, is_flagged=False, notes=None, request=None
+):
     """
     Service to review an entry (approve, reject, flag).
     """
@@ -478,7 +487,7 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None, reque
 
     # Log review action with rich business context
     user = _extract_user_from_actor(reviewer)
-    
+
     if is_flagged:
         action = "flag"
     elif status == EntryStatus.APPROVED:
@@ -494,7 +503,9 @@ def entry_review(*, entry, reviewer, status, is_flagged=False, notes=None, reque
         action=action,
         request=request,
         notes=notes,
-        reviewer_type="org_member" if hasattr(reviewer, 'organization') else "team_member",
+        reviewer_type="org_member"
+        if hasattr(reviewer, "organization")
+        else "team_member",
         previous_status=entry.status,
         flagged=is_flagged,
     )
@@ -507,7 +518,11 @@ def approve_entry(*, entry, reviewer, notes=None, request=None):
     Service to approve an entry.
     """
     return entry_review(
-        entry=entry, reviewer=reviewer, status=EntryStatus.APPROVED, notes=notes, request=request
+        entry=entry,
+        reviewer=reviewer,
+        status=EntryStatus.APPROVED,
+        notes=notes,
+        request=request,
     )
 
 
@@ -516,7 +531,11 @@ def reject_entry(*, entry, reviewer, notes, request=None):
     Service to reject an entry.
     """
     return entry_review(
-        entry=entry, reviewer=reviewer, status=EntryStatus.REJECTED, notes=notes, request=request
+        entry=entry,
+        reviewer=reviewer,
+        status=EntryStatus.REJECTED,
+        notes=notes,
+        request=request,
     )
 
 
@@ -541,7 +560,7 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None, request=None):
     _validate_review_data(status=status, notes=notes)
 
     reviewed_entries = []
-    
+
     audit_user = _extract_user_from_actor(reviewer)
 
     with transaction.atomic():
@@ -568,7 +587,9 @@ def bulk_review_entries(*, entries, reviewer, status, notes=None, request=None):
                 request=request,
                 review_status=status,
                 review_notes=notes,
-                reviewer_type="org_member" if hasattr(reviewer, 'organization') else "team_member",
+                reviewer_type="org_member"
+                if hasattr(reviewer, "organization")
+                else "team_member",
                 total_processed=len(reviewed_entries),
                 total_requested=len(entries),
             )
@@ -621,7 +642,9 @@ def entry_update(*, entry, updated_by, request=None, **fields_to_update):
             updated_fields=list(update_data.keys()),
             original_values=original_values,
             new_values=update_data,
-            updater_type="org_member" if hasattr(updated_by, 'organization') else "team_member",
+            updater_type="org_member"
+            if hasattr(updated_by, "organization")
+            else "team_member",
             entry_status=entry.status,
         )
 

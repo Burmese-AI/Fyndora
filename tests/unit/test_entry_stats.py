@@ -49,7 +49,7 @@ class TestEntryStats:
 
         # Test that the stats object is created successfully
         assert stats is not None
-        assert hasattr(stats, 'queryset')
+        assert hasattr(stats, "queryset")
 
     def test_entry_stats_initialization_with_minimal_parameters(self):
         """Test EntryStats initialization with minimal parameters."""
@@ -59,7 +59,7 @@ class TestEntryStats:
 
         # Test that the stats object is created successfully
         assert stats is not None
-        assert hasattr(stats, 'queryset')
+        assert hasattr(stats, "queryset")
 
     def test_entry_stats_total_calculation(self):
         """Test total amount calculation."""
@@ -490,7 +490,9 @@ class TestEntryStatsEdgeCases:
         organization = OrganizationFactory()
 
         # This should raise a ValueError according to current implementation
-        with pytest.raises(ValueError, match="At least one entry type must be provided"):
+        with pytest.raises(
+            ValueError, match="At least one entry type must be provided"
+        ):
             EntryStats(entry_types=[], organization=organization)
 
     def test_entry_stats_with_invalid_entry_type(self):

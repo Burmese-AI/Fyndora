@@ -35,7 +35,9 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
         workspace.created_by = orgMember
         workspace.save()
 
-        assign_workspace_permissions(workspace, request_user=orgMember.user if orgMember else None)
+        assign_workspace_permissions(
+            workspace, request_user=orgMember.user if orgMember else None
+        )
 
         # Log successful workspace creation
         try:

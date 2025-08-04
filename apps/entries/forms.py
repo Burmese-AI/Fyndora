@@ -170,7 +170,7 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
                 (EntryType.DISBURSEMENT, "Disbursement"),
                 (EntryType.REMITTANCE, "Remittance"),
             ]
-          
+
         # If admin or team coordinator, return Income, disbursement, remittance
         elif self.is_org_admin or self.is_team_coordinator:
             return [

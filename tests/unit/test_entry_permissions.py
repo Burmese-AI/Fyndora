@@ -324,7 +324,10 @@ class TestEntryPermissionsConstants:
         assert EntryPermissions.DELETE_ENTRY == "workspaces.delete_workspace_entry"
         assert EntryPermissions.VIEW_ENTRY == "workspaces.view_workspace_entry"
         assert EntryPermissions.REVIEW_ENTRY == "workspaces.review_workspace_entry"
-        assert EntryPermissions.UPLOAD_ATTACHMENTS == "workspaces.upload_workspace_attachments"
+        assert (
+            EntryPermissions.UPLOAD_ATTACHMENTS
+            == "workspaces.upload_workspace_attachments"
+        )
         assert EntryPermissions.FLAG_ENTRY == "workspaces.flag_workspace_entry"
 
 

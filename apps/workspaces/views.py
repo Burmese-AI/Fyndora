@@ -370,7 +370,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     workspace_team = get_workspace_team_by_workspace_team_id(
                         workspace_team.workspace_team_id
                     )
-                    assign_workspace_team_permissions(workspace_team, request_user=request.user)
+                    assign_workspace_team_permissions(
+                        workspace_team, request_user=request.user
+                    )
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
                         "includes/message.html", context=context, request=request

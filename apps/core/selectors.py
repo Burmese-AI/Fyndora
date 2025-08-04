@@ -9,6 +9,7 @@ def get_user_by_email(email: str) -> Optional[User]:
     """Get user by email"""
     return User.objects.filter(email=email).first()
 
+
 def get_org_members_without_owner(organization):
     """
     Return organization members without the owner.

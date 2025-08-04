@@ -3,6 +3,7 @@ Unit tests for Entry forms.
 
 Tests form validation, field behavior, and business logic in entry forms.
 """
+
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -40,13 +41,12 @@ class TestBaseEntryForm:
     def setup_method(self):
         """Set up test data."""
 
-        
         self.organization = OrganizationMemberFactory().organization
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization member to use as added_by
         self.org_member = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Create OrganizationExchangeRate to associate currency with organization
         OrganizationExchangeRate.objects.create(
             organization=self.organization,
@@ -164,7 +164,7 @@ class TestCreateOrganizationExpenseEntryForm:
         self.org_member = OrganizationMemberFactory()
         self.organization = self.org_member.organization
         self.currency = Currency.objects.create(code="EUR", name="Euro")
-        
+
         # Create OrganizationExchangeRate to associate currency with organization
         OrganizationExchangeRate.objects.create(
             organization=self.organization,
@@ -177,10 +177,9 @@ class TestCreateOrganizationExpenseEntryForm:
     def test_form_initialization_with_authorized_user(self):
         """Test form initializes for organization admin."""
         form = CreateOrganizationExpenseEntryForm(
-            organization=self.organization,
-            is_org_admin=True
+            organization=self.organization, is_org_admin=True
         )
-        
+
         # Form should initialize successfully
         assert form.organization == self.organization
 
@@ -194,15 +193,12 @@ class TestCreateOrganizationExpenseEntryForm:
         }
 
         form = CreateOrganizationExpenseEntryForm(
-            data=form_data,
-            organization=self.organization,
-            is_org_admin=False
+            data=form_data, organization=self.organization, is_org_admin=False
         )
-        
+
         assert not form.is_valid()
-        assert (
-            "You are not authorized to create organization expenses"
-            in str(form.errors)
+        assert "You are not authorized to create organization expenses" in str(
+            form.errors
         )
 
     def test_valid_form_submission(self):
@@ -215,9 +211,7 @@ class TestCreateOrganizationExpenseEntryForm:
         }
 
         form = CreateOrganizationExpenseEntryForm(
-            data=form_data,
-            organization=self.organization,
-            is_org_admin=True
+            data=form_data, organization=self.organization, is_org_admin=True
         )
 
         assert form.is_valid()
@@ -230,7 +224,7 @@ class TestCreateWorkspaceTeamEntryForm:
 
     def setup_method(self):
         """Set up test data."""
-        
+
         self.submitter = TeamMemberFactory(role=TeamMemberRole.SUBMITTER)
         self.organization = self.submitter.organization_member.organization
         self.workspace = WorkspaceFactory(organization=self.organization)
@@ -238,10 +232,10 @@ class TestCreateWorkspaceTeamEntryForm:
             workspace=self.workspace, team=self.submitter.team
         )
         self.currency = Currency.objects.create(code="GBP", name="British Pound")
-        
+
         # Create organization member to use as added_by
         self.org_member = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Create OrganizationExchangeRate to associate currency with organization
         OrganizationExchangeRate.objects.create(
             organization=self.organization,
@@ -274,19 +268,21 @@ class TestCreateWorkspaceTeamEntryForm:
         """Test form initialization with workspace admin (team coordinator)."""
         # Create team and set up coordinator properly
         team = TeamFactory(organization=self.organization)
-        coordinator_org_member = OrganizationMemberFactory(organization=self.organization)
-        
+        coordinator_org_member = OrganizationMemberFactory(
+            organization=self.organization
+        )
+
         # Set the coordinator on the team
         team.team_coordinator = coordinator_org_member
         team.save()
-        
+
         # Create workspace team member for the coordinator
         coordinator_team_member = TeamMemberFactory(
             team=team,
             organization_member=coordinator_org_member,
-            role=TeamMemberRole.SUBMITTER  # Role doesn't matter, coordinator status comes from team.team_coordinator
+            role=TeamMemberRole.SUBMITTER,  # Role doesn't matter, coordinator status comes from team.team_coordinator
         )
-        
+
         # Update workspace team to use this team
         self.workspace_team.team = team
         self.workspace_team.save()
@@ -337,12 +333,12 @@ class TestCreateWorkspaceTeamEntryForm:
         # For a submitter, we'll test with INCOME which is valid for the field choices
         # but we'll test the business logic validation by making the workspace expired
         # so that INCOME entries are not allowed
-        
+
         # Set workspace end date to yesterday to trigger validation error
-  
+
         self.workspace.end_date = date.today() - timedelta(days=1)
         self.workspace.save()
-        
+
         form_data = {
             "entry_type": EntryType.INCOME,  # Valid choice but should be rejected due to expired workspace
             "amount": "100.00",
@@ -382,13 +378,13 @@ class TestBaseUpdateEntryForm:
         from decimal import Decimal
 
         from apps.organizations.models import OrganizationExchangeRate
-        
+
         self.entry = PendingEntryFactory()
         self.organization = self.entry.organization
-        
+
         # Create organization member to use as added_by
         self.org_member = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Associate the entry's currency with the organization
         OrganizationExchangeRate.objects.create(
             organization=self.organization,
@@ -450,7 +446,7 @@ class TestBaseUpdateEntryForm:
         """Test invalid status transition is rejected."""
         # Create an approved entry and try to transition to pending (not allowed)
         approved_entry = ApprovedEntryFactory()
-        
+
         form_data = {
             "status": EntryStatus.PENDING,  # Not allowed from APPROVED status
             "amount": str(approved_entry.amount),
@@ -461,7 +457,9 @@ class TestBaseUpdateEntryForm:
         }
 
         form = BaseUpdateEntryForm(
-            data=form_data, instance=approved_entry, organization=approved_entry.organization
+            data=form_data,
+            instance=approved_entry,
+            organization=approved_entry.organization,
         )
 
         assert not form.is_valid()
@@ -475,10 +473,10 @@ class TestUpdateOrganizationExpenseEntryForm:
 
     def setup_method(self):
         """Set up test data."""
-        
+
         self.org_member = OrganizationMemberFactory()
         self.organization = self.org_member.organization
-        
+
         # Create currency and associate it with organization
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
         OrganizationExchangeRate.objects.create(
@@ -488,22 +486,20 @@ class TestUpdateOrganizationExpenseEntryForm:
             effective_date=date.today(),
             added_by=self.org_member,
         )
-        
+
         # Create entry with the organization's currency
         self.entry = EntryFactory(
-            organization=self.organization, 
+            organization=self.organization,
             entry_type=EntryType.ORG_EXP,
-            currency=self.currency
+            currency=self.currency,
         )
 
     def test_form_initialization_with_authorized_user(self):
         """Test form initializes for organization admin."""
         form = UpdateOrganizationExpenseEntryForm(
-            instance=self.entry,
-            organization=self.organization,
-            is_org_admin=True
+            instance=self.entry, organization=self.organization, is_org_admin=True
         )
-        
+
         # Form should initialize successfully
         assert form.instance == self.entry
 
@@ -517,19 +513,18 @@ class TestUpdateOrganizationExpenseEntryForm:
             "occurred_at": self.entry.occurred_at,
             "replace_attachments": False,
         }
-        
+
         form = UpdateOrganizationExpenseEntryForm(
             data=form_data,
             instance=self.entry,
             organization=self.organization,
-            is_org_admin=False
+            is_org_admin=False,
         )
-        
+
         assert not form.is_valid()
         # Check non-field errors where authorization errors appear
-        assert (
-            "You are not authorized to update organization expenses"
-            in str(form.non_field_errors())
+        assert "You are not authorized to update organization expenses" in str(
+            form.non_field_errors()
         )
 
 
@@ -540,13 +535,13 @@ class TestFormFieldValidation:
 
     def setup_method(self):
         """Set up test data."""
-        
+
         self.organization = OrganizationMemberFactory().organization
         self.currency = Currency.objects.create(code="JPY", name="Japanese Yen")
-        
+
         # Create organization member to use as added_by
         self.org_member = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Create OrganizationExchangeRate to associate currency with organization
         OrganizationExchangeRate.objects.create(
             organization=self.organization,
@@ -578,11 +573,13 @@ class TestFormFieldValidation:
         }
 
         form = BaseEntryForm(data=form_data, organization=self.organization)
-        
+
         # Django DecimalField with decimal_places=2 rejects values with more than 2 decimal places
         assert not form.is_valid()
         assert "amount" in form.errors
-        assert "Ensure that there are no more than 2 decimal places" in str(form.errors["amount"])
+        assert "Ensure that there are no more than 2 decimal places" in str(
+            form.errors["amount"]
+        )
 
     def test_amount_field_max_digits_validation(self):
         """Test amount field rejects values exceeding max_digits=10."""
@@ -622,6 +619,7 @@ class TestFormFieldValidation:
         assert form.is_valid()
         if form.is_valid():
             from decimal import Decimal
+
             assert form.cleaned_data["amount"] == Decimal("100.50")
 
     def test_amount_field_no_decimal_places(self):
@@ -637,6 +635,7 @@ class TestFormFieldValidation:
         assert form.is_valid()
         if form.is_valid():
             from decimal import Decimal
+
             assert form.cleaned_data["amount"] == Decimal("100.00")
 
     def test_occurred_at_field_date_format(self):
@@ -684,7 +683,9 @@ class TestFormFieldValidation:
 
     def test_currency_field_invalid_choice(self):
         """Test currency field rejects currency not in organization."""
-        other_currency = Currency.objects.create(code="EUR", name="Euro")  # Not added to organization
+        other_currency = Currency.objects.create(
+            code="EUR", name="Euro"
+        )  # Not added to organization
 
         form_data = {
             "amount": "100.00",

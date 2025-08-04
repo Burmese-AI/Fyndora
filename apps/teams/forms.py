@@ -1,10 +1,10 @@
 from django import forms
 from .models import Team
 from apps.organizations.models import OrganizationMember
-from apps.workspaces.selectors import get_organization_members_by_organization_id
 from apps.teams.models import TeamMember
 from apps.teams.constants import TeamMemberRole
 from apps.core.selectors import get_org_members_without_owner
+
 
 class TeamForm(forms.ModelForm):
     team_coordinator = forms.ModelChoiceField(
@@ -45,9 +45,9 @@ class TeamForm(forms.ModelForm):
         )
         super().__init__(*args, **kwargs)
         if self.organization:
-            self.fields[
-                "team_coordinator"
-            ].queryset = get_org_members_without_owner(self.organization)
+            self.fields["team_coordinator"].queryset = get_org_members_without_owner(
+                self.organization
+            )
         if not self.can_change_team_coordinator:
             self.fields["team_coordinator"].widget.attrs["disabled"] = True
 
@@ -107,9 +107,9 @@ class TeamMemberForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.organization:
-            self.fields[
-                "organization_member"
-            ].queryset = get_org_members_without_owner(self.organization)
+            self.fields["organization_member"].queryset = get_org_members_without_owner(
+                self.organization
+            )
 
     def clean(self):
         cleaned_data = super().clean()

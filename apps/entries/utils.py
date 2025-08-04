@@ -94,7 +94,7 @@ def extract_entry_business_context(entry):
     """
     if not entry:
         return {}
-    
+
     return {
         "entry_id": str(entry.entry_id),
         "entry_type": entry.entry_type,

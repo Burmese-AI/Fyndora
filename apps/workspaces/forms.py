@@ -7,7 +7,7 @@ from apps.workspaces.models import WorkspaceTeam
 from apps.workspaces.selectors import get_teams_by_organization_id
 from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 from django.core.exceptions import ValidationError
-
+from apps.workspaces.selectors import get_org_members_without_owner
 
 class WorkspaceForm(forms.ModelForm):
     workspace_admin = forms.ModelChoiceField(
@@ -94,16 +94,10 @@ class WorkspaceForm(forms.ModelForm):
         if self.organization:
             self.fields[
                 "workspace_admin"
-            ].queryset = get_organization_members_by_organization_id(
-                self.organization.organization_id
-            )
+            ].queryset = get_org_members_without_owner(self.organization)
 
         if self.organization:
-            self.fields[
-                "operations_reviewer"
-            ].queryset = get_organization_members_by_organization_id(
-                self.organization.organization_id
-            )
+            self.fields["operations_reviewer"].queryset = get_org_members_without_owner(self.organization)
 
         if not self.can_change_workspace_admin:
             self.fields["workspace_admin"].widget.attrs["disabled"] = True

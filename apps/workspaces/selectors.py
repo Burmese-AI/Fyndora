@@ -225,3 +225,15 @@ def get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id):
     except Exception as e:
         print(f"Error in get_workspace_team_by_workspace_id_and_team_id: {str(e)}")
         return None
+
+def get_org_members_without_owner(organization):
+    """
+    Return organization members without the owner.
+    """
+    try:
+        return OrganizationMember.objects.filter(organization=organization).exclude(
+            user=organization.owner.user
+        )
+    except Exception as e:
+        print(f"Error in get_org_members_without_owner: {str(e)}")
+        return None

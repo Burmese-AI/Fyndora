@@ -148,8 +148,6 @@ def edit_team_view(request, organization_id, team_id):
         team = get_team_by_id(team_id)
         organization = get_organization_by_id(organization_id)
         previous_team_coordinator = team.team_coordinator
-        print("previous_team_coordinator is ", previous_team_coordinator)
-        print("new team coordinator is ", request.POST.get("team_coordinator"))
 
         permission_check = check_change_team_permission(request, team)
         if permission_check:

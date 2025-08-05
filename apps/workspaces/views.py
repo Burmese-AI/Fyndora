@@ -76,6 +76,7 @@ from apps.workspaces.permissions import (
     remove_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
+from datetime import datetime
 
 
 @login_required
@@ -491,13 +492,14 @@ def change_workspace_team_remittance_rate_view(
     request, organization_id, workspace_id, team_id, workspace_team_id
 ):
     try:
+        
         workspace_team = get_workspace_team_by_workspace_team_id(workspace_team_id)
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         team = get_team_by_id(team_id)
         if request.method == "POST":
             form = ChangeWorkspaceTeamRemittanceRateForm(
-                request.POST, instance=workspace_team
+                request.POST, instance=workspace_team, workspace=workspace
             )
             if form.is_valid():
                 # Updating Team Lvl Remittance Rate

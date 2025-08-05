@@ -7,6 +7,7 @@ from apps.workspaces.selectors import get_teams_by_organization_id
 from apps.currencies.forms import BaseExchangeRateCreateForm, BaseExchangeRateUpdateForm
 from django.core.exceptions import ValidationError
 from apps.core.selectors import get_org_members_without_owner
+from datetime import datetime
 
 
 class WorkspaceForm(forms.ModelForm):
@@ -124,11 +125,17 @@ class WorkspaceForm(forms.ModelForm):
         workspace_admin = cleaned_data.get("workspace_admin")
         operations_reviewer = cleaned_data.get("operations_reviewer")
 
+        now = datetime.now().date()
+        if end_date and end_date < now:
+            raise forms.ValidationError("You cannot edit a workspace that has ended.")
+
+        # to make sure the workspace admin and operations reviewer are not the same person
         if workspace_admin and operations_reviewer:
             if workspace_admin == operations_reviewer:
                 raise forms.ValidationError(
                     "Workspace admin and operations reviewer cannot be the same person."
                 )
+
 
         if title and self.organization:
             # Create a queryset excluding the current instance (if editing)
@@ -214,6 +221,9 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
                 }
             ),
         }
+    def __init__(self, *args, **kwargs):
+        self.workspace = kwargs.pop("workspace", None)
+        super().__init__(*args, **kwargs)
 
     def clean_custom_remittance_rate(self):
         custom_remittance_rate = self.cleaned_data.get("custom_remittance_rate")
@@ -223,6 +233,13 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
             raise forms.ValidationError("Remittance rate must be between 0 and 100.")
         return custom_remittance_rate
 
+    def clean(self):
+        # to make sure the remittance rate is not changed after the workspace has ended
+        now = datetime.now().date()
+        workspace_end_date = self.workspace.end_date
+        if workspace_end_date and workspace_end_date < now:
+            raise forms.ValidationError("You cannot change the remittance rate of a workspace that has ended.")
+        return self.cleaned_data
 
 class WorkspaceExchangeRateCreateForm(BaseExchangeRateCreateForm):
     class Meta(BaseExchangeRateCreateForm.Meta):

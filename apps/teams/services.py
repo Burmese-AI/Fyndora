@@ -264,7 +264,7 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
                 request=None,
                 team_id=str(team.team_id),
                 team_title=team.title,
-                team_member_id=str(team_member.id),
+                team_member_id=str(team_member.pk),
                 member_email=team_member.organization_member.user.email,
                 attempted_role_change=f"{previous_role} -> {form.cleaned_data.get('role', 'Unknown')}",
             )
@@ -487,7 +487,7 @@ def remove_team_member(team_member: TeamMember, team: Team) -> None:
                 request=None,
                 team_id=str(team.team_id),
                 team_title=team.title,
-                team_member_id=str(team_member.id),
+                team_member_id=str(team_member.pk),
                 member_email=team_member.organization_member.user.email,
                 member_role=team_member.role,
             )

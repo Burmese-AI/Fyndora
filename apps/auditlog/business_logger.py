@@ -494,7 +494,7 @@ class BusinessAuditLogger:
         if exchange_rate:
             metadata.update(
                 {
-                    "exchange_rate_id": str(exchange_rate.id),
+                    "exchange_rate_id": str(exchange_rate.pk),
                     "organization_id": str(exchange_rate.organization.organization_id),
                     "currency_code": exchange_rate.currency.code,
                     "rate": str(exchange_rate.rate),
@@ -657,7 +657,7 @@ class BusinessAuditLogger:
         if team_member:
             metadata.update(
                 {
-                    "team_member_id": str(team_member.id),
+                    "team_member_id": str(team_member.pk),
                     "team_id": str(team_member.team.team_id),
                     "team_title": team_member.team.title,
                     "organization_id": str(
@@ -949,7 +949,7 @@ class BusinessAuditLogger:
         if exchange_rate:
             metadata.update(
                 {
-                    "exchange_rate_id": str(exchange_rate.id),
+                    "exchange_rate_id": str(exchange_rate.pk),
                     "workspace_id": str(exchange_rate.workspace.workspace_id),
                     "workspace_title": exchange_rate.workspace.title,
                     "organization_id": str(

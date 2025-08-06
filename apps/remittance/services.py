@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.utils import model_update
+from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.remittance.permissions import RemittancePermissions
 from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus
@@ -61,22 +62,12 @@ def process_due_amount(workspace_team: WorkspaceTeam, remittance: Remittance):
     final_total = Decimal(income_total) - Decimal(disbursement_total)
 
     # 4. Get remittance rate from team or workspace
-    print(f"===== > {workspace_team}")
     team_lvl_remittance_rate = workspace_team.custom_remittance_rate
-    print(f"Team lvl remittance => {team_lvl_remittance_rate}")
-    workspace_lvl_remittance_rate = workspace_team.workspace.remittance_rate
-    print(f"Workspace lvl => {workspace_lvl_remittance_rate}")
     remittance_rate = (
         workspace_team.custom_remittance_rate
         if team_lvl_remittance_rate and team_lvl_remittance_rate != 0.00
         else workspace_team.workspace.remittance_rate
     )
-
-    # Debug: Print calculation info
-    print(f"Income Total: {income_total}")
-    print(f"Disbursement Total: {disbursement_total}")
-    print(f"Remittance Rate: {remittance_rate} {type(remittance_rate)}")
-    print(f"Final Total: {final_total} {type(final_total)}")
 
     # 5. Apply rate to get due amount
     due_amount = 0
@@ -89,13 +80,6 @@ def process_due_amount(workspace_team: WorkspaceTeam, remittance: Remittance):
 def update_remittance_based_on_entry_status_change(
     *, remittance: Remittance, due_amount=None, paid_amount=None
 ):
-    print(
-        f"Pre-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
-    )
-
-    # Debug: Show the values we’re about to apply
-    print(f"Values to update with: {due_amount} | {paid_amount}")
-
     # Update only the fields that are provided
     remittance.due_amount = (
         due_amount if due_amount is not None else remittance.due_amount
@@ -106,8 +90,6 @@ def update_remittance_based_on_entry_status_change(
     remittance.update_status()
     remittance.check_if_overdue()
     remittance.check_if_overpaid()
-
-    # Debug: Show values before saving
 
     # Save the updated fields to the database
     remittance.save(
@@ -120,22 +102,14 @@ def update_remittance_based_on_entry_status_change(
         ]
     )
 
-    # Debug: Confirm saved values
-    print(
-        f"Post-Update Remittance: {remittance.due_amount} | {remittance.paid_amount} | {remittance.status} | {remittance.is_overpaid}"
-    )
-
 
 def remittance_confirm_payment(*, remittance, user):
     """
     Confirms a remittance payment.
     """
-    if not skip_permissions:
-        workspace = remittance.workspace_team.workspace
-        if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
-            raise PermissionDenied(
-                "You do not have permission to confirm this remittance."
-            )
+    workspace = remittance.workspace_team.workspace
+    if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
+        raise PermissionDenied("You do not have permission to confirm this remittance.")
 
     if remittance.paid_amount < remittance.due_amount:
         raise ValidationError(
@@ -143,8 +117,9 @@ def remittance_confirm_payment(*, remittance, user):
         )
 
     # Get the OrganizationMember instance for the user
-    organization_member = get_organization_member_by_user_and_organization(
-        user=user, organization=remittance.workspace_team.workspace.organization
+    organization_member = get_orgMember_by_user_id_and_organization_id(
+        user_id=user.pk,
+        organization_id=remittance.workspace_team.workspace.organization.pk,
     )
 
     updated_remittance = model_update(

@@ -5,13 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.utils import model_update
-from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
-from apps.remittance.permissions import RemittancePermissions
-from apps.remittance.models import Remittance
-from apps.remittance.constants import RemittanceStatus
+from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
-from apps.entries.constants import EntryType, EntryStatus
 from apps.entries.selectors import get_total_amount_of_entries
+from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
+from apps.remittance.constants import RemittanceStatus
+from apps.remittance.models import Remittance
+from apps.remittance.permissions import RemittancePermissions
 from apps.workspaces.models import WorkspaceTeam
 
 
@@ -155,8 +155,15 @@ def remittance_record_payment(*, remittance, user, amount):
             f"Payment of {amount} exceeds the remaining due amount of {remaining_amount}."
         )
 
+    # Update payment amount and recalculate status
     remittance.paid_amount += amount
-    remittance.save(update_fields=["paid_amount", "status"])
+    remittance.update_status()
+    remittance.check_if_overdue()
+    remittance.check_if_overpaid()
+
+    remittance.save(
+        update_fields=["paid_amount", "status", "paid_within_deadlines", "is_overpaid"]
+    )
 
     return remittance
 
@@ -194,7 +201,15 @@ def remittance_create_or_update_from_income_entry(*, entry):
 
         if remittance:
             remittance.due_amount += due_amount_to_add
-            remittance.save(update_fields=["due_amount"])
+            remittance.update_status()
+            remittance.check_if_overdue()
+            remittance.check_if_overpaid()
+            remittance.save(update_fields=[
+                "due_amount", 
+                "status", 
+                "paid_within_deadlines", 
+                "is_overpaid"
+            ])
         else:
             remittance = Remittance.objects.create(
                 workspace_team=workspace_team,
@@ -226,9 +241,15 @@ def remittance_change_due_date(*, remittance, user, due_date):
     workspace.full_clean()
     workspace.save(update_fields=["end_date"])
 
-    # Check if remittance is now overdue
+    # Update status and check all conditions after due date change
+    remittance.update_status()
     remittance.check_if_overdue()
-    remittance.save(update_fields=["paid_within_deadlines"])
+    remittance.check_if_overpaid()
+    remittance.save(update_fields=[
+        "status", 
+        "paid_within_deadlines", 
+        "is_overpaid"
+    ])
 
     return remittance
 
@@ -271,7 +292,14 @@ def remittance_cancel(*, remittance, user):
     if remittance.status == RemittanceStatus.CANCELED:
         return remittance
 
+    # Set status to canceled and update related fields
     remittance.status = RemittanceStatus.CANCELED
-    remittance.save(update_fields=["status"])
+    remittance.check_if_overdue()
+    remittance.check_if_overpaid()
+    remittance.save(update_fields=[
+        "status", 
+        "paid_within_deadlines", 
+        "is_overpaid"
+    ])
 
     return remittance

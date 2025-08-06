@@ -64,18 +64,20 @@ class Remittance(baseModel):
         """
         Update remittance status based on paid and due amounts.
         """
-
         # Don't update status if it's already canceled
         if self.status == RemittanceStatus.CANCELED:
             return
 
-        if self.paid_amount == 0.0:
+        # Check if overdue first (if not paid and past due date)
+        if (self.workspace_team.workspace.end_date < timezone.now().date() 
+            and self.paid_amount < self.due_amount):
+            self.status = RemittanceStatus.OVERDUE
+        elif self.paid_amount == 0.0:
             self.status = RemittanceStatus.PENDING
         elif self.paid_amount < self.due_amount:
             self.status = RemittanceStatus.PARTIAL
         else:
             self.status = RemittanceStatus.PAID
-        print(f"Debugging status => {self.status}")
 
     def check_if_overdue(self):
         if (

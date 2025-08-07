@@ -367,7 +367,7 @@ def delete_organization_exchange_rate(
                     exchange_rate=None,  # Entity is deleted
                     action="delete",
                     request=None,
-                    organization_id=str(organization.organization_id),
+                    organization_id=str(organization.pk),
                     organization_title=organization.title,
                     deleted_exchange_rate_context=exchange_rate_context,
                     **extract_request_metadata(),
@@ -389,8 +389,8 @@ def delete_organization_exchange_rate(
                     operation_type="organization_exchange_rate_deletion_failed",
                     error=err,
                     request=None,
-                    organization_id=str(organization.organization_id),
-                    exchange_rate_id=str(org_exchange_rate.id),
+                    organization_id=str(organization.pk),
+                    exchange_rate_id=str(org_exchange_rate.pk),
                     error_type=type(err).__name__,
                     **extract_request_metadata(),
                 )

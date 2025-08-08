@@ -69,8 +69,10 @@ class Remittance(baseModel):
             return
 
         # Check if overdue first (if not paid and past due date)
-        if (self.workspace_team.workspace.end_date < timezone.now().date() 
-            and self.paid_amount < self.due_amount):
+        if (
+            self.workspace_team.workspace.end_date < timezone.now().date()
+            and self.paid_amount < self.due_amount
+        ):
             self.status = RemittanceStatus.OVERDUE
         elif self.paid_amount == 0.0:
             self.status = RemittanceStatus.PENDING

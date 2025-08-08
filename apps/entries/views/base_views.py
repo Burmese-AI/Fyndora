@@ -1,8 +1,6 @@
-from typing import Any
 import json
 
-from django.views import View
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpResponse
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.template.loader import render_to_string
@@ -47,19 +45,11 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
 
 
 # views/bulk_actions.py
-from django.http import HttpResponse
-from django.views import View
-from django.shortcuts import get_object_or_404
-from django.core.exceptions import ValidationError
-import json
 
 
 class BaseEntryBulkActionView(
-    HtmxInvalidResponseMixin,
-    HtmxOobResponseMixin,
-    TemplateView
+    HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
 ):
-    
     table_template_name = None
     context_object_name = CONTEXT_OBJECT_NAME
 
@@ -97,10 +87,9 @@ class BaseEntryBulkActionView(
 
     def post(self, request, *args, **kwargs):
         try:
-            
             # Parse IDs
             entry_ids = self.parse_entry_ids(request)
-            
+
             if not entry_ids:
                 raise Exception("No entries selected")
 
@@ -108,9 +97,9 @@ class BaseEntryBulkActionView(
             base_qs = self.get_queryset()
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
-            
+
             # List existing entry ids
-            existing_ids = set(entries.values_list('pk', flat=True))
+            existing_ids = set(entries.values_list("pk", flat=True))
 
             # List missing or inaccessible entries
             requested_set = set(entry_ids)
@@ -131,7 +120,10 @@ class BaseEntryBulkActionView(
 
             self.perform_action(qs_valid_entries, request.user)
 
-            messages.success(self.request, f"Performed the bulk action on {qs_valid_entries.count()} entries successfully")
+            messages.success(
+                self.request,
+                f"Performed the bulk action on {qs_valid_entries.count()} entries successfully",
+            )
 
             return self._render_htmx_success_response()
 

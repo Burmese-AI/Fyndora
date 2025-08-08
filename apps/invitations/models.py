@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from apps.core.models import baseModel
 from apps.organizations.models import Organization, OrganizationMember
 from django.utils import timezone
@@ -35,6 +36,10 @@ class Invitation(baseModel):
     @property
     def is_valid(self):
         return self.is_active and not self.is_used and not self.is_expired
+
+    def get_acceptance_url(self):
+        """Generate the URL for accepting this invitation"""
+        return reverse('accept_invitation', kwargs={'invitation_token': self.token})
 
     def __str__(self):
         return f"{self.pk} - {self.organization.title} - {self.email} - {self.token} - {self.is_active}"

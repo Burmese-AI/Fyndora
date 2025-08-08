@@ -136,6 +136,7 @@ Before setting up the email system, ensure you have:
 3. Configure the consent screen if prompted
 4. Choose "Desktop application" as the application type
 5. Download the JSON credentials file
+6. You may require to set up tester in "Audience" section to test the email sending
 
 ### Step 3: Generate OAuth2 Token
 
@@ -155,6 +156,9 @@ print('OAuth2 setup complete!')
 ```
 
 **Option B: Local Setup**
+
+**important** required to setup celery worker locally to send emails and using docker is recommended
+
 ```bash
 # Install yagmail locally
 pip install yagmail

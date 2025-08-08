@@ -25,7 +25,7 @@ env = environ.Env(
 # Read .env file
 # env_path = BASE_DIR(".env")
 # Read .env.local file
-env_path = BASE_DIR(".env.local")
+env_path = BASE_DIR(".env")
 
 env.read_env(env_path, parse_comments=True, overwrite=True)
 
@@ -246,7 +246,7 @@ ACCOUNT_ADAPTER = "apps.emails.adapters.CustomAccountAdapter"
 ACCOUNT_LOGIN_METHODS = ("email",)
 ACCOUNT_SIGNUP_FIELDS = ("email*", "username*", "password1*", "password2*")
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # none or mandatory
 ACCOUNT_SESSION_REMEMBER = True
 
 # Using dummy backend because we are using our own email service

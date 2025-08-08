@@ -1,0 +1,20 @@
+🎉 Welcome to {{ organization.title }}!
+
+Great news! {{ invited_by.user.get_full_name|default:invited_by.user.email }} has invited you to join {{ organization.title }}, where teams collaborate seamlessly and achieve more together.
+
+🚀 Ready to get started?
+Accept your invitation by clicking this link:
+{{ acceptance_url }}
+
+⏰ Important Details:
+• This invitation expires on {{ invitation.expired_at|date:"F j, Y at g:i A" }}
+• New to our platform? No worries! You'll create your account during the acceptance process
+• Questions? Simply reply to this email for assistance
+
+We're excited to have you join the {{ organization.title }} community!
+
+Best regards,
+The {{ organization.title }} Team
+
+---
+This invitation was sent to you because {{ invited_by.user.get_full_name|default:invited_by.user.email }} believes you'd be a valuable addition to their team. If you received this email in error, please disregard it.

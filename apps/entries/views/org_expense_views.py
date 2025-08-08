@@ -1,11 +1,8 @@
 from typing import Any
-import json
 
 from django.db.models.query import QuerySet
-from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
-from django.views import View
 
 from apps.core.utils import permission_denied_view
 from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
@@ -238,38 +235,42 @@ class OrganizationExpenseBulkDeleteView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
     BaseGetModalView,
-    BaseEntryBulkActionView
+    BaseEntryBulkActionView,
 ):
     table_template_name = "entries/partials/table.html"
     modal_template_name = "components/delete_confirmation_modal.html"
-    
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
         )
-        
+
     def perform_action(self, entries, user):
         return entries.delete()
-    
+
     def validate_entry(self, entry, user):
-        #True if
-        #1. Entry status pending
-        #2. Entry hasn't been reviewed
-        if entry.status == EntryStatus.PENDING and not entry.status_last_updated_at and not entry.last_status_modified_by:
+        # True if
+        # 1. Entry status pending
+        # 2. Entry hasn't been reviewed
+        if (
+            entry.status == EntryStatus.PENDING
+            and not entry.status_last_updated_at
+            and not entry.last_status_modified_by
+        ):
             return True
         return False
-    
+
     def get_post_url(self) -> str:
         return reverse(
-            "organization_expense_bulk_delete", 
-            kwargs={"organization_id": self.organization.pk}
+            "organization_expense_bulk_delete",
+            kwargs={"organization_id": self.organization.pk},
         )
 
     def get_modal_title(self) -> str:
         return ""
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         selected_ids = self.request.GET.getlist("entries")

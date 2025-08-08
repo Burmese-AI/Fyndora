@@ -136,7 +136,6 @@ class WorkspaceForm(forms.ModelForm):
                     "Workspace admin and operations reviewer cannot be the same person."
                 )
 
-
         if title and self.organization:
             # Create a queryset excluding the current instance (if editing)
             workspace_queryset = Workspace.objects.filter(
@@ -221,6 +220,7 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
                 }
             ),
         }
+
     def __init__(self, *args, **kwargs):
         self.workspace = kwargs.pop("workspace", None)
         super().__init__(*args, **kwargs)
@@ -238,8 +238,11 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
         now = datetime.now().date()
         workspace_end_date = self.workspace.end_date
         if workspace_end_date and workspace_end_date < now:
-            raise forms.ValidationError("You cannot change the remittance rate of a workspace that has ended.")
+            raise forms.ValidationError(
+                "You cannot change the remittance rate of a workspace that has ended."
+            )
         return self.cleaned_data
+
 
 class WorkspaceExchangeRateCreateForm(BaseExchangeRateCreateForm):
     class Meta(BaseExchangeRateCreateForm.Meta):

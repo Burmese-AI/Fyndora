@@ -204,12 +204,14 @@ def remittance_create_or_update_from_income_entry(*, entry):
             remittance.update_status()
             remittance.check_if_overdue()
             remittance.check_if_overpaid()
-            remittance.save(update_fields=[
-                "due_amount", 
-                "status", 
-                "paid_within_deadlines", 
-                "is_overpaid"
-            ])
+            remittance.save(
+                update_fields=[
+                    "due_amount",
+                    "status",
+                    "paid_within_deadlines",
+                    "is_overpaid",
+                ]
+            )
         else:
             remittance = Remittance.objects.create(
                 workspace_team=workspace_team,
@@ -245,11 +247,7 @@ def remittance_change_due_date(*, remittance, user, due_date):
     remittance.update_status()
     remittance.check_if_overdue()
     remittance.check_if_overpaid()
-    remittance.save(update_fields=[
-        "status", 
-        "paid_within_deadlines", 
-        "is_overpaid"
-    ])
+    remittance.save(update_fields=["status", "paid_within_deadlines", "is_overpaid"])
 
     return remittance
 
@@ -296,10 +294,6 @@ def remittance_cancel(*, remittance, user):
     remittance.status = RemittanceStatus.CANCELED
     remittance.check_if_overdue()
     remittance.check_if_overpaid()
-    remittance.save(update_fields=[
-        "status", 
-        "paid_within_deadlines", 
-        "is_overpaid"
-    ])
+    remittance.save(update_fields=["status", "paid_within_deadlines", "is_overpaid"])
 
     return remittance

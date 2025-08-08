@@ -36,9 +36,10 @@ class BaseGetModalView:
         context["is_oob"] = False
         return render(request, self.modal_template_name, context)
 
+
 class BaseGetModalFormView(BaseGetModalView, HtmxModalFormInvalidFormResponseMixin):
     form_class = None
-    
+
     def get(self, request: HttpRequest, *args: str, **kwargs: Any) -> HttpResponse:
         self.object = None
         form_kwargs = self.get_form_kwargs()
@@ -55,4 +56,3 @@ class BaseGetModalFormView(BaseGetModalView, HtmxModalFormInvalidFormResponseMix
             }
         )
         return render(request, self.modal_template_name, context)
-

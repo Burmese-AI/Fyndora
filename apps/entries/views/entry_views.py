@@ -58,10 +58,23 @@ class WorkspaceTeamEntryListView(
             entry_types=[
                 EntryType.INCOME,
                 EntryType.DISBURSEMENT,
-                EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
+            status=self.request.GET.get("status"),
+            type_filter=self.request.GET.get("type"),
+            team_name=self.request.GET.get("team"),
+            workspace_id=self.request.GET.get("workspace"),
+            search=self.request.GET.get("search"),
         )
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        #Filter Options
+        #Type
+        context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT]
+        #Status
+        context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED]
+        return context
 
 
 class WorkspaceTeamEntryCreateView(

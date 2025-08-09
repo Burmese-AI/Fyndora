@@ -22,68 +22,8 @@
       
       <div class="flex items-center gap-2 flex-wrap">
         <!-- Filter Button -->
-        <div class="dropdown dropdown-bottom">
-          <button class="btn btn-sm btn-outline" tabindex="0">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-              stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-            </svg>
-            <span class="hidden sm:inline">Filter</span>
-          </button>
-
-          <!-- Filter Dropdown Menu -->
-          <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-64 space-y-3">
-            <!-- Status Filter -->
-            <div>
-              <label class="label-text font-semibold">Status</label>
-              <select class="select select-sm select-bordered w-full">
-                <option disabled selected>Select status</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Pending</option>
-              </select>
-            </div>
-
-            <!-- Type Filter -->
-            <div>
-              <label class="label-text font-semibold">Type</label>
-              <select class="select select-sm select-bordered w-full">
-                <option disabled selected>Select type</option>
-                <option>Internal</option>
-                <option>External</option>
-              </select>
-            </div>
-
-            <!-- Team Filter -->
-            <div>
-              <label class="label-text font-semibold">Team</label>
-              <select class="select select-sm select-bordered w-full">
-                <option disabled selected>Select team</option>
-                <option>Team Alpha</option>
-                <option>Team Beta</option>
-                <option>Team Gamma</option>
-              </select>
-            </div>
-
-            <!-- Workspace Filter -->
-            <div>
-              <label class="label-text font-semibold">Workspace</label>
-              <select class="select select-sm select-bordered w-full">
-                <option disabled selected>Select workspace</option>
-                <option>Workspace 1</option>
-                <option>Workspace 2</option>
-                <option>Workspace 3</option>
-              </select>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex justify-between mt-2">
-              <button class="btn btn-sm btn-outline">Clear</button>
-              <button class="btn btn-sm btn-primary">Apply</button>
-            </div>
-          </div>
-        </div>
+        {% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
+        {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
 
         <!-- Search Input -->
         <label class="input input-bordered flex items-center gap-2 w-full sm:w-64">
@@ -96,8 +36,6 @@
           <input type="search" class="grow" placeholder="Search entries..." />
         </label>
       </div>
-
-
 
       <!-- Action Buttons Container-->
       <div>
@@ -144,7 +82,7 @@
     </div>
 
     <!-- Entries Section -->
-    <div class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
+    <div id="content-container" class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
       {% include "entries/partials/table.html" %}
     </div>
 

@@ -1,0 +1,77 @@
+<div class="dropdown dropdown-bottom">
+  <button class="btn btn-sm btn-outline" tabindex="0">
+    <span class="hidden sm:inline">Filter</span>
+  </button>
+
+  <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-64 space-y-3">
+    {% if status_options or type_options or team_options or workspace_options %}
+
+      <form 
+        hx-get="{{ filter_url }}"
+        hx-target="{{ filter_target|default:'#content-container' }}" 
+        hx-swap="innerHTML"
+        class="space-y-3"
+      >
+        {% if status_options %}
+          <div>
+            <label class="label-text font-semibold">Status</label>
+            <select name="status" class="select select-sm select-bordered w-full">
+              <option value="">All statuses</option>
+              {% for status in status_options %}
+                <option value="{{ status }}">{{ status }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="divider"></div>
+        {% endif %}
+
+        {% if type_options %}
+          <div>
+            <label class="label-text font-semibold">Type</label>
+            <select name="type" class="select select-sm select-bordered w-full">
+              <option value="">All types</option>
+              {% for type in type_options %}
+                <option value="{{ type }}">{{ type }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="divider"></div>
+        {% endif %}
+
+        {% if team_options %}
+          <div>
+            <label class="label-text font-semibold">Team</label>
+            <select name="team" class="select select-sm select-bordered w-full">
+              <option value="">All teams</option>
+              {% for team in team_options %}
+                <option value="{{ team.id }}">{{ team.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="divider"></div>
+        {% endif %}
+
+        {% if workspace_options %}
+          <div>
+            <label class="label-text font-semibold">Workspace</label>
+            <select name="workspace" class="select select-sm select-bordered w-full">
+              <option value="">All workspaces</option>
+              {% for ws in workspace_options %}
+                <option value="{{ ws.id }}">{{ ws.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="divider"></div>
+        {% endif %}
+
+        <div class="flex justify-between mt-2">
+          <a href="{{ filter_url }}" class="btn btn-sm btn-outline">Clear</a>
+          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        </div>
+      </form>
+
+    {% else %}
+      <p class="text-sm text-base-content/60">No filters available.</p>
+    {% endif %}
+  </div>
+</div>

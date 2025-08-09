@@ -13,7 +13,7 @@ from .mixins import HtmxInvalidResponseMixin, HtmxOobResponseMixin
 from django.shortcuts import render
 
 
-class BaseListView(LoginRequiredMixin, HtmxOobResponseMixin, ListView):
+class BaseListView(LoginRequiredMixin, ListView):
     """
     Base class for list view.
     Required:

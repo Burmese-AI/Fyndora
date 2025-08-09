@@ -30,33 +30,35 @@ def remittance_list_view(request, organization_id):
     View to list remittances for a specific workspace team.
     """
     try:
-
         filtered_workspace_id = request.GET.get("workspace_id")
-        print(f"this is the filter_by_workspace: {filtered_workspace_id}")
+        filtered_status = request.GET.get("status")
+        print(f"this is the filtered_status: {filtered_status}")
         
+
         # Convert empty string to None for proper filtering
         if filtered_workspace_id == "":
             filtered_workspace_id = None
-            
-        if filtered_workspace_id:
-            remittances = get_remiitances_under_organization(
-                organization_id, workspace_id=filtered_workspace_id
-            )
-        else:
-            remittances = get_remiitances_under_organization(organization_id)
-            
+        if filtered_status == "":
+            filtered_status = None
+
+        remittances = get_remiitances_under_organization(
+            organization_id, workspace_id=filtered_workspace_id
+        )
         
+        # Apply status filter if provided
+        if filtered_status and remittances:
+            remittances = remittances.filter(status=filtered_status)
+
         organization = get_organization_by_id(organization_id)
         workspaces = get_workspaces_under_organization(organization_id)
-        
+
         # Handle case where remittances is None
         if remittances is None:
             remittances = []
-            
+
         paginator = Paginator(remittances, PAGINATION_SIZE)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        
         context = {
             "organization": organization,
             "remittances": page_obj,
@@ -65,10 +67,14 @@ def remittance_list_view(request, organization_id):
             "paginator": paginator,
             "workspaces": workspaces,  # for dropdown filter
             "selected_workspace_id": filtered_workspace_id,  # to maintain selected state
+            "selected_status": filtered_status,  # to maintain selected status
+            "remittance_status": RemittanceStatus.choices,  # for dropdown filter
         }
-        
+
         if request.headers.get("HX-Request"):
-            return render(request, "remittance/components/remittance_table.html", context)
+            return render(
+                request, "remittance/components/remittance_table.html", context
+            )
         return render(request, "remittance/index.html", context)
     except Exception as e:
         # Handle any errors gracefully

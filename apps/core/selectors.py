@@ -67,15 +67,14 @@ def get_remiitances_under_organization(organization_id, workspace_id=None):
         if workspace_id:
             # Filter workspace teams by specific workspace
             workspace_teams = WorkspaceTeam.objects.filter(
-                workspace__organization=organization_id,
-                workspace=workspace_id
+                workspace__organization=organization_id, workspace=workspace_id
             )
         else:
             # Get all workspace teams under organization
             workspace_teams = WorkspaceTeam.objects.filter(
                 workspace__organization=organization_id
             )
-        
+
         remittances = Remittance.objects.filter(workspace_team__in=workspace_teams)
         for remittance in remittances:
             remittance.remaining_amount = remittance.due_amount - remittance.paid_amount

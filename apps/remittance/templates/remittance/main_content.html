@@ -3,32 +3,45 @@
         <div>
             <h1 class="text-3xl font-bold">Remittance Under {{ organization.title }}</h1>
         </div>
-        {{organization.pk}}
-        <div class="flex items-center space-x-2">
-            <label for="workspace_team" class="font-medium text-base mr-2">Filter by Team:</label>
-            <div class="relative">
-                <select
-                name="workspace_id"
-                id="workspace_id"
-                class="select select-bordered select-sm min-w-[180px]"
-                hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                hx-target="#remittance_table"
-                hx-trigger="change"
-                hx-include="this">
-                <option value="">All workspaces</option>
-                 {% for workspace in workspaces %}
-                <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
-                {% endfor %}
-            
-</select>
-
-                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </span>
+                <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <label for="workspace_filter" class="font-medium text-base">Workspace:</label>
+                <div class="relative">
+                    <select
+                    name="workspace_id"
+                    id="workspace_filter"
+                    class="select select-bordered select-sm min-w-[180px]"
+                    hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                    hx-target="#remittance_table"
+                    hx-trigger="change"
+                    hx-include="[name='workspace_id'], [name='status']">
+                    <option value="">All workspaces</option>
+                     {% for workspace in workspaces %}
+                    <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
+                     {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <label for="status_filter" class="font-medium text-base">Status:</label>
+                <div class="relative">
+                    <select
+                    name="status"
+                    id="status_filter"
+                    class="select select-bordered select-sm min-w-[160px]"
+                    hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                    hx-target="#remittance_table"
+                    hx-trigger="change"
+                    hx-include="[name='workspace_id'], [name='status']">
+                    <option value="">All Statuses</option>
+                     {% for status_value, status_label in remittance_status %}
+                    <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
+        
     </div>
     {% include "remittance/components/remittance_table.html" %}
 </div>

@@ -18,6 +18,131 @@
 {% block content %}
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-6">
 
+    <div class="flex flex-col md:flex-row md:justify-between items-center">
+      
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Filter Button -->
+        <div class="dropdown dropdown-bottom">
+          <button class="btn btn-sm btn-outline" tabindex="0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+            </svg>
+            <span class="hidden sm:inline">Filter</span>
+          </button>
+
+          <!-- Filter Dropdown Menu -->
+          <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-64 space-y-3">
+            <!-- Status Filter -->
+            <div>
+              <label class="label-text font-semibold">Status</label>
+              <select class="select select-sm select-bordered w-full">
+                <option disabled selected>Select status</option>
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Pending</option>
+              </select>
+            </div>
+
+            <!-- Type Filter -->
+            <div>
+              <label class="label-text font-semibold">Type</label>
+              <select class="select select-sm select-bordered w-full">
+                <option disabled selected>Select type</option>
+                <option>Internal</option>
+                <option>External</option>
+              </select>
+            </div>
+
+            <!-- Team Filter -->
+            <div>
+              <label class="label-text font-semibold">Team</label>
+              <select class="select select-sm select-bordered w-full">
+                <option disabled selected>Select team</option>
+                <option>Team Alpha</option>
+                <option>Team Beta</option>
+                <option>Team Gamma</option>
+              </select>
+            </div>
+
+            <!-- Workspace Filter -->
+            <div>
+              <label class="label-text font-semibold">Workspace</label>
+              <select class="select select-sm select-bordered w-full">
+                <option disabled selected>Select workspace</option>
+                <option>Workspace 1</option>
+                <option>Workspace 2</option>
+                <option>Workspace 3</option>
+              </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-between mt-2">
+              <button class="btn btn-sm btn-outline">Clear</button>
+              <button class="btn btn-sm btn-primary">Apply</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Input -->
+        <label class="input input-bordered flex items-center gap-2 w-full sm:w-64">
+          <svg class="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input type="search" class="grow" placeholder="Search entries..." />
+        </label>
+      </div>
+
+
+
+      <!-- Action Buttons Container-->
+      <div>
+        <button 
+          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+          hx-target="#modal-placeholder"
+          hx-swap="innerHTML"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+            <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+          </svg>
+            
+          <span class="hidden sm:inline">Import</span>
+        </button>
+
+
+        <button 
+          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+          hx-target="#modal-placeholder"
+          hx-swap="innerHTML"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+            <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
+            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+          </svg>
+        
+          <span class="hidden sm:inline">Export</span>
+        </button>
+
+        <button 
+            class="btn btn-sm btn-neutral"
+            hx-get="{% url 'workspace_team_entry_create' organization_id=organization.pk workspace_id=workspace.pk workspace_team_id=workspace_team.pk %}"
+            hx-target="#modal-placeholder"
+            hx-swap="innerHTML"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+              <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+            </svg>
+              
+            <span class="hidden sm:inline">Add Expense Entry</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Entries Section -->
     <div class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
       {% include "entries/partials/table.html" %}

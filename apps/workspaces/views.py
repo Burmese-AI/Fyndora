@@ -360,6 +360,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         workspace_id,
                         form.cleaned_data["team"].team_id,
                         form.cleaned_data["custom_remittance_rate"],
+                        workspace,
                     )
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
@@ -450,7 +451,8 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            remove_workspace_team_permissions(workspace_team, request_user=request.user)
+            #unnecessary to remove permissions as the workspace team will be deleted
+            # remove_workspace_team_permissions(workspace_team, request_user=request.user)
             remove_team_from_workspace(workspace_team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)

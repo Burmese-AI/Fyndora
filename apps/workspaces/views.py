@@ -451,7 +451,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            #unnecessary to remove permissions as the workspace team will be deleted
+            # unnecessary to remove permissions as the workspace team will be deleted
             # remove_workspace_team_permissions(workspace_team, request_user=request.user)
             remove_team_from_workspace(workspace_team)
             messages.success(request, "Team removed from workspace successfully.")

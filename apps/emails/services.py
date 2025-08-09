@@ -38,10 +38,10 @@ def send_invitation_email(invitation):
     """
     # Determine the domain and protocol for the invitation URL
     # Priority: DEBUG setting for development, then Sites framework, then ALLOWED_HOSTS
-    if getattr(settings, 'DEBUG', False):
+    if getattr(settings, "DEBUG", False):
         # In development, use localhost with port 8000
-        domain = 'localhost:8000'
-        protocol = 'http'
+        domain = "localhost:8000"
+        protocol = "http"
     else:
         # In production, try to get from Sites framework
         try:

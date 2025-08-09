@@ -15,40 +15,73 @@ from .models import Remittance
 from .selectors import get_remittances_with_filters
 from .services import remittance_confirm_payment
 from apps.organizations.models import Organization
-from apps.core.selectors import get_organization_by_id, get_remiitances_under_organization, get_workspaces_under_organization
+from apps.core.selectors import (
+    get_organization_by_id,
+    get_remiitances_under_organization,
+    get_workspaces_under_organization,
+)
 from django.core.paginator import Paginator
 
 
-#developed by THA for the remittance list by each workspace team
-#this is display the remittance list by each workspace team (due amount , paid amount , status , etc)
+# developed by THA for the remittance list by each workspace team
+# this is display the remittance list by each workspace team (due amount , paid amount , status , etc)
 def remittance_list_view(request, organization_id):
     """
     View to list remittances for a specific workspace team.
     """
     try:
+
+        filtered_workspace_id = request.GET.get("workspace_id")
+        print(f"this is the filter_by_workspace: {filtered_workspace_id}")
+        
+        # Convert empty string to None for proper filtering
+        if filtered_workspace_id == "":
+            filtered_workspace_id = None
+            
+        if filtered_workspace_id:
+            remittances = get_remiitances_under_organization(
+                organization_id, workspace_id=filtered_workspace_id
+            )
+        else:
+            remittances = get_remiitances_under_organization(organization_id)
+            
+        
         organization = get_organization_by_id(organization_id)
         workspaces = get_workspaces_under_organization(organization_id)
-        remittances = get_remiitances_under_organization(organization_id)
+        
+        # Handle case where remittances is None
+        if remittances is None:
+            remittances = []
+            
         paginator = Paginator(remittances, PAGINATION_SIZE)
-        page_number = request.GET.get('page')
+        page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
+        
         context = {
             "organization": organization,
             "remittances": page_obj,
             "is_paginated": page_obj.has_other_pages(),
             "page_obj": page_obj,
             "paginator": paginator,
-            "workspaces": workspaces, # for dropdown filter
-
+            "workspaces": workspaces,  # for dropdown filter
+            "selected_workspace_id": filtered_workspace_id,  # to maintain selected state
         }
+        
+        if request.headers.get("HX-Request"):
+            return render(request, "remittance/components/remittance_table.html", context)
         return render(request, "remittance/index.html", context)
     except Exception as e:
         # Handle any errors gracefully
         print(f"Error in remittance_list_view: {e}")
-        return render(request, "remittance/index.html")
-    
+        context = {
+            "organization": get_organization_by_id(organization_id),
+            "remittances": [],
+            "workspaces": get_workspaces_under_organization(organization_id) or [],
+        }
+        return render(request, "remittance/index.html", context)
 
-#this view will not be currently used 
+
+# this view will not be currently used
 # class RemittanceListView(LoginRequiredMixin, ListView):
 #     """
 #     Main template-based view for listing remittances with filters.
@@ -105,7 +138,7 @@ def remittance_list_view(request, organization_id):
 #         context["workspace_id"] = self.kwargs.get("workspace_id")
 #         return context
 
-# #this view will not be currently used 
+# #this view will not be currently used
 # class RemittanceConfirmPaymentView(LoginRequiredMixin, View):
 #     """
 #     View to handle the confirmation of a remittance payment.
@@ -131,5 +164,3 @@ def remittance_list_view(request, organization_id):
 #             response = HttpResponse(status=204)
 #             response["HX-Refresh"] = "true"
 #             return response
-
-

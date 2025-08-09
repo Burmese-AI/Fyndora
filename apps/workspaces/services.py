@@ -201,11 +201,13 @@ def remove_team_from_workspace(workspace_team, user=None):
         raise ValidationError(f"Failed to remove team from workspace: {str(e)}")
 
 
-def add_team_to_workspace(workspace_id, team_id, custom_remittance_rate, workspace, user=None):
+def add_team_to_workspace(
+    workspace_id, team_id, custom_remittance_rate, workspace, user=None
+):
     try:
         if custom_remittance_rate is None:
             custom_remittance_rate = workspace.remittance_rate
-            
+
         workspace_team = WorkspaceTeam.objects.create(
             workspace_id=workspace_id,
             team_id=team_id,

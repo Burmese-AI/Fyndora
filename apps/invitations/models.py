@@ -39,7 +39,7 @@ class Invitation(baseModel):
 
     def get_acceptance_url(self):
         """Generate the URL for accepting this invitation"""
-        return reverse('accept_invitation', kwargs={'invitation_token': self.token})
+        return reverse("accept_invitation", kwargs={"invitation_token": self.token})
 
     def __str__(self):
         return f"{self.pk} - {self.organization.title} - {self.email} - {self.token} - {self.is_active}"

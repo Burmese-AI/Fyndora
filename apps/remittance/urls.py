@@ -1,14 +1,7 @@
 from django.urls import path
+from .views import remittance_list_view
 
-from .views import RemittanceConfirmPaymentView, RemittanceListView
-
-app_name = "remittance"
 
 urlpatterns = [
-    path("<uuid:workspace_id>/", RemittanceListView.as_view(), name="remittance_list"),
-    path(
-        "<uuid:workspace_id>/<uuid:remittance_id>/confirm/",
-        RemittanceConfirmPaymentView.as_view(),
-        name="remittance_confirm_payment",
-    ),
+    path("", remittance_list_view, name="remittance_list"),
 ]

@@ -15,7 +15,8 @@ from .models import Remittance
 from .selectors import get_remittances_with_filters
 from .services import remittance_confirm_payment
 from apps.organizations.models import Organization
-
+from apps.core.selectors import get_organization_by_id
+from apps.workspaces.models import WorkspaceTeam
 #this view will not be currently used 
 class RemittanceListView(LoginRequiredMixin, ListView):
     """
@@ -108,9 +109,19 @@ def remittance_list_view(request, organization_id):
     View to list remittances for a specific workspace team.
     """
     try:
-        organization = Organization.objects.get(pk=organization_id)
+        organization = get_organization_by_id(organization_id)
+        workspaces = Workspace.objects.filter(organization=organization)
+        workspace_teams = WorkspaceTeam.objects.filter(workspace__in=workspaces)
+        
+        remittances = Remittance.objects.filter(workspace_team__in=workspace_teams)
+        for remittance in remittances:
+            remittance.remaining_amount = remittance.due_amount - remittance.paid_amount
+        print("this is the workspaces", workspaces)
+        print("this is the workspace teams", workspace_teams)
+        print("this is the remittances", remittances)
         context = {
-            "organization": organization
+            "organization": organization,
+            "remittances": remittances
         }
         print (organization)
         return render(request, "remittance/index.html", context)

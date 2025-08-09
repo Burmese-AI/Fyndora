@@ -1,0 +1,55 @@
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} class="hover:bg-base-100 transition-colors" id="remittance_row-{{ remittance.remittance_id }}">
+    <!-- Member Info -->
+    <td>
+        <div class="flex items-center space-x-3">
+            
+            <div>
+                <div class="font-bold text-base">
+                    {{remittance.workspace_team.workspace.title }}
+                </div>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div class="flex items-center space-x-3">
+            
+            <div>
+                <div class="font-bold text-base">
+                    {{remittance.workspace_team.team.title }}
+                </div>
+            </div>
+        </div>
+    </td>
+    
+    <!-- Due Amount -->
+    <td>
+        <div class="text-sm">
+            {{ remittance.due_amount }}
+        </div>
+    </td>
+    
+    <!-- Paid Amount -->
+    <td>
+        {{ remittance.paid_amount }}
+    </td>
+
+    <td>
+        {{ remittance.remaining_amount }}
+    </td>
+    
+    <!-- Joined Date -->
+    <td>
+        <div class="text-sm opacity-70">
+            {{ remittance.status }}
+        </div>
+    </td>
+
+    <td>
+        <div class="text-sm opacity-70">
+            {{ remittance.workspace_team.workspace.end_date }}
+        </div>
+    </td>
+    
+    <!-- Actions -->
+    
+</tr>

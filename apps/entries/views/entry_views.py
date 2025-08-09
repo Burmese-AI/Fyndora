@@ -12,7 +12,7 @@ from apps.core.views.crud_base_views import (
     BaseListView,
     BaseUpdateView,
 )
-from apps.core.views.mixins import WorkspaceTeamRequiredMixin
+from apps.core.views.mixins import WorkspaceRequiredMixin, WorkspaceTeamRequiredMixin
 from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin,
     HtmxTableServiceMixin,
@@ -39,6 +39,32 @@ from .mixins import (
     EntryRequiredMixin,
 )
 
+class WorkspaceEntryListView(
+    WorkspaceRequiredMixin,
+    TeamLevelEntryView,
+    BaseListView,
+):
+    model = Entry
+    context_object_name = CONTEXT_OBJECT_NAME
+    table_template_name = "entries/partials/table.html"
+    template_name = "entries/workspace_level_entry_index.html"
+    
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+        )
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "workspace_lvl_entries"
+        return context
 
 class WorkspaceTeamEntryListView(
     WorkspaceTeamRequiredMixin,

@@ -16,6 +16,7 @@ from .selectors import get_remittances_with_filters
 from .services import remittance_confirm_payment
 from apps.organizations.models import Organization
 from apps.core.selectors import get_organization_by_id, get_remiitances_under_organization
+from django.core.paginator import Paginator
 
 #this view will not be currently used 
 class RemittanceListView(LoginRequiredMixin, ListView):
@@ -111,9 +112,15 @@ def remittance_list_view(request, organization_id):
     try:
         organization = get_organization_by_id(organization_id)
         remittances = get_remiitances_under_organization(organization_id)
+        paginator = Paginator(remittances, PAGINATION_SIZE)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
         context = {
             "organization": organization,
-            "remittances": remittances
+            "remittances": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "paginator": paginator,
         }
         return render(request, "remittance/index.html", context)
     except Exception as e:

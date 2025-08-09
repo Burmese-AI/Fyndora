@@ -73,7 +73,6 @@ from apps.remittance.services import (
 )
 from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
-    remove_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
 

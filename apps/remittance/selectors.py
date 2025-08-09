@@ -2,39 +2,43 @@ from django.db.models import Q
 from apps.remittance.models import Remittance
 
 
-def get_remittances_with_filters(
-    workspace_id,
-    team_id=None,
-    status=None,
-    start_date=None,
-    end_date=None,
-    search=None,
+def get_remiitances_under_organization(
+    organization_id, workspace_id=None, status=None, search_query=None
 ):
     """
-    Fetches remittances for a given workspace and applies additional filters.
+    Return remittances under organization with Q object filtering.
     """
-    qs = Remittance.objects.select_related(
-        "workspace_team__team",
-        "workspace_team__workspace",
-        "confirmed_by",
-    ).filter(workspace_team__workspace_id=workspace_id)
+    try:
+        # Build base Q object for organization filtering
+        # that will used fetch workspace teams under organization
+        base_q = Q(workspace_team__workspace__organization=organization_id)
 
-    if team_id:
-        qs = qs.filter(workspace_team__team_id=team_id)
+        # Add workspace filter if provided
+        if workspace_id:
+            base_q &= Q(workspace_team__workspace=workspace_id)
 
-    if status:
-        qs = qs.filter(status=status)
+        # Add status filter if provided
+        if status:
+            base_q &= Q(status=status)
 
-    if start_date:
-        qs = qs.filter(workspace_team__workspace__end_date__gte=start_date)
+        # Add search functionality if provided
+        if search_query:
+            search_q = Q(workspace_team__workspace__title__icontains=search_query) | Q(
+                workspace_team__team__title__icontains=search_query
+            )
+            base_q &= search_q
 
-    if end_date:
-        qs = qs.filter(workspace_team__workspace__end_date__lte=end_date)
-
-    if search:
-        qs = qs.filter(
-            Q(workspace_team__team__title__icontains=search)
-            | Q(status__icontains=search)
+        remittances = (
+            Remittance.objects.filter(base_q)
+            .select_related("workspace_team__workspace", "workspace_team__team")
+            .order_by("-created_at")
         )
 
-    return qs
+        # Add remaining amount calculation
+        for remittance in remittances:
+            remittance.remaining_amount = remittance.due_amount - remittance.paid_amount
+
+        return remittances
+    except Exception as e:
+        print(f"Error in get_remiitances_under_organization: {str(e)}")
+        return None

@@ -1,25 +1,13 @@
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import Http404, HttpResponse
-from django.shortcuts import get_object_or_404, render
-from django.views import View
-from django.views.generic import ListView
+from django.shortcuts import render
 
 from apps.core.constants import PAGINATION_SIZE
-from apps.teams.models import Team
-from apps.workspaces.models import Workspace
 
 from .constants import RemittanceStatus
-from .models import Remittance
-from .selectors import get_remittances_with_filters
-from .services import remittance_confirm_payment
-from apps.organizations.models import Organization
 from apps.core.selectors import (
     get_organization_by_id,
-    get_remiitances_under_organization,
     get_workspaces_under_organization,
 )
+from apps.remittance.selectors import get_remiitances_under_organization
 from django.core.paginator import Paginator
 
 
@@ -33,7 +21,6 @@ def remittance_list_view(request, organization_id):
         filtered_workspace_id = request.GET.get("workspace_id")
         filtered_status = request.GET.get("status")
         search_query = request.GET.get("q")  # Add search functionality
-        
 
         # Convert empty string to None for proper filtering
         if filtered_workspace_id == "":
@@ -48,11 +35,13 @@ def remittance_list_view(request, organization_id):
             organization_id=organization_id,
             workspace_id=filtered_workspace_id,
             status=filtered_status,
-            search_query=search_query
+            search_query=search_query,
         )
 
-        organization = get_organization_by_id(organization_id)
-        workspaces = get_workspaces_under_organization(organization_id)
+        organization = get_organization_by_id(organization_id)  # for context
+        workspaces = get_workspaces_under_organization(
+            organization_id
+        )  # for dropdown filter
 
         # Handle case where remittances is None
         if remittances is None:

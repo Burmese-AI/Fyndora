@@ -1,83 +1,102 @@
 <div class="container mx-auto px-4 py-4">
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold">Remittance Under {{ organization.title }}</h1>
-        </div>
-                <div class="flex items-center justify-between space-x-4">
-            <div class="flex items-center space-x-4">
-                <!-- Search Input -->
-                <div class="flex items-center space-x-4">
-
-                    <div class="relative">
-                        <input
-                        type="text"
-                        name="q"
-                        id="search_input"
-                        value="{{ search_query|default:'' }}"
-                        placeholder="Search remittances..."
-                        class="input input-bordered input-sm min-w-[200px]"
-                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                        hx-target="#remittance_table"
-                        hx-trigger="keyup changed delay:500ms"
-                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
+        <!-- Header Section -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold">Remittance Under {{ organization.title }}</h1>
+    </div>
+    
+    <!-- Compact Filters Section -->
+    <div class="bg-base-100 rounded-lg p-4 mb-6 shadow-sm ">
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Search Input with Icon -->
+            <div class="flex-1 min-w-[250px]">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
                     </div>
+                    <input
+                    type="text"
+                    name="q"
+                    id="search_input"
+                    value="{{ search_query|default:'' }}"
+                    placeholder="Search remittances..."
+                    class="input input-bordered input-sm w-full pl-10"
+                    hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                    hx-target="#remittance_table"
+                    hx-trigger="keyup changed delay:500ms"
+                    hx-include="[name='workspace_id'], [name='status'], [name='q']">
                 </div>
-                
-                <!-- Workspace Filter -->
-                <div class="flex items-center space-x-4">
-                    <label for="workspace_filter" class="font-medium text-base">Filter by:</label>
-                    <div class="relative">
-                        <select
-                        name="workspace_id"
-                        id="workspace_filter"
-                        class="select select-bordered select-sm min-w-[180px]"
-                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                        hx-target="#remittance_table"
-                        hx-trigger="change"
-                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
-                        <option value="">All workspaces</option>
-                         {% for workspace in workspaces %}
-                        <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
-                         {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Status Filter -->
-                <div class="flex items-center space-x-4">
-                    <div class="relative">
-                        <select
-                        name="status"
-                        id="status_filter"
-                        class="select select-bordered select-sm min-w-[160px]"
-                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                        hx-target="#remittance_table"
-                        hx-trigger="change"
-                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
-                        <option value="">All Statuses</option>
-                         {% for status_value, status_label in remittance_status %}
-                        <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_label }}</option>
-                        {% endfor %}
-                        </select>
-                    </div>
-                </div>
+            </div>
+            
+            <!-- Workspace Filter -->
+            <div class="min-w-[160px]">
+                <select
+                name="workspace_id"
+                id="workspace_filter"
+                class="select select-bordered select-sm w-full"
+                hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                hx-target="#remittance_table"
+                hx-trigger="change"
+                hx-include="[name='workspace_id'], [name='status'], [name='q']">
+                <option value="">All Workspaces</option>
+                 {% for workspace in workspaces %}
+                <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
+                 {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Status Filter -->
+            <div class="min-w-[140px]">
+                <select
+                name="status"
+                id="status_filter"
+                class="select select-bordered select-sm w-full"
+                hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                hx-target="#remittance_table"
+                hx-trigger="change"
+                hx-include="[name='workspace_id'], [name='status'], [name='q']">
+                <option value="">All Statuses</option>
+                 {% for status_value, status_label in remittance_status %}
+                <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                {% endfor %}
+                </select>
             </div>
             
             <!-- Clear Filters Button -->
             <div class="flex items-center">
                 <button 
                 type="button"
-                class="btn btn-outline btn-sm flex items-center gap-2"
+                class="btn btn-ghost btn-sm"
+                title="Clear all filters"
                 hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
                 hx-target="#remittance_table"
                 onclick="document.getElementById('search_input').value=''; document.getElementById('workspace_filter').value=''; document.getElementById('status_filter').value='';">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.21 17.293A9 9 0 1021 12.001M19.418 7.293A9 9 0 003 12.001"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
         </div>
         
+        <!-- Filter Summary (Optional - shows active filters) -->
+        <div class="flex flex-wrap gap-2 mt-3" id="active-filters">
+            {% if selected_workspace_id %}
+            <span class="badge badge-primary badge-sm">
+                Workspace: {% for workspace in workspaces %}{% if workspace.pk|stringformat:"s" == selected_workspace_id %}{{ workspace.title }}{% endif %}{% endfor %}
+            </span>
+            {% endif %}
+            {% if selected_status %}
+            <span class="badge badge-secondary badge-sm">
+                Status: {% for status_value, status_label in remittance_status %}{% if status_value == selected_status %}{{ status_label }}{% endif %}{% endfor %}
+            </span>
+            {% endif %}
+            {% if search_query %}
+            <span class="badge badge-accent badge-sm">
+                Search: "{{ search_query }}"
+            </span>
+            {% endif %}
+        </div>
     </div>
     {% include "remittance/components/remittance_table.html" %}
 </div>

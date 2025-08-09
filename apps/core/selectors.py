@@ -66,6 +66,7 @@ def get_remiitances_under_organization(organization_id, workspace_id=None, statu
     """
     try:
         # Build base Q object for organization filtering
+        # that will used fetch workspace teams under organization
         base_q = Q(workspace_team__workspace__organization=organization_id)
         
         # Add workspace filter if provided
@@ -80,10 +81,7 @@ def get_remiitances_under_organization(organization_id, workspace_id=None, statu
         if search_query:
             search_q = (
                 Q(workspace_team__workspace__title__icontains=search_query) |
-                Q(workspace_team__team__title__icontains=search_query) |
-                Q(due_amount__icontains=search_query) |
-                Q(paid_amount__icontains=search_query) |
-                Q(status__icontains=search_query)
+                Q(workspace_team__team__title__icontains=search_query)
             )
             base_q &= search_q
 

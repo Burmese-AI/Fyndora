@@ -32,7 +32,7 @@ def remittance_list_view(request, organization_id):
     try:
         filtered_workspace_id = request.GET.get("workspace_id")
         filtered_status = request.GET.get("status")
-        print(f"this is the filtered_status: {filtered_status}")
+        search_query = request.GET.get("q")  # Add search functionality
         
 
         # Convert empty string to None for proper filtering
@@ -40,14 +40,16 @@ def remittance_list_view(request, organization_id):
             filtered_workspace_id = None
         if filtered_status == "":
             filtered_status = None
+        if search_query == "":
+            search_query = None
 
+        # Use Q objects in the selector
         remittances = get_remiitances_under_organization(
-            organization_id, workspace_id=filtered_workspace_id
+            organization_id=organization_id,
+            workspace_id=filtered_workspace_id,
+            status=filtered_status,
+            search_query=search_query
         )
-        
-        # Apply status filter if provided
-        if filtered_status and remittances:
-            remittances = remittances.filter(status=filtered_status)
 
         organization = get_organization_by_id(organization_id)
         workspaces = get_workspaces_under_organization(organization_id)
@@ -68,6 +70,7 @@ def remittance_list_view(request, organization_id):
             "workspaces": workspaces,  # for dropdown filter
             "selected_workspace_id": filtered_workspace_id,  # to maintain selected state
             "selected_status": filtered_status,  # to maintain selected status
+            "search_query": search_query,  # to maintain search state
             "remittance_status": RemittanceStatus.choices,  # for dropdown filter
         }
 

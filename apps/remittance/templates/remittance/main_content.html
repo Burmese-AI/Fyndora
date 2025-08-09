@@ -3,42 +3,78 @@
         <div>
             <h1 class="text-3xl font-bold">Remittance Under {{ organization.title }}</h1>
         </div>
+                <div class="flex items-center justify-between space-x-4">
+            <div class="flex items-center space-x-4">
+                <!-- Search Input -->
                 <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-2">
-                <label for="workspace_filter" class="font-medium text-base">Workspace:</label>
-                <div class="relative">
-                    <select
-                    name="workspace_id"
-                    id="workspace_filter"
-                    class="select select-bordered select-sm min-w-[180px]"
-                    hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                    hx-target="#remittance_table"
-                    hx-trigger="change"
-                    hx-include="[name='workspace_id'], [name='status']">
-                    <option value="">All workspaces</option>
-                     {% for workspace in workspaces %}
-                    <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
-                     {% endfor %}
-                    </select>
+
+                    <div class="relative">
+                        <input
+                        type="text"
+                        name="q"
+                        id="search_input"
+                        value="{{ search_query|default:'' }}"
+                        placeholder="Search remittances..."
+                        class="input input-bordered input-sm min-w-[200px]"
+                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                        hx-target="#remittance_table"
+                        hx-trigger="keyup changed delay:500ms"
+                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
+                    </div>
+                </div>
+                
+                <!-- Workspace Filter -->
+                <div class="flex items-center space-x-4">
+                    <label for="workspace_filter" class="font-medium text-base">Filter by:</label>
+                    <div class="relative">
+                        <select
+                        name="workspace_id"
+                        id="workspace_filter"
+                        class="select select-bordered select-sm min-w-[180px]"
+                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                        hx-target="#remittance_table"
+                        hx-trigger="change"
+                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
+                        <option value="">All workspaces</option>
+                         {% for workspace in workspaces %}
+                        <option value="{{ workspace.pk }}" {% if selected_workspace_id == workspace.pk|stringformat:"s" %}selected{% endif %}>{{ workspace.title }}</option>
+                         {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <select
+                        name="status"
+                        id="status_filter"
+                        class="select select-bordered select-sm min-w-[160px]"
+                        hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                        hx-target="#remittance_table"
+                        hx-trigger="change"
+                        hx-include="[name='workspace_id'], [name='status'], [name='q']">
+                        <option value="">All Statuses</option>
+                         {% for status_value, status_label in remittance_status %}
+                        <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_label }}</option>
+                        {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <label for="status_filter" class="font-medium text-base">Status:</label>
-                <div class="relative">
-                    <select
-                    name="status"
-                    id="status_filter"
-                    class="select select-bordered select-sm min-w-[160px]"
-                    hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
-                    hx-target="#remittance_table"
-                    hx-trigger="change"
-                    hx-include="[name='workspace_id'], [name='status']">
-                    <option value="">All Statuses</option>
-                     {% for status_value, status_label in remittance_status %}
-                    <option value="{{ status_value }}" {% if selected_status == status_value %}selected{% endif %}>{{ status_label }}</option>
-                    {% endfor %}
-                    </select>
-                </div>
+            
+            <!-- Clear Filters Button -->
+            <div class="flex items-center">
+                <button 
+                type="button"
+                class="btn btn-outline btn-sm flex items-center gap-2"
+                hx-get="{% url 'remittance_list' organization_id=organization.pk %}"
+                hx-target="#remittance_table"
+                onclick="document.getElementById('search_input').value=''; document.getElementById('workspace_filter').value=''; document.getElementById('status_filter').value='';">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.21 17.293A9 9 0 1021 12.001M19.418 7.293A9 9 0 003 12.001"/>
+                    </svg>
+                </button>
             </div>
         </div>
         

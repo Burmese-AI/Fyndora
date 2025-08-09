@@ -16,7 +16,6 @@
           <div>
             <label class="label-text font-semibold">Status</label>
             <select name="status" class="select select-sm select-bordered w-full">
-              <option value="">All statuses</option>
               {% for status in status_options %}
                 <option value="{{ status }}">{{ status }}</option>
               {% endfor %}
@@ -29,7 +28,6 @@
           <div>
             <label class="label-text font-semibold">Type</label>
             <select name="type" class="select select-sm select-bordered w-full">
-              <option value="">All types</option>
               {% for type in type_options %}
                 <option value="{{ type }}">{{ type }}</option>
               {% endfor %}

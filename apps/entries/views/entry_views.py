@@ -57,10 +57,9 @@ class WorkspaceTeamEntryListView(
             workspace_team=self.workspace_team,
             entry_types=[
                 EntryType.INCOME,
-                EntryType.DISBURSEMENT,
             ],
             annotate_attachment_count=True,
-            status=self.request.GET.get("status"),
+            status=self.request.GET.get("status") or EntryStatus.PENDING,
             type_filter=self.request.GET.get("type"),
             team_name=self.request.GET.get("team"),
             workspace_id=self.request.GET.get("workspace"),
@@ -69,7 +68,6 @@ class WorkspaceTeamEntryListView(
         
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        #Filter Options
         #Type
         context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT]
         #Status

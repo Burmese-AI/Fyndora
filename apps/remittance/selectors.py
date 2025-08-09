@@ -2,7 +2,7 @@ from django.db.models import Q
 from apps.remittance.models import Remittance
 
 
-def get_remiitances_under_organization(
+def get_remittances_under_organization(
     organization_id, workspace_id=None, status=None, search_query=None
 ):
     """

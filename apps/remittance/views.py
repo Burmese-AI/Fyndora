@@ -7,7 +7,7 @@ from apps.core.selectors import (
     get_organization_by_id,
     get_workspaces_under_organization,
 )
-from apps.remittance.selectors import get_remiitances_under_organization
+from apps.remittance.selectors import get_remittances_under_organization
 from django.core.paginator import Paginator
 
 
@@ -31,7 +31,7 @@ def remittance_list_view(request, organization_id):
             search_query = None
 
         # Use Q objects in the selector
-        remittances = get_remiitances_under_organization(
+        remittances = get_remittances_under_organization(
             organization_id=organization_id,
             workspace_id=filtered_workspace_id,
             status=filtered_status,
@@ -62,7 +62,7 @@ def remittance_list_view(request, organization_id):
             "search_query": search_query,  # to maintain search state
             "remittance_status": RemittanceStatus.choices,  # for dropdown filter
         }
-
+        #if hx-request is true, return the partial template and for the full template, return the full template
         if request.headers.get("HX-Request"):
             return render(
                 request, "remittance/components/remittance_table.html", context

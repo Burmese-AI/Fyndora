@@ -34,22 +34,8 @@
     </button>
   </div>
 
-  <!-- Stats Overview (Optional Section) -->
-  {# You can add stat cards here later if needed #}
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="stat bg-base-200 rounded-box">
-        <div class="stat-title">Total Entries</div>
-        <div class="stat-value text-primary">42</div>
-      </div>
-  </div>
-
   <!-- Entries Section -->
   <div class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-semibold text-base-content">Recent Entries</h3>
-      <!-- Optional filters or export button can go here -->
-    </div>
-
     {% include "entries/partials/table.html" %}
   </div>
 

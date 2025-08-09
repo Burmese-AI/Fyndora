@@ -1,0 +1,27 @@
+{% extends "layouts/organization_layout.html" %}
+
+{% block breadcrumbs %}
+  <div class="text-sm breadcrumbs text-base-content/70">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="{% url 'submission-teams' organization.pk %}">{{ organization.title }}</a></li>
+      <li>{{ workspace.title }} Workspace</li>
+      <li class="font-medium">{{ workspace_team.team.title }} Team</li>
+    </ul>
+  </div>
+{% endblock %}
+
+{% block header %}
+  {% include "components/organization_layout_header.html" with title=workspace_team.team.title subtitle="Review and manage team level entries here." %}
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-6">
+
+    <!-- Entries Section -->
+    <div class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
+      {% include "entries/partials/table.html" %}
+    </div>
+
+  </div>
+{% endblock %}

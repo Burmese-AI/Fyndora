@@ -48,7 +48,7 @@ class WorkspaceTeamEntryListView(
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
-    template_name = "entries/team_level_entry.html"
+    template_name = "entries/team_level_entry_index_for_review.html"
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(

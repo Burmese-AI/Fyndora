@@ -14,8 +14,9 @@ from .constants import RemittanceStatus
 from .models import Remittance
 from .selectors import get_remittances_with_filters
 from .services import remittance_confirm_payment
+from apps.organizations.models import Organization
 
-
+#this view will not be currently used 
 class RemittanceListView(LoginRequiredMixin, ListView):
     """
     Main template-based view for listing remittances with filters.
@@ -72,7 +73,7 @@ class RemittanceListView(LoginRequiredMixin, ListView):
         context["workspace_id"] = self.kwargs.get("workspace_id")
         return context
 
-
+#this view will not be currently used 
 class RemittanceConfirmPaymentView(LoginRequiredMixin, View):
     """
     View to handle the confirmation of a remittance payment.
@@ -98,3 +99,23 @@ class RemittanceConfirmPaymentView(LoginRequiredMixin, View):
             response = HttpResponse(status=204)
             response["HX-Refresh"] = "true"
             return response
+
+
+#developed by THA for the remittance list by each workspace team
+#this is display the remittance list by each workspace team (due amount , paid amount , status , etc)
+def remittance_list_view(request, organization_id):
+    """
+    View to list remittances for a specific workspace team.
+    """
+    try:
+        organization = Organization.objects.get(pk=organization_id)
+        context = {
+            "organization": organization
+        }
+        print (organization)
+        return render(request, "remittance/index.html", context)
+    except Exception as e:
+        # Handle any errors gracefully
+        print(f"Error in remittance_list_view: {e}")
+        return render(request, "remittance/index.html")
+    

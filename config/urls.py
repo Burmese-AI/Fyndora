@@ -29,7 +29,7 @@ urlpatterns = [
     path("<uuid:organization_id>/", include("apps.workspaces.custom_urls")),
     path("invitations/", include("apps.invitations.urls")),
     path("<uuid:organization_id>/teams/", include("apps.teams.urls")),
-    path("remittances/", include("apps.remittance.urls")),
+    path("<uuid:organization_id>/remittances/", include("apps.remittance.urls")),
     path("<uuid:organization_id>/", include("apps.entries.urls")),
     path("attachments/", include("apps.attachments.urls")),
 ]

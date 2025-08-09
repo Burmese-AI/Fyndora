@@ -70,7 +70,6 @@ def dashboard_view(request, organization_id):
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
         owner = organization.owner.user if organization.owner else None
-
         context = {
             "organization": organization,
             "members_count": members_count,

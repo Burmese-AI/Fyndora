@@ -133,7 +133,7 @@
       </a>
 
       <a
-          hx-get="{% entry_update_url entry_type entry organization workspace workspace_team %}"
+          hx-get="{% entry_update_url entry_type entry %}"
           hx-target="#modal-placeholder"
           hx-swap="innerHTML"
           title="Edit"
@@ -149,7 +149,7 @@
         type="button"
         class="btn btn-xs btn-ghost"
         title="Delete"
-        hx-post="{% entry_delete_url entry_type entry organization workspace workspace_team %}"
+        hx-post="{% entry_delete_url entry_type entry %}"
         hx-confirm="Are you sure you want to delete this entry?"
         hx-swap="none"
         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'

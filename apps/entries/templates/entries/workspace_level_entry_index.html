@@ -1,0 +1,35 @@
+{% extends "layouts/custom_workspace_teams_layout.html" %}
+
+{% block secondary_content %}
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-6">
+
+    <div class="flex flex-col md:flex-row md:justify-between items-center gap-2">
+      
+      {% url 'workspace_entry_list' organization.pk workspace.pk as filter_url %}
+      {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
+      
+
+      <!-- Action Buttons Container-->
+      <button 
+        class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+          <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
+      
+        <span class="hidden sm:inline">Export</span>
+      </button>
+    </div>
+
+    <!-- Entries Section -->
+    <div id="content-container" class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
+      {% include "entries/partials/table.html" %}
+    </div>
+
+  </div>
+
+{% endblock %}

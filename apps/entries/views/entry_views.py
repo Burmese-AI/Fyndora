@@ -12,7 +12,7 @@ from apps.core.views.crud_base_views import (
     BaseListView,
     BaseUpdateView,
 )
-from apps.core.views.mixins import WorkspaceTeamRequiredMixin
+from apps.core.views.mixins import WorkspaceRequiredMixin, WorkspaceTeamRequiredMixin
 from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin,
     HtmxTableServiceMixin,
@@ -37,18 +37,52 @@ from .base_views import (
 from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
+    WorkspaceLevelEntryFiltering,
+    TeamLevelEntryFiltering
 )
 
-
-class WorkspaceTeamEntryListView(
-    WorkspaceTeamRequiredMixin,
+class WorkspaceEntryListView(
+    WorkspaceRequiredMixin,
     TeamLevelEntryView,
+    WorkspaceLevelEntryFiltering,
     BaseListView,
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
-    template_name = "entries/team_level_entry.html"
+    template_name = "entries/workspace_level_entry_index.html"
+    
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.REVIEWED],
+            type_filter=self.request.GET.get("type"),
+            workspace_team_id=self.request.GET.get("team"),
+            search=self.request.GET.get("search"),
+        )
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["view"] = "workspace_lvl_entries"
+        return context
+
+class WorkspaceTeamEntryListView(
+    WorkspaceTeamRequiredMixin,
+    TeamLevelEntryView,
+    TeamLevelEntryFiltering,
+    BaseListView,
+):
+    model = Entry
+    context_object_name = CONTEXT_OBJECT_NAME
+    table_template_name = "entries/partials/table.html"
+    template_name = "entries/team_level_entry_index_for_review.html"
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -57,10 +91,12 @@ class WorkspaceTeamEntryListView(
             workspace_team=self.workspace_team,
             entry_types=[
                 EntryType.INCOME,
-                EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            type_filter=self.request.GET.get("type"),
+            search=self.request.GET.get("search"),
         )
 
 

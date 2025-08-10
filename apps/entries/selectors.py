@@ -22,66 +22,81 @@ def get_entries(
     workspace: Workspace = None,
     workspace_team: WorkspaceTeam = None,
     entry_types: List[str],
-    status: str = None,
+    statuses: List[str] = [],
+    type_filter: str = None,
+    workspace_team_id: str = None,
+    workspace_id: str = None,
+    search: str = None,
     prefetch_attachments: bool = False,
     sort_by: str = None,
     annotate_attachment_count: bool = False,
 ) -> QuerySet:
     """
     Get entries for a specific organization, workspace, or workspace team.
-
-    Args:
-        organization: Organization object
-        workspace: Workspace object
-        workspace_team: WorkspaceTeam object
-        entry_types: List of EntryType strings (e.g., ["org_exp", "income"])
-        status: EntryStatus string
-        prefetch_attachments: Boolean to prefetch attachments
-
-    Returns:
-        QuerySet: QuerySet of Entry objects
     """
 
     if not entry_types:
         raise ValueError("At least one entry type must be provided.")
 
-    # Split entry types
     expense_entry_types = [
         et for et in entry_types if et in (EntryType.ORG_EXP, EntryType.WORKSPACE_EXP)
     ]
     team_entry_types = [et for et in entry_types if et not in expense_entry_types]
 
     filters = Q()
-
-    # Org/Workspace Expense Entries
+    print(f">>>> team entry types => {team_entry_types}")
     if expense_entry_types:
         expense_filter = Q(entry_type__in=expense_entry_types)
-
         if organization:
             expense_filter &= Q(organization=organization)
         elif workspace:
             expense_filter &= Q(workspace=workspace)
-
         filters |= expense_filter
+    print(f">>>> expense filter => {filters}")
 
-    # Team Level Entries
-    if team_entry_types and workspace_team:
-        team_filter = Q(
-            entry_type__in=team_entry_types,
-            workspace_team=workspace_team,
-        )
+    if team_entry_types:
+        if workspace_team:
+            team_filter = Q(
+                entry_type__in=team_entry_types,
+                workspace_team=workspace_team,
+            )
+        elif workspace:
+            team_filter = Q(
+                entry_type__in=team_entry_types,
+                workspace=workspace,
+            )
+        elif organization:
+            team_filter = Q(
+                entry_type__in=team_entry_types,
+                organization=organization,
+            )
+        
         filters |= team_filter
+    print(f">>>> team filter => {filters}")
 
     if not filters:
+        print(f">>>> Returning None")
         return Entry.objects.none()
 
     queryset = Entry.objects.filter(filters).distinct()
-
+    print(f">>>> queryset => {queryset}")
     if annotate_attachment_count:
         queryset = queryset.annotate(attachment_count=Count("attachments"))
 
-    if status:
-        queryset = queryset.filter(status=status)
+    # 🔹 Apply additional filters
+    print(f"statuses => {statuses}")
+    if statuses:
+        queryset = queryset.filter(status__in=statuses)
+    if type_filter:
+        queryset = queryset.filter(entry_type=type_filter)
+    if workspace_team_id:
+        queryset = queryset.filter(workspace_team__pk=workspace_team_id)
+    if workspace_id:
+        queryset = queryset.filter(workspace_pk=workspace_id)
+    if search:
+        queryset = queryset.filter(
+            Q(description__icontains=search)
+        )
 
     if sort_by:
         queryset = queryset.order_by(sort_by)

@@ -212,7 +212,8 @@ class BaseUpdateEntryForm(BaseEntryForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["status"].choices = self.get_allowed_statuses(self.instance.status)
+        # Get allowed statuses
+        self.fields["status"].choices = self.get_allowed_statuses()
         # Don't Allow Amount, Description and Attachments to be changed if the status is not PENDING
         if self.instance.status != EntryStatus.PENDING:
             self.fields["amount"].disabled = True
@@ -221,28 +222,26 @@ class BaseUpdateEntryForm(BaseEntryForm):
             self.fields["replace_attachments"].disabled = True
             self.fields["currency"].disabled = True
             self.fields["occurred_at"].disabled = True
+        #Disable status and status note for submitter
+        if self.workspace_team_role == TeamMemberRole.SUBMITTER:
+            self.fields["status"].disabled = True
+            self.fields["status_note"].disabled = True
 
-    def get_allowed_statuses(self, current_status):
-        transitions = {
-            EntryStatus.PENDING: [
+    def get_allowed_statuses(self):
+        
+        #OA, WA, OR => ALL STATUSES
+        if self.is_org_admin or self.is_workspace_admin or self.is_operation_reviewer:
+            allowed_statuses = EntryStatus.values
+        #TC => PENDING, REVIEWED, REJECTED
+        elif self.is_team_coordinator:
+            allowed_statuses = [
                 EntryStatus.PENDING,
                 EntryStatus.REVIEWED,
                 EntryStatus.REJECTED,
-            ],
-            EntryStatus.REVIEWED: [
-                EntryStatus.REVIEWED,
-                EntryStatus.APPROVED,
-                EntryStatus.REJECTED,
-            ],
-            EntryStatus.REJECTED: [
-                EntryStatus.REJECTED,
-                EntryStatus.PENDING,
-                EntryStatus.REVIEWED,
-            ],
-            EntryStatus.APPROVED: [EntryStatus.APPROVED, EntryStatus.REJECTED],
-        }
-
-        allowed_statuses = transitions.get(current_status, [])
+            ]
+        #Others => None
+        else:
+            allowed_statuses = []
 
         # Convert codes into (value, label) tuples using EntryStatus.labels
         return [

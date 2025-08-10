@@ -6,36 +6,23 @@
 
     <div class="flex flex-col md:flex-row md:justify-between items-center">
       
-        <div class="flex items-center gap-2 flex-wrap">
-            <!-- Filter Button -->
-            {% url 'workspace_entry_list' organization.pk workspace.pk as filter_url %}
-            {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
+      {% url 'workspace_entry_list' organization.pk workspace.pk as filter_url %}
+      {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
+      
 
-            <!-- Search Input -->
-            <label class="input input-bordered flex items-center gap-2 w-full sm:w-64">
-            <svg class="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.3-4.3"></path>
-                </g>
-            </svg>
-            <input type="search" class="grow" placeholder="Search entries..." />
-            </label>
-        </div>
-
-        <!-- Action Buttons Container-->
-        <button 
-          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
-          hx-target="#modal-placeholder"
-          hx-swap="innerHTML"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-            <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
-            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
-          </svg>
-        
-          <span class="hidden sm:inline">Export</span>
-        </button>
+      <!-- Action Buttons Container-->
+      <button 
+        class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+          <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
+      
+        <span class="hidden sm:inline">Export</span>
+      </button>
     </div>
 
     <!-- Entries Section -->

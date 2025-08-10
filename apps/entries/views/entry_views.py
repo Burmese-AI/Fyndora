@@ -37,11 +37,14 @@ from .base_views import (
 from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
+    WorkspaceLevelEntryFiltering,
+    TeamLevelEntryFiltering
 )
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
     TeamLevelEntryView,
+    WorkspaceLevelEntryFiltering,
     BaseListView,
 ):
     model = Entry
@@ -59,6 +62,10 @@ class WorkspaceEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
+            status=self.request.GET.get("status"),
+            type_filter=self.request.GET.get("type"),
+            workspace_team_id=self.request.GET.get("team"),
+            search=self.request.GET.get("search"),
         )
         
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -69,6 +76,7 @@ class WorkspaceEntryListView(
 class WorkspaceTeamEntryListView(
     WorkspaceTeamRequiredMixin,
     TeamLevelEntryView,
+    TeamLevelEntryFiltering,
     BaseListView,
 ):
     model = Entry
@@ -83,22 +91,13 @@ class WorkspaceTeamEntryListView(
             workspace_team=self.workspace_team,
             entry_types=[
                 EntryType.INCOME,
+                EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            status=self.request.GET.get("status") or EntryStatus.PENDING,
+            status=self.request.GET.get("status"),
             type_filter=self.request.GET.get("type"),
-            team_name=self.request.GET.get("team"),
-            workspace_id=self.request.GET.get("workspace"),
             search=self.request.GET.get("search"),
         )
-        
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        #Type
-        context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT]
-        #Status
-        context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED]
-        return context
 
 
 class WorkspaceTeamEntryCreateView(

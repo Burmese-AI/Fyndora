@@ -24,8 +24,8 @@ def get_entries(
     entry_types: List[str],
     status: str = None,
     type_filter: str = None,
-    team_name: str = None,
-    workspace_id: int = None,
+    workspace_team_id: str = None,
+    workspace_id: str = None,
     search: str = None,
     prefetch_attachments: bool = False,
     sort_by: str = None,
@@ -88,13 +88,12 @@ def get_entries(
         queryset = queryset.filter(status=status)
     if type_filter:
         queryset = queryset.filter(entry_type=type_filter)
-    if team_name:
-        queryset = queryset.filter(workspace_team__name=team_name)
+    if workspace_team_id:
+        queryset = queryset.filter(workspace_team__pk=workspace_team_id)
     if workspace_id:
-        queryset = queryset.filter(workspace_id=workspace_id)
+        queryset = queryset.filter(workspace_pk=workspace_id)
     if search:
         queryset = queryset.filter(
-            Q(name__icontains=search) | 
             Q(description__icontains=search)
         )
 

@@ -1,75 +1,84 @@
-<div class="dropdown dropdown-bottom">
-  <button class="btn btn-sm btn-outline" tabindex="0">
-    <span class="hidden sm:inline">Filter</span>
-  </button>
+<form 
+  hx-get="{{ filter_url }}"
+  hx-target="{{ filter_target|default:'#content-container' }}" 
+  hx-trigger="change delay:200ms, keyup delay:400ms"
+  hx-swap="innerHTML"
+  hx-push-url="true"
+  class="flex items-center gap-2 flex-wrap"
+>
+  <!-- FILTER DROPDOWN -->
+  <div class="dropdown dropdown-bottom">
+    <button class="btn btn-sm btn-outline" tabindex="0">
+      <span class="hidden sm:inline">Filter</span>      
+    </button>
 
-  <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-64 space-y-3">
-    {% if status_options or type_options or team_options or workspace_options %}
+    <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-64 space-y-3">
+      {% if status_options or type_options or team_options or workspace_options %}
 
-      <form 
-        hx-get="{{ filter_url }}"
-        hx-target="{{ filter_target|default:'#content-container' }}" 
-        hx-swap="innerHTML"
-        class="space-y-3"
-      >
-        {% if status_options %}
-          <div>
-            <label class="label-text font-semibold">Status</label>
-            <select name="status" class="select select-sm select-bordered w-full">
-              {% for status in status_options %}
-                <option value="{{ status }}">{{ status }}</option>
-              {% endfor %}
-            </select>
+          {% if status_options %}
+            <div>
+              <label class="label-text font-semibold">Status</label>
+              <select name="status" class="select select-sm select-bordered w-full">
+                <option value="">All Statuses</option>
+                {% for status in status_options %}
+                  <option value="{{ status }}">{{ status }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="divider"></div>
+          {% endif %}
+
+          {% if type_options %}
+            <div>
+              <label class="label-text font-semibold">Type</label>
+              <select name="type" class="select select-sm select-bordered w-full">
+                <option value="">All Types</option>
+                {% for type in type_options %}
+                  <option value="{{ type }}">{{ type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="divider"></div>
+          {% endif %}
+
+          {% if team_options %}
+            <div>
+              <label class="label-text font-semibold">Team</label>
+              <select name="team" class="select select-sm select-bordered w-full">
+                <option value="">All teams</option>
+                {% for team in team_options %}
+                  <option value="{{ team.pk }}">{{ team.team.title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="divider"></div>
+          {% endif %}
+
+          <div class="flex justify-end mt-2">
+            <a href="{{ filter_url }}" class="btn btn-sm btn-outline">Clear all</a>
           </div>
-          <div class="divider"></div>
-        {% endif %}
 
-        {% if type_options %}
-          <div>
-            <label class="label-text font-semibold">Type</label>
-            <select name="type" class="select select-sm select-bordered w-full">
-              {% for type in type_options %}
-                <option value="{{ type }}">{{ type }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="divider"></div>
-        {% endif %}
-
-        {% if team_options %}
-          <div>
-            <label class="label-text font-semibold">Team</label>
-            <select name="team" class="select select-sm select-bordered w-full">
-              <option value="">All teams</option>
-              {% for team in team_options %}
-                <option value="{{ team.id }}">{{ team.title }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="divider"></div>
-        {% endif %}
-
-        {% if workspace_options %}
-          <div>
-            <label class="label-text font-semibold">Workspace</label>
-            <select name="workspace" class="select select-sm select-bordered w-full">
-              <option value="">All workspaces</option>
-              {% for ws in workspace_options %}
-                <option value="{{ ws.id }}">{{ ws.title }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="divider"></div>
-        {% endif %}
-
-        <div class="flex justify-between mt-2">
-          <a href="{{ filter_url }}" class="btn btn-sm btn-outline">Clear</a>
-          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-        </div>
-      </form>
-
-    {% else %}
-      <p class="text-sm text-base-content/60">No filters available.</p>
-    {% endif %}
+      {% else %}
+        <p class="text-sm text-base-content/60">No filters available.</p>
+      {% endif %}
+    </div>
   </div>
-</div>
+
+  <!-- SEARCH BOX -->
+  <label class="input input-bordered flex items-center gap-2 w-full sm:w-64">
+      <svg class="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+          </g>
+      </svg>
+      <input
+          type="search"
+          name="search"
+          class="grow"
+          placeholder="{{ placeholder|default:'Search' }}"
+          value="{{ request.GET.search }}"
+      />
+  </label>
+
+</form>

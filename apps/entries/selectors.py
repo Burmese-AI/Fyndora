@@ -22,7 +22,7 @@ def get_entries(
     workspace: Workspace = None,
     workspace_team: WorkspaceTeam = None,
     entry_types: List[str],
-    status: str = None,
+    statuses: List[str] = [],
     type_filter: str = None,
     workspace_team_id: str = None,
     workspace_id: str = None,
@@ -84,8 +84,9 @@ def get_entries(
         queryset = queryset.annotate(attachment_count=Count("attachments"))
 
     # 🔹 Apply additional filters
-    if status:
-        queryset = queryset.filter(status=status)
+    print(f"statuses => {statuses}")
+    if statuses:
+        queryset = queryset.filter(status__in=statuses)
     if type_filter:
         queryset = queryset.filter(entry_type=type_filter)
     if workspace_team_id:

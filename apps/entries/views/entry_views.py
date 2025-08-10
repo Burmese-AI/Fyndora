@@ -62,7 +62,7 @@ class WorkspaceEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            status=self.request.GET.get("status"),
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.REVIEWED],
             type_filter=self.request.GET.get("type"),
             workspace_team_id=self.request.GET.get("team"),
             search=self.request.GET.get("search"),
@@ -94,7 +94,7 @@ class WorkspaceTeamEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            status=self.request.GET.get("status"),
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )

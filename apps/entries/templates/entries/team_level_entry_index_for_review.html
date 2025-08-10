@@ -18,24 +18,10 @@
 {% block content %}
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-6">
 
-    <div class="flex flex-col md:flex-row md:justify-between items-center">
+    <div class="flex flex-col md:flex-row md:justify-between items-center gap-2">
       
-      <div class="flex items-center gap-2 flex-wrap">
-        <!-- Filter Button -->
-        {% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
-        {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
-
-        <!-- Search Input -->
-        <label class="input input-bordered flex items-center gap-2 w-full sm:w-64">
-          <svg class="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </g>
-          </svg>
-          <input type="search" class="grow" placeholder="Search entries..." />
-        </label>
-      </div>
+      {% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
+      {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
 
       <!-- Action Buttons Container-->
       <div>
@@ -51,7 +37,6 @@
             
           <span class="hidden sm:inline">Import</span>
         </button>
-
 
         <button 
           class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"

@@ -74,6 +74,7 @@ class TeamLevelEntryFiltering:
         context = super().get_context_data(**kwargs)
         context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT]
         context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED]
+        context["default_status_option"] = EntryStatus.PENDING
         return context
     
 class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
@@ -84,5 +85,6 @@ class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
         #Overriding context values
         context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]
         context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED, EntryStatus.APPROVED]
+        context["default_status_option"] = EntryStatus.REVIEWED
         return context
     

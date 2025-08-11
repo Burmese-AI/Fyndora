@@ -59,7 +59,7 @@ ROLES = {
         TeamPermissions.ADD_TEAM_MEMBER,
     ],
     "SUBMITTER": [
-        WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY,
+        WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY, # org admin,TC and Submitter
         WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY,
         WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY,
     ],

@@ -182,12 +182,6 @@ class WorkspaceTeamEntryUpdateView(
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
 
-    def dispatch(self, request, *args, **kwargs):
-        if not can_update_workspace_team_entry(request.user, self.workspace_team):
-            return permission_denied_view(
-                request, "You do not have permission to update this entry."
-            )
-        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return Entry.objects.filter(

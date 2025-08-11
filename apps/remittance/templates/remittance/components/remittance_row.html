@@ -1,3 +1,6 @@
+{% load humanize %}
+
+
 <tr {% if is_oob %}hx-swap-oob="true"{% endif %} class="hover:bg-base-100 transition-colors" id="remittance_row-{{ remittance.remittance_id }}">
     <!-- Member Info -->
     <td>
@@ -26,18 +29,18 @@
     <!-- Due Amount -->
     <td>
         <div class="text-sm">
-            {{ remittance.due_amount }}
+            {{ remittance.due_amount|intcomma }}
         </div>
     </td>
     
     <!-- Paid Amount -->
     <td>
-        {{ remittance.paid_amount }}
+        {{ remittance.paid_amount|intcomma }}
     </td>
 
     <!-- Remaining Amount -->
     <td>
-        {{ remittance.remaining_amount }}
+        {{ remittance.remaining_amount|intcomma }}
     </td>
     
     <!-- Status of the remittance -->

@@ -97,7 +97,6 @@ def get_entries(
         queryset = queryset.filter(workspace_pk=workspace_id)
     if search:
         queryset = queryset.filter(Q(description__icontains=search))
-    print(f"queryset 1 => {queryset}")
 
     if sort_by:
         queryset = queryset.order_by(sort_by)
@@ -117,7 +116,6 @@ def get_entries(
         "last_status_modified_by__user",
     )
 
-    print(f"queryset 2 => {queryset}")
     return queryset
 
 

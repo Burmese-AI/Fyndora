@@ -70,12 +70,12 @@ def get_entries(
                 entry_type__in=team_entry_types,
                 organization=organization,
             )
-        
+
         filters |= team_filter
     print(f">>>> team filter => {filters}")
 
     if not filters:
-        print(f">>>> Returning None")
+        print(">>>> Returning None")
         return Entry.objects.none()
 
     queryset = Entry.objects.filter(filters).distinct()
@@ -94,9 +94,7 @@ def get_entries(
     if workspace_id:
         queryset = queryset.filter(workspace_pk=workspace_id)
     if search:
-        queryset = queryset.filter(
-            Q(description__icontains=search)
-        )
+        queryset = queryset.filter(Q(description__icontains=search))
 
     if sort_by:
         queryset = queryset.order_by(sort_by)
@@ -115,7 +113,6 @@ def get_entries(
         "submitted_by_team_member__organization_member__user",
         "last_status_modified_by__user",
     )
-
     return queryset
 
 

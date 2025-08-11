@@ -14,10 +14,10 @@
       />
     </label>
   </td>
-
+  
   <!-- Submitted By -->
   <td class="capitalize">
-    {{ entry.submitted_by_team_member.user.username|default:entry.submitted_by_org_member.user.username|default:"-" }}
+    {{ entry.submitted_by_team_member.organization_member.user.username}}
   </td>
 
   <!-- Description + attachments -->

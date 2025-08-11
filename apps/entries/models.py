@@ -14,6 +14,7 @@ from apps.organizations.models import (
     Organization,
     OrganizationExchangeRate,
 )
+from apps.core.permissions import EntryPermissions
 
 
 class Entry(baseModel, SoftDeleteModel):
@@ -126,9 +127,10 @@ class Entry(baseModel, SoftDeleteModel):
         verbose_name_plural = "entries"
         ordering = ["-occurred_at", "-created_at"]
         permissions = [
-            ("upload_attachments", "Can upload attachments to entries"),
-            ("review_entries", "Can review and approve entries"),
-            ("flag_entries", "Can flag or comment on entries"),
+            (
+                EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY,
+                "Can change other submitters entry",
+            ),
         ]
         indexes = [
             # Context

@@ -8,7 +8,6 @@ from datetime import date
 from apps.currencies.models import Currency
 from django.utils import timezone
 from apps.currencies.selectors import get_org_defined_currencies
-from pprint import pprint
 
 
 class BaseEntryForm(forms.ModelForm):
@@ -222,27 +221,28 @@ class BaseUpdateEntryForm(BaseEntryForm):
             self.fields["replace_attachments"].disabled = True
             self.fields["currency"].disabled = True
             self.fields["occurred_at"].disabled = True
-        #Disable status and status note 
+        # Disable status and status note
         # for submitter
         # for TC on remittance entry type
-        if (self.workspace_team_role == TeamMemberRole.SUBMITTER) or (self.is_team_coordinator and self.instance.entry_type == EntryType.REMITTANCE):
+        if (self.workspace_team_role == TeamMemberRole.SUBMITTER) or (
+            self.is_team_coordinator
+            and self.instance.entry_type == EntryType.REMITTANCE
+        ):
             self.fields["status"].disabled = True
             self.fields["status_note"].disabled = True
-                    
 
     def get_allowed_statuses(self):
-        
-        #OA, WA, OR => ALL STATUSES
+        # OA, WA, OR => ALL STATUSES
         if self.is_org_admin or self.is_workspace_admin or self.is_operation_reviewer:
             allowed_statuses = EntryStatus.values
-        #TC => PENDING, REVIEWED, REJECTED
+        # TC => PENDING, REVIEWED, REJECTED
         elif self.is_team_coordinator:
             allowed_statuses = [
                 EntryStatus.PENDING,
                 EntryStatus.REVIEWED,
                 EntryStatus.REJECTED,
             ]
-        #Others => None
+        # Others => None
         else:
             allowed_statuses = []
 

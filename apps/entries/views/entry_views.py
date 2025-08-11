@@ -30,7 +30,6 @@ from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
-    can_update_workspace_team_entry,
 )
 from .base_views import (
     TeamLevelEntryView,
@@ -39,8 +38,9 @@ from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
     WorkspaceLevelEntryFiltering,
-    TeamLevelEntryFiltering
+    TeamLevelEntryFiltering,
 )
+
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
@@ -52,7 +52,7 @@ class WorkspaceEntryListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_level_entry_index.html"
-    
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -63,16 +63,19 @@ class WorkspaceEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.REVIEWED],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.REVIEWED],
             type_filter=self.request.GET.get("type"),
             workspace_team_id=self.request.GET.get("team"),
             search=self.request.GET.get("search"),
         )
-        
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "workspace_lvl_entries"
         return context
+
 
 class WorkspaceTeamEntryListView(
     WorkspaceTeamRequiredMixin,
@@ -85,7 +88,7 @@ class WorkspaceTeamEntryListView(
     table_template_name = "entries/partials/table.html"
     template_name = "entries/team_level_entry_index_for_review.html"
     secondary_template_name = "entries/team_level_entry_index_for_submitters.html"
-    
+
     def get_template_names(self):
         if self.workspace_team_role == TeamMemberRole.SUBMITTER:
             return [self.secondary_template_name]
@@ -102,7 +105,9 @@ class WorkspaceTeamEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )
@@ -142,7 +147,9 @@ class WorkspaceTeamEntryCreateView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )
@@ -270,7 +277,9 @@ class WorkspaceTeamEntryDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )

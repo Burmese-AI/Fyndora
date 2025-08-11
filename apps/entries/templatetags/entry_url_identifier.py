@@ -6,9 +6,7 @@ register = template.Library()
 
 
 @register.simple_tag
-def entry_delete_url(
-    entry_type, entry
-):
+def entry_delete_url(entry_type, entry):
     if entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
         return reverse(
             "workspace_team_entry_delete",
@@ -22,10 +20,7 @@ def entry_delete_url(
     elif entry_type == EntryType.ORG_EXP:
         return reverse(
             "organization_expense_delete",
-            kwargs={
-                "organization_id": entry.organization.pk, 
-                "pk": entry.pk
-            },
+            kwargs={"organization_id": entry.organization.pk, "pk": entry.pk},
         )
     elif entry_type == EntryType.WORKSPACE_EXP:
         return reverse(
@@ -40,9 +35,7 @@ def entry_delete_url(
 
 
 @register.simple_tag
-def entry_update_url(
-    entry_type, entry
-):
+def entry_update_url(entry_type, entry):
     if entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
         return reverse(
             "workspace_team_entry_update",

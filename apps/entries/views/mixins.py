@@ -68,29 +68,54 @@ class EntryUrlIdentifierMixin:
         context["entry_type"] = self.get_entry_type()
         return context
 
+
 class StatusFilteringMixin:
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.APPROVED, EntryStatus.REJECTED]
+        context["status_options"] = [
+            EntryStatus.PENDING,
+            EntryStatus.REVIEWED,
+            EntryStatus.APPROVED,
+            EntryStatus.REJECTED,
+        ]
         context["default_status_option"] = EntryStatus.PENDING
         return context
-    
+
 
 class TeamLevelEntryFiltering(StatusFilteringMixin):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]
-        context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED]
+        context["type_options"] = [
+            EntryType.INCOME,
+            EntryType.DISBURSEMENT,
+            EntryType.REMITTANCE,
+        ]
+        context["status_options"] = [
+            EntryStatus.PENDING,
+            EntryStatus.REVIEWED,
+            EntryStatus.REJECTED,
+        ]
         return context
-    
+
+
 class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        #Gettting all workspace teams under the current workspace
-        context["team_options"] = self.workspace.workspace_teams.select_related("team").all()
-        #Overriding context values
-        context["type_options"] = [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]
-        context["status_options"] = [EntryStatus.PENDING, EntryStatus.REVIEWED, EntryStatus.REJECTED, EntryStatus.APPROVED]
+        # Gettting all workspace teams under the current workspace
+        context["team_options"] = self.workspace.workspace_teams.select_related(
+            "team"
+        ).all()
+        # Overriding context values
+        context["type_options"] = [
+            EntryType.INCOME,
+            EntryType.DISBURSEMENT,
+            EntryType.REMITTANCE,
+        ]
+        context["status_options"] = [
+            EntryStatus.PENDING,
+            EntryStatus.REVIEWED,
+            EntryStatus.REJECTED,
+            EntryStatus.APPROVED,
+        ]
         context["default_status_option"] = EntryStatus.REVIEWED
         return context
-    

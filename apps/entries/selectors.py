@@ -72,12 +72,12 @@ def get_entries(
                 entry_type__in=team_entry_types,
                 organization=organization,
             )
-        
+
         filters |= team_filter
     print(f">>>> team filter => {filters}")
 
     if not filters:
-        print(f">>>> Returning None")
+        print(">>>> Returning None")
         return Entry.objects.none()
 
     queryset = Entry.objects.filter(filters).distinct()
@@ -96,9 +96,7 @@ def get_entries(
     if workspace_id:
         queryset = queryset.filter(workspace_pk=workspace_id)
     if search:
-        queryset = queryset.filter(
-            Q(description__icontains=search)
-        )
+        queryset = queryset.filter(Q(description__icontains=search))
     print(f"queryset 1 => {queryset}")
 
     if sort_by:

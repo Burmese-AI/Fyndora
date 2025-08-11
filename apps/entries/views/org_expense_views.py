@@ -38,11 +38,7 @@ from .base_views import (
     OrganizationLevelEntryView,
     BaseEntryBulkActionView,
 )
-from .mixins import (
-    EntryFormMixin,
-    EntryRequiredMixin,
-    StatusFilteringMixin
-)
+from .mixins import EntryFormMixin, EntryRequiredMixin, StatusFilteringMixin
 
 
 class OrganizationExpenseListView(
@@ -69,7 +65,9 @@ class OrganizationExpenseListView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             search=self.request.GET.get("search"),
         )
 
@@ -113,7 +111,9 @@ class OrganizationExpenseCreateView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             search=self.request.GET.get("search"),
         )
 
@@ -231,7 +231,9 @@ class OrganizationExpenseDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             search=self.request.GET.get("search"),
         )
 
@@ -253,7 +255,9 @@ class OrganizationExpenseBulkDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             search=self.request.GET.get("search"),
         )
 

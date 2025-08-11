@@ -7,7 +7,7 @@
     id="modal_content_template"
     hx-post="{% url 'change_workspace_team_remittance_rate' organization_id=organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id workspace_team_id=workspace_team.workspace_team_id %}"
     hx-swap="none"
-    class="modal-box w-4xl bg-white shadow-xl rounded-lg"
+    class="modal-box w-4xl shadow-xl rounded-lg"
     >
 {% csrf_token %}
 <div class="p-8">

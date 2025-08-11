@@ -1,7 +1,7 @@
 {% extends "components/new_base_modal.html" %}
 
 {% block modal_content %}
-<form action="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}"  class="modal-box w-4xl bg-white shadow-xl rounded-lg"  method="post" class="space-y-0">
+<form action="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}"  class="modal-box w-4xl shadow-xl rounded-lg"  method="post" class="space-y-0">
     {% csrf_token %}
    
         <div class="flex items-center gap-4 mb-6">
@@ -21,7 +21,7 @@
         </div>
         <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
             <button type="button"
-                class="inline-flex items-center justify-center px-5 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
+                class="inline-flex items-center justify-center px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
                 onclick="this.closest('.modal').removeAttribute('open')">
                 Cancel
             </button>

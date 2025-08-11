@@ -2,7 +2,7 @@
 
 {% block modal_content %}
 
-<form hx-post="{% url 'delete_team' organization_id=organization.organization_id team_id=team.team_id %}" class="modal-box w-4xl bg-white shadow-xl rounded-lg p-8 " hx-swap="none" >
+<form hx-post="{% url 'delete_team' organization_id=organization.organization_id team_id=team.team_id %}" class="modal-box w-4xl shadow-xl rounded-lg p-8 " hx-swap="none" >
     {% csrf_token %}
    
         <h2 class="text-2xl font-bold text-gray-800 mb-8">Delete {{ team.title }} in {{ organization.title }}</h2>

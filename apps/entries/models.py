@@ -125,11 +125,6 @@ class Entry(baseModel, SoftDeleteModel):
         verbose_name = "entry"
         verbose_name_plural = "entries"
         ordering = ["-occurred_at", "-created_at"]
-        permissions = [
-            ("upload_attachments", "Can upload attachments to entries"),
-            ("review_entries", "Can review and approve entries"),
-            ("flag_entries", "Can flag or comment on entries"),
-        ]
         indexes = [
             # Context
             models.Index(fields=["organization"]),

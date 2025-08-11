@@ -188,3 +188,15 @@ class WorkspaceTeamPermissions(models.TextChoices):
         "delete_workspace_team_entry",
         "Can delete workspace team entry by WA and Org Owner",
     )
+
+
+class EntryPermissions(models.TextChoices):
+    """
+    Permissions for the Entry model.
+    Permissions that are tied with entry ID Object
+    """
+
+    CHANGE_ENTRY = (
+        "change_entry",
+        "Can change entry by submitter",
+    )

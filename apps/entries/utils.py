@@ -79,14 +79,18 @@ def can_update_workspace_team_entry(user, workspace_team):
         WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY, workspace_team
     )
 
+
 def can_update_other_submitters_entry(user, org_member, entry, workspace_team):
     """
     Returns True if the user has the permission to update other submitters entry.
 
     """
-    if not user.has_perm(EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, entry) and not own_higher_admin_role(org_member, workspace_team):
+    if not user.has_perm(
+        EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, entry
+    ) and not own_higher_admin_role(org_member, workspace_team):
         return False
     return True
+
 
 def can_delete_workspace_team_entry(user, workspace_team):
     """
@@ -112,13 +116,20 @@ def extract_entry_business_context(entry):
         "organization_id": str(entry.workspace.organization.organization_id),
     }
 
+
 def own_higher_admin_role(user, workspace_team):
     """
-    Returns True if the user has the permission to update the workspace team entry.
+    Returns True if the user has admin role.
     """
     is_team_coordinator = user == workspace_team.team.team_coordinator
     is_workspace_admin = user == workspace_team.workspace.workspace_admin
     is_operation_reviewer = user == workspace_team.workspace.operations_reviewer
     is_org_admin = user == workspace_team.workspace.organization.owner
 
-    return is_team_coordinator or is_workspace_admin or is_operation_reviewer or is_org_admin
+    # if one condition is true, return True
+    return (
+        is_team_coordinator
+        or is_workspace_admin
+        or is_operation_reviewer
+        or is_org_admin
+    )

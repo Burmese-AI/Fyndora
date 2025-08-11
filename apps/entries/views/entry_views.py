@@ -40,9 +40,10 @@ from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
     WorkspaceLevelEntryFiltering,
-    TeamLevelEntryFiltering
+    TeamLevelEntryFiltering,
 )
 from apps.entries.utils import can_update_other_submitters_entry
+
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
@@ -54,7 +55,7 @@ class WorkspaceEntryListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_level_entry_index.html"
-    
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -65,16 +66,19 @@ class WorkspaceEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.REVIEWED],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.REVIEWED],
             type_filter=self.request.GET.get("type"),
             workspace_team_id=self.request.GET.get("team"),
             search=self.request.GET.get("search"),
         )
-        
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["view"] = "workspace_lvl_entries"
         return context
+
 
 class WorkspaceTeamEntryListView(
     WorkspaceTeamRequiredMixin,
@@ -97,7 +101,9 @@ class WorkspaceTeamEntryListView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )
@@ -167,11 +173,10 @@ class WorkspaceTeamEntryCreateView(
             user=self.request.user,
             request=self.request,
         )
-        #So ,only the submitter can edit the entry (except org admins,TC, workspace admins, operations reviewer) # dedicated to prevent other submitters from editing the entry
-        assign_perm (EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, self.request.user, entry)
-        
-        
-        
+        # So ,only the submitter can edit the entry (except org admins,TC, workspace admins, operations reviewer) # dedicated to prevent other submitters from editing the entry
+        assign_perm(
+            EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, self.request.user, entry
+        )
 
 
 class WorkspaceTeamEntryUpdateView(
@@ -189,13 +194,15 @@ class WorkspaceTeamEntryUpdateView(
     row_template_name = "entries/partials/row.html"
 
     def dispatch(self, request, *args, **kwargs):
-        
-        #general permission checking ....
+        # general permission checking if the user has the permission to update the workspace team entry....
         if not can_update_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(
                 request, "You do not have permission to update this entry."
             )
-        if not can_update_other_submitters_entry(request.user, self.org_member, self.entry, self.workspace_team):
+        # permission checking if the user has the permission to update other submitters entry....
+        if not can_update_other_submitters_entry(
+            request.user, self.org_member, self.entry, self.workspace_team
+        ):
             return permission_denied_view(
                 request, "You cannot edit other submitters entries."
             )

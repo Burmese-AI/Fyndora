@@ -4,14 +4,23 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('entries', '0002_alter_entry_status_last_updated_at'),
+        ("entries", "0002_alter_entry_status_last_updated_at"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='entry',
-            options={'ordering': ['-occurred_at', '-created_at'], 'permissions': [('change_other_submitters_entry', 'Can change other submitters entry')], 'verbose_name': 'entry', 'verbose_name_plural': 'entries'},
+            name="entry",
+            options={
+                "ordering": ["-occurred_at", "-created_at"],
+                "permissions": [
+                    (
+                        "change_other_submitters_entry",
+                        "Can change other submitters entry",
+                    )
+                ],
+                "verbose_name": "entry",
+                "verbose_name_plural": "entries",
+            },
         ),
     ]

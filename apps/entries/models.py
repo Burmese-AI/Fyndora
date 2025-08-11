@@ -126,8 +126,11 @@ class Entry(baseModel, SoftDeleteModel):
         verbose_name = "entry"
         verbose_name_plural = "entries"
         ordering = ["-occurred_at", "-created_at"]
-        permissions =[
-            (EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, "Can change other submitters entry"),
+        permissions = [
+            (
+                EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY,
+                "Can change other submitters entry",
+            ),
         ]
         indexes = [
             # Context

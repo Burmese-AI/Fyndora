@@ -162,8 +162,8 @@ def create_entry_with_attachments(
                 submitter_type="org_member"
                 if submitted_by_org_member
                 else "team_member",
-                )
-            
+            )
+
     return entry
 
 

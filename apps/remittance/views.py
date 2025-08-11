@@ -62,7 +62,7 @@ def remittance_list_view(request, organization_id):
             "search_query": search_query,  # to maintain search state
             "remittance_status": RemittanceStatus.choices,  # for dropdown filter
         }
-        #if hx-request is true, return the partial template and for the full template, return the full template
+        # if hx-request is true, return the partial template and for the full template, return the full template
         if request.headers.get("HX-Request"):
             return render(
                 request, "remittance/components/remittance_table.html", context

@@ -106,7 +106,11 @@ class Entry(baseModel, SoftDeleteModel):
     @property
     def submitter(self):
         """Return the submitter (either team member or organization member)."""
-        return self.submitted_by_team_member or self.submitted_by_org_member
+        if self.submitted_by_org_member:
+            print(f"in model org => {self.submitted_by_org_member}")
+            return self.submitted_by_org_member.user.username
+        print(f"in model team => {self.submitted_by_team_member}")
+        return self.submitted_by_team_member.organization_member.user.username
 
     def clean(self):
         super().clean()
@@ -151,4 +155,4 @@ class Entry(baseModel, SoftDeleteModel):
         ]
 
     def __str__(self):
-        return f"{self.organization} - {self.workspace} - {self.workspace_team} - {self.amount} - {self.currency} - {self.status}"
+        return f"{self.pk} - {self.entry_type} - {self.amount} - {self.status}"

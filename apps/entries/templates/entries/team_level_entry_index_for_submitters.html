@@ -2,8 +2,7 @@
 
 {% block content %}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-
+<div class="max-w-7xl mx-auto space-y-6 my-4 px-6">
   <!-- Breadcrumbs -->
   <div class="text-sm breadcrumbs text-base-content/70">
     <ul>
@@ -13,7 +12,7 @@
       <li class="font-medium">{{ workspace_team.team.title }} Team</li>
     </ul>
   </div>
-
+  
   <!-- Team Overview Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
@@ -33,12 +32,10 @@
         <span class="hidden sm:inline">Add Expense Entry</span>
     </button>
   </div>
-
-  <!-- Entries Section -->
-  <div class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
-    {% include "entries/partials/table.html" %}
-  </div>
-
 </div>
+
+
+{% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
+{% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
 
 {% endblock %}

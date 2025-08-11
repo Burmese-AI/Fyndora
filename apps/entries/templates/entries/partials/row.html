@@ -17,7 +17,7 @@
   
   <!-- Submitted By -->
   <td class="capitalize">
-    {{ entry.submitted_by_team_member.organization_member.user.username}}
+    {{ entry.submitter }}
   </td>
 
   <!-- Description + attachments -->
@@ -32,6 +32,37 @@
         </svg>
         <span>{{ entry.attachment_count }} attachment{{ entry.attachment_count|pluralize }}</span>
       </div>
+    {% endif %}
+  </td>
+
+    <!-- Status -->
+  <td class="text-center">
+    <span
+      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm rounded-full capitalize
+        {% if entry.status == 'approved' %}
+          bg-green-500 text-white
+        {% elif entry.status == 'pending' %}
+          bg-amber-400 text-black
+        {% elif entry.status == 'rejected' %}
+          bg-red-500 text-white
+        {% elif entry.status == 'flagged' %}
+          bg-orange-500 text-white
+        {% else %}
+          bg-neutral text-white
+        {% endif %}
+      "
+    >
+      {{ entry.get_status_display }}
+    </span>
+
+
+    {% if entry.is_flagged %}
+      <span class="text-xs flex gap-1 items-center text-red-700 mt-1 capitalize">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+        Missing Attachments
+      </span>
     {% endif %}
   </td>
 
@@ -80,27 +111,6 @@
   <!-- Occurred On -->
   <td>
     {{ entry.occurred_at|date:"M d, Y" }}
-  </td>
-
-  <!-- Status -->
-  <td class="text-center">
-    <div class="tooltip tooltip-neutral" data-tip="{{ entry.get_status_display }}">
-      <button class="status md:status-md xl:status-lg animate-pulse
-        {% if entry.status == 'approved' %}bg-green-300
-        {% elif entry.status == 'pending' %}bg-yellow-500
-        {% elif entry.status == 'rejected' %}bg-red-700
-        {% elif entry.status == 'flagged' %}status-neutral
-        {% else %}status-ghost{% endif %}">
-      </button>
-    </div>
-    {% if entry.is_flagged %}
-      <span class="text-xs text-neutral flex gap-1 items-center text-red-700 mt-1 capitalize">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-3">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-        </svg>
-        Missing Attachments
-      </span>
-    {% endif %}
   </td>
 
   <!-- Last Reviewed By -->

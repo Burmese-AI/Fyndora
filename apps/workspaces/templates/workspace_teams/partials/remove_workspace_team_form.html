@@ -4,7 +4,7 @@
 
 <form
     id="modal_content_template"
-    hx-post="{% url 'remove_team_from_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}"  hx-swap="none" class="modal-box w-4xl bg-white shadow-xl rounded-lg p-8 ">
+    hx-post="{% url 'remove_team_from_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id team_id=team.team_id %}"  hx-swap="none" class="modal-box w-4xl shadow-xl rounded-lg p-8 ">
     {% csrf_token %}
    
         <h2 class="text-2xl font-bold text-gray-800 mb-8">Remove {{ team.team_name }} from {{ workspace.title }}</h2>

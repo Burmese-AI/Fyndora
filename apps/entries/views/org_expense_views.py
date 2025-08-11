@@ -38,15 +38,13 @@ from .base_views import (
     OrganizationLevelEntryView,
     BaseEntryBulkActionView,
 )
-from .mixins import (
-    EntryFormMixin,
-    EntryRequiredMixin,
-)
+from .mixins import EntryFormMixin, EntryRequiredMixin, StatusFilteringMixin
 
 
 class OrganizationExpenseListView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
+    StatusFilteringMixin,
     BaseListView,
 ):
     model = Entry
@@ -67,6 +65,10 @@ class OrganizationExpenseListView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -109,6 +111,10 @@ class OrganizationExpenseCreateView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def get_modal_title(self) -> str:
@@ -225,6 +231,10 @@ class OrganizationExpenseDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def perform_service(self, form):
@@ -245,6 +255,10 @@ class OrganizationExpenseBulkDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def perform_action(self, entries, user):

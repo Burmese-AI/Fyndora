@@ -8,7 +8,6 @@ from datetime import date
 from apps.currencies.models import Currency
 from django.utils import timezone
 from apps.currencies.selectors import get_org_defined_currencies
-from pprint import pprint
 
 
 class BaseEntryForm(forms.ModelForm):
@@ -67,7 +66,7 @@ class BaseEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         # print("+++++++++++++ DEBUGGING +++++++++++++")
-        pprint(kwargs)
+        # pprint(kwargs)
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
         self.workspace = kwargs.pop("workspace", None)
@@ -222,8 +221,13 @@ class BaseUpdateEntryForm(BaseEntryForm):
             self.fields["replace_attachments"].disabled = True
             self.fields["currency"].disabled = True
             self.fields["occurred_at"].disabled = True
-        # Disable status and status note for submitter
-        if self.workspace_team_role == TeamMemberRole.SUBMITTER:
+        # Disable status and status note
+        # for submitter
+        # for TC on remittance entry type
+        if (self.workspace_team_role == TeamMemberRole.SUBMITTER) or (
+            self.is_team_coordinator
+            and self.instance.entry_type == EntryType.REMITTANCE
+        ):
             self.fields["status"].disabled = True
             self.fields["status_note"].disabled = True
 

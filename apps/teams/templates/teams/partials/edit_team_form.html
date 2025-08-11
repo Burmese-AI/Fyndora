@@ -5,7 +5,7 @@
 <form
     {% if is_oob %}hx-swap-oob="true"{% endif %}
     id="modal_content_template"
-    class="modal-box w-4xl bg-white shadow-xl rounded-lg" 
+    class="modal-box w-4xl shadow-xl rounded-lg" 
     hx-post="{% url 'edit_team' organization_id=request.resolver_match.kwargs.organization_id team_id=request.resolver_match.kwargs.team_id %}"
     hx-swap="none">
 {% csrf_token %}

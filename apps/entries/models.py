@@ -105,7 +105,9 @@ class Entry(baseModel, SoftDeleteModel):
     @property
     def submitter(self):
         """Return the submitter (either team member or organization member)."""
-        return self.submitted_by_team_member or self.submitted_by_org_member
+        if self.submitted_by_org_member:
+            return self.submitted_by_org_member.user.username
+        return self.submitted_by_team_member.organization_member.user.username
 
     def clean(self):
         super().clean()

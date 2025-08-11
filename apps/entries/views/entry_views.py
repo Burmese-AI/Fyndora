@@ -17,6 +17,7 @@ from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin,
     HtmxTableServiceMixin,
 )
+from apps.teams.constants import TeamMemberRole
 
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..forms import (
@@ -83,6 +84,12 @@ class WorkspaceTeamEntryListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/team_level_entry_index_for_review.html"
+    secondary_template_name = "entries/team_level_entry_index_for_submitters.html"
+    
+    def get_template_names(self):
+        if self.workspace_team_role == TeamMemberRole.SUBMITTER:
+            return [self.secondary_template_name]
+        return super().get_template_names()
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(
@@ -91,6 +98,7 @@ class WorkspaceTeamEntryListView(
             workspace_team=self.workspace_team,
             entry_types=[
                 EntryType.INCOME,
+                EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
@@ -114,10 +122,9 @@ class WorkspaceTeamEntryCreateView(
     table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
+    # Submitter can't create entries if this is uncommented
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
-            print(request.user)
-            print(self.workspace_team)
             return permission_denied_view(
                 request,
                 "You do not have permission to add an entry to this workspace team.",
@@ -181,13 +188,6 @@ class WorkspaceTeamEntryUpdateView(
     form_class = UpdateWorkspaceTeamEntryForm
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        if not can_update_workspace_team_entry(request.user, self.workspace_team):
-            return permission_denied_view(
-                request, "You do not have permission to update this entry."
-            )
-        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return Entry.objects.filter(

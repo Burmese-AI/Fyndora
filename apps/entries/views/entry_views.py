@@ -42,7 +42,7 @@ from .mixins import (
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering
 )
-from apps.entries.utils import check_higher_up_role
+from apps.entries.utils import can_update_other_submitters_entry
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
@@ -189,15 +189,13 @@ class WorkspaceTeamEntryUpdateView(
     row_template_name = "entries/partials/row.html"
 
     def dispatch(self, request, *args, **kwargs):
-
-        curent_user = self.org_member
         
         #general permission checking ....
         if not can_update_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(
                 request, "You do not have permission to update this entry."
             )
-        if not self.request.user.has_perm(EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, self.entry) and not check_higher_up_role(curent_user, self.workspace_team):
+        if not can_update_other_submitters_entry(request.user, self.org_member, self.entry, self.workspace_team):
             return permission_denied_view(
                 request, "You cannot edit other submitters entries."
             )

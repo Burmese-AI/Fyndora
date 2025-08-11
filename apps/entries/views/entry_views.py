@@ -42,6 +42,7 @@ from .mixins import (
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering
 )
+from apps.entries.utils import check_higher_up_role
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
@@ -166,10 +167,9 @@ class WorkspaceTeamEntryCreateView(
             user=self.request.user,
             request=self.request,
         )
-        assign_perm (EntryPermissions.CHANGE_ENTRY, self.request.user, entry)
-        print ("entry", entry)
-        print ("self.request.user", self.request.user)
         #So ,only the submitter can edit the entry (except org admins,TC, workspace admins, operations reviewer) # dedicated to prevent other submitters from editing the entry
+        assign_perm (EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, self.request.user, entry)
+        
         
         
 
@@ -191,28 +191,13 @@ class WorkspaceTeamEntryUpdateView(
     def dispatch(self, request, *args, **kwargs):
 
         curent_user = self.org_member
-        is_team_coordinator = curent_user == self.workspace_team.team.team_coordinator
-        is_workspace_admin = curent_user == self.workspace.workspace_admin
-        is_operation_reviewer = curent_user == self.workspace.operations_reviewer
-        is_org_admin = curent_user == self.organization.owner
-
-        def check_higher_up():
-            if is_team_coordinator or is_workspace_admin or is_operation_reviewer or is_org_admin:
-                return True
-            return False
         
-        print ("is_team_coordinator", is_team_coordinator)
-        print ("is_workspace_admin", is_workspace_admin)
-        print ("is_operation_reviewer", is_operation_reviewer)
-        print ("is_org_admin", is_org_admin)
-
-        
-        #generaal permission checking ....
+        #general permission checking ....
         if not can_update_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(
                 request, "You do not have permission to update this entry."
             )
-        if not self.request.user.has_perm(EntryPermissions.CHANGE_ENTRY, self.entry) and not check_higher_up():
+        if not self.request.user.has_perm(EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, self.entry) and not check_higher_up_role(curent_user, self.workspace_team):
             return permission_denied_view(
                 request, "You cannot edit other submitters entries."
             )

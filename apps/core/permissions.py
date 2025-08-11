@@ -196,7 +196,7 @@ class EntryPermissions(models.TextChoices):
     Permissions that are tied with entry ID Object
     """
 
-    CHANGE_ENTRY = (
-        "change_entry",
-        "Can change entry by submitter",
+    CHANGE_OTHER_SUBMITTERS_ENTRY = (
+        "change_other_submitters_entry",
+        "Can change other submitters entry",
     )

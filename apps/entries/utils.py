@@ -102,3 +102,14 @@ def extract_entry_business_context(entry):
         "workspace_name": entry.workspace.title,
         "organization_id": str(entry.workspace.organization.organization_id),
     }
+
+def check_higher_up_role(user, workspace_team):
+    """
+    Returns True if the user has the permission to update the workspace team entry.
+    """
+    is_team_coordinator = user == workspace_team.team.team_coordinator
+    is_workspace_admin = user == workspace_team.workspace.workspace_admin
+    is_operation_reviewer = user == workspace_team.workspace.operations_reviewer
+    is_org_admin = user == workspace_team.workspace.organization.owner
+
+    return is_team_coordinator or is_workspace_admin or is_operation_reviewer or is_org_admin

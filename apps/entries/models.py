@@ -14,6 +14,7 @@ from apps.organizations.models import (
     Organization,
     OrganizationExchangeRate,
 )
+from apps.core.permissions import EntryPermissions
 
 
 class Entry(baseModel, SoftDeleteModel):
@@ -125,6 +126,9 @@ class Entry(baseModel, SoftDeleteModel):
         verbose_name = "entry"
         verbose_name_plural = "entries"
         ordering = ["-occurred_at", "-created_at"]
+        permissions =[
+            (EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY, "Can change other submitters entry"),
+        ]
         indexes = [
             # Context
             models.Index(fields=["organization"]),

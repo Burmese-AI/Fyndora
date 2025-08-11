@@ -24,9 +24,8 @@
             {% endif %}
         </section>
 
-        <div id="content-container">
-            {% include "entries/partials/table.html" %}
-        </div>
+        {% url 'workspace_expense_list' organization.pk workspace.pk as filter_url %}
+        {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
 
     </div>
 {% endblock %}

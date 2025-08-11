@@ -142,6 +142,9 @@ class WorkspaceTeamEntryCreateView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            type_filter=self.request.GET.get("type"),
+            search=self.request.GET.get("search"),
         )
 
     def get_modal_title(self) -> str:
@@ -267,6 +270,9 @@ class WorkspaceTeamEntryDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            type_filter=self.request.GET.get("type"),
+            search=self.request.GET.get("search"),
         )
 
     def perform_service(self, form):

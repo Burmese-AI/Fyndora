@@ -12,6 +12,7 @@ from apps.core.views.mixins import (
 from .mixins import (
     EntryFormMixin,
     EntryRequiredMixin,
+    StatusFilteringMixin,
 )
 from .base_views import (
     WorkspaceLevelEntryView,
@@ -42,6 +43,7 @@ from apps.core.utils import permission_denied_view
 class WorkspaceExpenseListView(
     WorkspaceRequiredMixin,
     WorkspaceLevelEntryView,
+    StatusFilteringMixin,
     BaseListView,
 ):
     model = Entry
@@ -55,7 +57,10 @@ class WorkspaceExpenseListView(
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
+        
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -96,6 +101,8 @@ class WorkspaceExpenseCreateView(
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def get_modal_title(self) -> str:
@@ -223,6 +230,8 @@ class WorkspaceExpenseDeleteView(
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def perform_service(self, form):

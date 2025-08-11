@@ -4,7 +4,7 @@ from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm
 
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.core.permissions import OrganizationPermissions, WorkspacePermissions
+from apps.core.permissions import OrganizationPermissions, WorkspacePermissions, WorkspaceTeamPermissions
 from apps.core.roles import get_permissions_for_role
 from apps.core.utils import permission_denied_view
 
@@ -274,11 +274,25 @@ def assign_workspace_team_permissions(workspace_team, request_user=None):
         name=workspace_team_group_name
     )
 
+    # to give some edit workspace team entry permission to workspace admins
+    workspace_admins_group_name = f"Workspace Admins - {workspace_team.workspace.workspace_id}"
+    workspace_admins_group = Group.objects.get(name=workspace_admins_group_name)
+    print("workspace_admins_group_name", workspace_admins_group_name)
+
+    # to give some edit workspace team entry permission to operations reviewer
+    operations_reviewer_group_name = f"Operations Reviewer - {workspace_team.workspace.workspace_id}"
+    operations_reviewer_group = Group.objects.get(name=operations_reviewer_group_name)
+    print("operations_reviewer_group_name", operations_reviewer_group_name)
+
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     assigned_permissions = []
 
     for perm in workspace_team_permissions:
         assign_perm(perm, workspace_team_group, workspace_team)
+        #edit workspace team entry permission to workspace admins and operations reviewer
+        if perm == WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY:
+            assign_perm(perm, workspace_admins_group, workspace_team)
+            assign_perm(perm, operations_reviewer_group, workspace_team)
         assigned_permissions.append(f"SUBMITTER:{perm}")
 
     # Track user assignments for audit logging

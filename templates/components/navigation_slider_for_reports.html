@@ -2,7 +2,7 @@
 <div class="w-auto md:w-8/12 lg:w-10/12 xl:w-1/2">
     <div class="flex items-center space-x-1 bg-base-200 rounded-lg p-1">
         <a 
-            href="/"
+            href={% url 'overview_finance_report' organization.pk %}
             class="flex-1 text-center py-1 px-4 md:p-2 text-sm font-medium rounded transition-all duration-200 flex items-center justify-center gap-2 {% if view == 'overview' %}bg-base-100 text-primary-content{% else %}text-base-content hover:shadow-md{% endif %}"
         >
             <span class="hidden md:block">Overview Finance</span>
@@ -13,7 +13,7 @@
             </span>
         </a>
         <a 
-            href="/"
+            href={% url 'remittance_report' organization.pk %}
             class="flex-1 text-center py-1 px-4 md:p-2 text-sm font-medium rounded transition-all duration-200 flex items-center justify-center gap-2 {% if view == 'remittance' %}bg-base-100 text-primary-content{% else %}text-base-content hover:shadow-md{% endif %}"
         >
             <span class="hidden md:block">Remittance</span>

@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 from apps.core.constants import PAGINATION_SIZE
+from django.views.generic import TemplateView
 
 from .constants import RemittanceStatus
 from apps.core.selectors import (
@@ -9,7 +10,6 @@ from apps.core.selectors import (
 )
 from apps.remittance.selectors import get_remittances_under_organization
 from django.core.paginator import Paginator
-
 
 # developed by THA for the remittance list by each workspace team
 # this is display the remittance list by each workspace team (due amount , paid amount , status , etc)
@@ -77,7 +77,6 @@ def remittance_list_view(request, organization_id):
             "workspaces": get_workspaces_under_organization(organization_id) or [],
         }
         return render(request, "remittance/index.html", context)
-
 
 # this view will not be currently used
 # class RemittanceListView(LoginRequiredMixin, ListView):

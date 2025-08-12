@@ -1,5 +1,10 @@
 {% extends "layouts/report_layout.html" %}
 
+{% block filter %}
+    {% url 'overview_finance_report' organization.pk as filter_url %}
+    {% include "components/report_filter.html" with filter_url=filter_url %}
+{% endblock %}
+
 {% block secondary_content %}
     <h1>Report Index</h1>
 {% endblock %}

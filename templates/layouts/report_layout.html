@@ -6,8 +6,12 @@
 
 {% block content %}
 
+    {% block filter %}{% endblock %}
+
     {% include "components/navigation_slider_for_reports.html" %}
 
-    {% block secondary_content %}{% endblock %}
+    <div id="content-container">
+      {% block secondary_content %}{% endblock %}
+    </div>
 
 {% endblock %}

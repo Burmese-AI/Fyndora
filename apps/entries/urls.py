@@ -107,6 +107,6 @@ urlpatterns += [
     path(
         "report",
         OverviewFinanceReportView.as_view(),
-        name="entry_report"
+        name="overview_finance_report"
     )
 ]

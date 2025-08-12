@@ -5,6 +5,7 @@ from .mixins import (
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
 )
+from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 
 
 def close_modal(request):
@@ -18,6 +19,7 @@ def permission_denied_view(request):
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
+    WorkspaceFilteringMixin,
     TemplateView
 ):
     

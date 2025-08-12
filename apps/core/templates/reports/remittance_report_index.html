@@ -1,0 +1,10 @@
+{% extends "layouts/report_layout.html" %}
+
+{% block filter %}
+    {% url 'remittance_report' organization.pk as filter_url %}
+    {% include "components/report_filter.html" with filter_url=filter_url %}
+{% endblock %}
+
+{% block secondary_content %}
+    {% include "reports/partials/remittance_balance_sheet.html" %}
+{% endblock %}

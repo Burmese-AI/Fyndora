@@ -1,0 +1,29 @@
+<form 
+  hx-get="{{ filter_url }}"
+  hx-target="{{ filter_target|default:'#content-container' }}" 
+  hx-trigger="change delay:200ms, keyup delay:400ms"
+  hx-swap="innerHTML"
+  hx-push-url="true"
+  class="w-full grid grid-cols-1 sm:grid-cols-5 gap-3 p-3 bg-base-100 rounded-lg shadow-sm border border-base-200 items-end"
+>
+
+    {% if workspace_options %}
+    <div class="flex flex-col w-full">
+        <label class="label-text font-semibold text-base-content mb-1">Workspace</label>
+        <select name="workspace" class="select select-sm select-bordered w-full bg-base-100">
+            <option value="">All workspaces</option>
+            {% for workspace in workspace_options %}
+            <option value="{{ workspace.pk }}">{{ workspace.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- CLEAR BUTTON -->
+    <div class="flex w-full sm:w-auto">
+      <a href="{{ filter_url }}" class="btn btn-sm bg-red-200 text-red-600 hover:bg-red-300 w-full sm:w-auto">Clear all</a>
+    </div>
+
+  {% else %}
+    <p class="text-sm text-base-content/70 italic col-span-full">No filters available.</p>
+  {% endif %}
+</form>

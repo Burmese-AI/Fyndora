@@ -24,7 +24,7 @@ class OverviewFinanceReportView(
 ):
     
     template_name = "reports/overview_finance_report_index.html"
-    content_template_name = "reports/partials/overview_balance_sheet.html"
+    content_template_name = "reports/partials/sample_balance_sheet.html"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         base_context = super().get_context_data(**kwargs)

@@ -1,15 +1,19 @@
+from typing import Any
 from django.views.generic import TemplateView
 from apps.core.views.mixins import (
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
-    HtmxOobResponseMixin
 )
 
-class EntryReportView(
+class OverviewFinanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
-    HtmxOobResponseMixin,
     TemplateView
 ):
     
     template_name = "entries/overview_report_index.html"
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        base_context = super().get_context_data(**kwargs)
+        base_context["view"] = "overview"
+        return base_context

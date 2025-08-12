@@ -1,10 +1,7 @@
 from django.urls import path
-from .views.views import close_modal, permission_denied_view
 from .views.views import OverviewFinanceReportView
 
 urlpatterns = [
-    path("close-modal/", close_modal, name="close_modal"),
-    path("403/", permission_denied_view, name="permission_denied"),
     path(
         "report",
         OverviewFinanceReportView.as_view(),

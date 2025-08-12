@@ -1,0 +1,13 @@
+{% extends "layouts/organization_layout.html" %}
+
+{% block header %}
+  {% include "components/organization_layout_header.html" with title="Financial Reports" subtitle="Comprehensive financial overview and performance analytics" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include "components/navigation_slider_for_reports.html" %}
+
+    {% block secondary_content %}{% endblock %}
+
+{% endblock %}

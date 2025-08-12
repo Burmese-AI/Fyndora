@@ -19,6 +19,7 @@ from .views.entry_views import (
     WorkspaceTeamEntryUpdateView,
     WorkspaceTeamEntryDeleteView,
 )
+from .views.report_views import EntryReportView
 from .views.base_views import EntryDetailView
 
 urlpatterns = [
@@ -100,4 +101,12 @@ urlpatterns += [
         EntryDetailView.as_view(),
         name="entry_detail",
     ),
+]
+
+urlpatterns += [
+    path(
+        "report",
+        EntryReportView.as_view(),
+        name="entry_report"
+    )
 ]

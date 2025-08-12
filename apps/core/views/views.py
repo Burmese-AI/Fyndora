@@ -54,3 +54,22 @@ class RemittanceReportView(
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
         return super().render_to_response(context, **response_kwargs)
+
+class EntryReportView(
+    OrganizationRequiredMixin,
+    HtmxInvalidResponseMixin,
+    WorkspaceFilteringMixin,
+    TemplateView
+):
+    template_name = "reports/entry_report_index.html"
+    content_template_name = "reports/partials/entry_balance_sheet.html"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        base_context = super().get_context_data(**kwargs)
+        base_context["view"] = "entry"
+        return base_context
+    
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.htmx:
+            return render(self.request, self.content_template_name, context)
+        return super().render_to_response(context, **response_kwargs)

@@ -24,7 +24,7 @@
             </span>
         </a>
         <a 
-            href="/"
+            href={% url 'entry_report' organization.pk %}
             class="flex-1 text-center py-1 px-4 md:p-2 text-sm font-medium rounded transition-all duration-200 flex items-center justify-center gap-2 {% if view == 'entry' %}bg-base-100 text-primary-content{% else %}text-base-content hover:shadow-md{% endif %}"
         >
             <span class="hidden md:block">Entry</span>

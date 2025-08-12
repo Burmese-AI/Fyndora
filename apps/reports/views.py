@@ -1,18 +1,11 @@
 from django.shortcuts import render
 from typing import Any
 from django.views.generic import TemplateView
-from .mixins import (
+from apps.core.views.mixins import (
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
 )
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
-
-def close_modal(request):
-    return render(request, "components/modal_placeholder.html")
-
-
-def permission_denied_view(request):
-    return render(request, "components/permission_error_page.html")
 
 
 class OverviewFinanceReportView(

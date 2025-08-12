@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "apps.remittance",
     "apps.emails",
     "apps.currencies",
+    "apps.reports",
     "guardian",
     "django_extensions",
 ]

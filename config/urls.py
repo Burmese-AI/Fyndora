@@ -31,6 +31,6 @@ urlpatterns = [
     path("<uuid:organization_id>/teams/", include("apps.teams.urls")),
     path("<uuid:organization_id>/remittances/", include("apps.remittance.urls")),
     path("<uuid:organization_id>/", include("apps.entries.urls")),
-    path("<uuid:organization_id>/", include("apps.core.report_urls")),
+    path("<uuid:organization_id>/", include("apps.reports.urls")),
     path("attachments/", include("apps.attachments.urls")),
 ]

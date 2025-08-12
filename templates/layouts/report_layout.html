@@ -6,9 +6,9 @@
 
 {% block content %}
 
-    {% block filter %}{% endblock %}
+    <div class="my-4">{% block filter %}{% endblock %}</div>
 
-    {% include "components/navigation_slider_for_reports.html" %}
+    <div class="my-4">{% include "components/navigation_slider_for_reports.html" %}</div>
 
     <div id="content-container">
       {% block secondary_content %}{% endblock %}

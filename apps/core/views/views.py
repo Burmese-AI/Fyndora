@@ -23,9 +23,15 @@ class OverviewFinanceReportView(
     TemplateView
 ):
     
-    template_name = "entries/overview_report_index.html"
-    
+    template_name = "reports/overview_finance_report_index.html"
+    content_template_name = ""
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "overview"
         return base_context
+    
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.htmx:
+            return render(self.request, self.content_template_name, context)
+        return super().render_to_response(context, **response_kwargs)

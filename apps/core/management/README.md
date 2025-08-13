@@ -79,7 +79,7 @@ Type 'yes' to confirm: yes
 
 ### Workspaces
 - **Naming**: Project-based names (e.g., "Azure Education Program")
-- **Dates**: Realistic start/end dates (30-180 days ago to 90-365 days future)
+- **Dates**: All dates are in the past (6-12 months ago start, 1-6 months duration)
 - **Roles**: Workspace admin and operations reviewer
 - **Rates**: Random remittance rates (80-95%)
 
@@ -140,6 +140,22 @@ uv run manage.py seed_data --organizations 3 --entries-per-workspace 50
 uv run manage.py seed_data --organizations 5 --users-per-org 20 --entries-per-workspace 100
 ```
 
+## 📅 Date Handling
+
+### **All Dates Are in the Past**
+The seed data generates realistic historical dates for better testing and development:
+
+- **Workspace Start Dates**: 6-12 months ago
+- **Workspace End Dates**: 1-6 months after start date
+- **Entry Dates**: Within workspace date ranges
+- **Exchange Rate Dates**: 1-6 months ago for organizations, within workspace periods for workspaces
+
+### **Why Past Dates?**
+- ✅ **Realistic data**: Simulates actual historical projects
+- ✅ **No future conflicts**: Avoids issues with future date validation
+- ✅ **Better testing**: Allows testing of date-based queries and reports
+- ✅ **Consistent state**: All data represents completed or ongoing historical activities
+
 ## ⚠️ Important Notes
 
 ### Production Environment
@@ -157,6 +173,20 @@ uv run manage.py seed_data --organizations 5 --users-per-org 20 --entries-per-wo
 - Large datasets may take several minutes to create
 - Consider running during off-peak hours
 - Monitor database performance during execution
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Date Validation Errors
+- **Problem**: "Date cannot be in the future" errors
+- **Solution**: All seed data dates are automatically set in the past (6-12 months ago)
+- **Note**: This prevents future date validation conflicts in your application
+
+#### Role Conflicts
+- **Problem**: Users assigned multiple conflicting roles
+- **Solution**: The command automatically resolves role conflicts and reports any issues
+- **Check**: Look for role conflict warnings in the command output
 
 ## 🔧 Troubleshooting
 

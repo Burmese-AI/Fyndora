@@ -566,9 +566,9 @@ class Command(BaseCommand):
                     
                     operations_reviewer = random.choice(remaining_members) if remaining_members else org.owner
                     
-                    # Generate realistic dates
-                    start_date = date.today() - timedelta(days=random.randint(30, 180))
-                    end_date = start_date + timedelta(days=random.randint(90, 365))
+                    # Generate realistic dates (all in the past)
+                    start_date = date.today() - timedelta(days=random.randint(180, 365))  # 6-12 months ago
+                    end_date = start_date + timedelta(days=random.randint(30, 180))      # 1-6 months duration
                     
                     # Create NGO-themed workspace names with more variety
                     project_types = [
@@ -834,9 +834,9 @@ class Command(BaseCommand):
             # Create organization exchange rates
             for org in organizations:
                 for currency in currencies[:3]:  # First 3 currencies
-                    # Create multiple rates for different dates
+                    # Create multiple rates for different dates (all in the past)
                     for i in range(3):
-                        effective_date = date.today() - timedelta(days=i * 30)
+                        effective_date = date.today() - timedelta(days=random.randint(30, 180))  # 1-6 months ago
                         rate = Decimal(random.randint(80, 120)) / 100
                         
                         OrganizationExchangeRate.objects.create(
@@ -851,9 +851,11 @@ class Command(BaseCommand):
             # Create workspace exchange rates
             for workspace in workspaces:
                 for currency in currencies[:2]:  # First 2 currencies
-                    # Create multiple rates for different dates
+                    # Create multiple rates for different dates (all in the past)
                     for i in range(2):
-                        effective_date = workspace.start_date + timedelta(days=i * 45)
+                        # Generate dates within the workspace period, ensuring they're in the past
+                        days_offset = random.randint(0, min(180, (date.today() - workspace.start_date).days))
+                        effective_date = workspace.start_date + timedelta(days=days_offset)
                         rate = Decimal(random.randint(80, 120)) / 100
                         
                         WorkspaceExchangeRate.objects.create(

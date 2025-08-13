@@ -268,9 +268,28 @@ class Command(BaseCommand):
                     status=UserStatusChoices.ACTIVE
                 )
                 
-                # Create organization
+                # Create organization with NGO-themed names
+                ngo_names = [
+                    f"{faker.word().title()} Foundation",
+                    f"{faker.word().title()} Initiative",
+                    f"{faker.word().title()} Alliance",
+                    f"{faker.word().title()} Network",
+                    f"{faker.word().title()} Coalition",
+                    f"{faker.word().title()} Partnership",
+                    f"{faker.word().title()} Organization",
+                    f"{faker.word().title()} Association",
+                    f"{faker.word().title()} Council",
+                    f"{faker.word().title()} Trust",
+                    f"{faker.word().title()} Society",
+                    f"{faker.word().title()} Group",
+                    f"{faker.word().title()} Movement",
+                    f"{faker.word().title()} Community",
+                    f"{faker.word().title()} Collective"
+                ]
+                
+                org_name = random.choice(ngo_names)
                 org = Organization.objects.create(
-                    title=f"{faker.company()} {faker.company_suffix()}",
+                    title=org_name,
                     description=faker.text(max_nb_chars=200),
                     expense=Decimal('0.00'),
                     status=OrgStatusChoices.ACTIVE
@@ -355,9 +374,29 @@ class Command(BaseCommand):
                     # For now, just pick from available members
                     coordinator = random.choice(available_members) if available_members else org.owner
                     
+                    # Create NGO-themed team names
+                    team_types = [
+                        "Program Management",
+                        "Field Operations", 
+                        "Monitoring & Evaluation",
+                        "Finance & Administration",
+                        "Communications",
+                        "Partnership Development",
+                        "Research & Policy",
+                        "Capacity Building",
+                        "Advocacy & Outreach",
+                        "Emergency Response",
+                        "Technical Support",
+                        "Community Engagement",
+                        "Logistics & Procurement",
+                        "Training & Development",
+                        "Impact Assessment"
+                    ]
+                    
+                    team_name = f"{random.choice(team_types)} Team {i+1}"
                     team = Team.objects.create(
                         organization=org,
-                        title=f"{faker.job()} Team {i+1}",
+                        title=team_name,
                         description=faker.text(max_nb_chars=150),
                         team_coordinator=coordinator,
                         created_by=org.owner
@@ -426,11 +465,31 @@ class Command(BaseCommand):
                     start_date = date.today() - timedelta(days=random.randint(30, 180))
                     end_date = start_date + timedelta(days=random.randint(90, 365))
                     
+                    # Create NGO-themed workspace names
+                    project_types = [
+                        "Education Program",
+                        "Healthcare Initiative", 
+                        "Community Development",
+                        "Environmental Conservation",
+                        "Women Empowerment",
+                        "Youth Development",
+                        "Disaster Relief",
+                        "Food Security",
+                        "Clean Water Project",
+                        "Renewable Energy",
+                        "Microfinance Program",
+                        "Human Rights Advocacy",
+                        "Refugee Support",
+                        "Rural Development",
+                        "Urban Renewal"
+                    ]
+                    
+                    project_name = f"{random.choice(project_types)} {i+1}"
                     workspace = Workspace.objects.create(
                         organization=org,
                         workspace_admin=workspace_admin,
                         operations_reviewer=operations_reviewer,
-                        title=f"{faker.word().title()} Project {i+1}",
+                        title=project_name,
                         description=faker.text(max_nb_chars=200),
                         created_by=org.owner,
                         status=WorkspaceStatusChoices.ACTIVE,
@@ -568,10 +627,31 @@ class Command(BaseCommand):
                         days=random.randint(0, (workspace.end_date - workspace.start_date).days)
                     )
                     
+                    # Create NGO-themed entry descriptions
+                    ngo_activities = [
+                        "Community workshop materials and supplies",
+                        "Field staff transportation and accommodation",
+                        "Training program venue rental",
+                        "Medical supplies for health clinic",
+                        "School supplies for education program",
+                        "Agricultural tools and seeds distribution",
+                        "Clean water project equipment",
+                        "Emergency relief food distribution",
+                        "Women's empowerment workshop",
+                        "Youth skills training materials",
+                        "Environmental awareness campaign",
+                        "Microfinance loan disbursement",
+                        "Human rights documentation",
+                        "Refugee support services",
+                        "Rural infrastructure development"
+                    ]
+                    
+                    entry_description = random.choice(ngo_activities)
+                    
                     # Create entry
                     entry = Entry.objects.create(
                         entry_type=entry_type,
-                        description=faker.sentence(nb_words=6),
+                        description=entry_description,
                         organization=workspace.organization,
                         workspace=workspace,
                         workspace_team=workspace_team,

@@ -26,7 +26,7 @@ from guardian.shortcuts import assign_perm
 from apps.core.roles import get_permissions_for_role
 
 # Import permission assignment functions
-from apps.workspaces.permissions import assign_workspace_permissions
+from apps.workspaces.permissions import assign_workspace_permissions, assign_workspace_team_permissions
 from apps.teams.permissions import assign_team_permissions
 
 User = get_user_model()
@@ -543,6 +543,15 @@ class Command(BaseCommand):
                         workspace=workspace,
                         custom_remittance_rate=custom_rate
                     )
+                    
+                    # Assign workspace team permissions
+                    try:
+                        assign_workspace_team_permissions(workspace_team, request_user=workspace.organization.owner.user)
+                        self.stdout.write(f"    - Assigned workspace team permissions for {team.title} in {workspace.title}")
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f"    - Warning: Could not assign workspace team permissions: {str(e)}")
+                        )
                     
                     workspace_teams.append(workspace_team)
                     self.stdout.write(f"  - Linked team {team.title} to workspace {workspace.title}")

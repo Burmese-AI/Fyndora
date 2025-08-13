@@ -75,8 +75,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--entries-per-workspace',
             type=int,
-            default=100,
-            help='Number of entries per workspace (default: 100)'
+            default=50,
+            help='Number of entries per workspace (default: 50)'
         )
         parser.add_argument(
             '--clear-existing',
@@ -160,7 +160,7 @@ class Command(BaseCommand):
                 org_workspaces = [w for w in workspaces if w.organization == org]
                 for ws in org_workspaces:
                     self.stdout.write(f"   🏢 Workspace: {ws.title}")
-                    self.stdout.write(f"      👨‍💼 Admin: {ws.workspace_admin.user.username}")
+                    self.stdout.write(f"      🔐 Admin: {ws.workspace_admin.user.username}")
                     self.stdout.write(f"      👁️  Reviewer: {ws.operations_reviewer.user.username}")
                 
                 # Show team roles
@@ -554,17 +554,56 @@ class Command(BaseCommand):
             for org in organizations:
                 org_members = list(org.members.all())
                 
-                for i in range(workspaces_per_org):
-                    # Select workspace admin (not the owner)
-                    available_admin_members = [m for m in org_members if m != org.owner]
-                    workspace_admin = random.choice(available_admin_members) if available_admin_members else org.owner
+                # Check if we have enough members for unique workspace admins
+                available_members_for_admin = len(org_members) - 1  # Exclude org owner
+                if available_members_for_admin < workspaces_per_org:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  ⚠️  {org.title} has {available_members_for_admin} available members but needs {workspaces_per_org} workspace admins. "
+                            f"Reducing workspaces to {available_members_for_admin}."
+                        )
+                    )
+                    actual_workspaces = available_members_for_admin
+                else:
+                    actual_workspaces = workspaces_per_org
+                
+                # Track which members have been assigned as workspace admins
+                assigned_workspace_admins = set()
+                assigned_operations_reviewers = set()
+                
+                for i in range(actual_workspaces):
+                    # Select workspace admin (not the owner, and not already assigned to another workspace)
+                    available_admin_members = [
+                        m for m in org_members 
+                        if m != org.owner and m not in assigned_workspace_admins
+                    ]
                     
-                    # Select operations reviewer (different from admin)
-                    remaining_members = [m for m in org_members if m != org.owner and m != workspace_admin]
-                    if not remaining_members:
-                        remaining_members = [m for m in org_members if m != org.owner]
+                    if not available_admin_members:
+                        # If we run out of unique members, we can't create more workspaces
+                        self.stdout.write(
+                            self.style.WARNING(f"  ⚠️  Cannot create more workspaces for {org.title} - no more unique members available")
+                        )
+                        break
                     
-                    operations_reviewer = random.choice(remaining_members) if remaining_members else org.owner
+                    workspace_admin = random.choice(available_admin_members)
+                    assigned_workspace_admins.add(workspace_admin)
+                    
+                    # Select operations reviewer (different from admin and owner, and not already assigned)
+                    available_reviewer_members = [
+                        m for m in org_members 
+                        if m != org.owner and m != workspace_admin and m not in assigned_operations_reviewers
+                    ]
+                    
+                    if not available_reviewer_members:
+                        # If no unique reviewers available, use any available member
+                        available_reviewer_members = [
+                            m for m in org_members 
+                            if m != org.owner and m != workspace_admin
+                        ]
+                    
+                    operations_reviewer = random.choice(available_reviewer_members) if available_reviewer_members else org.owner
+                    if operations_reviewer != org.owner:
+                        assigned_operations_reviewers.add(operations_reviewer)
                     
                     # Generate realistic dates (all in the past)
                     start_date = date.today() - timedelta(days=random.randint(180, 365))  # 6-12 months ago
@@ -619,6 +658,7 @@ class Command(BaseCommand):
                     while Workspace.objects.filter(organization=org, title=project_name).exists():
                         project_name = f"{original_name} {counter}"
                         counter += 1
+                    
                     workspace = Workspace.objects.create(
                         organization=org,
                         workspace_admin=workspace_admin,
@@ -699,130 +739,265 @@ class Command(BaseCommand):
             raise
 
     def create_entries(self, workspaces, workspace_teams, entries_per_workspace):
-        """Create entries for each workspace."""
+        """Create entries for each workspace with proper role separation."""
         try:
             faker = Faker()
             currencies = list(Currency.objects.all())
-            entry_types = [choice[0] for choice in EntryType.choices]
             entry_statuses = [choice[0] for choice in EntryStatus.choices]
             
             for workspace in workspaces:
                 # Get workspace teams for this workspace
                 ws_teams = [wt for wt in workspace_teams if wt.workspace == workspace]
                 
-                for i in range(entries_per_workspace):
-                    # Determine entry type and context
-                    entry_type = random.choice(entry_types)
-                    
-                    # For certain entry types, we need workspace_team
-                    workspace_team = None
-                    if entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
-                        if ws_teams:
-                            workspace_team = random.choice(ws_teams)
-                        else:
-                            continue  # Skip if no workspace teams
-                    
-                    # Generate realistic amounts
-                    if entry_type == EntryType.INCOME:
-                        amount = Decimal(random.randint(1000, 50000)) / 100
-                    elif entry_type == EntryType.DISBURSEMENT:
-                        amount = Decimal(random.randint(500, 10000)) / 100
-                    else: # EntryType.REMITTANCE
-                        amount = Decimal(random.randint(100, 5000)) / 100
-                    
-                    # Select currency and generate exchange rate
-                    currency = random.choice(currencies)
-                    exchange_rate = Decimal(random.randint(80, 120)) / 100
-                    
-                    # Determine submitter (avoiding users with admin/reviewer roles for better distribution)
-                    if workspace_team and random.choice([True, False]):
-                        # Team member submitter
-                        team_members = list(workspace_team.team.members.all())
-                        if team_members:
-                            # Prefer regular team members over coordinators
-                            regular_members = [tm for tm in team_members if tm != workspace_team.team.team_coordinator]
-                            if regular_members:
-                                submitter = random.choice(regular_members)
-                            else:
-                                submitter = random.choice(team_members)
-                            
-                            submitted_by_team_member = submitter
-                            submitted_by_org_member = None
-                        else:
-                            continue
-                    else:
-                        # Organization member submitter (avoiding admin roles)
-                        org_members = list(workspace.organization.members.all())
-                        # Filter out users with admin roles
-                        admin_users = [workspace.workspace_admin, workspace.operations_reviewer]
-                        available_submitters = [m for m in org_members if m not in admin_users]
-                        
-                        if available_submitters:
-                            submitter = random.choice(available_submitters)
-                        else:
-                            submitter = random.choice(org_members)
-                        
-                        submitted_by_org_member = submitter
-                        submitted_by_team_member = None
-                    
-                    # Generate realistic dates
-                    occurred_at = workspace.start_date + timedelta(
-                        days=random.randint(0, (workspace.end_date - workspace.start_date).days)
-                    )
-                    
-                    # Create NGO-themed entry descriptions
-                    ngo_activities = [
-                        "Community workshop materials and supplies",
-                        "Field staff transportation and accommodation",
-                        "Training program venue rental",
-                        "Medical supplies for health clinic",
-                        "School supplies for education program",
-                        "Agricultural tools and seeds distribution",
-                        "Clean water project equipment",
-                        "Emergency relief food distribution",
-                        "Women's empowerment workshop",
-                        "Youth skills training materials",
-                        "Environmental awareness campaign",
-                        "Microfinance loan disbursement",
-                        "Human rights documentation",
-                        "Refugee support services",
-                        "Rural infrastructure development"
-                    ]
-                    
-                    entry_description = random.choice(ngo_activities)
-                    
-                    # Create entry
-                    entry = Entry.objects.create(
-                        entry_type=entry_type,
-                        description=entry_description,
-                        organization=workspace.organization,
-                        workspace=workspace,
-                        workspace_team=workspace_team,
-                        amount=amount,
-                        occurred_at=occurred_at,
-                        currency=currency,
-                        exchange_rate_used=exchange_rate,
-                        org_exchange_rate_ref=None,  # Will be set by exchange rate creation
-                        workspace_exchange_rate_ref=None,  # Will be set by exchange rate creation
-                        submitted_by_org_member=submitted_by_org_member,
-                        submitted_by_team_member=submitted_by_team_member,
-                        status=random.choice(entry_statuses),
-                        is_flagged=random.choice([True, False]) if random.random() < 0.1 else False
-                    )
-                    
-                    # Update workspace expense
-                    workspace.expense += entry.converted_amount
-                    workspace.save()
-                    
-                    # Update organization expense
-                    workspace.organization.expense += entry.converted_amount
-                    workspace.organization.save()
-                    
+                # Create entries with proper role separation
+                workspace_exp_count = entries_per_workspace // 4
+                org_exp_count = entries_per_workspace // 8
+                team_entry_count = entries_per_workspace - workspace_exp_count - org_exp_count
+                
+                self.create_workspace_expense_entries(workspace, currencies, entry_statuses, workspace_exp_count)
+                self.create_organization_expense_entries(workspace, currencies, entry_statuses, org_exp_count)
+                self.create_team_based_entries(workspace, ws_teams, currencies, entry_statuses, team_entry_count)
+                
                 self.stdout.write(f"  - Created {entries_per_workspace} entries for workspace {workspace.title}")
                 
         except Exception as e:
             self.stdout.write(
                 self.style.ERROR(f"Error creating entries: {str(e)}")
+            )
+            raise
+
+    def create_workspace_expense_entries(self, workspace, currencies, entry_statuses, count):
+        """Create workspace expense entries - ONLY by workspace admin for their own workspace."""
+        try:
+            workspace_admin = workspace.workspace_admin
+            
+            for i in range(count):
+                # Generate realistic amounts for workspace expenses
+                amount = Decimal(random.randint(1000, 25000)) / 100
+                currency = random.choice(currencies)
+                exchange_rate = Decimal(random.randint(80, 120)) / 100
+                
+                # Generate realistic dates
+                occurred_at = workspace.start_date + timedelta(
+                    days=random.randint(0, (workspace.end_date - workspace.start_date).days)
+                )
+                
+                # Create NGO-themed entry descriptions
+                ngo_activities = [
+                    "Workspace management and administration costs",
+                    "Workspace infrastructure and maintenance",
+                    "Workspace-level training and development",
+                    "Workspace communication and coordination",
+                    "Workspace monitoring and evaluation"
+                ]
+                
+                entry_description = random.choice(ngo_activities)
+                
+                # Create workspace expense entry - ONLY by workspace admin
+                entry = Entry.objects.create(
+                    entry_type=EntryType.WORKSPACE_EXP,
+                    description=entry_description,
+                    organization=workspace.organization,
+                    workspace=workspace,
+                    workspace_team=None,  # Workspace expenses don't have teams
+                    amount=amount,
+                    occurred_at=occurred_at,
+                    currency=currency,
+                    exchange_rate_used=exchange_rate,
+                    org_exchange_rate_ref=None,
+                    workspace_exchange_rate_ref=None,
+                    submitted_by_org_member=workspace_admin,  # ONLY workspace admin
+                    submitted_by_team_member=None,
+                    status=random.choice(entry_statuses),
+                    is_flagged=random.choice([True, False]) if random.random() < 0.1 else False
+                )
+                
+                # Update workspace expense
+                workspace.expense += entry.converted_amount
+                workspace.save()
+                
+                # Update organization expense
+                workspace.organization.expense += entry.converted_amount
+                workspace.organization.save()
+                
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error creating workspace expense entries: {str(e)}")
+            )
+            raise
+
+    def create_organization_expense_entries(self, workspace, currencies, entry_statuses, count):
+        """Create organization expense entries - ONLY by organization owner."""
+        try:
+            org_owner = workspace.organization.owner
+            
+            for i in range(count):
+                # Generate realistic amounts for organization expenses
+                amount = Decimal(random.randint(5000, 100000)) / 100
+                currency = random.choice(currencies)
+                exchange_rate = Decimal(random.randint(80, 120)) / 100
+                
+                # Generate realistic dates
+                occurred_at = workspace.start_date + timedelta(
+                    days=random.randint(0, (workspace.end_date - workspace.start_date).days)
+                )
+                
+                # Create NGO-themed entry descriptions
+                ngo_activities = [
+                    "Organization-wide program costs",
+                    "Cross-workspace coordination expenses",
+                    "Organization-level capacity building",
+                    "Strategic planning and development",
+                    "Organization-wide monitoring and evaluation"
+                ]
+                
+                entry_description = random.choice(ngo_activities)
+                
+                # Create organization expense entry - ONLY by organization owner
+                entry = Entry.objects.create(
+                    entry_type=EntryType.ORG_EXP,
+                    description=entry_description,
+                    organization=workspace.organization,
+                    workspace=workspace,
+                    workspace_team=None,  # Organization expenses don't have teams
+                    amount=amount,
+                    occurred_at=occurred_at,
+                    currency=currency,
+                    exchange_rate_used=exchange_rate,
+                    org_exchange_rate_ref=None,
+                    workspace_exchange_rate_ref=None,
+                    submitted_by_org_member=org_owner,  # ONLY organization owner
+                    submitted_by_team_member=None,
+                    status=random.choice(entry_statuses),
+                    is_flagged=random.choice([True, False]) if random.random() < 0.1 else False
+                )
+                
+                # Update workspace expense
+                workspace.expense += entry.converted_amount
+                workspace.save()
+                
+                # Update organization expense
+                workspace.organization.expense += entry.converted_amount
+                workspace.organization.save()
+                
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error creating organization expense entries: {str(e)}")
+            )
+            raise
+
+    def create_team_based_entries(self, workspace, ws_teams, currencies, entry_statuses, count):
+        """Create team-based entries (income, disbursement, remittance) by team members."""
+        try:
+            if not ws_teams:
+                return  # Skip if no workspace teams
+                
+            for i in range(count):
+                # Determine entry type and context
+                entry_type = random.choice([EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE])
+                
+                # For team-based entries, we need workspace_team
+                workspace_team = random.choice(ws_teams)
+                
+                # Generate realistic amounts
+                if entry_type == EntryType.INCOME:
+                    amount = Decimal(random.randint(1000, 50000)) / 100
+                elif entry_type == EntryType.DISBURSEMENT:
+                    amount = Decimal(random.randint(500, 10000)) / 100
+                else: # EntryType.REMITTANCE
+                    amount = Decimal(random.randint(100, 5000)) / 100
+                
+                # Select currency and generate exchange rate
+                currency = random.choice(currencies)
+                exchange_rate = Decimal(random.randint(80, 120)) / 100
+                
+                # Determine submitter (team members or regular org members)
+                if random.choice([True, False]):
+                    # Team member submitter
+                    team_members = list(workspace_team.team.members.all())
+                    if team_members:
+                        # Prefer regular team members over coordinators
+                        regular_members = [tm for tm in team_members if tm != workspace_team.team.team_coordinator]
+                        if regular_members:
+                            submitter = random.choice(regular_members)
+                        else:
+                            submitter = random.choice(team_members)
+                        
+                        submitted_by_team_member = submitter
+                        submitted_by_org_member = None
+                    else:
+                        continue
+                else:
+                    # Organization member submitter (avoiding admin roles)
+                    org_members = list(workspace.organization.members.all())
+                    # Filter out users with admin roles
+                    admin_users = [workspace.workspace_admin, workspace.operations_reviewer]
+                    available_submitters = [m for m in org_members if m not in admin_users]
+                    
+                    if available_submitters:
+                        submitter = random.choice(available_submitters)
+                    else:
+                        submitter = random.choice(org_members)
+                    
+                    submitted_by_org_member = submitter
+                    submitted_by_team_member = None
+                
+                # Generate realistic dates
+                occurred_at = workspace.start_date + timedelta(
+                    days=random.randint(0, (workspace.end_date - workspace.start_date).days)
+                )
+                
+                # Create NGO-themed entry descriptions
+                ngo_activities = [
+                    "Community workshop materials and supplies",
+                    "Field staff transportation and accommodation",
+                    "Training program venue rental",
+                    "Medical supplies for health clinic",
+                    "School supplies for education program",
+                    "Agricultural tools and seeds distribution",
+                    "Clean water project equipment",
+                    "Emergency relief food distribution",
+                    "Women's empowerment workshop",
+                    "Youth skills training materials",
+                    "Environmental awareness campaign",
+                    "Microfinance loan disbursement",
+                    "Human rights documentation",
+                    "Refugee support services",
+                    "Rural infrastructure development"
+                ]
+                
+                entry_description = random.choice(ngo_activities)
+                
+                # Create team-based entry
+                entry = Entry.objects.create(
+                    entry_type=entry_type,
+                    description=entry_description,
+                    organization=workspace.organization,
+                    workspace=workspace,
+                    workspace_team=workspace_team,
+                    amount=amount,
+                    occurred_at=occurred_at,
+                    currency=currency,
+                    exchange_rate_used=exchange_rate,
+                    org_exchange_rate_ref=None,
+                    workspace_exchange_rate_ref=None,
+                    submitted_by_org_member=submitted_by_org_member,
+                    submitted_by_team_member=submitted_by_team_member,
+                    status=random.choice(entry_statuses),
+                    is_flagged=random.choice([True, False]) if random.random() < 0.1 else False
+                )
+                
+                # Update workspace expense
+                workspace.expense += entry.converted_amount
+                workspace.save()
+                
+                # Update organization expense
+                workspace.organization.expense += entry.converted_amount
+                workspace.organization.save()
+                
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error creating team-based entries: {str(e)}")
             )
             raise
 

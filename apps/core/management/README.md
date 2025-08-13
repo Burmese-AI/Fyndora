@@ -74,7 +74,7 @@ Type 'yes' to confirm: yes
 ### Organizations
 - **Naming**: NGO-themed names (e.g., "Azure Foundation", "Crimson Initiative")
 - **Uniqueness**: Automatic conflict resolution for duplicate names
-- **Users**: 10 users per organization by default
+- **Users**: 20+ users per organization by default
 - **Roles**: Organization owner with full permissions
 
 ### Workspaces
@@ -92,16 +92,20 @@ Type 'yes' to confirm: yes
 
 ### Users
 - **Creation**: Realistic usernames and email addresses using Faker
-- **Passwords**: All users get "password123" for easy testing
-- **Status**: All users are set to ACTIVE status
-- **Roles**: Proper role separation (owner, admin, reviewer, coordinator, member)
+- **Password**: All users get "password123" for easy testing
+- **Role Assignment**: Automatic role distribution with conflict resolution
+- **Permissions**: Proper permission assignment based on roles
 
 ### Entries
-- **Types**: Income, Disbursement, Remittance
-- **Amounts**: Realistic financial amounts based on entry type
-- **Currencies**: Multiple currency support with exchange rates
-- **Descriptions**: NGO-themed activity descriptions
-- **Dates**: Occur within workspace date ranges
+- **Types**: Income, Disbursement, Remittance, Workspace Expense, and Organization Expense
+- **Validation**: 
+  - Workspace Expense entries: Only workspace admin of that specific workspace can create
+  - Organization Expense entries: Only organization owners can create
+  - Team-based entries: Team members can create
+- **Submitters**: Team members or organization members based on entry type
+- **Amounts**: Realistic amounts based on entry type
+- **Dates**: Within workspace date ranges
+- **Attachments**: Random flagging for testing purposes
 
 ### Exchange Rates
 - **Organization**: 3 currencies × 3 dates per organization

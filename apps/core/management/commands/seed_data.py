@@ -568,7 +568,7 @@ class Command(BaseCommand):
                     
                     # Generate realistic dates (all in the past)
                     start_date = date.today() - timedelta(days=random.randint(180, 365))  # 6-12 months ago
-                    end_date = start_date + timedelta(days=random.randint(30, 180))      # 1-6 months duration
+                    end_date = date.today() + timedelta(days=random.randint(1, 7))      # 1-7 days from today
                     
                     # Create NGO-themed workspace names with more variety
                     project_types = [
@@ -661,7 +661,7 @@ class Command(BaseCommand):
             for workspace in workspaces:
                 # Get teams from the same organization
                 org_teams = [t for t in teams if t.organization == workspace.organization]
-                
+                 
                 # Assign 1-3 teams to each workspace
                 num_teams = min(random.randint(1, 3), len(org_teams))
                 selected_teams = random.sample(org_teams, num_teams)

@@ -79,7 +79,7 @@ Type 'yes' to confirm: yes
 
 ### Workspaces
 - **Naming**: Project-based names (e.g., "Azure Education Program")
-- **Dates**: All dates are in the past (6-12 months ago start, 1-6 months duration)
+- **Dates**: Start dates 6-12 months ago, end dates 1-7 days from today
 - **Roles**: Workspace admin and operations reviewer
 - **Rates**: Random remittance rates (80-95%)
 
@@ -146,15 +146,15 @@ uv run manage.py seed_data --organizations 5 --users-per-org 20 --entries-per-wo
 The seed data generates realistic historical dates for better testing and development:
 
 - **Workspace Start Dates**: 6-12 months ago
-- **Workspace End Dates**: 1-6 months after start date
+- **Workspace End Dates**: 1-7 days from today (near-future for current testing)
 - **Entry Dates**: Within workspace date ranges
 - **Exchange Rate Dates**: 1-6 months ago for organizations, within workspace periods for workspaces
 
-### **Why Past Dates?**
-- ✅ **Realistic data**: Simulates actual historical projects
-- ✅ **No future conflicts**: Avoids issues with future date validation
-- ✅ **Better testing**: Allows testing of date-based queries and reports
-- ✅ **Consistent state**: All data represents completed or ongoing historical activities
+### **Why This Date Strategy?**
+- ✅ **Realistic data**: Simulates actual historical projects that started in the past
+- ✅ **Current testing**: Workspace end dates are near-future for testing current/ongoing projects
+- ✅ **Better testing**: Allows testing of date-based queries, reports, and current project status
+- ✅ **Balanced approach**: Historical start dates with current end dates for comprehensive testing
 
 ## ⚠️ Important Notes
 
@@ -180,8 +180,8 @@ The seed data generates realistic historical dates for better testing and develo
 
 #### Date Validation Errors
 - **Problem**: "Date cannot be in the future" errors
-- **Solution**: All seed data dates are automatically set in the past (6-12 months ago)
-- **Note**: This prevents future date validation conflicts in your application
+- **Solution**: Most seed data dates are in the past, but workspace end dates are intentionally 1-7 days from today for current testing
+- **Note**: This prevents most future date validation conflicts while keeping workspaces current
 
 #### Role Conflicts
 - **Problem**: Users assigned multiple conflicting roles

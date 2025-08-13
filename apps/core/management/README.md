@@ -86,14 +86,16 @@ Type 'yes' to confirm: yes
 ### Teams
 - **Naming**: Functional team names (e.g., "Azure Program Management")
 - **Roles**: Team coordinator assigned
-- **Members**: Multiple team members with proper permissions
+- **Members**: Multiple team submitters with proper permissions
 - **Types**: 30+ different team types (Health Services, Education Support, etc.)
 
 ### Users
 - **Creation**: Realistic usernames and email addresses using Faker
+- **Username Pattern**: `submitter_{org_index}_{user_index}_{faker_name}` for better identification
 - **Passwords**: All users get "password123" for easy testing
 - **Status**: All users are set to ACTIVE status
-- **Roles**: Proper role separation (owner, admin, reviewer, coordinator, member)
+- **Roles**: Proper role separation (owner, admin, reviewer, coordinator, submitter)
+- **Submitters**: Users who can submit entries and have basic access permissions
 
 ### Entries
 - **Types**: Income, Disbursement, Remittance

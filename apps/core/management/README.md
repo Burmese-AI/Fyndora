@@ -32,7 +32,7 @@ uv run manage.py seed_data --organizations 5 --workspaces-per-org 10 --teams-per
 | `--organizations` | int | 3 | Number of organizations to create |
 | `--workspaces-per-org` | int | 2 | Workspaces per organization |
 | `--teams-per-org` | int | 3 | Teams per organization |
-| `--users-per-org` | int | 10 | Users per organization |
+| `--users-per-org` | int | 20 | Users per organization |
 | `--entries-per-workspace` | int | 10 | Entries per workspace |
 | `--clear-existing` | flag | False | Clear all existing data before seeding |
 
@@ -45,7 +45,7 @@ When using default settings, the command creates:
 | **Organizations** | 3 | Default value |
 | **Workspaces** | 6 | 3 orgs × 2 per org |
 | **Teams** | 9 | 3 orgs × 3 per org |
-| **Users** | 30 | 3 orgs × 10 per org |
+| **Users** | 60 | 3 orgs × 20 per org |
 | **Entries** | 60 | 6 workspaces × 10 per workspace |
 | **Workspace Teams** | 6-18 | Random: 1-3 teams per workspace |
 | **Currencies** | 8 | Hardcoded currency list |

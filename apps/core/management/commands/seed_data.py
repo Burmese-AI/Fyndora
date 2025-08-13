@@ -69,8 +69,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--users-per-org',
             type=int,
-            default=10,
-            help='Number of users per organization (default: 10)'
+            default=20,
+            help='Number of users per organization (default: 20)'
         )
         parser.add_argument(
             '--entries-per-workspace',

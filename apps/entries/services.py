@@ -1,9 +1,8 @@
 from datetime import date
 
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from guardian.shortcuts import assign_perm
 
 from apps.attachments.services import create_attachments, replace_or_append_attachments
 from apps.auditlog.business_logger import BusinessAuditLogger
@@ -11,13 +10,11 @@ from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_closest_exchanged_rate
 from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
-from .permissions import EntryPermissions
 from .stats import EntryStats
 
 
@@ -31,51 +28,6 @@ def _extract_user_from_actor(actor):
         return actor.user
     else:
         return actor
-
-
-def _check_entry_permissions(*, actor, permission_to_check, entry=None, workspace=None):
-    """
-    A helper function to centralize permission checking for entry services.
-    """
-    user = (
-        actor.organization_member.user if isinstance(actor, TeamMember) else actor.user
-    )
-
-    # For create, an entry object doesn't exist yet, so a workspace is passed.
-    # For update/review, an entry object exists, and we get the workspace from it.
-    perm_object = workspace
-    if entry:
-        perm_object = entry.workspace
-
-    # 1. Base permission check
-    has_perm = user.has_perm(permission_to_check, perm_object)
-
-    if not has_perm:
-        raise PermissionDenied("You do not have permission to perform this action.")
-
-    # 2. Role-specific checks (only for existing entries)
-    if entry:
-        actor_org_member = (
-            actor.organization_member if isinstance(actor, TeamMember) else actor
-        )
-
-        # Submitter check
-        if (
-            permission_to_check == EntryPermissions.CHANGE_ENTRY
-            and isinstance(actor, TeamMember)
-            and actor.role == TeamMemberRole.SUBMITTER
-            and entry.submitter != actor
-        ):
-            raise PermissionDenied("You can only edit your own entries.")
-
-        # Team Coordinator check
-        # A user who is a coordinator for any team is restricted to their own team's entries.
-        if actor_org_member.coordinated_teams.exists():
-            entry_team = entry.workspace_team.team if entry.workspace_team else None
-            # If the entry is not associated with a team, or if the actor is not the
-            # coordinator for that team, deny permission.
-            if not entry_team or entry_team.team_coordinator != actor_org_member:
-                raise PermissionDenied("You can only manage entries for your own team.")
 
 
 def create_entry_with_attachments(
@@ -350,12 +302,6 @@ def entry_create(
     if entry_type == EntryType.WORKSPACE_EXP and not workspace:
         raise ValidationError("Workspace is required for workspace expense entries")
 
-    _check_entry_permissions(
-        actor=submitted_by,
-        workspace=workspace,
-        permission_to_check=EntryPermissions.ADD_ENTRY,
-    )
-
     # If submitter is a team member, validate workspace_team for certain entry types
     if (
         isinstance(submitted_by, TeamMember)
@@ -414,16 +360,6 @@ def entry_create(
             else submitted_by.user
         )
 
-        # Assign permissions to the submitter for this workspace (if not already assigned)
-        if workspace and not user.has_perm(EntryPermissions.CHANGE_ENTRY, workspace):
-            assign_perm(EntryPermissions.CHANGE_ENTRY, user, workspace)
-        if workspace and not user.has_perm(EntryPermissions.DELETE_ENTRY, workspace):
-            assign_perm(EntryPermissions.DELETE_ENTRY, user, workspace)
-        if workspace and not user.has_perm(
-            EntryPermissions.UPLOAD_ATTACHMENTS, workspace
-        ):
-            assign_perm(EntryPermissions.UPLOAD_ATTACHMENTS, user, workspace)
-
         # Log entry creation with rich business context
         BusinessAuditLogger.log_entry_action(
             user=user,
@@ -459,12 +395,6 @@ def entry_review(
     """
     Service to review an entry (approve, reject, flag).
     """
-    _check_entry_permissions(
-        actor=reviewer,
-        entry=entry,
-        permission_to_check=EntryPermissions.REVIEW_ENTRY,
-    )
-
     # Allow flagging with current status
     if is_flagged:
         if not notes:
@@ -601,9 +531,6 @@ def entry_update(*, entry, updated_by, request=None, **fields_to_update):
     """
     Service to update an existing entry.
     """
-    _check_entry_permissions(
-        actor=updated_by, entry=entry, permission_to_check=EntryPermissions.CHANGE_ENTRY
-    )
 
     allowed_fields = ["description", "amount", "workspace", "workspace_team"]
     update_data = {}

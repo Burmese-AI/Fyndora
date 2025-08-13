@@ -42,8 +42,10 @@ from .mixins import (
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering,
 )
-from apps.entries.utils import can_update_other_submitters_entry
-
+from apps.entries.utils import (
+    can_update_other_submitters_entry,
+    can_update_workspace_team_entry,
+)
 
 
 class WorkspaceEntryListView(
@@ -206,7 +208,6 @@ class WorkspaceTeamEntryUpdateView(
     form_class = UpdateWorkspaceTeamEntryForm
     modal_template_name = "entries/components/update_modal.html"
     row_template_name = "entries/partials/row.html"
-
 
     def dispatch(self, request, *args, **kwargs):
         # general permission checking if the user has the permission to update the workspace team entry....

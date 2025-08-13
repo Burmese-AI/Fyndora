@@ -11,7 +11,7 @@ def get_currency_by_code(code: str) -> Currency:
 def get_org_defined_currencies(organization: Organization):
     return Currency.objects.filter(
         organizations_organizationexchangerate__organization=organization,
-    )
+    ).distinct()
 
 
 def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace=None):

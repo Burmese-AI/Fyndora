@@ -187,7 +187,7 @@ class BusinessAuditLogger:
 
         metadata = {
             "target_user_id": str(target_user.user_id),
-            "target_user_email": target_user.email,
+            "target_user_email": target_user.user.email,
             "permission": permission,
             "action": action,
             "change_reason": request.POST.get("reason", "")

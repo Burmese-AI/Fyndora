@@ -85,8 +85,7 @@ print(secret)
     echo "  makemigrations  - Create new migrations"
     echo "  collectstatic   - Collect static files"
     echo "  createsuperuser - Create Django superuser"
-    echo "  seed            - Seed database with test data (keeps existing data)"
-    echo "  seed-clear      - Clear existing data and seed fresh"
+    echo "  seed_data       - Seed database with test data (keeps existing data)"
     echo "  generate-secret - Generate Django secret key"
     exit 1
     ;;

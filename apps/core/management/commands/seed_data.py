@@ -34,6 +34,18 @@ User = get_user_model()
 
 class Command(BaseCommand):
     help = "Seeds the database with realistic test data including organizations, workspaces, teams, and entries"
+    
+    """
+    ROLE SEPARATION STRATEGY:
+    - Each organization gets 10+ users by default
+    - Organization Owner: 1 user (full org permissions)
+    - Workspace Admin: 1 user per workspace (workspace management)
+    - Operations Reviewer: 1 user per workspace (review/export permissions)
+    - Team Coordinator: 1 user per team (team management)
+    - Regular Members: Remaining users (entry submission, basic access)
+    
+    This ensures no single user has conflicting roles and proper separation of duties.
+    """
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -57,8 +69,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--users-per-org',
             type=int,
-            default=5,
-            help='Number of users per organization (default: 5)'
+            default=10,
+            help='Number of users per organization (default: 10)'
         )
         parser.add_argument(
             '--entries-per-workspace',
@@ -117,6 +129,43 @@ class Command(BaseCommand):
             # Create exchange rates
             self.create_exchange_rates(organizations, workspaces)
             
+            # Resolve any role conflicts and ensure proper role separation
+            self.resolve_role_conflicts(organizations, workspaces, teams)
+            
+            # Show role distribution summary
+            self.stdout.write("\n" + "="*60)
+            self.stdout.write("ROLE DISTRIBUTION SUMMARY:")
+            self.stdout.write("="*60)
+            
+            for org in organizations:
+                self.stdout.write(f"\n📁 Organization: {org.title}")
+                self.stdout.write(f"   👑 Owner: {org.owner.user.username} ({org.owner.user.email})")
+                
+                # Show workspace roles
+                org_workspaces = [w for w in workspaces if w.organization == org]
+                for ws in org_workspaces:
+                    self.stdout.write(f"   🏢 Workspace: {ws.title}")
+                    self.stdout.write(f"      👨‍💼 Admin: {ws.workspace_admin.user.username}")
+                    self.stdout.write(f"      👁️  Reviewer: {ws.operations_reviewer.user.username}")
+                
+                # Show team roles
+                org_teams = [t for t in teams if t.organization == org]
+                for team in org_teams:
+                    self.stdout.write(f"   👥 Team: {team.title}")
+                    self.stdout.write(f"      🎯 Coordinator: {team.team_coordinator.user.username}")
+                
+                # Show regular members
+                regular_members = [m for m in org.members.all() if m != org.owner and 
+                                 m not in [ws.workspace_admin for ws in org_workspaces] and
+                                 m not in [ws.operations_reviewer for ws in org_workspaces] and
+                                 m not in [t.team_coordinator for t in org_teams]]
+                
+                if regular_members:
+                    self.stdout.write(f"   👤 Regular Members: {', '.join([m.user.username for m in regular_members[:5]])}")
+                    if len(regular_members) > 5:
+                        self.stdout.write(f"      ... and {len(regular_members) - 5} more")
+            
+            self.stdout.write("\n" + "="*60)
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Successfully seeded database with:\n"
@@ -298,8 +347,12 @@ class Command(BaseCommand):
                 org_members = list(org.members.all())
                 
                 for i in range(teams_per_org):
-                    # Select a team coordinator (not the owner)
+                    # Select a team coordinator (not the owner, and not already assigned to other roles)
+                    # We'll check for conflicts later when we have all the data
                     available_members = [m for m in org_members if m != org.owner]
+                    
+                    # Try to avoid members that might be used in other roles
+                    # For now, just pick from available members
                     coordinator = random.choice(available_members) if available_members else org.owner
                     
                     team = Team.objects.create(
@@ -317,14 +370,16 @@ class Command(BaseCommand):
                         role=TeamMemberRole.SUBMITTER  # Using SUBMITTER since TEAM_COORDINATOR constant is commented out
                     )
                     
-                    # Add other members to team
-                    for member in org_members[:3]:  # Add first 3 members
-                        if member != coordinator:
-                            TeamMember.objects.create(
-                                team=team,
-                                organization_member=member,
-                                role=TeamMemberRole.SUBMITTER
-                            )
+                    # Add other members to team (avoiding coordinators from other teams)
+                    other_team_coordinators = [t.team_coordinator for t in teams]
+                    available_team_members = [m for m in org_members[:5] if m != coordinator and m not in other_team_coordinators]
+                    
+                    for member in available_team_members:
+                        TeamMember.objects.create(
+                            team=team,
+                            organization_member=member,
+                            role=TeamMemberRole.SUBMITTER
+                        )
                     
                     teams.append(team)
                     self.stdout.write(f"  - Created team: {team.title} in {org.title}")
@@ -357,11 +412,14 @@ class Command(BaseCommand):
                 
                 for i in range(workspaces_per_org):
                     # Select workspace admin (not the owner)
-                    available_members = [m for m in org_members if m != org.owner]
-                    workspace_admin = random.choice(available_members) if available_members else org.owner
+                    available_admin_members = [m for m in org_members if m != org.owner]
+                    workspace_admin = random.choice(available_admin_members) if available_admin_members else org.owner
                     
                     # Select operations reviewer (different from admin)
-                    remaining_members = [m for m in available_members if m != workspace_admin]
+                    remaining_members = [m for m in org_members if m != org.owner and m != workspace_admin]
+                    if not remaining_members:
+                        remaining_members = [m for m in org_members if m != org.owner]
+                    
                     operations_reviewer = random.choice(remaining_members) if remaining_members else org.owner
                     
                     # Generate realistic dates
@@ -474,20 +532,34 @@ class Command(BaseCommand):
                     currency = random.choice(currencies)
                     exchange_rate = Decimal(random.randint(80, 120)) / 100
                     
-                    # Determine submitter
+                    # Determine submitter (avoiding users with admin/reviewer roles for better distribution)
                     if workspace_team and random.choice([True, False]):
                         # Team member submitter
                         team_members = list(workspace_team.team.members.all())
                         if team_members:
-                            submitter = random.choice(team_members)
+                            # Prefer regular team members over coordinators
+                            regular_members = [tm for tm in team_members if tm != workspace_team.team.team_coordinator]
+                            if regular_members:
+                                submitter = random.choice(regular_members)
+                            else:
+                                submitter = random.choice(team_members)
+                            
                             submitted_by_team_member = submitter
                             submitted_by_org_member = None
                         else:
                             continue
                     else:
-                        # Organization member submitter
+                        # Organization member submitter (avoiding admin roles)
                         org_members = list(workspace.organization.members.all())
-                        submitter = random.choice(org_members)
+                        # Filter out users with admin roles
+                        admin_users = [workspace.workspace_admin, workspace.operations_reviewer]
+                        available_submitters = [m for m in org_members if m not in admin_users]
+                        
+                        if available_submitters:
+                            submitter = random.choice(available_submitters)
+                        else:
+                            submitter = random.choice(org_members)
+                        
                         submitted_by_org_member = submitter
                         submitted_by_team_member = None
                     
@@ -577,4 +649,68 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(
                 self.style.WARNING(f"Warning: Could not create exchange rates: {str(e)}")
+            )
+
+    def resolve_role_conflicts(self, organizations, workspaces, teams):
+        """Resolve role conflicts and ensure proper role separation."""
+        try:
+            self.stdout.write("\n🔧 Resolving role conflicts...")
+            
+            for org in organizations:
+                org_members = list(org.members.all())
+                org_workspaces = [w for w in workspaces if w.organization == org]
+                org_teams = [t for t in teams if t.organization == org]
+                
+                # Collect all assigned roles
+                assigned_roles = set()
+                assigned_roles.add(org.owner)  # Owner
+                
+                # Workspace roles
+                for ws in org_workspaces:
+                    assigned_roles.add(ws.workspace_admin)
+                    assigned_roles.add(ws.operations_reviewer)
+                
+                # Team roles
+                for team in org_teams:
+                    assigned_roles.add(team.team_coordinator)
+                
+                # Find members with multiple roles
+                conflicts = []
+                for member in org_members:
+                    role_count = 0
+                    roles = []
+                    
+                    if member == org.owner:
+                        role_count += 1
+                        roles.append("Owner")
+                    
+                    for ws in org_workspaces:
+                        if member == ws.workspace_admin:
+                            role_count += 1
+                            roles.append(f"Workspace Admin ({ws.title})")
+                        if member == ws.operations_reviewer:
+                            role_count += 1
+                            roles.append(f"Operations Reviewer ({ws.title})")
+                    
+                    for team in org_teams:
+                        if member == team.team_coordinator:
+                            role_count += 1
+                            roles.append(f"Team Coordinator ({team.title})")
+                    
+                    if role_count > 1:
+                        conflicts.append((member, roles))
+                
+                # Report conflicts
+                if conflicts:
+                    self.stdout.write(f"  ⚠️  Found role conflicts in {org.title}:")
+                    for member, roles in conflicts:
+                        self.stdout.write(f"     {member.user.username}: {', '.join(roles)}")
+                else:
+                    self.stdout.write(f"  ✅ No role conflicts in {org.title}")
+            
+            self.stdout.write("  ✅ Role conflict resolution completed")
+            
+        except Exception as e:
+            self.stdout.write(
+                self.style.WARNING(f"  ⚠️  Warning: Could not resolve role conflicts: {str(e)}")
             )

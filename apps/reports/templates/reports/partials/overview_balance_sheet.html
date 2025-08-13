@@ -1,1 +1,56 @@
-<h1>Overview Balance Sheet</h1>
+<section class="card shadow-lg bg-base-100 p-4">
+  <div class="mb-4">
+    <span class="text-lg font-semibold">{% if workspace_filter %}Workspace{% else %}Organization{% endif %}</span>
+    <span class="font-medium">{{ workspace.title }}</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="table table-compact w-full sheet-table">
+      <thead>
+        <tr class="bg-base-200">
+          <th class="text-left sticky-col">Workspace / Team ID</th>
+          <th class="text-right">Total Income</th>
+          <th class="text-right">Total Disbursement</th>
+          <th class="text-right">Net Income</th>
+          <th class="text-right">Org Share</th>
+        </tr>
+      </thead>
+
+      <tbody id="bs-tbody">
+        {% for team in workspace_teams %}
+        <tr class="hover">
+          <td class="font-medium">{{ team.pk }}</td>
+          <td class="text-right">{{ team.total_income|floatformat:2 }}</td>
+          <td class="text-right">{{ team.total_disbursement|floatformat:2 }}</td>
+          <td class="text-right">{{ team.net_income|floatformat:2 }}</td>
+          <td class="text-right">
+            <div class="flex flex-col items-end gap-1">
+              <span class="text-primary text-xs font-semibold">Rate: {{ team.remittance_rate }}%</span>
+              <span class="font-medium">{{ team.org_share|floatformat:2 }}</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+      <tfoot>
+        <!-- Totals -->
+        <tr class="bg-secondary/50 text-secondary-content font-semibold border-t-2 border-secondary">
+          <td class="text-left">Total</td>
+          <td class="text-right">{{ workspace.total_income|floatformat:2 }}</td>
+          <td class="text-right">{{ workspace.total_disbursement|floatformat:2 }}</td>
+          <td class="text-right">{{ workspace.net_income|floatformat:2 }}</td>
+          <td class="text-right">{{ workspace.org_share|floatformat:2 }}</td>
+        </tr>
+
+        <!-- Workspace Expenses -->
+        <tr class="bg-accent/20 text-accent-content font-semibold border-t border-accent">
+          <td class="text-left">Workspace Expenses</td>
+          <td class="text-right">{{ workspace.workspace_expenses|floatformat:2 }}</td>
+          <td class="text-right">&nbsp;</td>
+          <td class="text-right">Final Net Profit</td>
+          <td class="text-right">{{ workspace.final_net_profit|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>

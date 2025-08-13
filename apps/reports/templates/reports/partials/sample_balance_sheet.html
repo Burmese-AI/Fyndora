@@ -1,70 +1,128 @@
 <section class="card shadow-lg bg-base-100 p-4">
-      <div class="overflow-x-auto">
-        <table class="table table-compact w-full sheet-table">
-          <thead>
-            <tr class="bg-base-200">
-              <th class="text-left sticky-col">Workspace/Team Title</th>
-              <th class="text-right">Income</th>
-              <th class="text-right">Disbursement</th>
-              <th class="text-right">Revenue</th>
-              <th class="text-right">Profit</th>
-            </tr>
-          </thead>
+  <div class="overflow-x-auto">
+    <table class="table table-compact w-full sheet-table">
+      <thead>
+        <tr class="bg-base-200">
+          <th class="text-left sticky-col">Workspace / Team</th>
+          <th class="text-right">Total Income</th>
+          <th class="text-right">Total Disbursement</th>
+          <th class="text-right">Net Income After Disbursement</th>
+          <th class="text-right">Org Share</th>
+        </tr>
+      </thead>
 
-          <tbody id="bs-tbody">
-            <tr class="hover">
-              <td class="font-medium">Sales - Product A</td>
-              <td class="text-right">1,200.00</td>
-              <td class="text-right">300.00</td>
-              <td class="text-right">900.00</td>
-              <td class="text-right">600.00</td>
-            </tr>
-            <tr class="hover">
-              <td class="font-medium">Sales - Product B</td>
-              <td class="text-right">800.00</td>
-              <td class="text-right">200.00</td>
-              <td class="text-right">600.00</td>
-              <td class="text-right">400.00</td>
-            </tr>
-            <tr class="hover">
-              <td class="font-medium">Service Income</td>
-              <td class="text-right">500.00</td>
-              <td class="text-right">120.00</td>
-              <td class="text-right">380.00</td>
-              <td class="text-right">280.00</td>
-            </tr>
-            <tr class="hover">
-              <td class="font-medium">Consulting Fees</td>
-              <td class="text-right">950.00</td>
-              <td class="text-right">150.00</td>
-              <td class="text-right">800.00</td>
-              <td class="text-right">650.00</td>
-            </tr>
-            <tr class="hover">
-              <td class="font-medium">Affiliate Income</td>
-              <td class="text-right">300.00</td>
-              <td class="text-right">50.00</td>
-              <td class="text-right">250.00</td>
-              <td class="text-right">200.00</td>
-            </tr>
-          </tbody>
+      <tbody id="bs-tbody">
+        <tr class="hover">
+          <td class="font-medium">Sales - Product A</td>
+          <td class="text-right">1,200.00</td>
+          <td class="text-right">300.00</td>
+          <td class="text-right">900.00</td>
+          <td class="text-right">600.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Sales - Product B</td>
+          <td class="text-right">800.00</td>
+          <td class="text-right">200.00</td>
+          <td class="text-right">600.00</td>
+          <td class="text-right">400.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Service Income</td>
+          <td class="text-right">500.00</td>
+          <td class="text-right">120.00</td>
+          <td class="text-right">380.00</td>
+          <td class="text-right">280.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Consulting Fees</td>
+          <td class="text-right">950.00</td>
+          <td class="text-right">150.00</td>
+          <td class="text-right">800.00</td>
+          <td class="text-right">650.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Affiliate Income</td>
+          <td class="text-right">300.00</td>
+          <td class="text-right">50.00</td>
+          <td class="text-right">250.00</td>
+          <td class="text-right">200.00</td>
+        </tr>
+      </tbody>
 
-          <tfoot>
-            <tr class="bg-base-200 font-semibold">
-              <td class="text-left">Total</td>
-              <td class="text-right">3,750.00</td>
-              <td class="text-right">820.00</td>
-              <td class="text-right">2,930.00</td>
-              <td class="text-right">2,130.00</td>
-            </tr>
-            <tr class="bg-base-100">
-              <td class="text-left">Expense</td>
-              <td class="text-right">820.00</td>
-              <td class="text-right">&nbsp;</td>
-              <td class="text-right">Net Profit</td>
-              <td class="text-right">2,110.00</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
+      <tfoot>
+        <tr class="bg-base-200 font-semibold">
+          <td class="text-left">Total</td>
+          <td class="text-right">3,750.00</td>
+          <td class="text-right">820.00</td>
+          <td class="text-right">2,930.00</td>
+          <td class="text-right">2,130.00</td>
+        </tr>
+        <tr class="bg-base-100 font-semibold">
+          <td class="text-left">Workspace Expenses</td>
+          <td class="text-right">820.00</td>
+          <td class="text-right">&nbsp;</td>
+          <td class="text-right">Final Net Profit</td>
+          <td class="text-right">1,310.00</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<section class="my-4 card shadow-lg bg-base-100 p-4">
+  <div class="overflow-x-auto">
+    <table class="table table-compact w-full sheet-table">
+      <thead>
+        <tr class="bg-base-200">
+          <th class="text-left sticky-col">Workspace</th>
+          <th class="text-right">Total Income</th>
+          <th class="text-right">Total Disbursement</th>
+          <th class="text-right">Net Income After Disbursement</th>
+          <th class="text-right">Org Share</th>
+        </tr>
+      </thead>
+
+      <tbody id="bs-tbody">
+        <tr class="hover">
+          <td class="font-medium">Workspace Alpha</td>
+          <td class="text-right">5,000.00</td>
+          <td class="text-right">1,200.00</td>
+          <td class="text-right">3,800.00</td>
+          <td class="text-right">2,500.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Workspace Beta</td>
+          <td class="text-right">3,200.00</td>
+          <td class="text-right">800.00</td>
+          <td class="text-right">2,400.00</td>
+          <td class="text-right">1,800.00</td>
+        </tr>
+        <tr class="hover">
+          <td class="font-medium">Workspace Gamma</td>
+          <td class="text-right">2,500.00</td>
+          <td class="text-right">600.00</td>
+          <td class="text-right">1,900.00</td>
+          <td class="text-right">1,400.00</td>
+        </tr>
+      </tbody>
+
+      <tfoot>
+        <tr class="bg-base-200 font-semibold">
+          <td class="text-left">Total</td>
+          <td class="text-right">10,700.00</td>
+          <td class="text-right">2,600.00</td>
+          <td class="text-right">8,100.00</td>
+          <td class="text-right">5,700.00</td>
+        </tr>
+        <tr class="bg-base-100 font-semibold">
+          <td class="text-left">Org-Level Expenses</td>
+          <td class="text-right">1,500.00</td>
+          <td class="text-right">&nbsp;</td>
+          <td class="text-right">Final Net Profit</td>
+          <td class="text-right">4,200.00</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+

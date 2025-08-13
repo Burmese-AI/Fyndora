@@ -32,6 +32,7 @@ from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
+    can_update_workspace_team_entry
 )
 from .base_views import (
     TeamLevelEntryView,

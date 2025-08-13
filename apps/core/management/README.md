@@ -19,7 +19,7 @@ uv run manage.py seed_data
 #if you want to use in docker, use the following command:
 scripts/docker-dev.sh seed_data #this will run the command in the docker container
 scripts/docker-dev.sh seed_data --clear-existing #this will clear the existing data and seed fresh
-    
+
 # Clear existing data and seed fresh
 # Default: 3 orgs, 6 workspaces, 9 teams, 60 users, 600 entries
 uv run manage.py seed_data --clear-existing
@@ -122,31 +122,6 @@ Type 'yes' to confirm: yes
 - **Variability**: Not every workspace gets all teams (more realistic)
 - **Custom Rates**: Sometimes custom remittance rates are applied
 
-## 🎯 Use Cases
-
-### Development Environment
-```bash
-# Fresh start for development
-uv run manage.py seed_data --clear-existing
-
-# Add more test data
-uv run manage.py seed_data --organizations 2
-```
-
-### Testing
-```bash
-# Minimal data for unit tests
-uv run manage.py seed_data --organizations 1 --users-per-org 5
-
-# Comprehensive data for integration tests
-uv run manage.py seed_data --organizations 3 --entries-per-workspace 50
-```
-
-### Demo/Staging
-```bash
-# Rich dataset for demonstrations
-uv run manage.py seed_data --organizations 5 --users-per-org 20 --entries-per-workspace 100
-```
 
 ## 📅 Date Handling
 
@@ -191,83 +166,3 @@ The seed data generates realistic historical dates for better testing and develo
 - **Solution**: Most seed data dates are in the past, but workspace end dates are intentionally 1-7 days from today for current testing
 - **Note**: This prevents most future date validation conflicts while keeping workspaces current
 
-#### Role Conflicts
-- **Problem**: Users assigned multiple conflicting roles
-- **Solution**: The command automatically resolves role conflicts and reports any issues
-- **Check**: Look for role conflict warnings in the command output
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### Permission Errors
-```bash
-# Ensure you have database write access
-# Check Django user permissions
-```
-
-#### Signal Errors
-- The command automatically handles signal disconnection
-- If you encounter signal errors, the command will show detailed error messages
-
-#### Duplicate Names
-- Names are automatically made unique
-- If conflicts occur, numbers are appended (e.g., "Foundation 1", "Foundation 2")
-
-### Error Recovery
-- If the command fails, check the error messages
-- The database will be in a consistent state
-- You can safely re-run the command
-
-## 📖 Examples
-
-### Complete Development Setup
-```bash
-# Clear everything and start fresh
-uv run manage.py seed_data --clear-existing \
-  --organizations 3 \
-  --workspaces-per-org 2 \
-  --teams-per-org 3 \
-  --users-per-org 10 \
-  --entries-per-workspace 100
-```
-
-### Add More Test Data
-```bash
-# Keep existing data, add more organizations
-uv run manage.py seed_data --organizations 2
-```
-
-### Minimal Test Data
-```bash
-# Small dataset for quick testing
-uv run manage.py seed_data \
-  --organizations 1 \
-  --workspaces-per-org 1 \
-  --teams-per-org 2 \
-  --users-per-org 5 \
-  --entries-per-workspace 5
-```
-
-## 🤝 Contributing
-
-When adding new management commands to this directory:
-
-1. Follow the existing naming conventions
-2. Include comprehensive help text
-3. Add proper error handling with try-catch blocks
-4. Document all command options
-5. Update this README.md with new command information
-
-## 📞 Support
-
-For issues or questions about these management commands:
-
-1. Check the command help: `uv run manage.py seed_data --help`
-2. Review the command source code
-3. Check Django logs for detailed error information
-4. Consult the main project documentation
-
----
-
-**Remember**: These commands are powerful tools for development and testing. Always use them responsibly and never in production without proper backups! 🚀

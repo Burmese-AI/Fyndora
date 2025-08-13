@@ -14,8 +14,12 @@ Populates your database with realistic test data for development, testing, and d
 ```bash
 # Seed with default settings (keeps existing data)
 # Default: 3 orgs, 6 workspaces, 9 teams, 60 users, 600 entries
-uv run manage.py seed_data #
+uv run manage.py seed_data
 
+#if you want to use in docker, use the following command:
+scripts/docker-dev.sh seed_data #this will run the command in the docker container
+scripts/docker-dev.sh seed_data --clear-existing #this will clear the existing data and seed fresh
+    
 # Clear existing data and seed fresh
 # Default: 3 orgs, 6 workspaces, 9 teams, 60 users, 600 entries
 uv run manage.py seed_data --clear-existing

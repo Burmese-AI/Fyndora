@@ -22,6 +22,7 @@ from apps.teams.permissions import (
 )
 
 from .models import Team, TeamMember
+from .constants import TeamMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def create_team_from_form(form, organization, orgMember):
             TeamMember.objects.create(
                 team=team,
                 organization_member=team.team_coordinator,
-                role="team_coordinator",
+                role=TeamMemberRole.TEAM_COORDINATOR,
             )
 
         assign_team_permissions(team)

@@ -327,12 +327,16 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             )
             workspace_teams = WorkspaceTeam.objects.filter(team=team)
             for workspace_team in workspace_teams:
-                workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+                workspace_team_group_name = (
+                    f"Workspace Team - {workspace_team.workspace_team_id}"
+                )
                 workspace_team_group, _ = Group.objects.get_or_create(
                     name=workspace_team_group_name
                 )
                 workspace_team_group.user_set.remove(previous_team_coordinator.user)
-                print("Team coordinator removed from workspace team group permission removed")
+                print(
+                    "Team coordinator removed from workspace team group permission removed"
+                )
             # Audit logging: Log coordinator removal
             try:
                 BusinessAuditLogger.log_team_member_action(
@@ -410,7 +414,9 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             workspace_teams = WorkspaceTeam.objects.filter(team=team)
             print("workspace_teams", workspace_teams)
             for workspace_team in workspace_teams:
-                workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+                workspace_team_group_name = (
+                    f"Workspace Team - {workspace_team.workspace_team_id}"
+                )
                 workspace_team_group, _ = Group.objects.get_or_create(
                     name=workspace_team_group_name
                 )

@@ -86,24 +86,24 @@ class TeamMemberForm(forms.ModelForm):
             }
         ),
     )
-    #prevent editing team coordinator role by removing it from the choices
+    # prevent editing team coordinator role by removing it from the choices
     role = forms.ChoiceField(
-    choices=[
-        (key, label)
-        for key, label in TeamMemberRole.choices
-        if key != TeamMemberRole.TEAM_COORDINATOR
-    ],
-    required=True,
-    label="Select Role",
-    widget=forms.Select(
-        attrs={
-            "class": (
-                "select select-bordered w-full rounded-lg shadow "
-                "focus:outline-none focus:ring-2 focus:ring-primary text-base"
-            )
-        },
-    ),
-)
+        choices=[
+            (key, label)
+            for key, label in TeamMemberRole.choices
+            if key != TeamMemberRole.TEAM_COORDINATOR
+        ],
+        required=True,
+        label="Select Role",
+        widget=forms.Select(
+            attrs={
+                "class": (
+                    "select select-bordered w-full rounded-lg shadow "
+                    "focus:outline-none focus:ring-2 focus:ring-primary text-base"
+                )
+            },
+        ),
+    )
 
     class Meta:
         model = TeamMember
@@ -139,13 +139,13 @@ class EditTeamMemberRoleForm(forms.ModelForm):
         model = TeamMember
         fields = ["role"]
 
-    #prevent editing team coordinator role by removing it from the choices
+    # prevent editing team coordinator role by removing it from the choices
     role = forms.ChoiceField(
         choices=[
-        (key, label)
-        for key, label in TeamMemberRole.choices
-        if key != TeamMemberRole.TEAM_COORDINATOR
-    ],
+            (key, label)
+            for key, label in TeamMemberRole.choices
+            if key != TeamMemberRole.TEAM_COORDINATOR
+        ],
         required=True,
         label="Select Role",
         widget=forms.Select(

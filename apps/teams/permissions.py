@@ -22,7 +22,9 @@ def assign_team_permissions(team):
                 assign_perm(perm, team_coordinator_group, team)
 
         if team.team_coordinator is not None:
-            print(f"Adding team coordinator {team.team_coordinator.user.username} to team coordinator group")
+            print(
+                f"Adding team coordinator {team.team_coordinator.user.username} to team coordinator group"
+            )
             team_coordinator_group.user_set.add(team.team_coordinator.user)
             print("permission")
 
@@ -59,7 +61,9 @@ def update_team_coordinator_group(team, previous_coordinator, new_coordinator):
         if previous_coordinator:
             team_coordinator_group.user_set.remove(previous_coordinator.user)
         if new_coordinator:
-            print(f"Adding team coordinator {new_coordinator.user.username} to team coordinator group")
+            print(
+                f"Adding team coordinator {new_coordinator.user.username} to team coordinator group"
+            )
             team_coordinator_group.user_set.add(new_coordinator.user)
     except Exception as e:
         print(f"Error updating team coordinator group: {e}")

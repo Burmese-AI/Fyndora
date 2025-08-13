@@ -1,9 +1,8 @@
 from datetime import date
 
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from guardian.shortcuts import assign_perm
 
 from apps.attachments.services import create_attachments, replace_or_append_attachments
 from apps.auditlog.business_logger import BusinessAuditLogger
@@ -11,7 +10,6 @@ from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_closest_exchanged_rate
 from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.teams.constants import TeamMemberRole
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
@@ -30,6 +28,7 @@ def _extract_user_from_actor(actor):
         return actor.user
     else:
         return actor
+
 
 def create_entry_with_attachments(
     *,
@@ -303,7 +302,6 @@ def entry_create(
     if entry_type == EntryType.WORKSPACE_EXP and not workspace:
         raise ValidationError("Workspace is required for workspace expense entries")
 
-   
     # If submitter is a team member, validate workspace_team for certain entry types
     if (
         isinstance(submitted_by, TeamMember)

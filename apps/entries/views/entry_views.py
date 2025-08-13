@@ -42,7 +42,7 @@ from .mixins import (
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering,
 )
-from apps.entries.utils import can_update_other_submitters_entry
+from apps.entries.utils import can_update_other_submitters_entry,can_update_workspace_team_entry
 
 
 

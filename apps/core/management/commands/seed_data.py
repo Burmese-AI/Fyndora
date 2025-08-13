@@ -160,14 +160,14 @@ class Command(BaseCommand):
                 org_workspaces = [w for w in workspaces if w.organization == org]
                 for ws in org_workspaces:
                     self.stdout.write(f"   🏢 Workspace: {ws.title}")
-                    self.stdout.write(f"      🔐 Admin: {ws.workspace_admin.user.username}")
-                    self.stdout.write(f"      👁️  Reviewer: {ws.operations_reviewer.user.username}")
+                    self.stdout.write(f"      🔐 Admin: {ws.workspace_admin.user.username} ({ws.workspace_admin.user.email})")
+                    self.stdout.write(f"      👁️  Reviewer: {ws.operations_reviewer.user.username} ({ws.operations_reviewer.user.email})")
                 
                 # Show team roles
                 org_teams = [t for t in teams if t.organization == org]
                 for team in org_teams:
                     self.stdout.write(f"   👥 Team: {team.title}")
-                    self.stdout.write(f"      🎯 Coordinator: {team.team_coordinator.user.username}")
+                    self.stdout.write(f"      🎯 Coordinator: {team.team_coordinator.user.username} ({team.team_coordinator.user.email})")
                 
                 # Show regular members
                 regular_members = [m for m in org.members.all() if m != org.owner and 

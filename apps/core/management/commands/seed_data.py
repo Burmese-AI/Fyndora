@@ -284,10 +284,45 @@ class Command(BaseCommand):
                     f"{faker.word().title()} Group",
                     f"{faker.word().title()} Movement",
                     f"{faker.word().title()} Community",
-                    f"{faker.word().title()} Collective"
+                    f"{faker.word().title()} Collective",
+                    f"{faker.word().title()} Institute",
+                    f"{faker.word().title()} Center",
+                    f"{faker.word().title()} Agency",
+                    f"{faker.word().title()} Service",
+                    f"{faker.word().title()} Program",
+                    f"{faker.word().title()} Project",
+                    f"{faker.word().title()} Mission",
+                    f"{faker.word().title()} Vision",
+                    f"{faker.word().title()} Action",
+                    f"{faker.word().title()} Support",
+                    f"{faker.word().title()} Development",
+                    f"{faker.word().title()} Relief",
+                    f"{faker.word().title()} Aid",
+                    f"{faker.word().title()} Care",
+                    f"{faker.word().title()} Help",
+                    f"{faker.word().title()} Hope",
+                    f"{faker.word().title()} Future",
+                    f"{faker.word().title()} Progress",
+                    f"{faker.word().title()} Change",
+                    f"{faker.word().title()} Impact",
+                    f"{faker.word().title()} Solutions",
+                    f"{faker.word().title()} Partners",
+                    f"{faker.word().title()} United",
+                    f"{faker.word().title()} Global",
+                    f"{faker.word().title()} International",
+                    f"{faker.word().title()} Regional",
+                    f"{faker.word().title()} Local",
+                    f"{faker.word().title()} National"
                 ]
                 
                 org_name = random.choice(ngo_names)
+                # Ensure unique organization name by checking if it exists
+                counter = 1
+                original_name = org_name
+                while Organization.objects.filter(title=org_name).exists():
+                    org_name = f"{original_name} {counter}"
+                    counter += 1
+                
                 org = Organization.objects.create(
                     title=org_name,
                     description=faker.text(max_nb_chars=200),
@@ -374,7 +409,7 @@ class Command(BaseCommand):
                     # For now, just pick from available members
                     coordinator = random.choice(available_members) if available_members else org.owner
                     
-                    # Create NGO-themed team names
+                    # Create NGO-themed team names with more variety
                     team_types = [
                         "Program Management",
                         "Field Operations", 
@@ -390,10 +425,32 @@ class Command(BaseCommand):
                         "Community Engagement",
                         "Logistics & Procurement",
                         "Training & Development",
-                        "Impact Assessment"
+                        "Impact Assessment",
+                        "Health Services",
+                        "Education Support",
+                        "Environmental Protection",
+                        "Women's Empowerment",
+                        "Youth Development",
+                        "Disaster Management",
+                        "Food Security",
+                        "Water & Sanitation",
+                        "Energy Solutions",
+                        "Microfinance",
+                        "Human Rights",
+                        "Refugee Support",
+                        "Rural Development",
+                        "Urban Planning",
+                        "Cultural Preservation"
                     ]
                     
-                    team_name = f"{random.choice(team_types)} Team {i+1}"
+                    # Use faker to generate more unique team names
+                    team_name = f"{faker.word().title()} {random.choice(team_types)}"
+                    # Ensure unique team name by checking if it exists
+                    counter = 1
+                    original_name = team_name
+                    while Team.objects.filter(organization=org, title=team_name).exists():
+                        team_name = f"{original_name} {counter}"
+                        counter += 1
                     team = Team.objects.create(
                         organization=org,
                         title=team_name,
@@ -465,7 +522,7 @@ class Command(BaseCommand):
                     start_date = date.today() - timedelta(days=random.randint(30, 180))
                     end_date = start_date + timedelta(days=random.randint(90, 365))
                     
-                    # Create NGO-themed workspace names
+                    # Create NGO-themed workspace names with more variety
                     project_types = [
                         "Education Program",
                         "Healthcare Initiative", 
@@ -481,10 +538,39 @@ class Command(BaseCommand):
                         "Human Rights Advocacy",
                         "Refugee Support",
                         "Rural Development",
-                        "Urban Renewal"
+                        "Urban Renewal",
+                        "Child Protection",
+                        "Elderly Care",
+                        "Disability Support",
+                        "Mental Health",
+                        "Nutrition Program",
+                        "Hygiene Education",
+                        "Skills Training",
+                        "Job Creation",
+                        "Market Access",
+                        "Technology Transfer",
+                        "Climate Adaptation",
+                        "Biodiversity Conservation",
+                        "Sustainable Agriculture",
+                        "Forest Management",
+                        "Marine Protection",
+                        "Waste Management",
+                        "Transportation",
+                        "Housing Support",
+                        "Legal Aid",
+                        "Gender Equality",
+                        "Peace Building",
+                        "Conflict Resolution"
                     ]
                     
-                    project_name = f"{random.choice(project_types)} {i+1}"
+                    # Use faker to generate more unique project names
+                    project_name = f"{faker.word().title()} {random.choice(project_types)}"
+                    # Ensure unique project name by checking if it exists
+                    counter = 1
+                    original_name = project_name
+                    while Workspace.objects.filter(organization=org, title=project_name).exists():
+                        project_name = f"{original_name} {counter}"
+                        counter += 1
                     workspace = Workspace.objects.create(
                         organization=org,
                         workspace_admin=workspace_admin,

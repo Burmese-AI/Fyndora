@@ -21,6 +21,7 @@ uv run manage.py seed_data #
 uv run manage.py seed_data --clear-existing
 
 # Customize data amounts
+# too much data will cause the command to take a long time to run
 uv run manage.py seed_data --organizations 5 --workspaces-per-org 10 --teams-per-org 15 --users-per-org 20 --entries-per-workspace 30
 ```
 
@@ -34,6 +35,21 @@ uv run manage.py seed_data --organizations 5 --workspaces-per-org 10 --teams-per
 | `--users-per-org` | int | 10 | Users per organization |
 | `--entries-per-workspace` | int | 10 | Entries per workspace |
 | `--clear-existing` | flag | False | Clear all existing data before seeding |
+
+## 📊 Default Data Counts
+
+When using default settings, the command creates:
+
+| Data Type | Count | Calculation |
+|-----------|-------|-------------|
+| **Organizations** | 3 | Default value |
+| **Workspaces** | 6 | 3 orgs × 2 per org |
+| **Teams** | 9 | 3 orgs × 3 per org |
+| **Users** | 30 | 3 orgs × 10 per org |
+| **Entries** | 60 | 6 workspaces × 10 per workspace |
+| **Workspace Teams** | 6-18 | Random: 1-3 teams per workspace |
+| **Currencies** | 8 | Hardcoded currency list |
+| **Exchange Rates** | 51 | (3 orgs × 3 currencies × 3 dates) + (6 workspaces × 2 currencies × 2 dates) |
 
 ## 🔒 Safety Features
 
@@ -58,7 +74,7 @@ Type 'yes' to confirm: yes
 ### Organizations
 - **Naming**: NGO-themed names (e.g., "Azure Foundation", "Crimson Initiative")
 - **Uniqueness**: Automatic conflict resolution for duplicate names
-- **Users**: 10+ users per organization by default
+- **Users**: 10 users per organization by default
 - **Roles**: Organization owner with full permissions
 
 ### Workspaces
@@ -91,6 +107,11 @@ Type 'yes' to confirm: yes
 - **Workspace**: 2 currencies × 2 dates per workspace
 - **Rates**: Random rates (80-120% of base)
 - **Approval**: Some workspace rates require approval
+
+### Workspace Teams
+- **Assignment**: Random assignment of 1-3 teams per workspace
+- **Variability**: Not every workspace gets all teams (more realistic)
+- **Custom Rates**: Sometimes custom remittance rates are applied
 
 ## 🎯 Use Cases
 

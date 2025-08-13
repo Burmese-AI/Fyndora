@@ -20,6 +20,15 @@ from apps.accounts.constants import StatusChoices as UserStatusChoices
 from apps.organizations.constants import StatusChoices as OrgStatusChoices
 from apps.workspaces.constants import StatusChoices as WorkspaceStatusChoices
 
+# Import Django and guardian modules for permission assignment
+from django.contrib.auth.models import Group
+from guardian.shortcuts import assign_perm
+from apps.core.roles import get_permissions_for_role
+
+# Import permission assignment functions
+from apps.workspaces.permissions import assign_workspace_permissions
+from apps.teams.permissions import assign_team_permissions
+
 User = get_user_model()
 
 
@@ -202,20 +211,20 @@ class Command(BaseCommand):
             organizations = []
             
             for i in range(count):
+                # Create owner user first
+                owner_user = CustomUser.objects.create_user(
+                    username=f"owner_{i}_{faker.user_name()}",
+                    email=f"owner_{i}@{faker.domain_name()}",
+                    password="password123",
+                    status=UserStatusChoices.ACTIVE
+                )
+                
                 # Create organization
                 org = Organization.objects.create(
                     title=f"{faker.company()} {faker.company_suffix()}",
                     description=faker.text(max_nb_chars=200),
                     expense=Decimal('0.00'),
                     status=OrgStatusChoices.ACTIVE
-                )
-                
-                # Create owner user
-                owner_user = CustomUser.objects.create_user(
-                    username=f"owner_{i}_{faker.user_name()}",
-                    email=f"owner_{i}@{faker.domain_name()}",
-                    password="password123",
-                    status=UserStatusChoices.ACTIVE
                 )
                 
                 # Create organization member for owner
@@ -228,6 +237,30 @@ class Command(BaseCommand):
                 # Set owner
                 org.owner = owner_member
                 org.save()
+                
+                # Manually assign organization permissions (similar to create_organization_with_owner)
+                try:
+                    # Create org owner group
+                    org_owner_group, _ = Group.objects.get_or_create(
+                        name=f"Org Owner - {org.organization_id}"
+                    )
+                    
+                    # Get permissions for org owner role
+                    org_owner_permissions = get_permissions_for_role("ORG_OWNER")
+                    
+                    # Assign permissions to the org owner group
+                    for perm in org_owner_permissions:
+                        if "workspace_currency" not in perm:
+                            assign_perm(perm, org_owner_group, org)
+                    
+                    # Assign the org owner group to the user
+                    org_owner_group.user_set.add(owner_user)
+                    
+                    self.stdout.write(f"    - Assigned organization permissions for {org.title}")
+                except Exception as e:
+                    self.stdout.write(
+                        self.style.WARNING(f"    - Warning: Could not assign organization permissions: {str(e)}")
+                    )
                 
                 # Create additional members
                 for j in range(users_per_org - 1):
@@ -295,6 +328,15 @@ class Command(BaseCommand):
                     
                     teams.append(team)
                     self.stdout.write(f"  - Created team: {team.title} in {org.title}")
+                    
+                    # Assign team permissions
+                    try:
+                        assign_team_permissions(team)
+                        self.stdout.write(f"    - Assigned team permissions for {team.title}")
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f"    - Warning: Could not assign team permissions: {str(e)}")
+                        )
             
             return teams
             
@@ -342,6 +384,15 @@ class Command(BaseCommand):
                     
                     workspaces.append(workspace)
                     self.stdout.write(f"  - Created workspace: {workspace.title} in {org.title}")
+                    
+                    # Assign workspace permissions
+                    try:
+                        assign_workspace_permissions(workspace, request_user=org.owner.user)
+                        self.stdout.write(f"    - Assigned workspace permissions for {workspace.title}")
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f"    - Warning: Could not assign workspace permissions: {str(e)}")
+                        )
             
             return workspaces
             

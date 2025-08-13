@@ -42,7 +42,7 @@ class Command(BaseCommand):
     - Workspace Admin: 1 user per workspace (workspace management)
     - Operations Reviewer: 1 user per workspace (review/export permissions)
     - Team Coordinator: 1 user per team (team management)
-    - Regular Submitters: Remaining users (entry submission, basic access)
+    - Regular Members: Remaining users (entry submission, basic access)
     
     This ensures no single user has conflicting roles and proper separation of duties.
     """
@@ -169,16 +169,16 @@ class Command(BaseCommand):
                     self.stdout.write(f"   👥 Team: {team.title}")
                     self.stdout.write(f"      🎯 Coordinator: {team.team_coordinator.user.username}")
                 
-                # Show regular submitters
-                regular_submitters = [m for m in org.members.all() if m != org.owner and 
-                                     m not in [ws.workspace_admin for ws in org_workspaces] and
-                                     m not in [ws.operations_reviewer for ws in org_workspaces] and
-                                     m not in [t.team_coordinator for t in org_teams]]
+                # Show regular members
+                regular_members = [m for m in org.members.all() if m != org.owner and 
+                                 m not in [ws.workspace_admin for ws in org_workspaces] and
+                                 m not in [ws.operations_reviewer for ws in org_workspaces] and
+                                 m not in [t.team_coordinator for t in org_teams]]
                 
-                if regular_submitters:
-                    self.stdout.write(f"   👤 Regular Submitters: {', '.join([m.user.username for m in regular_submitters[:5]])}")
-                    if len(regular_submitters) > 5:
-                        self.stdout.write(f"      ... and {len(regular_submitters) - 5} more")
+                if regular_members:
+                    self.stdout.write(f"   👤 Regular Members: {', '.join([m.user.username for m in regular_members[:5]])}")
+                    if len(regular_members) > 5:
+                        self.stdout.write(f"      ... and {len(regular_members) - 5} more")
             
             self.stdout.write("\n" + "="*60)
             self.stdout.write(
@@ -407,18 +407,18 @@ class Command(BaseCommand):
                         self.style.WARNING(f"    - Warning: Could not assign organization permissions: {str(e)}")
                     )
                 
-                # Create additional submitters
+                # Create additional members
                 for j in range(users_per_org - 1):
-                    submitter_user = CustomUser.objects.create_user(
-                        username=f"submitter_{i}_{j}_{faker.user_name()}",
-                        email=f"submitter_{i}_{j}@{faker.domain_name()}",
+                    member_user = CustomUser.objects.create_user(
+                        username=f"member_{i}_{j}_{faker.user_name()}",
+                        email=f"member_{i}_{j}@{faker.domain_name()}",
                         password="password123",
                         status=UserStatusChoices.ACTIVE
                     )
                     
                     OrganizationMember.objects.create(
                         organization=org,
-                        user=submitter_user,
+                        user=member_user,
                         is_active=True
                     )
                 
@@ -450,6 +450,8 @@ class Command(BaseCommand):
                     # Try to avoid members that might be used in other roles
                     # For now, just pick from available members
                     coordinator = random.choice(available_members) if available_members else org.owner
+                    
+                    # Note: Team coordinators get TEAM_COORDINATOR role, not SUBMITTER role
                     
                     # Create NGO-themed team names with more variety
                     team_types = [
@@ -501,16 +503,20 @@ class Command(BaseCommand):
                         created_by=org.owner
                     )
                     
-                    # Create team member for coordinator
+                    # Create team member for coordinator with proper role
                     TeamMember.objects.create(
                         team=team,
                         organization_member=coordinator,
-                        role=TeamMemberRole.SUBMITTER  # Using SUBMITTER since TEAM_COORDINATOR constant is commented out
+                        role=TeamMemberRole.TEAM_COORDINATOR
                     )
                     
                     # Add other members to team (avoiding coordinators from other teams)
                     other_team_coordinators = [t.team_coordinator for t in teams]
-                    available_team_members = [m for m in org_members[:5] if m != coordinator and m not in other_team_coordinators]
+                    # Filter out current coordinator and other team coordinators
+                    available_team_members = [
+                        m for m in org_members[:5] 
+                        if m != coordinator and m not in other_team_coordinators
+                    ]
                     
                     for member in available_team_members:
                         TeamMember.objects.create(
@@ -733,10 +739,10 @@ class Command(BaseCommand):
                         # Team member submitter
                         team_members = list(workspace_team.team.members.all())
                         if team_members:
-                            # Prefer regular team submitters over coordinators
-                            regular_submitters = [tm for tm in team_members if tm != workspace_team.team.team_coordinator]
-                            if regular_submitters:
-                                submitter = random.choice(regular_submitters)
+                            # Prefer regular team members over coordinators
+                            regular_members = [tm for tm in team_members if tm != workspace_team.team.team_coordinator]
+                            if regular_members:
+                                submitter = random.choice(regular_members)
                             else:
                                 submitter = random.choice(team_members)
                             

@@ -75,8 +75,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--entries-per-workspace',
             type=int,
-            default=10,
-            help='Number of entries per workspace (default: 10)'
+            default=100,
+            help='Number of entries per workspace (default: 100)'
         )
         parser.add_argument(
             '--clear-existing',

@@ -87,7 +87,22 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             if options['clear_existing']:
-                self.stdout.write("Clearing existing data...")
+                self.stdout.write(
+                    self.style.WARNING(
+                        "⚠️  WARNING: This will DELETE ALL existing data from the database!\n"
+                        "This action cannot be undone. Are you sure you want to continue?"
+                    )
+                )
+                
+                # Ask for confirmation
+                confirm = input("Type 'yes' to confirm: ")
+                if confirm.lower() != 'yes':
+                    self.stdout.write(
+                        self.style.ERROR("❌ Database clearing cancelled by user.")
+                    )
+                    return
+                
+                self.stdout.write("🗑️  Clearing existing data...")
                 self.clear_existing_data()
 
             self.stdout.write("Starting data seeding process...")
@@ -187,44 +202,71 @@ class Command(BaseCommand):
     def clear_existing_data(self):
         """Clear existing data in the correct order to respect foreign key constraints."""
         try:
-            # Clear entries first
-            Entry.objects.all().delete()
-            self.stdout.write("  - Cleared entries")
+            self.stdout.write("  🗑️  Clearing database...")
             
-            # Clear workspace teams
-            WorkspaceTeam.objects.all().delete()
-            self.stdout.write("  - Cleared workspace teams")
+            # Import signals to disable them temporarily
+            from django.db.models.signals import post_delete
+            from apps.entries.signals import revert_remittance_on_entry_delete
             
-            # Clear workspaces
-            Workspace.objects.all().delete()
-            self.stdout.write("  - Cleared workspaces")
+            # Temporarily disconnect the problematic signal
+            post_delete.disconnect(revert_remittance_on_entry_delete, sender=Entry)
             
-            # Clear teams and team members
-            TeamMember.objects.all().delete()
-            Team.objects.all().delete()
-            self.stdout.write("  - Cleared teams and team members")
-            
-            # Clear organization members
-            OrganizationMember.objects.all().delete()
-            self.stdout.write("  - Cleared organization members")
-            
-            # Clear organizations
-            Organization.objects.all().delete()
-            self.stdout.write("  - Cleared organizations")
-            
-            # Clear users (but keep superuser)
-            CustomUser.objects.filter(is_superuser=False).delete()
-            self.stdout.write("  - Cleared regular users")
-            
-            # Clear exchange rates
-            OrganizationExchangeRate.objects.all().delete()
-            WorkspaceExchangeRate.objects.all().delete()
-            self.stdout.write("  - Cleared exchange rates")
+            try:
+                # Clear entries first (most dependent)
+                entries_count = Entry.objects.count()
+                Entry.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {entries_count} entries")
+                
+                # Clear workspace teams
+                ws_teams_count = WorkspaceTeam.objects.count()
+                WorkspaceTeam.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {ws_teams_count} workspace teams")
+                
+                # Clear workspaces
+                workspaces_count = Workspace.objects.count()
+                Workspace.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {workspaces_count} workspaces")
+                
+                # Clear teams and team members
+                team_members_count = TeamMember.objects.count()
+                teams_count = Team.objects.count()
+                TeamMember.objects.all().delete()
+                Team.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {team_members_count} team members and {teams_count} teams")
+                
+                # Clear organization members
+                org_members_count = OrganizationMember.objects.count()
+                OrganizationMember.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {org_members_count} organization members")
+                
+                # Clear organizations
+                orgs_count = Organization.objects.count()
+                Organization.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {orgs_count} organizations")
+                
+                # Clear users (but keep superuser)
+                users_count = CustomUser.objects.filter(is_superuser=False).count()
+                CustomUser.objects.filter(is_superuser=False).delete()
+                self.stdout.write(f"    ✅ Cleared {users_count} regular users")
+                
+                # Clear exchange rates
+                org_rates_count = OrganizationExchangeRate.objects.count()
+                ws_rates_count = WorkspaceExchangeRate.objects.count()
+                OrganizationExchangeRate.objects.all().delete()
+                WorkspaceExchangeRate.objects.all().delete()
+                self.stdout.write(f"    ✅ Cleared {org_rates_count} organization and {ws_rates_count} workspace exchange rates")
+                
+                self.stdout.write("  🎉 Database cleared successfully!")
+                
+            finally:
+                # Reconnect the signal
+                post_delete.connect(revert_remittance_on_entry_delete, sender=Entry)
             
         except Exception as e:
             self.stdout.write(
-                self.style.WARNING(f"Warning: Could not clear all data: {str(e)}")
+                self.style.ERROR(f"❌ Error clearing database: {str(e)}")
             )
+            raise
 
     def create_currencies(self):
         """Create common currencies."""

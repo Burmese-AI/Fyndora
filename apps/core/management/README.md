@@ -13,11 +13,11 @@ Populates your database with realistic test data for development, testing, and d
 ### Basic Usage
 ```bash
 # Seed with default settings (keeps existing data)
-# Default: 3 orgs, 6 workspaces, 9 teams, 30 users, 60 entries
+# Default: 3 orgs, 6 workspaces, 9 teams, 60 users, 600 entries
 uv run manage.py seed_data #
 
 # Clear existing data and seed fresh
-# Default: 3 orgs, 6 workspaces, 9 teams, 30 users, 60 entries
+# Default: 3 orgs, 6 workspaces, 9 teams, 60 users, 600 entries
 uv run manage.py seed_data --clear-existing
 
 # Customize data amounts
@@ -25,7 +25,7 @@ uv run manage.py seed_data --clear-existing
 uv run manage.py seed_data --organizations 5 --workspaces-per-org 10 --teams-per-org 15 --users-per-org 20 --entries-per-workspace 30
 ```
 
-## ⚙️ Command Options
+## ⚙️ Command Optionsi
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -225,7 +225,7 @@ uv run manage.py seed_data --clear-existing \
   --workspaces-per-org 2 \
   --teams-per-org 3 \
   --users-per-org 10 \
-  --entries-per-workspace 20
+  --entries-per-workspace 100
 ```
 
 ### Add More Test Data

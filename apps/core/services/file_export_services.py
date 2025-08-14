@@ -6,6 +6,7 @@ from django.http import HttpResponse
 
 from .base_services import BaseFileExporter
 
+
 class CsvExporter(BaseFileExporter):
     def export(self):
         filename = f"{self.filename_prefix}-{datetime.now().date()}.csv"
@@ -18,6 +19,7 @@ class CsvExporter(BaseFileExporter):
             writer.writerow([row.get(key, "") for key, _ in self.columns])
 
         return response
+
 
 class PdfExporter(BaseFileExporter):
     def export(self):
@@ -34,7 +36,7 @@ class PdfExporter(BaseFileExporter):
         col_widths = []
         for key, header in self.columns:
             # start with header width
-            max_width = pdf.get_string_width(str(header)) + 6  
+            max_width = pdf.get_string_width(str(header)) + 6
             for row in self.data:
                 text_width = pdf.get_string_width(str(row.get(key, ""))) + 6
                 if text_width > max_width:

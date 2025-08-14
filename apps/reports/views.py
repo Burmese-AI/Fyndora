@@ -1,26 +1,20 @@
 from typing import Any
-import csv
-from datetime import datetime
 from django.shortcuts import render
-from django.http import HttpResponse
 from django.views.generic import TemplateView
 from apps.core.views.mixins import (
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
 )
 from decimal import Decimal
-from apps.core.utils import round_decimal
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.models import Organization
 from apps.entries.constants import EntryType, EntryStatus
-from apps.core.services.file_export_services import (
-    CsvExporter,
-    PdfExporter
-)
+from apps.core.services.file_export_services import CsvExporter, PdfExporter
 from pprint import pprint
 from apps.entries.selectors import get_total_amount_of_entries
 from .services import export_overview_finance_report
+
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -30,18 +24,18 @@ class OverviewFinanceReportView(
 ):
     template_name = "reports/overview_finance_report_index.html"
     content_template_name = "reports/partials/overview_balance_sheet.html"
-    
+
     def _get_workspace_team_context(self, workspace_team: WorkspaceTeam):
         team_income = get_total_amount_of_entries(
-            entry_type=EntryType.INCOME, 
-            entry_status=EntryStatus.APPROVED, 
-            workspace_team=workspace_team
+            entry_type=EntryType.INCOME,
+            entry_status=EntryStatus.APPROVED,
+            workspace_team=workspace_team,
         )
-        
+
         team_expense = get_total_amount_of_entries(
-            entry_type=EntryType.DISBURSEMENT, 
-            entry_status=EntryStatus.APPROVED, 
-            workspace_team=workspace_team
+            entry_type=EntryType.DISBURSEMENT,
+            entry_status=EntryStatus.APPROVED,
+            workspace_team=workspace_team,
         )
 
         net_income = team_income - team_expense
@@ -55,7 +49,7 @@ class OverviewFinanceReportView(
             "remittance_rate": workspace_team.custom_remittance_rate,
             "org_share": round(due_amount, 2),
         }
-      
+
     def _get_workspace_context(self, workspace: Workspace):
         children_qs = workspace.workspace_teams.select_related("team").all()
         context_children = []
@@ -74,7 +68,7 @@ class OverviewFinanceReportView(
         workspace_expenses = get_total_amount_of_entries(
             entry_type=EntryType.WORKSPACE_EXP,
             entry_status=EntryStatus.APPROVED,
-            workspace=workspace
+            workspace=workspace,
         )
 
         return {
@@ -85,9 +79,9 @@ class OverviewFinanceReportView(
             "org_share": round(total_org_share, 2),
             "parent_lvl_total_expense": round(workspace_expenses, 2),
             "final_net_profit": round(total_org_share - workspace_expenses, 2),
-            "context_children": context_children
+            "context_children": context_children,
         }
-      
+
     def _get_organization_context(self, org: Organization):
         children_qs = self.organization.workspaces.all()
         context_children = []
@@ -101,7 +95,7 @@ class OverviewFinanceReportView(
             total_income += ws_context["total_income"]
             total_expense += ws_context["total_expense"]
             total_org_share += ws_context["final_net_profit"]
-            #Turn this parent context format into child context format
+            # Turn this parent context format into child context format
             ws_context = {
                 "title": ws_context["title"],
                 "total_income": ws_context["total_income"],
@@ -111,9 +105,7 @@ class OverviewFinanceReportView(
                 "org_share": ws_context["final_net_profit"],
             }
         org_expenses = get_total_amount_of_entries(
-            entry_type=EntryType.ORG_EXP,
-            entry_status=EntryStatus.APPROVED,
-            org=org
+            entry_type=EntryType.ORG_EXP, entry_status=EntryStatus.APPROVED, org=org
         )
         return {
             "title": org.title,
@@ -123,9 +115,9 @@ class OverviewFinanceReportView(
             "org_share": round(total_org_share, 2),
             "parent_lvl_total_expense": round(org_expenses, 2),
             "final_net_profit": round(total_org_share - org_expenses, 2),
-            "context_children": context_children
+            "context_children": context_children,
         }
-      
+
     def get_context_data(self, **kwargs) -> dict[str, any]:
         workspace_filter = self.request.GET.get("workspace") or None
 
@@ -139,7 +131,9 @@ class OverviewFinanceReportView(
         # workspace_filter exists, Workspace Lvl Report
         try:
             if workspace_filter:
-                workspace = Workspace.objects.get(pk=workspace_filter, organization=self.organization)
+                workspace = Workspace.objects.get(
+                    pk=workspace_filter, organization=self.organization
+                )
                 if not workspace:
                     raise ValueError("Invalid workspace selected.")
                 context_parent = self._get_workspace_context(workspace)
@@ -163,7 +157,9 @@ class OverviewFinanceReportView(
         return base_context
 
     def post(self, request, *args, **kwargs):
-        export_format = (request.POST.get("format") or request.GET.get("format", "csv")).lower()
+        export_format = (
+            request.POST.get("format") or request.GET.get("format", "csv")
+        ).lower()
         context = self.get_context_data(**kwargs)
 
         if export_format == "csv":
@@ -172,13 +168,13 @@ class OverviewFinanceReportView(
             return export_overview_finance_report(context, PdfExporter)
         else:
             raise Http404(f"Unsupported export format: {export_format}")
-    
+
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
         return super().render_to_response(context, **response_kwargs)
 
-     
+
 class RemittanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,

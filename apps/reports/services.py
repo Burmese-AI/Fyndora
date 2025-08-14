@@ -1,5 +1,6 @@
 from apps.core.services.base_services import BaseFileExporter
 
+
 def export_overview_finance_report(context, exporter_class: type[BaseFileExporter]):
     columns = [
         ("title", "Title"),

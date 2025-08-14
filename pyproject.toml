@@ -21,6 +21,7 @@ dependencies = [
     "celery[redis]>=5.5.3",
     "django-extensions>=4.1",
     "iso4217>=1.14.20250512",
+    "fpdf>=1.7.2",
 ]
 
 [dependency-groups]

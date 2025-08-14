@@ -21,6 +21,8 @@ from apps.teams.permissions import (
     assign_team_permissions,
     update_team_coordinator_group,
 )
+from apps.core.permissions import WorkspacePermissions
+from guardian.shortcuts import remove_perm,assign_perm
 
 from .models import Team, TeamMember
 from .constants import TeamMemberRole
@@ -365,7 +367,10 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                 organization_member=new_team_coordinator,
                 role="team_coordinator",
             )
-
+            joined_workspaces = WorkspaceTeam.objects.filter(team=team)
+            for workspace_team in joined_workspaces:
+                assign_perm(WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, new_team_coordinator.user, workspace_team.workspace)
+                print ("successfully assigned view workspace teams under workspace permission to new team coordinator")
             # Audit logging: Log new coordinator addition
             try:
                 BusinessAuditLogger.log_team_member_action(
@@ -389,6 +394,10 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                     organization_member=previous_team_coordinator,
                     role="team_coordinator",
                 )
+                joined_workspaces = WorkspaceTeam.objects.filter(team=team)
+                for workspace_team in joined_workspaces:
+                    remove_perm(WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, previous_team_coordinator.user, workspace_team.workspace)
+                    print ("successfully removed view workspace teams under workspace permission from previous team coordinator")
 
                 # Audit logging: Log previous coordinator removal
                 try:

@@ -311,12 +311,13 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                 f"Audit logging failed for team update: {audit_error}",
                 exc_info=True,
             )
-
+        #which means the team coordinator is not being changed.. MgMg still MgMg
         if previous_team_coordinator == new_team_coordinator:
+            #just return the team and do nothing
             return team
-
+        
+        #which means the team coordinator is being removed
         if new_team_coordinator is None:
-            print("new team coordinator is None")
             team.team_coordinator = None
             team.save()
             update_team_coordinator_group(team, previous_team_coordinator, None)
@@ -357,6 +358,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             team_member.delete()
             return team
 
+        #which means the team coordinator is changed with a new one
         if new_team_coordinator is not None:
             team_member = TeamMember.objects.create(
                 team=team,

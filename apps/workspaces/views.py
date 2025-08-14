@@ -376,7 +376,7 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         workspace_team.workspace_team_id
                     )
                     assign_workspace_team_permissions(
-                        workspace_team, request_user=request.user
+                        workspace_team, request_user=request.user,workspace=workspace,team=form.cleaned_data["team"]
                     )
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
@@ -459,9 +459,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            # unnecessary to remove permissions as the workspace team will be deleted
-            # remove_workspace_team_permissions(workspace_team, request_user=request.user)
-            remove_team_from_workspace(workspace_team)
+            remove_team_from_workspace(workspace_team,team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {

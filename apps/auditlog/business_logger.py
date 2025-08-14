@@ -753,7 +753,7 @@ class BusinessAuditLogger:
 
         # Add workspace-specific metadata if workspace exists
         if workspace:
-            metadata.update(
+            metadata.update(    
                 {
                     "workspace_id": str(workspace.workspace_id),
                     "workspace_title": workspace.title,

@@ -90,9 +90,6 @@ def get_workspaces_view(request, organization_id):
         #for owners, show all workspaces
         #for 
         workspaces = get_workspaces_with_team_counts(organization_id, request.user)
-        # print(f"Request User: {request.user}")
-        # print(f"Workspaces: {workspaces}")
-
         return render(
             request,
             "workspaces/index.html",
@@ -129,7 +126,7 @@ def create_workspace_view(request, organization_id):
                     messages.success(request, "Workspace created successfully.")
                     if request.headers.get("HX-Request"):
                         organization = get_organization_by_id(organization_id)
-                        workspaces = get_workspaces_with_team_counts(organization_id)
+                        workspaces = get_workspaces_with_team_counts(organization_id,request.user)
                         context = {
                             "workspaces": workspaces,
                             "organization": organization,
@@ -312,7 +309,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
             workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
-            workspaces = get_workspaces_with_team_counts(organization_id)
+            workspaces = get_workspaces_with_team_counts(organization_id,request.user)
             context = {
                 "workspaces": workspaces,
                 "organization": organization,

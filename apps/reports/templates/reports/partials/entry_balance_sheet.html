@@ -1,1 +1,70 @@
-<h1>Entry Balance Sheet</h1>
+<!-- Entry Balance Sheet Dashboard -->
+<div class="min-h-screen p-6">
+
+    <!-- Dashboard Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Entries Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Total Entries</h3>
+                <div class="w-6 h-6 text-gray-400">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 mb-2">
+                {{ total_entries|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">All submissions</p>
+        </div>
+
+        <!-- Approved Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Approved</h3>
+                <div class="w-6 h-6 text-green-500">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-green-600 mb-2">
+                {{ approved_entries|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">Successfully processed</p>
+        </div>
+
+        <!-- Pending Review Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Pending Review</h3>
+                <div class="w-6 h-6 text-orange-500">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-orange-600 mb-2">
+                {{ pending_entries|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">Awaiting approval</p>
+        </div>
+
+        <!-- Rejected Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Rejected</h3>
+                <div class="w-6 h-6 text-red-500">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-red-600 mb-2">
+                {{ rejected_entries|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">Requires revision</p>
+        </div>
+    </div>
+</div>

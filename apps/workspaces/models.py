@@ -77,14 +77,6 @@ class Workspace(baseModel):
                 WorkspacePermissions.ASSIGN_TEAMS.label,
             ),
             (
-                WorkspacePermissions.LOCK_WORKSPACE,
-                WorkspacePermissions.LOCK_WORKSPACE.label,
-            ),
-            (
-                WorkspacePermissions.VIEW_DASHBOARD,
-                WorkspacePermissions.VIEW_DASHBOARD.label,
-            ),
-            (
                 WorkspacePermissions.ADD_WORKSPACE_ENTRY,
                 WorkspacePermissions.ADD_WORKSPACE_ENTRY.label,
             ),
@@ -101,20 +93,8 @@ class Workspace(baseModel):
                 WorkspacePermissions.VIEW_WORKSPACE_ENTRY.label,
             ),
             (
-                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY,
-                WorkspacePermissions.REVIEW_WORKSPACE_ENTRY.label,
-            ),
-            (
-                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS,
-                WorkspacePermissions.UPLOAD_WORKSPACE_ATTACHMENTS.label,
-            ),
-            (
-                WorkspacePermissions.FLAG_WORKSPACE_ENTRY,
-                WorkspacePermissions.FLAG_WORKSPACE_ENTRY.label,
-            ),
-            (
-                WorkspacePermissions.EXPORT_WORKSPACE_REPORT,
-                WorkspacePermissions.EXPORT_WORKSPACE_REPORT.label,
+                WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE.label,
             ),
             (
                 WorkspacePermissions.ADD_WORKSPACE_CURRENCY,

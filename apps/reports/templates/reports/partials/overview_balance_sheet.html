@@ -1,3 +1,5 @@
+{% load humanize %}
+
 {% if not context_parent and not context_children %}
 <div class="hero bg-base-200 rounded-box">
   <div class="hero-content text-center py-12">
@@ -20,11 +22,37 @@
 {% else %}
 <section class="card shadow-lg bg-base-100 p-4">
   <!-- Report Title -->
-  <div class="mb-4">
-    <span class="text-lg font-semibold">
-      {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
-    </span>
-    <span class="font-medium">{{ context_parent.title }}</span>
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <span class="text-lg font-semibold">
+        {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
+      </span>
+      <span class="font-medium">{{ context_parent.title }}</span>
+    </div>
+
+    <!-- change popover-1 and --anchor-1 names if you have multiple dropdowns -->
+    <button class="btn btn-neutral btn-sm" popovertarget="popover-1" style="anchor-name:--anchor-1">
+      Export
+    </button>
+
+    <ul class="dropdown dropdown-end menu w-52 rounded-box bg-neutral shadow-sm"
+        popover id="popover-1" style="position-anchor:--anchor-1">
+      <li>
+        <form method="post" action="{% url 'overview_finance_report' organization.pk %}?{{ request.GET.urlencode }}">
+          {% csrf_token %}
+          <input type="hidden" name="format" value="csv">
+          <button type="submit" class="w-full text-left text-sm tracking-wider text-neutral-content">Export as CSV</button>
+        </form>
+      </li>
+      <li>
+        <form method="post" action="{% url 'overview_finance_report' organization.pk %}?{{ request.GET.urlencode }}">
+          {% csrf_token %}
+          <input type="hidden" name="format" value="pdf">
+          <button type="submit" class="w-full text-left text-sm tracking-wider text-neutral-content">Export as PDF</button>
+        </form>
+      </li>
+    </ul>
+
   </div>
 
   <div class="overflow-x-auto">
@@ -45,9 +73,9 @@
         {% for child in context_children %}
         <tr class="hover">
           <td class="font-medium">{{ child.title }}</td>
-          <td class="text-right">{{ child.total_income|floatformat:2 }}</td>
-          <td class="text-right">{{ child.total_expense|floatformat:2 }}</td>
-          <td class="text-right">{{ child.net_income|floatformat:2 }}</td>
+          <td class="text-right">{{ child.total_income|floatformat:2|intcomma }}</td>
+          <td class="text-right">{{ child.total_expense|floatformat:2|intcomma }}</td>
+          <td class="text-right">{{ child.net_income|floatformat:2|intcomma }}</td>
           <td class="text-right">
             <div class="flex flex-col items-end leading-tight">
               {% if child.remittance_rate %}
@@ -56,10 +84,10 @@
                 </span>
               {% elif child.parent_lvl_total_expense %}
                 <span class="text-red-600 text-xs font-semibold">
-                  Expense: -{{ child.parent_lvl_total_expense|floatformat:2 }}
+                  Expense: -{{ child.parent_lvl_total_expense|floatformat:2|intcomma }}
                 </span>
               {% endif %}
-              <span class="font-medium">{{ child.org_share|floatformat:2 }}</span>
+              <span class="font-medium">{{ child.org_share|floatformat:2|intcomma }}</span>
             </div>
           </td>
         </tr>
@@ -76,24 +104,22 @@
         <!-- Totals -->
         <tr class="bg-neutral text-neutral-content font-semibold">
           <td class="text-left">Total</td>
-          <td class="text-right">{{ context_parent.total_income|floatformat:2 }}</td>
-          <td class="text-right">{{ context_parent.total_expense|floatformat:2 }}</td>
-          <td class="text-right">{{ context_parent.net_income|floatformat:2 }}</td>
-          <td class="text-right">{{ context_parent.org_share|floatformat:2 }}</td>
+          <td class="text-right">{{ context_parent.total_income|floatformat:2|intcomma }}</td>
+          <td class="text-right">{{ context_parent.total_expense|floatformat:2|intcomma }}</td>
+          <td class="text-right">{{ context_parent.net_income|floatformat:2|intcomma }}</td>
+          <td class="text-right">{{ context_parent.org_share|floatformat:2|intcomma }}</td>
         </tr>
 
         <!-- Parent Expenses + Final Profit -->
         <tr class="font-semibold">
           <td class="text-left">{{ context_parent.parent_expense_label }}</td>
-          <td class="text-right">{{ context_parent.parent_lvl_total_expense|floatformat:2 }}</td>
+          <td class="text-right">{{ context_parent.parent_lvl_total_expense|floatformat:2|intcomma }}</td>
           <td class="text-right">&nbsp;</td>
-          <td class="text-right bg-neutral text-neutral-content ">Final Net Profit</td>
-          <td class="text-right bg-neutral text-neutral-content ">{{ context_parent.final_net_profit|floatformat:2 }}</td>
+          <td class="text-right bg-neutral text-neutral-content">Final Net Profit</td>
+          <td class="text-right bg-neutral text-neutral-content">{{ context_parent.final_net_profit|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
     </table>
   </div>
 </section>
 {% endif %}
-
-

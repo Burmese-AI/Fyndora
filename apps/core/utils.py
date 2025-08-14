@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django_htmx.http import HttpResponseClientRedirect
 from apps.core.permissions import OrganizationPermissions
+from decimal import Decimal, ROUND_HALF_UP
 
 
 def percent_change(current: float, previous: float) -> str:
@@ -12,6 +13,10 @@ def percent_change(current: float, previous: float) -> str:
     change = ((current - previous) / previous) * 100
     symbol = "+" if change >= 0 else "-"
     return f"{symbol}{abs(change):.1f}% from last period"
+
+
+def round_decimal(value, places=2):
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 def get_paginated_context(

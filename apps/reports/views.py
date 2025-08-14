@@ -9,13 +9,14 @@ from apps.core.views.mixins import (
     HtmxInvalidResponseMixin,
     OrganizationRequiredMixin,
 )
-from apps.entries.constants import EntryStatus, EntryType
-from apps.entries.selectors import get_total_amount_of_entries
-from apps.organizations.models import Organization
-from apps.reports.selectors import EntrySelectors, RemittanceSelectors
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.workspaces.models import Workspace, WorkspaceTeam
-
+from apps.organizations.models import Organization
+from apps.entries.constants import EntryType, EntryStatus
+from apps.entries.selectors import get_total_amount_of_entries
+from apps.core.services.file_export_services import CsvExporter, PdfExporter
+from .services import export_overview_finance_report
+from apps.reports.selectors import EntrySelectors, RemittanceSelectors
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -44,11 +45,11 @@ class OverviewFinanceReportView(
 
         return {
             "title": workspace_team.team.title,
-            "total_income": team_income,
-            "total_expense": team_expense,
-            "net_income": net_income,
+            "total_income": round(team_income, 2),
+            "total_expense": round(team_expense, 2),
+            "net_income": round(net_income, 2),
             "remittance_rate": workspace_team.custom_remittance_rate,
-            "org_share": due_amount,
+            "org_share": round(due_amount, 2),
         }
 
     def _get_workspace_context(self, workspace: Workspace):
@@ -74,12 +75,12 @@ class OverviewFinanceReportView(
 
         return {
             "title": workspace.title,
-            "total_income": total_income,
-            "total_expense": total_expense,
-            "net_income": total_income - total_expense,
-            "org_share": total_org_share,
-            "parent_lvl_total_expense": workspace_expenses,
-            "final_net_profit": total_org_share - workspace_expenses,
+            "total_income": round(total_income, 2),
+            "total_expense": round(total_expense, 2),
+            "net_income": round(total_income - total_expense, 2),
+            "org_share": round(total_org_share, 2),
+            "parent_lvl_total_expense": round(workspace_expenses, 2),
+            "final_net_profit": round(total_org_share - workspace_expenses, 2),
             "context_children": context_children,
         }
 
@@ -110,12 +111,12 @@ class OverviewFinanceReportView(
         )
         return {
             "title": org.title,
-            "total_income": total_income,
-            "total_expense": total_expense,
-            "net_income": total_income - total_expense,
-            "org_share": total_org_share,
-            "parent_lvl_total_expense": org_expenses,
-            "final_net_profit": total_org_share - org_expenses,
+            "total_income": round(total_income, 2),
+            "total_expense": round(total_expense, 2),
+            "net_income": round(total_income - total_expense, 2),
+            "org_share": round(total_org_share, 2),
+            "parent_lvl_total_expense": round(org_expenses, 2),
+            "final_net_profit": round(total_org_share - org_expenses, 2),
             "context_children": context_children,
         }
 
@@ -138,11 +139,13 @@ class OverviewFinanceReportView(
                 if not workspace:
                     raise ValueError("Invalid workspace selected.")
                 context_parent = self._get_workspace_context(workspace)
+                print(f">>> ws context_parent {context_parent}")
                 context_children = context_parent.pop("context_children")
                 context_parent["parent_expense_label"] = "Workspace Expenses"
 
             else:
                 context_parent = self._get_organization_context(self.organization)
+                print(f">>> org context_parent {context_parent}")
                 context_children = context_parent.pop("context_children")
                 context_parent["parent_expense_label"] = "Org Expenses"
         except Exception as e:
@@ -154,6 +157,20 @@ class OverviewFinanceReportView(
         pprint(base_context)
         print("=" * 100)
         return base_context
+
+    def post(self, request, *args, **kwargs):
+        export_format = (
+            request.POST.get("format") or request.GET.get("format", "csv")
+        ).lower()
+        context = self.get_context_data(**kwargs)
+
+        if export_format == "csv":
+            return export_overview_finance_report(context, CsvExporter)
+        elif export_format == "pdf":
+            return export_overview_finance_report(context, PdfExporter)
+        else:
+            raise Http404(f"Unsupported export format: {export_format}")
+
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:

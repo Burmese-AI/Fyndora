@@ -55,6 +55,14 @@ case "$1" in
 "createsuperuser")
     docker compose exec web python manage.py createsuperuser
     ;;
+"seed_data")
+    echo "Seeding database with test data..."
+    if [ "$2" = "--clear-existing" ]; then
+        docker compose exec web python manage.py seed_data --clear-existing
+    else
+        docker compose exec web python manage.py seed_data
+    fi
+    ;;
 "generate-secret")
     echo "Generating Django secret key..."
     python3 -c "
@@ -66,7 +74,7 @@ print(secret)
 "
     ;;
 *)
-    echo "Usage: $0 {up|down|logs|shell|migrate|makemigrations|collectstatic|createsuperuser|generate-secret}"
+    echo "Usage: $0 {up|down|logs|shell|migrate|makemigrations|collectstatic|createsuperuser|seed|seed-clear|generate-secret}"
     echo ""
     echo "Commands:"
     echo "  up              - Start development environment"
@@ -77,6 +85,7 @@ print(secret)
     echo "  makemigrations  - Create new migrations"
     echo "  collectstatic   - Collect static files"
     echo "  createsuperuser - Create Django superuser"
+    echo "  seed_data       - Seed database with test data (keeps existing data)"
     echo "  generate-secret - Generate Django secret key"
     exit 1
     ;;

@@ -340,7 +340,8 @@ def assign_workspace_team_permissions(workspace_team, request_user=None):
                     workspace_id=str(workspace_team.workspace.workspace_id),
                     workspace_title=workspace_team.workspace.title,
                     team_id=str(workspace_team.team.team_id),
-                    team_name=workspace_team.team.name,
+                    # I fixed name to title .. as the name is not database field (Note for Ko AHP)
+                    team_name=workspace_team.team.title,
                     workspace_team_id=str(workspace_team.workspace_team_id),
                     organization_id=str(
                         workspace_team.workspace.organization.organization_id

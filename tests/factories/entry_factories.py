@@ -1,20 +1,26 @@
-"""
-Factory Boy factories for Entry models.
-"""
+"""Factory Boy factories for Entry models."""
 
 import uuid
 from decimal import Decimal
+from datetime import date
 
 import factory
-from django.contrib.contenttypes.models import ContentType
 from factory.django import DjangoModelFactory
 
 from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
-from apps.teams.constants import TeamMemberRole
-from tests.factories.organization_factories import OrganizationMemberFactory
-from tests.factories.team_factories import TeamMemberFactory, TeamFactory
-from tests.factories.workspace_factories import WorkspaceFactory, WorkspaceTeamFactory
+from apps.currencies.models import Currency
+from tests.factories.organization_factories import (
+    OrganizationMemberFactory,
+    OrganizationFactory,
+    OrganizationExchangeRateFactory,
+)
+from tests.factories.team_factories import TeamMemberFactory
+from tests.factories.workspace_factories import (
+    WorkspaceFactory,
+    WorkspaceTeamFactory,
+    WorkspaceExchangeRateFactory,
+)
 
 
 class EntryFactory(DjangoModelFactory):
@@ -24,34 +30,68 @@ class EntryFactory(DjangoModelFactory):
         model = Entry
 
     entry_id = factory.LazyFunction(uuid.uuid4)
-    submitter = factory.SubFactory(TeamMemberFactory, role=TeamMemberRole.SUBMITTER)
-    submitter_content_type = factory.LazyAttribute(
-        lambda obj: ContentType.objects.get_for_model(obj.submitter)
-    )
-    submitter_object_id = factory.LazyAttribute(lambda obj: obj.submitter.pk)
     entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])
-    amount = factory.Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
     description = factory.Faker("sentence", nb_words=8)
-    status = EntryStatus.PENDING_REVIEW  # Default status
-    workspace = factory.LazyAttribute(lambda obj: WorkspaceFactory())
+    organization = factory.SubFactory(OrganizationFactory)
+    workspace = factory.SubFactory(WorkspaceFactory)
+    workspace_team = factory.SubFactory(WorkspaceTeamFactory)
+    amount = factory.Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
+    occurred_at = factory.LazyFunction(lambda: date.today())
+    currency = factory.LazyFunction(
+        lambda: Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    )
+    exchange_rate_used = Decimal("1.00")
+    org_exchange_rate_ref = factory.SubFactory(OrganizationExchangeRateFactory)
+    workspace_exchange_rate_ref = factory.SubFactory(WorkspaceExchangeRateFactory)
+    submitted_by_org_member = factory.SubFactory(OrganizationMemberFactory)
+    submitted_by_team_member = None
+    status = EntryStatus.PENDING
+    status_last_updated_at = None
+    last_status_modified_by = None
+    status_note = None
     is_flagged = False
 
-    @factory.lazy_attribute
-    def workspace_team(self):
-        """
-        Create workspace_team based on submitter type.
-        If submitter has a team attribute, use it; otherwise create a new team.
-        """
-        if hasattr(self.submitter, "team"):
-            team = self.submitter.team
-        else:
-            # Create a team if the submitter doesn't have one (e.g., CustomUser)
-            team = TeamFactory(organization=self.workspace.organization)
-
-        return WorkspaceTeamFactory(workspace=self.workspace, team=team)
-
-    reviewed_by = None
-    review_notes = None
+    @factory.post_generation
+    def setup_relationships(self, create, extracted, **kwargs):
+        """Ensure all relationships are consistent."""
+        if not create:
+            return
+        
+        # Ensure workspace belongs to the same organization
+        if self.workspace.organization != self.organization:
+            self.workspace.organization = self.organization
+            self.workspace.save()
+        
+        # Ensure workspace_team uses the same workspace
+        if self.workspace_team.workspace != self.workspace:
+            self.workspace_team.workspace = self.workspace
+            self.workspace_team.save()
+        
+        # Get or create exchange rate references to avoid duplicates
+        if self.org_exchange_rate_ref:
+            from apps.organizations.models import OrganizationExchangeRate
+            org_rate, created = OrganizationExchangeRate.objects.get_or_create(
+                organization=self.organization,
+                currency=self.currency,
+                effective_date=self.occurred_at,
+                defaults={'rate': self.org_exchange_rate_ref.rate}
+            )
+            self.org_exchange_rate_ref = org_rate
+        
+        if self.workspace_exchange_rate_ref:
+            from apps.workspaces.models import WorkspaceExchangeRate
+            workspace_rate, created = WorkspaceExchangeRate.objects.get_or_create(
+                workspace=self.workspace,
+                currency=self.currency,
+                effective_date=self.occurred_at,
+                defaults={'rate': self.workspace_exchange_rate_ref.rate}
+            )
+            self.workspace_exchange_rate_ref = workspace_rate
+        
+        # Ensure submitted_by_org_member belongs to the same organization
+        if self.submitted_by_org_member and self.submitted_by_org_member.organization != self.organization:
+            self.submitted_by_org_member.organization = self.organization
+            self.submitted_by_org_member.save()
 
 
 class IncomeEntryFactory(EntryFactory):
@@ -82,7 +122,7 @@ class RemittanceEntryFactory(EntryFactory):
 class PendingEntryFactory(EntryFactory):
     """Factory for creating pending review financial transactions."""
 
-    status = EntryStatus.PENDING_REVIEW
+    status = EntryStatus.PENDING
     description = factory.Sequence(
         lambda n: f"Financial transaction awaiting review {n}"
     )
@@ -93,28 +133,29 @@ class ApprovedEntryFactory(EntryFactory):
 
     status = EntryStatus.APPROVED
     description = factory.Sequence(lambda n: f"Approved financial transaction {n}")
-    reviewed_by = factory.SubFactory(
-        "tests.factories.organization_factories.OrganizationMemberFactory"
-    )
-    review_notes = "This entry has been approved."
+    last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
+    status_note = "This entry has been approved."
+    status_last_updated_at = factory.LazyFunction(lambda: date.today())
 
 
 class RejectedEntryFactory(EntryFactory):
     """Factory for creating rejected financial transactions."""
 
     status = EntryStatus.REJECTED
-    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
-    review_notes = factory.Faker("sentence", nb_words=10)
+    last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
+    status_note = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Rejected financial transaction {n}")
+    status_last_updated_at = factory.LazyFunction(lambda: date.today())
 
 
 class FlaggedEntryFactory(EntryFactory):
     """Factory for creating flagged financial transactions."""
 
     is_flagged = True
-    reviewed_by = factory.SubFactory(OrganizationMemberFactory)
-    review_notes = factory.Faker("sentence", nb_words=10)
+    last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
+    status_note = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Flagged financial transaction {n}")
+    status_last_updated_at = factory.LazyFunction(lambda: date.today())
 
 
 class LargeAmountEntryFactory(EntryFactory):
@@ -137,6 +178,30 @@ class SmallAmountEntryFactory(EntryFactory):
     description = factory.Sequence(lambda n: f"Small campaign expense {n}")
 
 
+class TeamSubmittedEntryFactory(EntryFactory):
+    """Factory for creating entries submitted by team members."""
+
+    submitted_by_org_member = None
+    submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
+    description = factory.Sequence(lambda n: f"Team submitted transaction {n}")
+
+    @factory.post_generation
+    def setup_team_relationships(self, create, extracted, **kwargs):
+        """Ensure team member belongs to the workspace team."""
+        if not create or not self.submitted_by_team_member:
+            return
+        
+        # Ensure the team member's team matches the workspace team
+        if self.workspace_team and self.submitted_by_team_member.team != self.workspace_team.team:
+            self.submitted_by_team_member.team = self.workspace_team.team
+            self.submitted_by_team_member.save()
+        
+        # Ensure the team member's organization matches the entry organization
+        if self.submitted_by_team_member.organization_member.organization != self.organization:
+            self.submitted_by_team_member.organization_member.organization = self.organization
+            self.submitted_by_team_member.organization_member.save()
+
+
 class EntryWithReviewFactory(EntryFactory):
     """Factory for creating financial transaction with review completed."""
 
@@ -155,7 +220,7 @@ class EntryWithReviewFactory(EntryFactory):
 
         if status == "flagged" or kwargs.get("is_flagged") is True:
             self.is_flagged = True
-            self.status = EntryStatus.PENDING_REVIEW
+            self.status = EntryStatus.PENDING
         else:
             self.is_flagged = False
             self.status = status
@@ -166,9 +231,10 @@ class EntryWithReviewFactory(EntryFactory):
             or self.is_flagged
         ):
             # Use OrganizationMember instead of TeamMember
-            self.reviewed_by = OrganizationMemberFactory()
+            self.last_status_modified_by = OrganizationMemberFactory()
+            self.status_last_updated_at = date.today()
             if self.is_flagged:
-                self.review_notes = "Financial transaction has been flagged for review."
+                self.status_note = "Financial transaction has been flagged for review."
             else:
-                self.review_notes = f"Financial transaction {self.status} after review."
+                self.status_note = f"Financial transaction {self.status} after review."
             self.save()

@@ -20,9 +20,8 @@ class OverviewFinanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
     WorkspaceFilteringMixin,
-    TemplateView
+    TemplateView,
 ):
-    
     template_name = "reports/overview_finance_report_index.html"
     content_template_name = "reports/partials/overview_balance_sheet.html"
     
@@ -155,6 +154,7 @@ class OverviewFinanceReportView(
         print("=" * 100)
         return base_context
 
+
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
@@ -164,7 +164,7 @@ class RemittanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
     WorkspaceFilteringMixin,
-    TemplateView
+    TemplateView,
 ):
     template_name = "reports/remittance_report_index.html"
     content_template_name = "reports/partials/remittance_balance_sheet.html"
@@ -173,17 +173,18 @@ class RemittanceReportView(
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "remittance"
         return base_context
-    
+
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
         return super().render_to_response(context, **response_kwargs)
 
+
 class EntryReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
     WorkspaceFilteringMixin,
-    TemplateView
+    TemplateView,
 ):
     template_name = "reports/entry_report_index.html"
     content_template_name = "reports/partials/entry_balance_sheet.html"
@@ -192,7 +193,7 @@ class EntryReportView(
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "entry"
         return base_context
-    
+
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)

@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import transaction
 from guardian.shortcuts import assign_perm
+from apps.workspaces.models import WorkspaceTeam
 
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.roles import get_permissions_for_role
@@ -22,6 +23,7 @@ from apps.teams.permissions import (
 )
 
 from .models import Team, TeamMember
+from .constants import TeamMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +39,9 @@ def create_team_from_form(form, organization, orgMember):
             TeamMember.objects.create(
                 team=team,
                 organization_member=team.team_coordinator,
-                role="team_coordinator",
+                role=TeamMemberRole.TEAM_COORDINATOR,
             )
+        print("team coordinator", team.team_coordinator)
 
         assign_team_permissions(team)
 
@@ -313,6 +316,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             return team
 
         if new_team_coordinator is None:
+            print("new team coordinator is None")
             team.team_coordinator = None
             team.save()
             update_team_coordinator_group(team, previous_team_coordinator, None)
@@ -321,7 +325,18 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                 organization_member=previous_team_coordinator,
                 role="team_coordinator",
             )
-
+            workspace_teams = WorkspaceTeam.objects.filter(team=team)
+            for workspace_team in workspace_teams:
+                workspace_team_group_name = (
+                    f"Workspace Team - {workspace_team.workspace_team_id}"
+                )
+                workspace_team_group, _ = Group.objects.get_or_create(
+                    name=workspace_team_group_name
+                )
+                workspace_team_group.user_set.remove(previous_team_coordinator.user)
+                print(
+                    "Team coordinator removed from workspace team group permission removed"
+                )
             # Audit logging: Log coordinator removal
             try:
                 BusinessAuditLogger.log_team_member_action(
@@ -395,6 +410,22 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             update_team_coordinator_group(
                 team, previous_team_coordinator, new_team_coordinator
             )
+            print("New team coordinator", team.team_coordinator)
+            workspace_teams = WorkspaceTeam.objects.filter(team=team)
+            print("workspace_teams", workspace_teams)
+            for workspace_team in workspace_teams:
+                workspace_team_group_name = (
+                    f"Workspace Team - {workspace_team.workspace_team_id}"
+                )
+                workspace_team_group, _ = Group.objects.get_or_create(
+                    name=workspace_team_group_name
+                )
+                workspace_team_group.user_set.add(new_team_coordinator.user)
+                print("permission")
+
+            # # Print the permissions of the new team coordinator user for this group
+            # user_permissions = new_team_coordinator.user.get_group_permissions(workspace_team_group)
+            # print(f"Permissions for user {new_team_coordinator.user.username} in group '{workspace_team_group_name}': {list(user_permissions)}")
         return team
     except Exception as e:
         # Audit logging: Log team update failure

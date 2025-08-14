@@ -120,7 +120,12 @@ def get_entries(
 
 
 def get_total_amount_of_entries(
-    *, entry_type: EntryType, entry_status: EntryStatus, workspace_team: WorkspaceTeam
+    *, 
+    entry_type: EntryType, 
+    entry_status: EntryStatus, 
+    workspace_team: WorkspaceTeam = None, 
+    workspace: Workspace = None,
+    org: Organization = None
 ) -> Decimal:
     """
     Get the total converted amount of entries (amount * exchange_rate_used)
@@ -134,7 +139,8 @@ def get_total_amount_of_entries(
     Returns:
         Decimal: The total converted amount of matching entries.
     """
-    total = workspace_team.entries.filter(
+    object_to_get_entries_from = workspace_team or workspace or org
+    total = object_to_get_entries_from.entries.filter(
         entry_type=entry_type, status=entry_status
     ).aggregate(
         total=Sum(

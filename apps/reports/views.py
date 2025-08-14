@@ -9,11 +9,12 @@ from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from decimal import Decimal
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.entries.models import Entry
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.models import Organization
 from apps.remittance.models import Remittance
 from apps.entries.constants import EntryType, EntryStatus
 from pprint import pprint
+from apps.entries.selectors import get_total_amount_of_entries
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -24,107 +25,134 @@ class OverviewFinanceReportView(
     
     template_name = "reports/overview_finance_report_index.html"
     content_template_name = "reports/partials/overview_balance_sheet.html"
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        workspace_filter = self.request.GET.get("workspace") or None
+    
+    def _get_workspace_team_context(self, workspace_team: WorkspaceTeam):
+        team_income = get_total_amount_of_entries(
+            entry_type=EntryType.INCOME, 
+            entry_status=EntryStatus.APPROVED, 
+            workspace_team=workspace_team
+        )
         
+        team_expense = get_total_amount_of_entries(
+            entry_type=EntryType.DISBURSEMENT, 
+            entry_status=EntryStatus.APPROVED, 
+            workspace_team=workspace_team
+        )
+
+        net_income = team_income - team_expense
+        due_amount = workspace_team.remittance.due_amount or Decimal("0.00")
+
+        return {
+            "title": workspace_team.team.title,
+            "total_income": team_income,
+            "total_expense": team_expense,
+            "net_income": net_income,
+            "remittance_rate": workspace_team.custom_remittance_rate,
+            "org_share": due_amount,
+        }
+      
+    def _get_workspace_context(self, workspace: Workspace):
+        children_qs = workspace.workspace_teams.select_related("team").all()
+        context_children = []
+        # Totals for workspace
+        total_income = Decimal("0.00")
+        total_expense = Decimal("0.00")
+        total_org_share = Decimal("0.00")
+
+        for ws_team in children_qs:
+            ws_team_context = self._get_workspace_team_context(ws_team)
+            context_children.append(ws_team_context)
+            total_income += ws_team_context["total_income"]
+            total_expense += ws_team_context["total_expense"]
+            total_org_share += ws_team_context["org_share"]
+
+        workspace_expenses = get_total_amount_of_entries(
+            entry_type=EntryType.WORKSPACE_EXP,
+            entry_status=EntryStatus.APPROVED,
+            workspace=workspace
+        )
+
+        return {
+            "title": workspace.title,
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "net_income": total_income - total_expense,
+            "org_share": total_org_share,
+            "parent_lvl_total_expense": workspace_expenses,
+            "final_net_profit": total_org_share - workspace_expenses,
+            "context_children": context_children
+        }
+      
+    def _get_organization_context(self, org: Organization):
+        children_qs = self.organization.workspaces.all()
+        context_children = []
+        # Totals for workspace
+        total_income = Decimal("0.00")
+        total_expense = Decimal("0.00")
+        total_org_share = Decimal("0.00")
+        for ws in children_qs:
+            ws_context = self._get_workspace_context(ws)
+            context_children.append(ws_context)
+            total_income += ws_context["total_income"]
+            total_expense += ws_context["total_expense"]
+            total_org_share += ws_context["final_net_profit"]
+            #Turn this parent context format into child context format
+            ws_context = {
+                "title": ws_context["title"],
+                "total_income": ws_context["total_income"],
+                "total_expense": ws_context["total_expense"],
+                "net_income": ws_context["net_income"],
+                "parent_lvl_total_expense": ws_context["parent_lvl_total_expense"],
+                "org_share": ws_context["final_net_profit"],
+            }
+        org_expenses = get_total_amount_of_entries(
+            entry_type=EntryType.ORG_EXP,
+            entry_status=EntryStatus.APPROVED,
+            org=org
+        )
+        return {
+            "title": org.title,
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "net_income": total_income - total_expense,
+            "org_share": total_org_share,
+            "parent_lvl_total_expense": org_expenses,
+            "final_net_profit": total_org_share - org_expenses,
+            "context_children": context_children
+        }
+      
+    def get_context_data(self, **kwargs) -> dict[str, any]:
+        workspace_filter = self.request.GET.get("workspace") or None
+
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "overview"
         base_context["workspace_filter"] = workspace_filter
 
-        if workspace_filter:
-            workspace_obj = Workspace.objects.get(pk=workspace_filter)
+        context_parent = None
+        context_children = []
 
-            workspace_teams_qs = workspace_obj.workspace_teams.select_related("team").all()
+        # workspace_filter exists, Workspace Lvl Report
+        try:
+            if workspace_filter:
+                workspace = Workspace.objects.get(pk=workspace_filter, organization=self.organization)
+                if not workspace:
+                    raise ValueError("Invalid workspace selected.")
+                context_parent = self._get_workspace_context(workspace)
+                context_children = context_parent.pop("context_children")
+                context_parent["parent_expense_label"] = "Workspace Expenses"
 
-            workspace_teams_list = []
+            else:
+                context_parent = self._get_organization_context(self.organization)
+                context_children = context_parent.pop("context_children")
+                context_parent["parent_expense_label"] = "Org Expenses"
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-            # Totals for the whole workspace
-            ws_total_income = Decimal("0.00")
-            ws_total_disbursement = Decimal("0.00")
-            ws_total_org_share = Decimal("0.00")
-
-            for ws_team in workspace_teams_qs:
-                team_pk = ws_team.team.pk
-
-                # Total approved income for team
-                total_income = ws_team.entries.filter(
-                    entry_type=EntryType.INCOME,
-                    status=EntryStatus.APPROVED
-                ).aggregate(
-                    total=Sum(
-                        ExpressionWrapper(
-                            F("amount") * F("exchange_rate_used"),
-                            output_field=DecimalField(max_digits=20, decimal_places=2)
-                        )
-                    )
-                )["total"] or Decimal("0.00")
-
-                # Total approved disbursements for team
-                total_disbursement = ws_team.entries.filter(
-                    entry_type=EntryType.DISBURSEMENT,
-                    status=EntryStatus.APPROVED
-                ).aggregate(
-                    total=Sum(
-                        ExpressionWrapper(
-                            F("amount") * F("exchange_rate_used"),
-                            output_field=DecimalField(max_digits=20, decimal_places=2)
-                        )
-                    )
-                )["total"] or Decimal("0.00")
-
-                net_income = total_income - total_disbursement
-
-                # Get org share from linked remittance
-                paid_amount = ws_team.remittance.due_amount or Decimal("0.00")
-
-                workspace_teams_list.append({
-                    "pk": team_pk,
-                    "total_income": total_income,
-                    "total_disbursement": total_disbursement,
-                    "net_income": net_income,
-                    "remittance_rate": ws_team.custom_remittance_rate,
-                    "org_share": paid_amount
-                })
-
-                # Add to workspace totals
-                ws_total_income += total_income
-                ws_total_disbursement += total_disbursement
-                ws_total_org_share += paid_amount
-
-            # Workspace-level expense
-            workspace_expenses = workspace_obj.entries.filter(
-                entry_type=EntryType.WORKSPACE_EXP, 
-                status=EntryStatus.APPROVED
-            ).aggregate(
-                total=Sum(
-                    ExpressionWrapper(
-                        F("amount") * F("exchange_rate_used"),
-                        output_field=DecimalField(max_digits=20, decimal_places=2)
-                    )
-                )
-            )["total"] or Decimal("0.00")
-
-            ws_net_income = ws_total_income - ws_total_disbursement
-            final_net_profit = ws_net_income - workspace_expenses
-
-            workspace_dict = {
-                "title": workspace_obj.title,
-                "total_income": ws_total_income,
-                "total_disbursement": ws_total_disbursement,
-                "net_income": ws_net_income,
-                "org_share": ws_total_org_share,
-                "workspace_expenses": workspace_expenses,
-                "final_net_profit": final_net_profit,
-            }
-
-            base_context["workspace_teams"] = workspace_teams_list
-            base_context["workspace"] = workspace_dict
-
-        else:
-            pass
-        
+        base_context["context_parent"] = context_parent
+        base_context["context_children"] = context_children
+        print("=" * 100)
         pprint(base_context)
+        print("=" * 100)
         return base_context
 
     def render_to_response(self, context, **response_kwargs):

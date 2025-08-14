@@ -174,19 +174,19 @@ class WorkspaceTeamPermissions(models.TextChoices):
 
     VIEW_WORKSPACE_TEAM = (
         "view_workspace_team",
-        "Can view workspace team by WA and Org Owner",
+        "Can view workspace team by Assigned WA and Org Owner",
     )
     ADD_WORKSPACE_TEAM_ENTRY = (
         "add_workspace_team_entry",
-        "Can add workspace team entry by WA and Org Owner",
+        "Can add workspace team entry by Submitter and Org Owner",
     )
     CHANGE_WORKSPACE_TEAM_ENTRY = (
         "change_workspace_team_entry",
-        "Can change workspace team entry by WA and Org Owner",
+        "Can change workspace team entry by Submitter and Org Owner",
     )
     DELETE_WORKSPACE_TEAM_ENTRY = (
         "delete_workspace_team_entry",
-        "Can delete workspace team entry by WA and Org Owner",
+        "Can delete workspace team entry by Submitter and Org Owner",
     )
 
 

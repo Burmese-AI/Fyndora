@@ -86,7 +86,13 @@ def get_workspaces_view(request, organization_id):
                 request,
                 "You do not have permission to access this organization.",
             )
-        workspaces = get_workspaces_with_team_counts(organization_id)
+        #already filtered in the selector
+        #for owners, show all workspaces
+        #for 
+        workspaces = get_workspaces_with_team_counts(organization_id, request.user)
+        # print(f"Request User: {request.user}")
+        # print(f"Workspaces: {workspaces}")
+
         return render(
             request,
             "workspaces/index.html",
@@ -96,6 +102,7 @@ def get_workspaces_view(request, organization_id):
             },
         )
     except Exception as e:
+        print(f"Error: {e}")
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
@@ -425,13 +432,11 @@ def get_workspace_teams_view(request, organization_id, workspace_id):
         workspace = get_workspace_by_id(workspace_id)
         organization = get_organization_by_id(organization_id)
         workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
-
         context = {
             "workspace_teams": workspace_teams,
             "workspace": workspace,
             "organization": organization,
             "view": "teams",
-            "hide_management_access": False,
         }
         return render(request, "workspace_teams/index.html", context)
     except Exception as e:

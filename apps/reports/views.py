@@ -11,12 +11,18 @@ from apps.core.views.mixins import (
 )
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.workspaces.models import Workspace, WorkspaceTeam
+
+from apps.reports.permissions import can_view_report_page
+from apps.core.utils import permission_denied_view
+
+
 from apps.organizations.models import Organization
 from apps.entries.constants import EntryType, EntryStatus
 from apps.entries.selectors import get_total_amount_of_entries
 from apps.core.services.file_export_services import CsvExporter, PdfExporter
 from .services import export_overview_finance_report
 from apps.reports.selectors import EntrySelectors, RemittanceSelectors
+
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -26,6 +32,14 @@ class OverviewFinanceReportView(
 ):
     template_name = "reports/overview_finance_report_index.html"
     content_template_name = "reports/partials/overview_balance_sheet.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_report_page(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view the report page.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def _get_workspace_team_context(self, workspace_team: WorkspaceTeam):
         team_income = get_total_amount_of_entries(

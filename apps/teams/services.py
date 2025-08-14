@@ -21,6 +21,8 @@ from apps.teams.permissions import (
     assign_team_permissions,
     update_team_coordinator_group,
 )
+from apps.core.permissions import WorkspacePermissions
+from guardian.shortcuts import remove_perm
 
 from .models import Team, TeamMember
 from .constants import TeamMemberRole
@@ -311,12 +313,13 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                 f"Audit logging failed for team update: {audit_error}",
                 exc_info=True,
             )
-
+        # which means the team coordinator is not being changed.. MgMg still MgMg
         if previous_team_coordinator == new_team_coordinator:
+            # just return the team and do nothing
             return team
 
+        # which means the team coordinator is being removed
         if new_team_coordinator is None:
-            print("new team coordinator is None")
             team.team_coordinator = None
             team.save()
             update_team_coordinator_group(team, previous_team_coordinator, None)
@@ -357,13 +360,23 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
             team_member.delete()
             return team
 
+        # which means the team coordinator is changed with a new one
         if new_team_coordinator is not None:
             team_member = TeamMember.objects.create(
                 team=team,
                 organization_member=new_team_coordinator,
                 role="team_coordinator",
             )
-
+            joined_workspaces = WorkspaceTeam.objects.filter(team=team)
+            for workspace_team in joined_workspaces:
+                assign_perm(
+                    WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                    new_team_coordinator.user,
+                    workspace_team.workspace,
+                )
+                print(
+                    "successfully assigned view workspace teams under workspace permission to new team coordinator"
+                )
             # Audit logging: Log new coordinator addition
             try:
                 BusinessAuditLogger.log_team_member_action(
@@ -387,6 +400,16 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
                     organization_member=previous_team_coordinator,
                     role="team_coordinator",
                 )
+                joined_workspaces = WorkspaceTeam.objects.filter(team=team)
+                for workspace_team in joined_workspaces:
+                    remove_perm(
+                        WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                        previous_team_coordinator.user,
+                        workspace_team.workspace,
+                    )
+                    print(
+                        "successfully removed view workspace teams under workspace permission from previous team coordinator"
+                    )
 
                 # Audit logging: Log previous coordinator removal
                 try:

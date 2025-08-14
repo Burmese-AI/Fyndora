@@ -1,1 +1,99 @@
-<h1>Overview Balance Sheet</h1>
+{% if not context_parent and not context_children %}
+<div class="hero bg-base-200 rounded-box">
+  <div class="hero-content text-center py-12">
+    <div class="max-w-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+      </svg>
+      <h3 class="text-xl font-medium mb-2">No Data Available</h3>
+      <p class="text-base-content/70 mb-6">
+        {% if workspace_filter %}
+          The selected workspace is invalid. Please reset by clicking Clear All button.
+        {% else %}
+          There is currently no data available for your organization.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</div>
+{% else %}
+<section class="card shadow-lg bg-base-100 p-4">
+  <!-- Report Title -->
+  <div class="mb-4">
+    <span class="text-lg font-semibold">
+      {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
+    </span>
+    <span class="font-medium">{{ context_parent.title }}</span>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table table-compact w-full sheet-table">
+      <thead>
+        <tr class="bg-base-200">
+          <th class="text-left sticky-col">
+            {% if workspace_filter %}Team{% else %}Workspace{% endif %}
+          </th>
+          <th class="text-right">Total Income</th>
+          <th class="text-right">Total Expense</th>
+          <th class="text-right">Net Income</th>
+          <th class="text-right">Org Share</th>
+        </tr>
+      </thead>
+
+      <tbody id="bs-tbody">
+        {% for child in context_children %}
+        <tr class="hover">
+          <td class="font-medium">{{ child.title }}</td>
+          <td class="text-right">{{ child.total_income|floatformat:2 }}</td>
+          <td class="text-right">{{ child.total_expense|floatformat:2 }}</td>
+          <td class="text-right">{{ child.net_income|floatformat:2 }}</td>
+          <td class="text-right">
+            <div class="flex flex-col items-end leading-tight">
+              {% if child.remittance_rate %}
+                <span class="text-red-600 text-xs font-semibold">
+                  Rate: {{ child.remittance_rate }}%
+                </span>
+              {% elif child.parent_lvl_total_expense %}
+                <span class="text-red-600 text-xs font-semibold">
+                  Expense: -{{ child.parent_lvl_total_expense|floatformat:2 }}
+                </span>
+              {% endif %}
+              <span class="font-medium">{{ child.org_share|floatformat:2 }}</span>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-4 text-sm text-base-content/60">
+            No data available
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+      <tfoot>
+        <!-- Totals -->
+        <tr class="bg-neutral text-neutral-content font-semibold">
+          <td class="text-left">Total</td>
+          <td class="text-right">{{ context_parent.total_income|floatformat:2 }}</td>
+          <td class="text-right">{{ context_parent.total_expense|floatformat:2 }}</td>
+          <td class="text-right">{{ context_parent.net_income|floatformat:2 }}</td>
+          <td class="text-right">{{ context_parent.org_share|floatformat:2 }}</td>
+        </tr>
+
+        <!-- Parent Expenses + Final Profit -->
+        <tr class="font-semibold">
+          <td class="text-left">{{ context_parent.parent_expense_label }}</td>
+          <td class="text-right">{{ context_parent.parent_lvl_total_expense|floatformat:2 }}</td>
+          <td class="text-right">&nbsp;</td>
+          <td class="text-right bg-neutral text-neutral-content ">Final Net Profit</td>
+          <td class="text-right bg-neutral text-neutral-content ">{{ context_parent.final_net_profit|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+

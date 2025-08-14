@@ -11,12 +11,15 @@
     <div class="flex flex-col w-full">
         <label class="label-text font-semibold text-base-content mb-1">Workspace</label>
         <select name="workspace" class="select select-sm select-bordered w-full bg-base-100">
-            <option value="">All workspaces</option>
+            <option value="" {% if not request.GET.workspace %}selected{% endif %}>All workspaces</option>
             {% for workspace in workspace_options %}
-            <option value="{{ workspace.pk }}">{{ workspace.title }}</option>
+            <option value="{{ workspace.pk }}" {% if request.GET.workspace == workspace.pk|stringformat:"s" %}selected{% endif %}>
+                {{ workspace.title }}
+            </option>
             {% endfor %}
         </select>
     </div>
+
 
     <!-- CLEAR BUTTON -->
     <div class="flex w-full sm:w-auto">

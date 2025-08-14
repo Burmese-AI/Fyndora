@@ -56,40 +56,45 @@ class EntryFactory(DjangoModelFactory):
         """Ensure all relationships are consistent."""
         if not create:
             return
-        
+
         # Ensure workspace belongs to the same organization
         if self.workspace.organization != self.organization:
             self.workspace.organization = self.organization
             self.workspace.save()
-        
+
         # Ensure workspace_team uses the same workspace
         if self.workspace_team.workspace != self.workspace:
             self.workspace_team.workspace = self.workspace
             self.workspace_team.save()
-        
+
         # Get or create exchange rate references to avoid duplicates
         if self.org_exchange_rate_ref:
             from apps.organizations.models import OrganizationExchangeRate
+
             org_rate, created = OrganizationExchangeRate.objects.get_or_create(
                 organization=self.organization,
                 currency=self.currency,
                 effective_date=self.occurred_at,
-                defaults={'rate': self.org_exchange_rate_ref.rate}
+                defaults={"rate": self.org_exchange_rate_ref.rate},
             )
             self.org_exchange_rate_ref = org_rate
-        
+
         if self.workspace_exchange_rate_ref:
             from apps.workspaces.models import WorkspaceExchangeRate
+
             workspace_rate, created = WorkspaceExchangeRate.objects.get_or_create(
                 workspace=self.workspace,
                 currency=self.currency,
                 effective_date=self.occurred_at,
-                defaults={'rate': self.workspace_exchange_rate_ref.rate}
+                defaults={"rate": self.workspace_exchange_rate_ref.rate},
             )
             self.workspace_exchange_rate_ref = workspace_rate
-        
+
         # Ensure submitted_by_org_member belongs to the same organization
-        if self.submitted_by_org_member and self.submitted_by_org_member.organization != self.organization:
+        if (
+            self.submitted_by_org_member
+            and self.submitted_by_org_member.organization != self.organization
+        ):
             self.submitted_by_org_member.organization = self.organization
             self.submitted_by_org_member.save()
 
@@ -190,15 +195,23 @@ class TeamSubmittedEntryFactory(EntryFactory):
         """Ensure team member belongs to the workspace team."""
         if not create or not self.submitted_by_team_member:
             return
-        
+
         # Ensure the team member's team matches the workspace team
-        if self.workspace_team and self.submitted_by_team_member.team != self.workspace_team.team:
+        if (
+            self.workspace_team
+            and self.submitted_by_team_member.team != self.workspace_team.team
+        ):
             self.submitted_by_team_member.team = self.workspace_team.team
             self.submitted_by_team_member.save()
-        
+
         # Ensure the team member's organization matches the entry organization
-        if self.submitted_by_team_member.organization_member.organization != self.organization:
-            self.submitted_by_team_member.organization_member.organization = self.organization
+        if (
+            self.submitted_by_team_member.organization_member.organization
+            != self.organization
+        ):
+            self.submitted_by_team_member.organization_member.organization = (
+                self.organization
+            )
             self.submitted_by_team_member.organization_member.save()
 
 

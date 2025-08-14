@@ -4,15 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0009_alter_team_options'),
+        ("teams", "0009_alter_team_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='teammember',
-            name='role',
-            field=models.CharField(choices=[('team_coordinator', 'Team Coordinator'), ('submitter', 'Submitter'), ('auditor', 'Auditor')], default='submitter', max_length=32),
+            model_name="teammember",
+            name="role",
+            field=models.CharField(
+                choices=[
+                    ("team_coordinator", "Team Coordinator"),
+                    ("submitter", "Submitter"),
+                    ("auditor", "Auditor"),
+                ],
+                default="submitter",
+                max_length=32,
+            ),
         ),
     ]

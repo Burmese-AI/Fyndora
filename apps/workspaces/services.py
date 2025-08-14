@@ -157,14 +157,18 @@ def update_workspace_from_form(
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")
 
 
-def remove_team_from_workspace(workspace_team, user=None,team=None):
+def remove_team_from_workspace(workspace_team, user=None, team=None):
     try:
         # Store references before deletion
         workspace = workspace_team.workspace
         team = workspace_team.team
-        #remove that team coordinator's view workspace teams under workspace permission
+        # remove that team coordinator's view workspace teams under workspace permission
         if team.team_coordinator:
-            remove_perm(WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, team.team_coordinator.user, workspace)
+            remove_perm(
+                WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                team.team_coordinator.user,
+                workspace,
+            )
         workspace_team.delete()
 
         # Log successful team removal from workspace

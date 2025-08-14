@@ -177,32 +177,41 @@ def get_workspaces_with_team_counts(organization_id, user):
     try:
         organization = get_organization_by_id(organization_id)
         workspaces = get_user_workspaces_under_organization(organization_id)
-        #add teams count to each workspace for display purposes
+        # add teams count to each workspace for display purposes
         for workspace in workspaces:
             workspace.teams_count = get_workspace_teams_by_workspace_id(
-                workspace.workspace_id).count()
-            
+                workspace.workspace_id
+            ).count()
+
         if user == organization.owner.user:
-            #for owner, return all workspaces
+            # for owner, return all workspaces
             return workspaces
         else:
-            #for other roles , filter the relevant workspaces based on the user's role
+            # for other roles , filter the relevant workspaces based on the user's role
             workspaces_filtered = []
             for workspace in workspaces:
                 if workspace.workspace_admin and user == workspace.workspace_admin.user:
-                    #return workspaces where user is workspace admin
+                    # return workspaces where user is workspace admin
                     workspaces_filtered.append(workspace)
-                elif workspace.operations_reviewer and user == workspace.operations_reviewer.user:
-                    #return workspaces where user is operations reviewer
+                elif (
+                    workspace.operations_reviewer
+                    and user == workspace.operations_reviewer.user
+                ):
+                    # return workspaces where user is operations reviewer
                     workspaces_filtered.append(workspace)
                 else:
-                    #return workspaces where user is team coordinator
-                    workspace_teams = get_workspace_teams_by_workspace_id(workspace.workspace_id)
+                    # return workspaces where user is team coordinator
+                    workspace_teams = get_workspace_teams_by_workspace_id(
+                        workspace.workspace_id
+                    )
                     for workspace_team in workspace_teams:
-                        if workspace_team.team.team_coordinator and user == workspace_team.team.team_coordinator.user:
+                        if (
+                            workspace_team.team.team_coordinator
+                            and user == workspace_team.team.team_coordinator.user
+                        ):
                             workspaces_filtered.append(workspace)
             return workspaces_filtered
-            
+
     except Exception as e:
         print(f"Error in get_workspaces_with_team_counts: {str(e)}")
         return None

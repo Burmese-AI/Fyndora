@@ -120,12 +120,12 @@ def get_entries(
 
 
 def get_total_amount_of_entries(
-    *, 
-    entry_type: EntryType, 
-    entry_status: EntryStatus, 
-    workspace_team: WorkspaceTeam = None, 
+    *,
+    entry_type: EntryType,
+    entry_status: EntryStatus,
+    workspace_team: WorkspaceTeam = None,
     workspace: Workspace = None,
-    org: Organization = None
+    org: Organization = None,
 ) -> Decimal:
     """
     Get the total converted amount of entries (amount * exchange_rate_used)

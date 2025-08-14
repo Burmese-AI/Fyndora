@@ -35,7 +35,7 @@ class TestRemittanceSelectors:
         """Set up test data and disconnect signal."""
         # Disconnect the signal to prevent automatic remittance creation
         post_save.disconnect(create_remittance, sender=WorkspaceTeam)
-        
+
         self.organization = OrganizationFactory()
         self.other_organization = OrganizationFactory()
 
@@ -71,7 +71,7 @@ class TestRemittanceSelectors:
         due_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         # Create remittances with different due amounts
         RemittanceFactory(
             workspace_team=due_workspace_team1,
@@ -119,7 +119,7 @@ class TestRemittanceSelectors:
         filter_due_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         RemittanceFactory(
             workspace_team=filter_due_workspace_team1,
             due_amount=Decimal("100.00"),
@@ -153,7 +153,7 @@ class TestRemittanceSelectors:
         paid_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         RemittanceFactory(
             workspace_team=paid_workspace_team1,
             paid_amount=Decimal("50.00"),
@@ -189,7 +189,7 @@ class TestRemittanceSelectors:
         filter_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         RemittanceFactory(
             workspace_team=filter_workspace_team1,
             paid_amount=Decimal("50.00"),
@@ -216,10 +216,11 @@ class TestRemittanceSelectors:
         partial_workspace = WorkspaceFactory(
             organization=self.organization, end_date=past_date
         )
-        
+
         # Create new workspace team for overdue remittance
         overdue_workspace_team = WorkspaceTeamFactory(
-            workspace=overdue_workspace, team=TeamFactory(organization=self.organization)
+            workspace=overdue_workspace,
+            team=TeamFactory(organization=self.organization),
         )
         # Create overdue remittances
         RemittanceFactory(
@@ -230,7 +231,8 @@ class TestRemittanceSelectors:
         )
         # Create new workspace team for partial remittance
         partial_workspace_team = WorkspaceTeamFactory(
-            workspace=partial_workspace, team=TeamFactory(organization=self.organization)
+            workspace=partial_workspace,
+            team=TeamFactory(organization=self.organization),
         )
         RemittanceFactory(
             workspace_team=partial_workspace_team,
@@ -241,7 +243,8 @@ class TestRemittanceSelectors:
 
         # Non-overdue remittance (should be excluded) - use workspace with future end date
         future_workspace = WorkspaceFactory(
-            organization=self.organization, end_date=timezone.now().date() + timedelta(days=10)
+            organization=self.organization,
+            end_date=timezone.now().date() + timedelta(days=10),
         )
         pending_workspace_team = WorkspaceTeamFactory(
             workspace=future_workspace, team=TeamFactory(organization=self.organization)
@@ -304,7 +307,7 @@ class TestRemittanceSelectors:
         remaining_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         RemittanceFactory(
             workspace_team=remaining_workspace_team1,
             due_amount=Decimal("100.00"),
@@ -333,7 +336,7 @@ class TestRemittanceSelectors:
         summary_workspace_team2 = WorkspaceTeamFactory(
             workspace=self.workspace2, team=TeamFactory(organization=self.organization)
         )
-        
+
         RemittanceFactory(
             workspace_team=summary_workspace_team1,
             due_amount=Decimal("100.00"),
@@ -371,12 +374,8 @@ class TestEntrySelectors:
     def test_get_total_count_basic(self):
         """Test get_total_count returns correct count."""
         # Create entries for the organization
-        EntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        EntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        EntryFactory(organization=self.organization, workspace=self.workspace1)
+        EntryFactory(organization=self.organization, workspace=self.workspace2)
 
         # Create entry for other organization (should be excluded)
         EntryFactory(
@@ -389,12 +388,8 @@ class TestEntrySelectors:
 
     def test_get_total_count_with_workspace_filter(self):
         """Test get_total_count with workspace filtering."""
-        EntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        EntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        EntryFactory(organization=self.organization, workspace=self.workspace1)
+        EntryFactory(organization=self.organization, workspace=self.workspace2)
 
         count = EntrySelectors.get_total_count(
             self.organization.organization_id, workspace_id=self.workspace1.workspace_id
@@ -408,29 +403,19 @@ class TestEntrySelectors:
 
     def test_get_pending_count(self):
         """Test get_pending_count returns correct count."""
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace1)
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         # Create approved entry (should be excluded)
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1   
-        )
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
 
         count = EntrySelectors.get_pending_count(self.organization.organization_id)
         assert count == 2
 
     def test_get_pending_count_with_workspace_filter(self):
         """Test get_pending_count with workspace filtering."""
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace1)
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         count = EntrySelectors.get_pending_count(
             self.organization.organization_id, workspace_id=self.workspace1.workspace_id
@@ -439,29 +424,19 @@ class TestEntrySelectors:
 
     def test_get_approved_count(self):
         """Test get_approved_count returns correct count."""
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         # Create pending entry (should be excluded)
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace1)
 
         count = EntrySelectors.get_approved_count(self.organization.organization_id)
         assert count == 2
 
     def test_get_approved_count_with_workspace_filter(self):
         """Test get_approved_count with workspace filtering."""
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         count = EntrySelectors.get_approved_count(
             self.organization.organization_id, workspace_id=self.workspace1.workspace_id
@@ -470,29 +445,19 @@ class TestEntrySelectors:
 
     def test_get_rejected_count(self):
         """Test get_rejected_count returns correct count."""
-        RejectedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        RejectedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        RejectedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        RejectedEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         # Create approved entry (should be excluded)
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
 
         count = EntrySelectors.get_rejected_count(self.organization.organization_id)
         assert count == 2
 
     def test_get_rejected_count_with_workspace_filter(self):
         """Test get_rejected_count with workspace filtering."""
-        RejectedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        RejectedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        RejectedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        RejectedEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         count = EntrySelectors.get_rejected_count(
             self.organization.organization_id, workspace_id=self.workspace1.workspace_id
@@ -501,18 +466,10 @@ class TestEntrySelectors:
 
     def test_get_summary_stats(self):
         """Test get_summary_stats returns all statistics."""
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
-        RejectedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace2)
+        RejectedEntryFactory(organization=self.organization, workspace=self.workspace1)
 
         stats = EntrySelectors.get_summary_stats(self.organization.organization_id)
 
@@ -523,15 +480,9 @@ class TestEntrySelectors:
 
     def test_get_summary_stats_with_workspace_filter(self):
         """Test get_summary_stats with workspace filtering."""
-        PendingEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace1
-        )
-        ApprovedEntryFactory(
-            organization=self.organization, workspace=self.workspace2
-        )
+        PendingEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace1)
+        ApprovedEntryFactory(organization=self.organization, workspace=self.workspace2)
 
         stats = EntrySelectors.get_summary_stats(
             self.organization.organization_id, workspace_id=self.workspace1.workspace_id

@@ -7,6 +7,7 @@ from guardian.shortcuts import remove_perm
 from apps.core.permissions import WorkspacePermissions
 from apps.workspaces.models import WorkspaceTeam
 
+
 def assign_team_permissions(team):
     team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
 
@@ -55,8 +56,8 @@ def update_team_coordinator_group(team, previous_coordinator, new_coordinator):
     try:
         if previous_coordinator == new_coordinator:
             return
-        #remove the previous team coordinator's view workspace teams under workspace permission
-         
+        # remove the previous team coordinator's view workspace teams under workspace permission
+
         team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
         team_coordinator_group = Group.objects.filter(
             name=team_coordinator_group_name
@@ -65,10 +66,18 @@ def update_team_coordinator_group(team, previous_coordinator, new_coordinator):
             try:
                 joined_workspaces = WorkspaceTeam.objects.filter(team=team)
                 for workspace_team in joined_workspaces:
-                    remove_perm(WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, previous_coordinator.user, workspace_team.workspace) 
-                print ("successfully removed view workspace teams under workspace permission")
+                    remove_perm(
+                        WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                        previous_coordinator.user,
+                        workspace_team.workspace,
+                    )
+                print(
+                    "successfully removed view workspace teams under workspace permission"
+                )
             except Exception as e:
-                print(f"Error removing view workspace teams under workspace permission: {e}")
+                print(
+                    f"Error removing view workspace teams under workspace permission: {e}"
+                )
                 raise e
             team_coordinator_group.user_set.remove(previous_coordinator.user)
         if new_coordinator:

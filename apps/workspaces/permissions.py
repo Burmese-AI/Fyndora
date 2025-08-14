@@ -269,7 +269,9 @@ def check_change_workspace_permission(request, workspace):
         )
 
 
-def assign_workspace_team_permissions(workspace_team, request_user=None,workspace=None,team=None):
+def assign_workspace_team_permissions(
+    workspace_team, request_user=None, workspace=None, team=None
+):
     """
     Assigns the necessary permissions to the group for the workspace team.
     """
@@ -309,14 +311,21 @@ def assign_workspace_team_permissions(workspace_team, request_user=None,workspac
         workspace_team_group.user_set.add(member.organization_member.user)
         user_assignments.append(f"team_member:{member.organization_member.user.email}")
 
-    #give view workspace teams under workspace permission to team coordinator
-    #for this not used group
+    # give view workspace teams under workspace permission to team coordinator
+    # for this not used group
     if team.team_coordinator:
         try:
-            assign_perm(WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, team.team_coordinator.user, workspace)
+            assign_perm(
+                WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                team.team_coordinator.user,
+                workspace,
+            )
         except Exception as e:
-            logger.error(f"Error assigning view workspace teams under workspace permission to team coordinator: {e}", exc_info=True)
-    
+            logger.error(
+                f"Error assigning view workspace teams under workspace permission to team coordinator: {e}",
+                exc_info=True,
+            )
+
     # adding owner to the workspace team group
     if workspace_team.workspace.organization.owner is not None:
         workspace_team_group.user_set.add(

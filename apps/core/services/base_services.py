@@ -6,6 +6,5 @@ class BaseFileExporter:
         self.data = data
     
     def export(self):
-        """Return a Django HttpResponse with the exported file"""
         pass
     

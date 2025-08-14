@@ -11,7 +11,7 @@ from apps.entries.constants import EntryStatus
 
 class RemittanceSelectors:
     """Selectors for remittance-related statistics and calculations."""
-    
+
     @staticmethod
     def get_total_due_amount(organization_id, workspace_id=None):
         """
@@ -112,28 +112,28 @@ class RemittanceSelectors:
         Get all remittance summary statistics in one call.
         """
         return {
-            'total_due': cls.get_total_due_amount(organization_id, workspace_id),
-            'total_paid': cls.get_total_paid_amount(organization_id, workspace_id),
-            'overdue_amount': cls.get_overdue_amount(organization_id, workspace_id),
-            'remaining_due': cls.get_remaining_due_amount(organization_id, workspace_id),
+            "total_due": cls.get_total_due_amount(organization_id, workspace_id),
+            "total_paid": cls.get_total_paid_amount(organization_id, workspace_id),
+            "overdue_amount": cls.get_overdue_amount(organization_id, workspace_id),
+            "remaining_due": cls.get_remaining_due_amount(
+                organization_id, workspace_id
+            ),
         }
 
 
 class EntrySelectors:
     """Selectors for entry-related statistics and calculations."""
-    
+
     @staticmethod
     def get_total_count(organization_id, workspace_id=None):
         """
         Get the total count of all entries for an organization.
         """
-        queryset = Entry.objects.filter(
-            organization_id=organization_id
-        )
-        
+        queryset = Entry.objects.filter(organization_id=organization_id)
+
         if workspace_id:
             queryset = queryset.filter(workspace_id=workspace_id)
-        
+
         return queryset.count()
 
     @staticmethod
@@ -142,13 +142,12 @@ class EntrySelectors:
         Get the count of pending entries for an organization.
         """
         queryset = Entry.objects.filter(
-            organization_id=organization_id,
-            status=EntryStatus.PENDING
+            organization_id=organization_id, status=EntryStatus.PENDING
         )
-        
+
         if workspace_id:
             queryset = queryset.filter(workspace_id=workspace_id)
-        
+
         return queryset.count()
 
     @staticmethod
@@ -157,13 +156,12 @@ class EntrySelectors:
         Get the count of approved entries for an organization.
         """
         queryset = Entry.objects.filter(
-            organization_id=organization_id,
-            status=EntryStatus.APPROVED
+            organization_id=organization_id, status=EntryStatus.APPROVED
         )
-        
+
         if workspace_id:
             queryset = queryset.filter(workspace_id=workspace_id)
-        
+
         return queryset.count()
 
     @staticmethod
@@ -172,13 +170,12 @@ class EntrySelectors:
         Get the count of rejected entries for an organization.
         """
         queryset = Entry.objects.filter(
-            organization_id=organization_id,
-            status=EntryStatus.REJECTED
+            organization_id=organization_id, status=EntryStatus.REJECTED
         )
-        
+
         if workspace_id:
             queryset = queryset.filter(workspace_id=workspace_id)
-        
+
         return queryset.count()
 
     @classmethod
@@ -187,8 +184,8 @@ class EntrySelectors:
         Get all entry summary statistics in one call.
         """
         return {
-            'total_entries': cls.get_total_count(organization_id, workspace_id),
-            'pending_entries': cls.get_pending_count(organization_id, workspace_id),
-            'approved_entries': cls.get_approved_count(organization_id, workspace_id),
-            'rejected_entries': cls.get_rejected_count(organization_id, workspace_id),
+            "total_entries": cls.get_total_count(organization_id, workspace_id),
+            "pending_entries": cls.get_pending_count(organization_id, workspace_id),
+            "approved_entries": cls.get_approved_count(organization_id, workspace_id),
+            "rejected_entries": cls.get_rejected_count(organization_id, workspace_id),
         }

@@ -269,7 +269,9 @@ def check_change_workspace_permission(request, workspace):
         )
 
 
-def assign_workspace_team_permissions(workspace_team, request_user=None):
+def assign_workspace_team_permissions(
+    workspace_team, request_user=None, workspace=None, team=None
+):
     """
     Assigns the necessary permissions to the group for the workspace team.
     """
@@ -283,14 +285,12 @@ def assign_workspace_team_permissions(workspace_team, request_user=None):
         f"Workspace Admins - {workspace_team.workspace.workspace_id}"
     )
     workspace_admins_group = Group.objects.get(name=workspace_admins_group_name)
-    print("workspace_admins_group_name", workspace_admins_group_name)
 
     # to give some edit workspace team entry permission to operations reviewer
     operations_reviewer_group_name = (
         f"Operations Reviewer - {workspace_team.workspace.workspace_id}"
     )
     operations_reviewer_group = Group.objects.get(name=operations_reviewer_group_name)
-    print("operations_reviewer_group_name", operations_reviewer_group_name)
 
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     assigned_permissions = []
@@ -310,6 +310,21 @@ def assign_workspace_team_permissions(workspace_team, request_user=None):
     for member in workspace_team.team.members.all():
         workspace_team_group.user_set.add(member.organization_member.user)
         user_assignments.append(f"team_member:{member.organization_member.user.email}")
+
+    # give view workspace teams under workspace permission to team coordinator
+    # for this not used group
+    if team.team_coordinator:
+        try:
+            assign_perm(
+                WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+                team.team_coordinator.user,
+                workspace,
+            )
+        except Exception as e:
+            logger.error(
+                f"Error assigning view workspace teams under workspace permission to team coordinator: {e}",
+                exc_info=True,
+            )
 
     # adding owner to the workspace team group
     if workspace_team.workspace.organization.owner is not None:

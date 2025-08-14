@@ -2,7 +2,6 @@
   {% for workspace_team in workspace_teams %}
     {% include "workspace_teams/partials/workspace_team_card.html" %}
   {% empty %}
-    {% if not hide_management_access %}
       <div class="col-span-full">
         <div class="hero bg-base-200 rounded-box">
           <div class="hero-content text-center py-12">
@@ -16,6 +15,5 @@
           </div>
         </div>
       </div>
-    {% endif %}
   {% endfor %}
 </div>

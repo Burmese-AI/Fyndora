@@ -23,19 +23,6 @@ class WorkspacePermissions(models.TextChoices):
         "assign_teams",
         "Can assign teams to workspace by WA and Org Owner",
     )
-    LOCK_WORKSPACE = (
-        "lock_workspace",
-        "Can lock workspace",
-    )
-    VIEW_DASHBOARD = (
-        "view_dashboard",
-        "Can view dashboard",
-    )
-    EXPORT_WORKSPACE_REPORT = (
-        "export_workspace_report",
-        "Can export workspace report",
-    )
-
     ADD_WORKSPACE_ENTRY = (
         "add_workspace_entry",
         "Can add workspace entry by WA and Org Owner",
@@ -52,18 +39,6 @@ class WorkspacePermissions(models.TextChoices):
         "view_workspace_entry",
         "Can view workspace entry by WA and Org Owner",
     )
-    REVIEW_WORKSPACE_ENTRY = (
-        "review_workspace_entry",
-        "Can review workspace entry by WA and Org Owner",
-    )
-    UPLOAD_WORKSPACE_ATTACHMENTS = (
-        "upload_workspace_attachments",
-        "Can upload workspace attachments by WA and Org Owner",
-    )
-    FLAG_WORKSPACE_ENTRY = (
-        "flag_workspace_entry",
-        "Can flag workspace entry by WA and Org Owner",
-    )
     ADD_WORKSPACE_CURRENCY = (
         "add_workspace_currency",
         "Can add workspace currency by WA and Org Owner",
@@ -75,6 +50,10 @@ class WorkspacePermissions(models.TextChoices):
     DELETE_WORKSPACE_CURRENCY = (
         "delete_workspace_currency",
         "Can delete workspace currency by WA and Org Owner",
+    )
+    VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE = (
+        "view_workspace_teams_under_workspace",
+        "Can view workspace teams under workspace by WA ,OR,TC and Org Owner",
     )
 
 
@@ -146,6 +125,10 @@ class OrganizationPermissions(models.TextChoices):
         "delete_org_currency",
         "Can delete org currency to organization only by Org Owner",
     )
+    VIEW_REPORT_PAGE = (
+        "view_report_page",
+        "Can view report page by Org Owner",
+    )
 
 
 class TeamPermissions(models.TextChoices):
@@ -174,19 +157,19 @@ class WorkspaceTeamPermissions(models.TextChoices):
 
     VIEW_WORKSPACE_TEAM = (
         "view_workspace_team",
-        "Can view workspace team by WA and Org Owner",
+        "Can view workspace team by Assigned WA and Org Owner",
     )
     ADD_WORKSPACE_TEAM_ENTRY = (
         "add_workspace_team_entry",
-        "Can add workspace team entry by WA and Org Owner",
+        "Can add workspace team entry by Submitter and Org Owner",
     )
     CHANGE_WORKSPACE_TEAM_ENTRY = (
         "change_workspace_team_entry",
-        "Can change workspace team entry by WA and Org Owner",
+        "Can change workspace team entry by Submitter and Org Owner",
     )
     DELETE_WORKSPACE_TEAM_ENTRY = (
         "delete_workspace_team_entry",
-        "Can delete workspace team entry by WA and Org Owner",
+        "Can delete workspace team entry by Submitter and Org Owner",
     )
 
 

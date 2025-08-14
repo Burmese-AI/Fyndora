@@ -1,11 +1,9 @@
-# from django.contrib import messages
-# from django.shortcuts import redirect
-# from django_htmx.http import HttpResponseClientRedirect
+from apps.core.permissions import WorkspacePermissions
 
 
-# def permission_denied_view(request, message):
-#     messages.error(request, message)
-#     if request.headers.get("HX-Request"):
-#         return HttpResponseClientRedirect("/403")
-#     else:
-#         return redirect("permission_denied")
+def can_view_workspace_teams_under_workspace(user, workspace):
+    if user.has_perm(
+        WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE, workspace
+    ):
+        return True
+    return False

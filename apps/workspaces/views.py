@@ -75,6 +75,7 @@ from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
+from apps.workspaces.utils import can_view_workspace_teams_under_workspace
 
 
 @login_required
@@ -86,7 +87,10 @@ def get_workspaces_view(request, organization_id):
                 request,
                 "You do not have permission to access this organization.",
             )
-        workspaces = get_workspaces_with_team_counts(organization_id)
+        # already filtered in the selector
+        # for owners, show all workspaces
+        # for
+        workspaces = get_workspaces_with_team_counts(organization_id, request.user)
         return render(
             request,
             "workspaces/index.html",
@@ -96,6 +100,7 @@ def get_workspaces_view(request, organization_id):
             },
         )
     except Exception as e:
+        print(f"Error: {e}")
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return HttpResponseClientRedirect(f"/{organization_id}/workspaces/")
 
@@ -122,7 +127,9 @@ def create_workspace_view(request, organization_id):
                     messages.success(request, "Workspace created successfully.")
                     if request.headers.get("HX-Request"):
                         organization = get_organization_by_id(organization_id)
-                        workspaces = get_workspaces_with_team_counts(organization_id)
+                        workspaces = get_workspaces_with_team_counts(
+                            organization_id, request.user
+                        )
                         context = {
                             "workspaces": workspaces,
                             "organization": organization,
@@ -305,7 +312,7 @@ def delete_workspace_view(request, organization_id, workspace_id):
             workspace.delete()
             messages.success(request, "Workspace deleted successfully.")
             organization = get_organization_by_id(organization_id)
-            workspaces = get_workspaces_with_team_counts(organization_id)
+            workspaces = get_workspaces_with_team_counts(organization_id, request.user)
             context = {
                 "workspaces": workspaces,
                 "organization": organization,
@@ -371,7 +378,10 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                         workspace_team.workspace_team_id
                     )
                     assign_workspace_team_permissions(
-                        workspace_team, request_user=request.user
+                        workspace_team,
+                        request_user=request.user,
+                        workspace=workspace,
+                        team=form.cleaned_data["team"],
                     )
                     messages.success(request, "Team added to workspace successfully.")
                     message_html = render_to_string(
@@ -423,15 +433,19 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
 def get_workspace_teams_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
+        # to check if the user has permission to view workspace teams under the workspace
+        if not can_view_workspace_teams_under_workspace(request.user, workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view teams under this workspace.",
+            )
         organization = get_organization_by_id(organization_id)
         workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
-
         context = {
             "workspace_teams": workspace_teams,
             "workspace": workspace,
             "organization": organization,
             "view": "teams",
-            "hide_management_access": False,
         }
         return render(request, "workspace_teams/index.html", context)
     except Exception as e:
@@ -450,9 +464,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            # unnecessary to remove permissions as the workspace team will be deleted
-            # remove_workspace_team_permissions(workspace_team, request_user=request.user)
-            remove_team_from_workspace(workspace_team)
+            remove_team_from_workspace(workspace_team, team)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {

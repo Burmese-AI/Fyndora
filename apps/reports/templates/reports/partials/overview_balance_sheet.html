@@ -20,11 +20,18 @@
 {% else %}
 <section class="card shadow-lg bg-base-100 p-4">
   <!-- Report Title -->
-  <div class="mb-4">
-    <span class="text-lg font-semibold">
-      {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
-    </span>
-    <span class="font-medium">{{ context_parent.title }}</span>
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <span class="text-lg font-semibold">
+        {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
+      </span>
+      <span class="font-medium">{{ context_parent.title }}</span>
+    </div>
+
+    <form method="post" action="{% url 'overview_finance_report' organization.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-neutral">Export</button>
+    </form>
   </div>
 
   <div class="overflow-x-auto">

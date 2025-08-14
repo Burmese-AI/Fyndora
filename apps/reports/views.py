@@ -1,20 +1,25 @@
-from django.shortcuts import render
 from typing import Any
+import csv
+from datetime import datetime
+from django.shortcuts import render
+from django.http import HttpResponse
 from django.views.generic import TemplateView
 from apps.core.views.mixins import (
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
 )
-from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from decimal import Decimal
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
-from apps.entries.models import Entry
 from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.models import Organization
-from apps.remittance.models import Remittance
 from apps.entries.constants import EntryType, EntryStatus
+from apps.core.services.file_export_services import (
+    CsvExporter,
+    # PdfExporter
+)
 from pprint import pprint
 from apps.entries.selectors import get_total_amount_of_entries
+from .services import export_overview_finance_report
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -154,12 +159,76 @@ class OverviewFinanceReportView(
         print("=" * 100)
         return base_context
 
+    def post(self, request, *args, **kwargs):
+        export_format = request.GET.get("format", "csv").lower()
+        context = self.get_context_data(**kwargs)
+
+        if export_format == "csv":
+            return export_overview_finance_report(context, CsvExporter)
+        elif export_format == "pdf":
+            return export_overview_finance_report(context, CsvExporter)
+        else:
+            raise Http404(f"Unsupported export format: {export_format}")
+    
+    def _export_to_csv(self, context):
+        """Generate CSV export matching the HTML table layout"""
+        workspace_filter = self.request.GET.get("workspace") or None
+        filename = (
+            f"finance-report-workspace-{context['context_parent']['title']}-{datetime.now().date()}.csv"
+            if workspace_filter
+            else f"finance-report-organization-{datetime.now().date()}.csv"
+        )
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+
+        # Header row (matches table <thead>)
+        header_first_col = "Team" if workspace_filter else "Workspace"
+        writer.writerow([header_first_col, "Total Income", "Total Expense", "Net Income", "Org Share"])
+
+        # Children rows
+        for child in context['context_children']:
+            # This matches exactly what’s rendered in <tbody>
+            writer.writerow([
+                child['title'],
+                f"{child['total_income']:.2f}",
+                f"{child['total_expense']:.2f}",
+                f"{child['net_income']:.2f}" if 'net_income' in child else "",
+                f"{child['org_share']:.2f}" if 'org_share' in child else "",
+            ])
+
+        # Blank row before totals
+        writer.writerow([])
+
+        # Totals row (matches first <tfoot> row)
+        parent = context['context_parent']
+        writer.writerow([
+            "Total",
+            f"{parent['total_income']:.2f}",
+            f"{parent['total_expense']:.2f}",
+            f"{parent['net_income']:.2f}",
+            f"{parent['org_share']:.2f}",
+        ])
+
+        # Parent expenses & final net profit (matches second <tfoot> row)
+        writer.writerow([
+            parent['parent_expense_label'],
+            f"{parent['parent_lvl_total_expense']:.2f}",
+            "",
+            "Final Net Profit",
+            f"{parent['final_net_profit']:.2f}",
+        ])
+
+        return response
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
         return super().render_to_response(context, **response_kwargs)
-        
+
+     
 class RemittanceReportView(
     OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,

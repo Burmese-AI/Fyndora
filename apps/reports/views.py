@@ -1,20 +1,22 @@
+from decimal import Decimal
+from pprint import pprint
 from typing import Any
+
 from django.shortcuts import render
 from django.views.generic import TemplateView
+
 from apps.core.views.mixins import (
-    OrganizationRequiredMixin,
     HtmxInvalidResponseMixin,
+    OrganizationRequiredMixin,
 )
-from decimal import Decimal
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.workspaces.models import Workspace, WorkspaceTeam
 from apps.organizations.models import Organization
 from apps.entries.constants import EntryType, EntryStatus
-from apps.core.services.file_export_services import CsvExporter, PdfExporter
-from pprint import pprint
 from apps.entries.selectors import get_total_amount_of_entries
+from apps.core.services.file_export_services import CsvExporter, PdfExporter
 from .services import export_overview_finance_report
-
+from apps.reports.selectors import EntrySelectors, RemittanceSelectors
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -169,6 +171,7 @@ class OverviewFinanceReportView(
         else:
             raise Http404(f"Unsupported export format: {export_format}")
 
+
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
@@ -185,8 +188,34 @@ class RemittanceReportView(
     content_template_name = "reports/partials/remittance_balance_sheet.html"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
+        workspace_filter = self.request.GET.get("workspace") or None
+
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "remittance"
+        base_context["workspace_filter"] = workspace_filter
+
+        # Get remittance statistics
+        remittance_stats = RemittanceSelectors.get_summary_stats(
+            organization_id=self.organization.pk, workspace_id=workspace_filter
+        )
+
+        # Calculate payment progress percentage
+        total_due = remittance_stats["total_due"]
+        total_paid = remittance_stats["total_paid"]
+        payment_progress = 0
+        if total_due > 0:
+            payment_progress = round((total_paid / total_due) * 100, 1)
+
+        base_context.update(
+            {
+                "total_due": total_due,
+                "total_paid": total_paid,
+                "overdue_amount": remittance_stats["overdue_amount"],
+                "remaining_due": remittance_stats["remaining_due"],
+                "payment_progress": payment_progress,
+            }
+        )
+
         return base_context
 
     def render_to_response(self, context, **response_kwargs):
@@ -205,8 +234,26 @@ class EntryReportView(
     content_template_name = "reports/partials/entry_balance_sheet.html"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
+        workspace_filter = self.request.GET.get("workspace") or None
+
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "entry"
+        base_context["workspace_filter"] = workspace_filter
+
+        # Get entry statistics
+        entry_stats = EntrySelectors.get_summary_stats(
+            organization_id=self.organization.pk, workspace_id=workspace_filter
+        )
+
+        base_context.update(
+            {
+                "total_entries": entry_stats["total_entries"],
+                "pending_entries": entry_stats["pending_entries"],
+                "approved_entries": entry_stats["approved_entries"],
+                "rejected_entries": entry_stats["rejected_entries"],
+            }
+        )
+
         return base_context
 
     def render_to_response(self, context, **response_kwargs):

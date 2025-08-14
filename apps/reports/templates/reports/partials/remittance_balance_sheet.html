@@ -1,1 +1,85 @@
-<h1>Remittance Balance Sheet</h1>
+<!-- Remittance Balance Sheet Dashboard -->
+<div class="min-h-screen p-6">
+
+    <!-- Dashboard Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Due Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Total Due</h3>
+                <div class="w-6 h-6 text-gray-400">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 mb-2">
+                ${{ total_due|floatformat:0|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">Across all teams</p>
+        </div>
+
+        <!-- Total Paid Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Total Paid</h3>
+                <div class="w-6 h-6 text-green-500">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-green-600 mb-2">
+                ${{ total_paid|floatformat:0|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">{{ payment_progress }}% payment rate</p>
+        </div>
+
+        <!-- Overdue Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Overdue</h3>
+                <div class="w-6 h-6 text-red-500">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-red-600 mb-2">
+                ${{ overdue_amount|floatformat:0|default:"0" }}
+            </div>
+            <p class="text-sm text-gray-500">Requires immediate attention</p>
+        </div>
+
+        <!-- Remaining Due Amount Card -->
+        <div class="rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-900">Remaining Due Amount</h3>
+                <div class="w-6 h-6 text-gray-400">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 mb-2">
+                ${{ remaining_due|floatformat:0|default:"0" }}
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                {% if total_due > 0 %}
+                    {% widthratio remaining_due total_due 100 as remaining_percentage %}
+<div class="bg-gray-900 h-2 rounded-full" style="width: '{{ remaining_percentage }}%'"></div>
+                {% else %}
+                    <div class="bg-gray-900 h-2 rounded-full" style="width: 0%"></div>
+                {% endif %}
+            </div>
+            <p class="text-sm text-gray-500">
+                {% if total_due > 0 %}
+                    {% widthratio remaining_due total_due 100 as remaining_percentage %}
+                    {{ remaining_percentage }}% remaining
+                {% else %}
+                    0% remaining
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>

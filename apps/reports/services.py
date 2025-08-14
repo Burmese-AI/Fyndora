@@ -10,6 +10,6 @@ def export_overview_finance_report(context, exporter_class: type[BaseFileExporte
         ("parent_lvl_total_expense", "Parent Level Expenses"),
         ("final_net_profit", "Final Net Profit"),
     ]
-    data = [context["context_parent"]] + context["context_children"]
+    data = context["context_children"] + [context["context_parent"]]
     exporter = exporter_class("overview-finance-report", columns, data)
     return exporter.export()

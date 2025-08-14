@@ -761,19 +761,19 @@ class BusinessAuditLogger:
                     "organization_id": str(workspace.organization.organization_id),
                     "organization_title": workspace.organization.title,
                     "workspace_status": getattr(workspace, "status", ""),
-                    "workspace_admin_id": str(workspace.admin.organization_member_id)
-                    if workspace.admin
+                    "workspace_admin_id": str(workspace.workspace_admin.organization_member_id)
+                    if workspace.workspace_admin
                     else None,
-                    "workspace_admin_email": workspace.admin.user.email
-                    if workspace.admin
+                    "workspace_admin_email": workspace.workspace_admin.user.email
+                    if workspace.workspace_admin
                     else None,
                     "workspace_reviewer_id": str(
-                        workspace.reviewer.organization_member_id
+                        workspace.operations_reviewer.organization_member_id
                     )
-                    if workspace.reviewer
+                    if workspace.operations_reviewer
                     else None,
-                    "workspace_reviewer_email": workspace.reviewer.user.email
-                    if workspace.reviewer
+                    "workspace_reviewer_email": workspace.operations_reviewer.user.email
+                    if workspace.operation_reviewer
                     else None,
                 }
             )

@@ -90,6 +90,10 @@ class Organization(baseModel):
                 OrganizationPermissions.DELETE_ORG_CURRENCY,
                 OrganizationPermissions.DELETE_ORG_CURRENCY.label,
             ),
+            (
+                OrganizationPermissions.VIEW_REPORT_PAGE,
+                OrganizationPermissions.VIEW_REPORT_PAGE.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

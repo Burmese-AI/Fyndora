@@ -125,6 +125,10 @@ class OrganizationPermissions(models.TextChoices):
         "delete_org_currency",
         "Can delete org currency to organization only by Org Owner",
     )
+    VIEW_REPORT_PAGE = (
+        "view_report_page",
+        "Can view report page by Org Owner",
+    )
 
 
 class TeamPermissions(models.TextChoices):

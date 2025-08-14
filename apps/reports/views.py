@@ -15,7 +15,10 @@ from apps.organizations.models import Organization
 from apps.reports.selectors import EntrySelectors, RemittanceSelectors
 from apps.workspaces.mixins.workspaces.mixins import WorkspaceFilteringMixin
 from apps.workspaces.models import Workspace, WorkspaceTeam
-
+from apps.core.permissions import OrganizationPermissions
+from django.shortcuts import redirect
+from apps.reports.permissions import can_view_report_page
+from apps.core.utils import permission_denied_view
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,
@@ -25,6 +28,14 @@ class OverviewFinanceReportView(
 ):
     template_name = "reports/overview_finance_report_index.html"
     content_template_name = "reports/partials/overview_balance_sheet.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_report_page(request.user, self.organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view the report page.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def _get_workspace_team_context(self, workspace_team: WorkspaceTeam):
         team_income = get_total_amount_of_entries(
@@ -169,6 +180,8 @@ class RemittanceReportView(
 ):
     template_name = "reports/remittance_report_index.html"
     content_template_name = "reports/partials/remittance_balance_sheet.html"
+
+  
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         workspace_filter = self.request.GET.get("workspace") or None

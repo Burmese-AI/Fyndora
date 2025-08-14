@@ -75,6 +75,7 @@ from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
+from apps.workspaces.utils import can_view_workspace_teams_under_workspace
 
 
 @login_required
@@ -427,6 +428,12 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
 def get_workspace_teams_view(request, organization_id, workspace_id):
     try:
         workspace = get_workspace_by_id(workspace_id)
+        #to check if the user has permission to view workspace teams under the workspace
+        if not can_view_workspace_teams_under_workspace(request.user, workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view teams under this workspace.",
+            )
         organization = get_organization_by_id(organization_id)
         workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
         context = {

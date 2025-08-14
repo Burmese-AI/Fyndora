@@ -44,6 +44,7 @@ ROLES = {
     "OPERATIONS_REVIEWER": [
         OrganizationPermissions.MANAGE_ORGANIZATION,
         WorkspacePermissions.ASSIGN_TEAMS,
+        WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
     ],
     "TEAM_COORDINATOR": [
         OrganizationPermissions.MANAGE_ORGANIZATION,
@@ -51,6 +52,7 @@ ROLES = {
         TeamPermissions.DELETE_TEAM,
         TeamPermissions.VIEW_TEAM,
         TeamPermissions.ADD_TEAM_MEMBER,
+        WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
     ],
     "SUBMITTER": [
         WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY,  # org admin,TC and Submitter

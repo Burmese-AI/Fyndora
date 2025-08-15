@@ -363,10 +363,11 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
             try:
                 if form.is_valid():
                     workspace_team = add_team_to_workspace(
-                        workspace_id,
-                        form.cleaned_data["team"].team_id,
-                        form.cleaned_data["custom_remittance_rate"],
-                        workspace,
+                        workspace_id=workspace_id,
+                        team_id=form.cleaned_data["team"].team_id,
+                        custom_remittance_rate=form.cleaned_data["custom_remittance_rate"],
+                        workspace=workspace,
+                        user=request.user,
                     )
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
@@ -464,7 +465,7 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            remove_team_from_workspace(workspace_team, team)
+            remove_team_from_workspace(workspace_team=workspace_team, team=team, user=request.user)
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {
@@ -515,7 +516,8 @@ def change_workspace_team_remittance_rate_view(
             if form.is_valid():
                 # Updating Team Lvl Remittance Rate
                 update_workspace_team_remittance_rate_from_form(
-                    form=form, workspace_team=workspace_team, workspace=workspace
+                    form=form, workspace_team=workspace_team, workspace=workspace, user=request.user
+
                 )
                 # Updating due amount of remittance
                 remittance = workspace_team.remittance

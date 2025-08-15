@@ -153,13 +153,11 @@ class OverviewFinanceReportView(
                 if not workspace:
                     raise ValueError("Invalid workspace selected.")
                 context_parent = self._get_workspace_context(workspace)
-                print(f">>> ws context_parent {context_parent}")
                 context_children = context_parent.pop("context_children")
                 context_parent["parent_expense_label"] = "Workspace Expenses"
 
             else:
                 context_parent = self._get_organization_context(self.organization)
-                print(f">>> org context_parent {context_parent}")
                 context_children = context_parent.pop("context_children")
                 context_parent["parent_expense_label"] = "Org Expenses"
         except Exception as e:
@@ -184,7 +182,6 @@ class OverviewFinanceReportView(
             return export_overview_finance_report(context, PdfExporter)
         else:
             raise Http404(f"Unsupported export format: {export_format}")
-
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.htmx:

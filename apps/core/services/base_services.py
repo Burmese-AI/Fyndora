@@ -1,8 +1,7 @@
 class BaseFileExporter:
-    def __init__(self, filename_prefix: str, columns: list[tuple], data: list[dict]):
+    def __init__(self, filename_prefix: str, blocks: list[dict]):
         self.filename_prefix = filename_prefix
-        self.columns = columns
-        self.data = data
+        self.blocks = blocks
 
     def export(self):
-        pass
+        raise NotImplementedError("Subclasses must implement export()")

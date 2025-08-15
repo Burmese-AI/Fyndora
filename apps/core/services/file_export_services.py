@@ -14,10 +14,18 @@ class CsvExporter(BaseFileExporter):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        writer.writerow([header for _, header in self.columns])
-        for row in self.data:
-            writer.writerow([row.get(key, "") for key, _ in self.columns])
-
+        
+        for block in self.blocks:
+            if block["type"] == "table":
+                writer.writerow([header for _, header in block["columns"]])
+                for row in block["rows"]:
+                    writer.writerow([row.get(key, "") for key, _ in block["columns"]])
+                if "footer" in block:
+                    for footer_row in block["footer"]:
+                        writer.writerow([footer_row.get(key, "") for key, _ in block["columns"]])
+            elif block["type"] == "paragraph":
+                writer.writerow([block["text"]])
+        
         return response
 
 
@@ -27,44 +35,54 @@ class PdfExporter(BaseFileExporter):
 
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", "B", 10)
-        pdf.cell(0, 10, f"{self.filename_prefix.title()} Export", ln=True, align="C")
-        pdf.ln(10)
 
-        # --- Calculate dynamic column widths ---
-        pdf.set_font("Arial", "", 8)
-        col_widths = []
-        for key, header in self.columns:
-            # start with header width
-            max_width = pdf.get_string_width(str(header)) + 6
-            for row in self.data:
-                text_width = pdf.get_string_width(str(row.get(key, ""))) + 6
-                if text_width > max_width:
-                    max_width = text_width
-            col_widths.append(max_width)
+        for block in self.blocks:
+            if block["type"] == "table":
+                col_widths = self._calculate_col_widths(pdf, block["columns"], block["rows"], block.get("footer", []))
 
-        # scale if too wide for page
-        table_width = sum(col_widths)
-        page_width = pdf.w - 2 * pdf.l_margin
-        if table_width > page_width:
-            scale = page_width / table_width
-            col_widths = [w * scale for w in col_widths]
+                pdf.set_font("Arial", "B", 8)
+                for (_, header), width in zip(block["columns"], col_widths):
+                    pdf.cell(width, 8, str(header), border=1, align="C")
+                pdf.ln()
 
-        # --- Table header ---
-        pdf.set_font("Arial", "B", 8)
-        for (key, header), width in zip(self.columns, col_widths):
-            pdf.cell(width, 10, str(header), border=1, align="C")
-        pdf.ln()
+                pdf.set_font("Arial", "", 8)
+                for row in block["rows"]:
+                    for (key, _), width in zip(block["columns"], col_widths):
+                        pdf.cell(width, 8, str(row.get(key, "")), border=1, align="C")
+                    pdf.ln()
 
-        # --- Table rows ---
-        pdf.set_font("Arial", "", 8)
-        for row in self.data:
-            for (key, _), width in zip(self.columns, col_widths):
-                pdf.cell(width, 10, str(row.get(key, "")), border=1, align="C")
-            pdf.ln()
+                if "footer" in block:
+                    pdf.set_font("Arial", "B", 8)
+                    for footer_row in block["footer"]:
+                        for (key, _), width in zip(block["columns"], col_widths):
+                            pdf.cell(width, 8, str(footer_row.get(key, "")), border=1, align="C")
+                        pdf.ln()
 
-        # Output
+                pdf.ln(5)
+
+            elif block["type"] == "paragraph":
+                pdf.set_font("Arial", "", 10)
+                pdf.multi_cell(0, 8, block["text"])
+                pdf.ln(5)
+
         response = HttpResponse(content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         response.write(pdf.output(dest="S").encode("latin1"))
         return response
+
+    def _calculate_col_widths(self, pdf, columns, rows, footer_rows):
+        pdf.set_font("Arial", "", 8)
+        col_widths = []
+        all_rows = rows + footer_rows
+        for key, header in columns:
+            max_width = pdf.get_string_width(str(header)) + 6
+            for row in all_rows:
+                text_width = pdf.get_string_width(str(row.get(key, ""))) + 6
+                if text_width > max_width:
+                    max_width = text_width
+            col_widths.append(max_width)
+        page_width = pdf.w - 2 * pdf.l_margin
+        if sum(col_widths) > page_width:
+            scale = page_width / sum(col_widths)
+            col_widths = [w * scale for w in col_widths]
+        return col_widths

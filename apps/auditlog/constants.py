@@ -154,6 +154,9 @@ class AuditActionType(models.TextChoices):
     EMAIL_FAILED = "email_failed", "Email Failed"
     NOTIFICATION_SENT = "notification_sent", "Notification Sent"
 
+    # System Events
+    SYSTEM_ERROR = "system_error", "System Error"
+
 
 def is_critical_action(action_type):
     """

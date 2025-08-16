@@ -1,3 +1,4 @@
+{% with query_string=request.GET.urlencode %}
 <div 
   {% if is_oob %}hx-swap-oob="true"{% endif %} 
   id="pagination-container" 
@@ -6,9 +7,9 @@
   <div class="join">
     {% if page_obj.has_previous %}
       <a 
-        href="?page={{ page_obj.previous_page_number }}" 
+        href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
-        hx-get="?page={{ page_obj.previous_page_number }}"
+        hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}"
         hx-target="#content-container"
         hx-swap="innerHTML"
       >
@@ -23,9 +24,9 @@
         <button class="join-item btn btn-sm bg-neutral text-neutral-content border-lemonade-600">{{ num }}</button>
       {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
         <a 
-          href="?page={{ num }}" 
+          href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}" 
           class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
-          hx-get="?page={{ num }}"
+          hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}"
           hx-target="#content-container"
           hx-swap="innerHTML"
         >
@@ -36,9 +37,9 @@
 
     {% if page_obj.has_next %}
       <a 
-        href="?page={{ page_obj.next_page_number }}" 
+        href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
-        hx-get="?page={{ page_obj.next_page_number }}"
+        hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}"
         hx-target="#content-container"
         hx-swap="innerHTML"
       >
@@ -49,3 +50,4 @@
     {% endif %}
   </div>
 </div>
+{% endwith %}

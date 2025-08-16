@@ -30,5 +30,5 @@
 </div>
 
 {% if is_paginated %}
-  {% include "components/pagination.html" %}
+  {% include "components/pagination.html" with request=request %}
 {% endif %}

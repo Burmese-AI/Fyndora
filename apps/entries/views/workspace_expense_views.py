@@ -242,4 +242,4 @@ class WorkspaceExpenseDeleteView(
     def perform_service(self, form):
         from ..services import delete_entry
 
-        delete_entry(self.entry)
+        delete_entry(entry=self.entry, user=self.request.user, request=self.request)

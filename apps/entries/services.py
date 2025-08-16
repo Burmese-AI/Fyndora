@@ -234,7 +234,7 @@ def update_entry_status(
     )
 
 
-def delete_entry(entry: Entry, user=None, request=None):
+def delete_entry(*, entry: Entry, user=None, request=None):
     """
     Service to delete an entry.
     """

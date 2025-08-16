@@ -80,7 +80,6 @@ def audit_create(
         )
 
         data = {
-            "workspace": workspace,
             "user": user,
             "action_type": action_type,
             "target_entity_id": target_entity_id,

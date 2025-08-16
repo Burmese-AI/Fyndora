@@ -157,7 +157,7 @@ def update_workspace_from_form(
         raise WorkspaceUpdateError(f"Failed to update workspace: {str(e)}")
 
 
-def remove_team_from_workspace(workspace_team, user=None, team=None):
+def remove_team_from_workspace(*, workspace_team, user=None, team=None):
     try:
         # Store references before deletion
         workspace = workspace_team.workspace
@@ -210,7 +210,12 @@ def remove_team_from_workspace(workspace_team, user=None, team=None):
 
 
 def add_team_to_workspace(
-    workspace_id, team_id, custom_remittance_rate, workspace, user=None
+    *,
+    workspace_id,
+    team_id,
+    custom_remittance_rate,
+    workspace,
+    user=None,
 ):
     try:
         if custom_remittance_rate is None:

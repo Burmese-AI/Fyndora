@@ -238,7 +238,8 @@ class OrganizationExpenseDeleteView(
         )
 
     def perform_service(self, form):
-        delete_entry(self.entry)
+        delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+
 
 
 class OrganizationExpenseBulkDeleteView(

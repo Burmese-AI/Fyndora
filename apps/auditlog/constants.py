@@ -42,6 +42,18 @@ class AuditActionType(models.TextChoices):
         "organization_member_updated",
         "Organization Member Updated",
     )
+    ORGANIZATION_EXCHANGE_RATE_CREATED = (
+        "organization_exchange_rate_created",
+        "Organization Exchange Rate Created",
+    )
+    ORGANIZATION_EXCHANGE_RATE_UPDATED = (
+        "organization_exchange_rate_updated",
+        "Organization Exchange Rate Updated",
+    )
+    ORGANIZATION_EXCHANGE_RATE_DELETED = (
+        "organization_exchange_rate_deleted",
+        "Organization Exchange Rate Deleted",
+    )
 
     # Workspace Management
     WORKSPACE_CREATED = "workspace_created", "Workspace Created"
@@ -134,6 +146,7 @@ class AuditActionType(models.TextChoices):
 
     # Permission & Access Management
     PERMISSION_GRANTED = "permission_granted", "Permission Granted"
+    PERMISSION_CHANGED = "permission_changed", "Permission Changed"
     PERMISSION_REVOKED = "permission_revoked", "Permission Revoked"
     ROLE_ASSIGNED = "role_assigned", "Role Assigned"
     ROLE_REMOVED = "role_removed", "Role Removed"
@@ -156,6 +169,7 @@ class AuditActionType(models.TextChoices):
 
     # System Events
     SYSTEM_ERROR = "system_error", "System Error"
+    OPERATION_FAILED = "operation_failed", "Operation Failed"
 
 
 def is_critical_action(action_type):

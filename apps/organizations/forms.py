@@ -37,13 +37,13 @@ class OrganizationForm(forms.ModelForm):
     def clean_title(self):
         title = self.cleaned_data.get("title")
 
+        # if the instance is not adding, we are in edit mode
         if self.instance and not self.instance._state.adding:
-            print("EDIT MODE")
             organization_queryset = Organization.objects.filter(title=title).exclude(
                 pk=self.instance.pk
             )
         else:
-            print("CREATE MODE")
+            # if the instance is adding, we are in create mode
             organization_queryset = Organization.objects.filter(title=title)
 
         if organization_queryset.exists():

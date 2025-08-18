@@ -49,7 +49,10 @@ class Organization(baseModel):
                 OrganizationPermissions.ADD_WORKSPACE,
                 OrganizationPermissions.ADD_WORKSPACE.label,
             ),
-            (OrganizationPermissions.ADD_TEAM, OrganizationPermissions.ADD_TEAM.label),
+            (
+                OrganizationPermissions.ADD_TEAM,
+                OrganizationPermissions.ADD_TEAM.label,
+            ),
             (
                 OrganizationPermissions.INVITE_ORG_MEMBER,
                 OrganizationPermissions.INVITE_ORG_MEMBER.label,

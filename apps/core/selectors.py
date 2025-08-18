@@ -7,7 +7,17 @@ User = get_user_model()
 
 def get_user_by_email(email: str):
     """Get user by email"""
-    return User.objects.filter(email=email).first()
+    try:
+        return User.objects.get(email=email)
+    except User.DoesNotExist:
+        return None
+    except User.MultipleObjectsReturned:
+        # this is the error case
+        print(f"Multiple users found for email: {email}")
+        return User.objects.filter(email=email).first()
+    except Exception as e:
+        print(f"Error in get_user_by_email: {str(e)}")
+        return None
 
 
 def get_org_members_without_owner(organization):

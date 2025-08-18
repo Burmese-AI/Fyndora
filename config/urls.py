@@ -22,7 +22,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("apps.organizations.urls")),
     path("", include("apps.core.urls")),
-    path("accounts/", include("apps.accounts.urls")),
     path("accounts/", include("allauth.urls")),
     path("auditlog/", include("apps.auditlog.urls")),
     path("<uuid:organization_id>/workspaces/", include("apps.workspaces.urls")),

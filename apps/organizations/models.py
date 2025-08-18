@@ -104,6 +104,9 @@ class Organization(baseModel):
                 name="unique_organization",
             )
         ]
+        indexes = [
+            models.Index(fields=["title"]),
+        ]
 
     def __str__(self):
         return self.title

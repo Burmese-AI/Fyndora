@@ -140,7 +140,11 @@ def update_entry_user_inputs(
 
     # Check if currency or occurred_at values are changed or not
     is_currency_changed = entry.currency.code != currency.code
+    print(f"is currency changed => {is_currency_changed}")
+    print(f"is currency changed => {entry.currency.code} | {currency.code}")
     is_occurred_at_changed = entry.occurred_at != occurred_at
+    print(f"is occurred at changed => {is_occurred_at_changed}")
+    print(f"is occurred at changed => {entry.occurred_at} | {occurred_at}")
     # If changed, update exchange_rate_used, org_exchange_rate_ref, workspace_exchange_rate_ref
     new_exchange_rate_used = None
     if is_currency_changed or is_occurred_at_changed:
@@ -163,11 +167,13 @@ def update_entry_user_inputs(
 
     if new_exchange_rate_used:
         entry.exchange_rate_used = new_exchange_rate_used.rate
+        #Reset org_exchange_rate_ref
         entry.org_exchange_rate_ref = (
             new_exchange_rate_used
             if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
             else None
         )
+        #Reset workspace_exchange_rate_ref
         entry.workspace_exchange_rate_ref = (
             new_exchange_rate_used
             if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)

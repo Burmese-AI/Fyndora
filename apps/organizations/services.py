@@ -65,6 +65,7 @@ def create_organization_with_owner(*, form, user) -> Organization:
 
         # Assign permissions to the org owner group
         for perm in org_owner_permissions:
+            # neglecting workspace currency permissions as we need specific workspace ID
             if "workspace_currency" not in perm:
                 assign_perm(perm, org_owner_group, organization)
 

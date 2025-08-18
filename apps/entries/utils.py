@@ -134,8 +134,14 @@ def own_higher_admin_role(user, workspace_team):
         or is_org_admin
     )
 
+def can_view_total_workspace_teams_entries(user, workspace):
+    """
+    Returns True if the user has the permission to view the total workspace teams entries.
+    """
+    return user.has_perm(WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES, workspace)
+
 def can_view_workspace_level_entries(user, workspace):
     """
     Returns True if the user has the permission to view the workspace level entries.
     """
-    return user.has_perm(WorkspacePermissions.VIEW_WORKSPACE_ENTRY, workspace)
+    return user.has_perm(WorkspacePermissions.VIEW_WORKSPACE_ENTRY, workspace)   

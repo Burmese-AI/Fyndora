@@ -112,6 +112,10 @@ class Workspace(baseModel):
                 WorkspacePermissions.VIEW_WORKSPACE_CURRENCY,
                 WorkspacePermissions.VIEW_WORKSPACE_CURRENCY.label,
             ),
+            (
+                WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES,
+                WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

@@ -45,6 +45,7 @@ ROLES = {
         WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
         WorkspacePermissions.VIEW_WORKSPACE_CURRENCY,
         WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
+        WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES,
     ],
     "OPERATIONS_REVIEWER": [
         OrganizationPermissions.MANAGE_ORGANIZATION,

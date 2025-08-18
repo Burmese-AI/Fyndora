@@ -59,6 +59,10 @@ class WorkspacePermissions(models.TextChoices):
         "view_workspace_teams_under_workspace",
         "Can view workspace teams under workspace by WA ,OR,TC and Org Owner",
     )
+    VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES = (
+        "view_total_workspace_teams_entries",
+        "Can view total workspace teams entries by WA and Org Owner",
+    )
 
 
 class OrganizationPermissions(models.TextChoices):

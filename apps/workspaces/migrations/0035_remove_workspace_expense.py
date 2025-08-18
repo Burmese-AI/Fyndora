@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0034_alter_workspace_options'),
+        ("workspaces", "0034_alter_workspace_options"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='workspace',
-            name='expense',
+            model_name="workspace",
+            name="expense",
         ),
     ]

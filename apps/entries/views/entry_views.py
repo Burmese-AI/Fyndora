@@ -49,6 +49,7 @@ from apps.entries.utils import (
 )
 from apps.entries.utils import can_view_total_workspace_teams_entries
 
+
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
     TeamLevelEntryView,
@@ -102,7 +103,6 @@ class WorkspaceTeamEntryListView(
     table_template_name = "entries/partials/table.html"
     template_name = "entries/team_level_entry_index_for_review.html"
     secondary_template_name = "entries/team_level_entry_index_for_submitters.html"
-
 
     def get_template_names(self):
         if self.workspace_team_role == TeamMemberRole.SUBMITTER:
@@ -320,4 +320,3 @@ class WorkspaceTeamEntryDeleteView(
 
     def perform_service(self, form):
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
-

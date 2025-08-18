@@ -60,7 +60,7 @@ class BusinessAuditLogger:
         """Extract parameter from request with fallback to kwargs"""
         if request is None:
             return default
-        
+
         if method == "POST":
             return request.POST.get(param_name, default)
         elif method == "GET":
@@ -84,10 +84,10 @@ class BusinessAuditLogger:
             f"{action_type}_id": str(user.user_id),
             f"{action_type}_email": user.email,
         }
-        
+
         if timestamp_key:
             metadata[timestamp_key] = timezone.now().isoformat()
-        
+
         return metadata
 
     @staticmethod
@@ -95,19 +95,21 @@ class BusinessAuditLogger:
         """Build metadata for entity objects"""
         if not entity:
             return {}
-        
+
         # Get primary key field name if not specified
         if id_field is None:
             id_field = entity._meta.pk.name
-        
+
         metadata = {
             f"{entity.__class__.__name__.lower()}_id": str(getattr(entity, id_field)),
         }
-        
+
         # Add title/name if exists
         if hasattr(entity, title_field):
-            metadata[f"{entity.__class__.__name__.lower()}_{title_field}"] = getattr(entity, title_field)
-        
+            metadata[f"{entity.__class__.__name__.lower()}_{title_field}"] = getattr(
+                entity, title_field
+            )
+
         return metadata
 
     @staticmethod
@@ -115,7 +117,7 @@ class BusinessAuditLogger:
         """Safely get nested field value with None checks"""
         try:
             current = obj
-            for field in field_path.split('.'):
+            for field in field_path.split("."):
                 if current is None:
                     return default
                 current = getattr(current, field, None)
@@ -127,41 +129,51 @@ class BusinessAuditLogger:
     def _build_crud_action_metadata(user, action, request=None, **kwargs):
         """Build metadata for CRUD operations (create/update/delete)"""
         metadata = {}
-        
+
         if action == "create":
-            metadata.update(BusinessAuditLogger._build_user_action_metadata(
-                user, "creator", "creation_timestamp"
-            ))
+            metadata.update(
+                BusinessAuditLogger._build_user_action_metadata(
+                    user, "creator", "creation_timestamp"
+                )
+            )
         elif action == "update":
-            metadata.update(BusinessAuditLogger._build_user_action_metadata(
-                user, "updater", "update_timestamp"
-            ))
+            metadata.update(
+                BusinessAuditLogger._build_user_action_metadata(
+                    user, "updater", "update_timestamp"
+                )
+            )
             metadata["updated_fields"] = kwargs.get("updated_fields", [])
         elif action == "delete":
-            metadata.update(BusinessAuditLogger._build_user_action_metadata(
-                user, "deleter", "deletion_timestamp"
-            ))
+            metadata.update(
+                BusinessAuditLogger._build_user_action_metadata(
+                    user, "deleter", "deletion_timestamp"
+                )
+            )
             metadata["soft_delete"] = kwargs.get("soft_delete", False)
-        
+
         return metadata
 
     @staticmethod
-    def _handle_action_with_mapping(user, entity, action, action_mapping, request=None, **kwargs):
+    def _handle_action_with_mapping(
+        user, entity, action, action_mapping, request=None, **kwargs
+    ):
         """Generic handler for actions with mapping validation"""
         BusinessAuditLogger._validate_request_and_user(request, user)
-        
+
         if action not in action_mapping:
             logger.warning(f"Unknown action: {action}")
             return None
-        
+
         return action_mapping[action]
 
     @staticmethod
-    def _finalize_and_create_audit(user, action_type, metadata, target_entity=None, is_security_event=False):
+    def _finalize_and_create_audit(
+        user, action_type, metadata, target_entity=None, is_security_event=False
+    ):
         """Finalize metadata and create audit log entry"""
         # Ensure all metadata is JSON serializable
         serializable_metadata = make_json_serializable(metadata)
-        
+
         if is_security_event:
             audit_create_security_event(
                 user=user,
@@ -202,62 +214,72 @@ class BusinessAuditLogger:
 
         # Add entry-specific metadata
         if entry:
-            metadata.update({
-                "entry_id": str(entry.entry_id),
-                "entry_description": entry.description,
-                "entry_status": entry.status,
-                "entry_amount": str(entry.amount) if entry.amount else None,
-                "entry_currency": entry.currency,
-                "workspace_id": BusinessAuditLogger._safe_get_related_field(
-                    entry, "workspace.workspace_id", str
-                ),
-                "workspace_title": BusinessAuditLogger._safe_get_related_field(
-                    entry, "workspace.title"
-                ),
-                "organization_id": BusinessAuditLogger._safe_get_related_field(
-                    entry, "organization.organization_id", str
-                ),
-                "organization_title": BusinessAuditLogger._safe_get_related_field(
-                    entry, "organization.title"
-                ),
-                "submitter_id": BusinessAuditLogger._safe_get_related_field(
-                    entry, "submitter.organization_member_id", str
-                ),
-                "submitter_email": BusinessAuditLogger._safe_get_related_field(
-                    entry, "submitter.user.email"
-                ),
-            })
+            metadata.update(
+                {
+                    "entry_id": str(entry.entry_id),
+                    "entry_description": entry.description,
+                    "entry_status": entry.status,
+                    "entry_amount": str(entry.amount) if entry.amount else None,
+                    "entry_currency": entry.currency,
+                    "workspace_id": BusinessAuditLogger._safe_get_related_field(
+                        entry, "workspace.workspace_id", str
+                    ),
+                    "workspace_title": BusinessAuditLogger._safe_get_related_field(
+                        entry, "workspace.title"
+                    ),
+                    "organization_id": BusinessAuditLogger._safe_get_related_field(
+                        entry, "organization.organization_id", str
+                    ),
+                    "organization_title": BusinessAuditLogger._safe_get_related_field(
+                        entry, "organization.title"
+                    ),
+                    "submitter_id": BusinessAuditLogger._safe_get_related_field(
+                        entry, "submitter.organization_member_id", str
+                    ),
+                    "submitter_email": BusinessAuditLogger._safe_get_related_field(
+                        entry, "submitter.user.email"
+                    ),
+                }
+            )
 
         # Add workflow stage information
         if workflow_stage:
-            metadata.update({
-                "workflow_stage": workflow_stage,
-                "stage_timestamp": timezone.now().isoformat(),
-            })
+            metadata.update(
+                {
+                    "workflow_stage": workflow_stage,
+                    "stage_timestamp": timezone.now().isoformat(),
+                }
+            )
 
         # Add action-specific metadata
         if action in ["submit", "resubmit"]:
-            metadata.update({
-                "submitter_id": str(user.user_id),
-                "submitter_email": user.email,
-                "submission_timestamp": timezone.now().isoformat(),
-                "submission_notes": kwargs.get("notes", ""),
-            })
+            metadata.update(
+                {
+                    "submitter_id": str(user.user_id),
+                    "submitter_email": user.email,
+                    "submission_timestamp": timezone.now().isoformat(),
+                    "submission_notes": kwargs.get("notes", ""),
+                }
+            )
         elif action in ["approve", "reject", "return"]:
-            metadata.update({
-                "reviewer_id": str(user.user_id),
-                "reviewer_email": user.email,
-                "review_timestamp": timezone.now().isoformat(),
-                "review_notes": kwargs.get("notes", ""),
-                "review_decision": action,
-            })
+            metadata.update(
+                {
+                    "reviewer_id": str(user.user_id),
+                    "reviewer_email": user.email,
+                    "review_timestamp": timezone.now().isoformat(),
+                    "review_notes": kwargs.get("notes", ""),
+                    "review_decision": action,
+                }
+            )
         elif action == "withdraw":
-            metadata.update({
-                "withdrawer_id": str(user.user_id),
-                "withdrawer_email": user.email,
-                "withdrawal_timestamp": timezone.now().isoformat(),
-                "withdrawal_reason": kwargs.get("reason", ""),
-            })
+            metadata.update(
+                {
+                    "withdrawer_id": str(user.user_id),
+                    "withdrawer_email": user.email,
+                    "withdrawal_timestamp": timezone.now().isoformat(),
+                    "withdrawal_reason": kwargs.get("reason", ""),
+                }
+            )
 
         # Finalize and create audit log
         BusinessAuditLogger._finalize_and_create_audit(
@@ -287,23 +309,27 @@ class BusinessAuditLogger:
 
         # Build base metadata
         metadata = BusinessAuditLogger._build_base_metadata(action, request, **kwargs)
-        
+
         # Add entry-specific metadata
         if entry:
-            metadata.update({
-                "entry_id": str(entry.entry_id),
-                "entry_type": entry.entry_type,
-                "entry_amount": str(entry.amount) if hasattr(entry, "amount") else None,
-                "workspace_id": BusinessAuditLogger._safe_get_related_field(
-                    entry, "workspace.workspace_id", str
-                ),
-                "workspace_name": BusinessAuditLogger._safe_get_related_field(
-                    entry, "workspace.title"
-                ),
-                "organization_id": BusinessAuditLogger._safe_get_related_field(
-                    entry, "workspace.organization.organization_id", str
-                ),
-            })
+            metadata.update(
+                {
+                    "entry_id": str(entry.entry_id),
+                    "entry_type": entry.entry_type,
+                    "entry_amount": str(entry.amount)
+                    if hasattr(entry, "amount")
+                    else None,
+                    "workspace_id": BusinessAuditLogger._safe_get_related_field(
+                        entry, "workspace.workspace_id", str
+                    ),
+                    "workspace_name": BusinessAuditLogger._safe_get_related_field(
+                        entry, "workspace.title"
+                    ),
+                    "organization_id": BusinessAuditLogger._safe_get_related_field(
+                        entry, "workspace.organization.organization_id", str
+                    ),
+                }
+            )
 
         # Add action-specific metadata
         if action == "approve":
@@ -619,17 +645,23 @@ class BusinessAuditLogger:
 
         # Add organization-specific metadata
         if organization:
-            metadata.update({
-                "organization_id": str(organization.organization_id),
-                "organization_title": organization.title,
-                "organization_status": getattr(organization, "status", None),
-                "organization_description": getattr(organization, "description", ""),
-            })
+            metadata.update(
+                {
+                    "organization_id": str(organization.organization_id),
+                    "organization_title": organization.title,
+                    "organization_status": getattr(organization, "status", None),
+                    "organization_description": getattr(
+                        organization, "description", ""
+                    ),
+                }
+            )
 
         # Add CRUD action metadata
-        metadata.update(BusinessAuditLogger._build_crud_action_metadata(
-            user, action, request, **kwargs
-        ))
+        metadata.update(
+            BusinessAuditLogger._build_crud_action_metadata(
+                user, action, request, **kwargs
+            )
+        )
 
         # Finalize and create audit log
         BusinessAuditLogger._finalize_and_create_audit(
@@ -661,25 +693,29 @@ class BusinessAuditLogger:
 
         # Add exchange rate-specific metadata
         if exchange_rate:
-            metadata.update({
-                "exchange_rate_id": str(exchange_rate.pk),
-                "organization_id": BusinessAuditLogger._safe_get_related_field(
-                    exchange_rate, "organization.organization_id", str
-                ),
-                "currency_code": BusinessAuditLogger._safe_get_related_field(
-                    exchange_rate, "currency.code"
-                ),
-                "rate": str(exchange_rate.rate),
-                "effective_date": exchange_rate.effective_date.isoformat()
-                if exchange_rate.effective_date
-                else None,
-                "note": exchange_rate.note,
-            })
+            metadata.update(
+                {
+                    "exchange_rate_id": str(exchange_rate.pk),
+                    "organization_id": BusinessAuditLogger._safe_get_related_field(
+                        exchange_rate, "organization.organization_id", str
+                    ),
+                    "currency_code": BusinessAuditLogger._safe_get_related_field(
+                        exchange_rate, "currency.code"
+                    ),
+                    "rate": str(exchange_rate.rate),
+                    "effective_date": exchange_rate.effective_date.isoformat()
+                    if exchange_rate.effective_date
+                    else None,
+                    "note": exchange_rate.note,
+                }
+            )
 
         # Add CRUD action metadata
-        metadata.update(BusinessAuditLogger._build_crud_action_metadata(
-            user, action, request, **kwargs
-        ))
+        metadata.update(
+            BusinessAuditLogger._build_crud_action_metadata(
+                user, action, request, **kwargs
+            )
+        )
 
         # Finalize and create audit log
         BusinessAuditLogger._finalize_and_create_audit(
@@ -707,34 +743,38 @@ class BusinessAuditLogger:
 
         # Add team-specific metadata
         if team:
-            metadata.update({
-                "team_id": str(team.team_id),
-                "team_title": team.title,
-                "team_description": getattr(team, "description", ""),
-                "organization_id": BusinessAuditLogger._safe_get_related_field(
-                    team, "organization.organization_id", str
-                ),
-                "organization_title": BusinessAuditLogger._safe_get_related_field(
-                    team, "organization.title"
-                ),
-                "workspace_id": BusinessAuditLogger._safe_get_related_field(
-                    team, "workspace.workspace_id", str
-                ),
-                "workspace_title": BusinessAuditLogger._safe_get_related_field(
-                    team, "workspace.title"
-                ),
-                "team_coordinator_id": BusinessAuditLogger._safe_get_related_field(
-                    team, "team_coordinator.organization_member_id", str
-                ),
-                "team_coordinator_email": BusinessAuditLogger._safe_get_related_field(
-                    team, "team_coordinator.user.email"
-                ),
-            })
+            metadata.update(
+                {
+                    "team_id": str(team.team_id),
+                    "team_title": team.title,
+                    "team_description": getattr(team, "description", ""),
+                    "organization_id": BusinessAuditLogger._safe_get_related_field(
+                        team, "organization.organization_id", str
+                    ),
+                    "organization_title": BusinessAuditLogger._safe_get_related_field(
+                        team, "organization.title"
+                    ),
+                    "workspace_id": BusinessAuditLogger._safe_get_related_field(
+                        team, "workspace.workspace_id", str
+                    ),
+                    "workspace_title": BusinessAuditLogger._safe_get_related_field(
+                        team, "workspace.title"
+                    ),
+                    "team_coordinator_id": BusinessAuditLogger._safe_get_related_field(
+                        team, "team_coordinator.organization_member_id", str
+                    ),
+                    "team_coordinator_email": BusinessAuditLogger._safe_get_related_field(
+                        team, "team_coordinator.user.email"
+                    ),
+                }
+            )
 
         # Add CRUD action metadata
-        metadata.update(BusinessAuditLogger._build_crud_action_metadata(
-            user, action, request, **kwargs
-        ))
+        metadata.update(
+            BusinessAuditLogger._build_crud_action_metadata(
+                user, action, request, **kwargs
+            )
+        )
 
         # Finalize and create audit log
         BusinessAuditLogger._finalize_and_create_audit(
@@ -860,45 +900,51 @@ class BusinessAuditLogger:
 
         # Add workspace-specific metadata
         if workspace:
-            metadata.update({
-                "workspace_id": str(workspace.workspace_id),
-                "workspace_title": workspace.title,
-                "workspace_description": getattr(workspace, "description", ""),
-                "workspace_status": getattr(workspace, "status", ""),
-                "organization_id": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "organization.organization_id", str
-                ),
-                "organization_title": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "organization.title"
-                ),
-                "workspace_admin_id": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "workspace_admin.organization_member_id", str
-                ),
-                "workspace_admin_email": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "workspace_admin.user.email"
-                ),
-                "workspace_reviewer_id": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "operations_reviewer.organization_member_id", str
-                ),
-                "workspace_reviewer_email": BusinessAuditLogger._safe_get_related_field(
-                    workspace, "operations_reviewer.user.email"
-                ),
-            })
+            metadata.update(
+                {
+                    "workspace_id": str(workspace.workspace_id),
+                    "workspace_title": workspace.title,
+                    "workspace_description": getattr(workspace, "description", ""),
+                    "workspace_status": getattr(workspace, "status", ""),
+                    "organization_id": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "organization.organization_id", str
+                    ),
+                    "organization_title": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "organization.title"
+                    ),
+                    "workspace_admin_id": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "workspace_admin.organization_member_id", str
+                    ),
+                    "workspace_admin_email": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "workspace_admin.user.email"
+                    ),
+                    "workspace_reviewer_id": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "operations_reviewer.organization_member_id", str
+                    ),
+                    "workspace_reviewer_email": BusinessAuditLogger._safe_get_related_field(
+                        workspace, "operations_reviewer.user.email"
+                    ),
+                }
+            )
 
         # Add CRUD action metadata
-        metadata.update(BusinessAuditLogger._build_crud_action_metadata(
-            user, action, request, **kwargs
-        ))
+        metadata.update(
+            BusinessAuditLogger._build_crud_action_metadata(
+                user, action, request, **kwargs
+            )
+        )
 
         # Add status change specific metadata
         if action in ["archive", "activate", "close", "status_change"]:
-            metadata.update({
-                "modifier_id": str(user.user_id),
-                "modifier_email": user.email,
-                "modification_timestamp": timezone.now().isoformat(),
-                "previous_status": kwargs.get("previous_status"),
-                "new_status": kwargs.get("new_status"),
-            })
+            metadata.update(
+                {
+                    "modifier_id": str(user.user_id),
+                    "modifier_email": user.email,
+                    "modification_timestamp": timezone.now().isoformat(),
+                    "previous_status": kwargs.get("previous_status"),
+                    "new_status": kwargs.get("new_status"),
+                }
+            )
 
         # Finalize and create audit log
         BusinessAuditLogger._finalize_and_create_audit(

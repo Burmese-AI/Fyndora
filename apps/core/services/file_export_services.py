@@ -14,7 +14,7 @@ class CsvExporter(BaseFileExporter):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        
+
         for block in self.blocks:
             if block["type"] == "table":
                 writer.writerow([header for _, header in block["columns"]])
@@ -22,10 +22,12 @@ class CsvExporter(BaseFileExporter):
                     writer.writerow([row.get(key, "") for key, _ in block["columns"]])
                 if "footer" in block:
                     for footer_row in block["footer"]:
-                        writer.writerow([footer_row.get(key, "") for key, _ in block["columns"]])
+                        writer.writerow(
+                            [footer_row.get(key, "") for key, _ in block["columns"]]
+                        )
             elif block["type"] == "paragraph":
                 writer.writerow([block["text"]])
-        
+
         return response
 
 
@@ -38,7 +40,9 @@ class PdfExporter(BaseFileExporter):
 
         for block in self.blocks:
             if block["type"] == "table":
-                col_widths = self._calculate_col_widths(pdf, block["columns"], block["rows"], block.get("footer", []))
+                col_widths = self._calculate_col_widths(
+                    pdf, block["columns"], block["rows"], block.get("footer", [])
+                )
 
                 pdf.set_font("Arial", "B", 8)
                 for (_, header), width in zip(block["columns"], col_widths):
@@ -55,7 +59,13 @@ class PdfExporter(BaseFileExporter):
                     pdf.set_font("Arial", "B", 8)
                     for footer_row in block["footer"]:
                         for (key, _), width in zip(block["columns"], col_widths):
-                            pdf.cell(width, 8, str(footer_row.get(key, "")), border=1, align="C")
+                            pdf.cell(
+                                width,
+                                8,
+                                str(footer_row.get(key, "")),
+                                border=1,
+                                align="C",
+                            )
                         pdf.ln()
 
                 pdf.ln(5)

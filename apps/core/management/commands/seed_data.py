@@ -867,7 +867,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create workspace expense entry - ONLY by workspace admin
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=EntryType.WORKSPACE_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -925,7 +925,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create organization expense entry - ONLY by organization owner
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=EntryType.ORG_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -1051,7 +1051,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create team-based entry
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=entry_type,
                     description=entry_description,
                     organization=workspace.organization,

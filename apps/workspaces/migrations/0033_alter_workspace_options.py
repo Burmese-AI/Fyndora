@@ -4,14 +4,59 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0032_alter_workspace_options_alter_workspaceteam_options'),
+        ("workspaces", "0032_alter_workspace_options_alter_workspaceteam_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='workspace',
-            options={'ordering': ['-created_at'], 'permissions': (('assign_teams', 'Can assign teams to workspace by WA and Org Owner'), ('add_workspace_entry', 'Can add workspace entry by WA and Org Owner'), ('change_workspace_entry', 'Can change workspace entry by WA and Org Owner'), ('delete_workspace_entry', 'Can delete workspace entry by WA and Org Owner'), ('view_workspace_entry', 'Can view workspace entry by WA and Org Owner'), ('view_workspace_teams_under_workspace', 'Can view workspace teams under workspace by WA ,OR,TC and Org Owner'), ('add_workspace_currency', 'Can add workspace currency by WA and Org Owner'), ('change_workspace_currency', 'Can change workspace currency by WA and Org Owner'), ('delete_workspace_currency', 'Can delete workspace currency by WA and Org Owner'), ('view_workspace_currency', 'Can view workspace currency by WA and Org Owner')), 'verbose_name': 'workspace', 'verbose_name_plural': 'workspaces'},
+            name="workspace",
+            options={
+                "ordering": ["-created_at"],
+                "permissions": (
+                    (
+                        "assign_teams",
+                        "Can assign teams to workspace by WA and Org Owner",
+                    ),
+                    (
+                        "add_workspace_entry",
+                        "Can add workspace entry by WA and Org Owner",
+                    ),
+                    (
+                        "change_workspace_entry",
+                        "Can change workspace entry by WA and Org Owner",
+                    ),
+                    (
+                        "delete_workspace_entry",
+                        "Can delete workspace entry by WA and Org Owner",
+                    ),
+                    (
+                        "view_workspace_entry",
+                        "Can view workspace entry by WA and Org Owner",
+                    ),
+                    (
+                        "view_workspace_teams_under_workspace",
+                        "Can view workspace teams under workspace by WA ,OR,TC and Org Owner",
+                    ),
+                    (
+                        "add_workspace_currency",
+                        "Can add workspace currency by WA and Org Owner",
+                    ),
+                    (
+                        "change_workspace_currency",
+                        "Can change workspace currency by WA and Org Owner",
+                    ),
+                    (
+                        "delete_workspace_currency",
+                        "Can delete workspace currency by WA and Org Owner",
+                    ),
+                    (
+                        "view_workspace_currency",
+                        "Can view workspace currency by WA and Org Owner",
+                    ),
+                ),
+                "verbose_name": "workspace",
+                "verbose_name_plural": "workspaces",
+            },
         ),
     ]

@@ -386,7 +386,6 @@ class Command(BaseCommand):
                 org = Organization.objects.create(
                     title=org_name,
                     description=faker.text(max_nb_chars=200),
-                    expense=Decimal("0.00"),
                     status=OrgStatusChoices.ACTIVE,
                 )
 
@@ -716,7 +715,6 @@ class Command(BaseCommand):
                         remittance_rate=Decimal(random.randint(80, 95)),
                         start_date=start_date,
                         end_date=end_date,
-                        expense=Decimal("0.00"),
                     )
 
                     workspaces.append(workspace)
@@ -869,7 +867,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create workspace expense entry - ONLY by workspace admin
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=EntryType.WORKSPACE_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -888,14 +886,6 @@ class Command(BaseCommand):
                     if random.random() < 0.1
                     else False,
                 )
-
-                # Update workspace expense
-                workspace.expense += entry.converted_amount
-                workspace.save()
-
-                # Update organization expense
-                workspace.organization.expense += entry.converted_amount
-                workspace.organization.save()
 
         except Exception as e:
             self.stdout.write(
@@ -935,7 +925,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create organization expense entry - ONLY by organization owner
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=EntryType.ORG_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -954,14 +944,6 @@ class Command(BaseCommand):
                     if random.random() < 0.1
                     else False,
                 )
-
-                # Update workspace expense
-                workspace.expense += entry.converted_amount
-                workspace.save()
-
-                # Update organization expense
-                workspace.organization.expense += entry.converted_amount
-                workspace.organization.save()
 
         except Exception as e:
             self.stdout.write(
@@ -1069,7 +1051,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create team-based entry
-                entry = Entry.objects.create(
+                Entry.objects.create(
                     entry_type=entry_type,
                     description=entry_description,
                     organization=workspace.organization,
@@ -1088,14 +1070,6 @@ class Command(BaseCommand):
                     if random.random() < 0.1
                     else False,
                 )
-
-                # Update workspace expense
-                workspace.expense += entry.converted_amount
-                workspace.save()
-
-                # Update organization expense
-                workspace.organization.expense += entry.converted_amount
-                workspace.organization.save()
 
         except Exception as e:
             self.stdout.write(

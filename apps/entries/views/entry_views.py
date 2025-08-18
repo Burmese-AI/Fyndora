@@ -47,6 +47,7 @@ from apps.entries.utils import (
     can_update_other_submitters_entry,
     can_update_workspace_team_entry,
 )
+from apps.entries.utils import can_view_total_workspace_teams_entries
 
 
 class WorkspaceEntryListView(
@@ -59,6 +60,13 @@ class WorkspaceEntryListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_level_entry_index.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_total_workspace_teams_entries(request.user, self.workspace):
+            return permission_denied_view(
+                request, "You do not have permission to view this workspace's entries."
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return get_entries(
@@ -312,4 +320,3 @@ class WorkspaceTeamEntryDeleteView(
 
     def perform_service(self, form):
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
-

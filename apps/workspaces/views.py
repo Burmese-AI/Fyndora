@@ -75,7 +75,10 @@ from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
-from apps.workspaces.utils import can_view_workspace_teams_under_workspace
+from apps.workspaces.utils import (
+    can_view_workspace_teams_under_workspace,
+    can_view_workspace_currency,
+)
 
 
 @login_required
@@ -365,7 +368,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     workspace_team = add_team_to_workspace(
                         workspace_id=workspace_id,
                         team_id=form.cleaned_data["team"].team_id,
-                        custom_remittance_rate=form.cleaned_data["custom_remittance_rate"],
+                        custom_remittance_rate=form.cleaned_data[
+                            "custom_remittance_rate"
+                        ],
                         workspace=workspace,
                         user=request.user,
                     )
@@ -465,7 +470,9 @@ def remove_team_from_workspace_view(request, organization_id, workspace_id, team
             workspace_id, team_id
         )
         if request.method == "POST":
-            remove_team_from_workspace(workspace_team=workspace_team, team=team, user=request.user)
+            remove_team_from_workspace(
+                workspace_team=workspace_team, team=team, user=request.user
+            )
             messages.success(request, "Team removed from workspace successfully.")
             workspace_teams = get_workspace_teams_by_workspace_id(workspace_id)
             context = {
@@ -516,8 +523,10 @@ def change_workspace_team_remittance_rate_view(
             if form.is_valid():
                 # Updating Team Lvl Remittance Rate
                 update_workspace_team_remittance_rate_from_form(
-                    form=form, workspace_team=workspace_team, workspace=workspace, user=request.user
-
+                    form=form,
+                    workspace_team=workspace_team,
+                    workspace=workspace,
+                    user=request.user,
                 )
                 # Updating due amount of remittance
                 remittance = workspace_team.remittance
@@ -618,6 +627,14 @@ class WorkspaceExchangeRateListView(
     context_object_name = EXCHANGE_RATE_CONTEXT_OBJECT_NAME
     template_name = "workspace_exchange_rates/index.html"
     table_template_name = ""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_workspace_currency(request.user, self.workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view exchange rates for this workspace.",
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return get_workspace_exchange_rates(

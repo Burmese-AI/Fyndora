@@ -39,6 +39,10 @@ class WorkspacePermissions(models.TextChoices):
         "view_workspace_entry",
         "Can view workspace entry by WA and Org Owner",
     )
+    VIEW_WORKSPACE_CURRENCY = (
+        "view_workspace_currency",
+        "Can view workspace currency by WA and Org Owner",
+    )
     ADD_WORKSPACE_CURRENCY = (
         "add_workspace_currency",
         "Can add workspace currency by WA and Org Owner",
@@ -54,6 +58,10 @@ class WorkspacePermissions(models.TextChoices):
     VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE = (
         "view_workspace_teams_under_workspace",
         "Can view workspace teams under workspace by WA ,OR,TC and Org Owner",
+    )
+    VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES = (
+        "view_total_workspace_teams_entries",
+        "Can view total workspace teams entries by WA and Org Owner",
     )
 
 

@@ -28,15 +28,17 @@ def export_overview_finance_report(context, exporter_class: type[BaseFileExporte
                 "total_expense": "",
                 "net_income": "Final Net Profit",
                 "org_share": context["context_parent"]["final_net_profit"],
-            }
-        ]
+            },
+        ],
     }
 
     blocks = [
-        {"type": "paragraph", "text": f"Report for {context['context_parent']['title']}"},
-        table_block
+        {
+            "type": "paragraph",
+            "text": f"Report for {context['context_parent']['title']}",
+        },
+        table_block,
     ]
 
     exporter = exporter_class("overview-finance-report", blocks)
     return exporter.export()
-

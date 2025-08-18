@@ -38,6 +38,7 @@ from ..utils import (
     can_delete_workspace_expense,
 )
 from apps.core.utils import permission_denied_view
+from apps.entries.utils import can_view_workspace_level_entries
 
 
 class WorkspaceExpenseListView(
@@ -50,6 +51,13 @@ class WorkspaceExpenseListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_expense_index.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_workspace_level_entries(request.user, self.workspace):
+            return permission_denied_view(
+                request, "You do not have permission to view this workspace's entries."
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
         return get_entries(

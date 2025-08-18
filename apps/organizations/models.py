@@ -1,8 +1,6 @@
 import uuid
-from decimal import Decimal
 
 from django.db import models
-from django.core.validators import MinValueValidator
 from django.conf import settings
 
 from apps.core.models import baseModel, SoftDeleteModel
@@ -29,12 +27,6 @@ class Organization(baseModel):
         default=StatusChoices.ACTIVE,
     )
     description = models.TextField(blank=True, null=True)
-    expense = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        validators=[MinValueValidator(Decimal("0.00"))],
-    )
 
     class Meta:
         verbose_name = "organization"
@@ -49,7 +41,10 @@ class Organization(baseModel):
                 OrganizationPermissions.ADD_WORKSPACE,
                 OrganizationPermissions.ADD_WORKSPACE.label,
             ),
-            (OrganizationPermissions.ADD_TEAM, OrganizationPermissions.ADD_TEAM.label),
+            (
+                OrganizationPermissions.ADD_TEAM,
+                OrganizationPermissions.ADD_TEAM.label,
+            ),
             (
                 OrganizationPermissions.INVITE_ORG_MEMBER,
                 OrganizationPermissions.INVITE_ORG_MEMBER.label,
@@ -100,6 +95,9 @@ class Organization(baseModel):
                 fields=["owner", "title"],
                 name="unique_organization",
             )
+        ]
+        indexes = [
+            models.Index(fields=["title"]),
         ]
 
     def __str__(self):

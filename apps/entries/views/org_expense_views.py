@@ -241,7 +241,6 @@ class OrganizationExpenseDeleteView(
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
 
 
-
 class OrganizationExpenseBulkDeleteView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,

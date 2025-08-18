@@ -133,3 +133,9 @@ def own_higher_admin_role(user, workspace_team):
         or is_operation_reviewer
         or is_org_admin
     )
+
+def can_view_workspace_level_entries(user, workspace):
+    """
+    Returns True if the user has the permission to view the workspace level entries.
+    """
+    return user.has_perm(WorkspacePermissions.VIEW_WORKSPACE_ENTRY, workspace)

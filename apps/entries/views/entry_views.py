@@ -47,7 +47,7 @@ from apps.entries.utils import (
     can_update_other_submitters_entry,
     can_update_workspace_team_entry,
 )
-
+from apps.entries.utils import can_view_workspace_level_entries
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,

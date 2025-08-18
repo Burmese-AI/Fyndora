@@ -108,6 +108,10 @@ class Workspace(baseModel):
                 WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
                 WorkspacePermissions.DELETE_WORKSPACE_CURRENCY.label,
             ),
+            (
+                WorkspacePermissions.VIEW_WORKSPACE_CURRENCY,
+                WorkspacePermissions.VIEW_WORKSPACE_CURRENCY.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

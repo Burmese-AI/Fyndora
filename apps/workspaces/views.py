@@ -75,7 +75,7 @@ from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
 )
 from apps.workspaces.selectors import get_workspace_team_by_workspace_id_and_team_id
-from apps.workspaces.utils import can_view_workspace_teams_under_workspace
+from apps.workspaces.utils import can_view_workspace_teams_under_workspace, can_view_workspace_currency
 
 
 @login_required
@@ -619,6 +619,13 @@ class WorkspaceExchangeRateListView(
     template_name = "workspace_exchange_rates/index.html"
     table_template_name = ""
 
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_workspace_currency(request.user, self.workspace):
+            return permission_denied_view(
+                request,
+                "You do not have permission to view exchange rates for this workspace.",
+            )
+        return super().dispatch(request, *args, **kwargs)
     def get_queryset(self):
         return get_workspace_exchange_rates(
             organization=self.organization,
@@ -815,6 +822,7 @@ class WorkspaceExchangeRateDeleteView(
     BaseDeleteView,
 ):
     model = WorkspaceExchangeRate
+
 
     def get_queryset(self):
         return get_workspace_exchange_rates(

@@ -39,6 +39,10 @@ class WorkspacePermissions(models.TextChoices):
         "view_workspace_entry",
         "Can view workspace entry by WA and Org Owner",
     )
+    VIEW_WORKSPACE_CURRENCY = (
+        "view_workspace_currency",
+        "Can view workspace currency by WA and Org Owner",
+    )
     ADD_WORKSPACE_CURRENCY = (
         "add_workspace_currency",
         "Can add workspace currency by WA and Org Owner",

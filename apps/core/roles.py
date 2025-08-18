@@ -27,6 +27,7 @@ ROLES = {
         OrganizationPermissions.VIEW_REPORT_PAGE,
         WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
         WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
+
     ],
     "WORKSPACE_ADMIN": [
         OrganizationPermissions.MANAGE_ORGANIZATION,
@@ -40,6 +41,9 @@ ROLES = {
         WorkspacePermissions.DELETE_WORKSPACE_ENTRY,
         WorkspacePermissions.VIEW_WORKSPACE_ENTRY,
         WorkspacePermissions.ADD_WORKSPACE_CURRENCY,
+        WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
+        WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
+        WorkspacePermissions.VIEW_WORKSPACE_CURRENCY,
         WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
     ],
     "OPERATIONS_REVIEWER": [

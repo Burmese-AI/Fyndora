@@ -32,19 +32,9 @@ class BaseEntryForm(forms.ModelForm):
         ),
     )
 
-    occurred_at = forms.DateField(
-        widget=forms.DateInput(
-            attrs={
-                "type": "date",
-                "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-            },
-        ),
-        initial=timezone.now().date,
-    )
-
     class Meta:
         model = Entry
-        fields = ["amount", "description", "currency"]
+        fields = ["amount", "description", "currency", "occurred_at"]
         widgets = {
             "amount": forms.NumberInput(
                 attrs={
@@ -61,6 +51,13 @@ class BaseEntryForm(forms.ModelForm):
                     "placeholder": "Brief description of the expense",
                     "required": True,
                 }
+            ),
+            "occurred_at": forms.DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
+                    "required": True
+                },
             ),
         }
 
@@ -84,6 +81,19 @@ class BaseEntryForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        
+        occurred_at = cleaned_data.get("occurred_at")
+        today = date.today()
+
+        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "The occurred date must be within the workspace period."
+            )
+
+        if not (self.workspace.start_date <= today <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "Entries can only be submitted during the workspace period."
+            )
 
         # Validate Currency
         currency = cleaned_data.get("currency")
@@ -127,19 +137,6 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
     def clean(self):
         cleaned_data = super().clean()
-
-        occurred_at = cleaned_data.get("occurred_at")
-        today = date.today()
-
-        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "The occurred date must be within the workspace period."
-            )
-
-        if not (self.workspace.start_date <= today <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "Entries can only be submitted during the workspace period."
-            )
 
         # Role-based validation
         if cleaned_data["entry_type"] in [

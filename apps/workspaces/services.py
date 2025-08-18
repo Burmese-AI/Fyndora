@@ -490,7 +490,7 @@ def update_workspace_exchange_rate(
 def delete_workspace_exchange_rate(*, workspace_exchange_rate, user=None):
     try:
         # Store references before deletion
-        exchange_rate_id = workspace_exchange_rate.id
+        exchange_rate_id = workspace_exchange_rate.pk
         workspace = workspace_exchange_rate.workspace
         currency_code = workspace_exchange_rate.currency.code
         rate_value = workspace_exchange_rate.rate
@@ -505,7 +505,7 @@ def delete_workspace_exchange_rate(*, workspace_exchange_rate, user=None):
                     exchange_rate=None,  # Already deleted
                     action="delete",
                     deleted_exchange_rate_id=str(exchange_rate_id),
-                    workspace_id=str(workspace.workspace_id),
+                    workspace_id=str(workspace.pk),
                     workspace_title=workspace.title,
                     deleted_currency_code=currency_code,
                     deleted_rate_value=str(rate_value),
@@ -524,7 +524,7 @@ def delete_workspace_exchange_rate(*, workspace_exchange_rate, user=None):
                     user=user,
                     operation_type="workspace_exchange_rate_deletion",
                     error=e,
-                    exchange_rate_id=str(workspace_exchange_rate.id),
+                    exchange_rate_id=str(workspace_exchange_rate.pk),
                     workspace_id=str(workspace_exchange_rate.workspace.workspace_id),
                     workspace_title=workspace_exchange_rate.workspace.title,
                     currency_code=workspace_exchange_rate.currency.code,

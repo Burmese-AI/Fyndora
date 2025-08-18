@@ -17,11 +17,11 @@ def extract_organization_context(organization):
         return {}
 
     return {
-        "organization_id": str(organization.organization_id),
+        "organization_id": str(organization.pk),
         "organization_title": organization.title,
         "organization_status": getattr(organization, "status", None),
         "organization_description": getattr(organization, "description", None),
-        "owner_id": str(organization.owner.user.user_id)
+        "owner_id": str(organization.owner.user.pk)
         if organization.owner and organization.owner.user
         else None,
         "owner_email": organization.owner.user.email
@@ -45,9 +45,9 @@ def extract_organization_member_context(member):
 
     return {
         "member_id": str(member.id),
-        "organization_id": str(member.organization.organization_id),
+        "organization_id": str(member.organization.pk),
         "organization_title": member.organization.title,
-        "user_id": str(member.user.user_id),
+        "user_id": str(member.user.pk),
         "user_email": member.user.email,
         "member_status": getattr(member, "status", "active"),
         "is_active": getattr(member, "is_active", True),
@@ -69,15 +69,15 @@ def extract_organization_exchange_rate_context(exchange_rate):
         return {}
 
     return {
-        "exchange_rate_id": str(exchange_rate.id),
-        "organization_id": str(exchange_rate.organization.organization_id),
+        "exchange_rate_id": str(exchange_rate.pk),
+        "organization_id": str(exchange_rate.organization.pk),
         "organization_title": exchange_rate.organization.title,
         "currency_code": exchange_rate.currency.code,
         "rate": str(exchange_rate.rate),
         "effective_date": exchange_rate.effective_date.isoformat()
         if exchange_rate.effective_date
         else None,
-        "added_by_id": str(exchange_rate.added_by.user.user_id)
+        "added_by_id": str(exchange_rate.added_by.user.pk)
         if exchange_rate.added_by and exchange_rate.added_by.user
         else None,
         "added_by_email": exchange_rate.added_by.user.email

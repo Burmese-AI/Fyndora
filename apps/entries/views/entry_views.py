@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from apps.core.permissions import EntryPermissions
@@ -259,6 +260,7 @@ class WorkspaceTeamEntryUpdateView(
         from ..services import update_entry_status, update_entry_user_inputs
 
         if self.entry.status == EntryStatus.PENDING:
+            print("Triggered due to pending status")
             update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
@@ -299,6 +301,16 @@ class WorkspaceTeamEntryDeleteView(
                 request, "You do not have permission to delete this entry."
             )
         return super().dispatch(request, *args, **kwargs)
+    
+    #Overriding this method to solve discrepency temporarily
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            Entry,
+            pk=self.kwargs["pk"],
+            workspace_team=self.workspace_team,
+            workspace=self.workspace,
+            organization=self.organization,
+        )
 
     def get_queryset(self):
         return get_entries(
@@ -311,9 +323,7 @@ class WorkspaceTeamEntryDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")]
-            if self.request.GET.get("status")
-            else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )

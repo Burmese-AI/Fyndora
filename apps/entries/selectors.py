@@ -116,6 +116,10 @@ def get_entries(
         "last_status_modified_by__user",
     )
 
+    print("TESTING EXCHANGE RATES")
+    for each in queryset:
+        print(f">>>> {each.amount} | {each.org_exchange_rate_ref} | {each.workspace_exchange_rate_ref}")
+
     return queryset
 
 

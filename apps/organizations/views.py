@@ -622,12 +622,20 @@ class OrganizationExchangerateDeleteView(
 
 def remove_organization_member_view(request, organization_id, member_id):
     try:
-        # print("request.user", request.user)
-        # print("organization_id", organization_id)
-        # print("member_id", member_id)
         organization = get_object_or_404(Organization, pk=organization_id)
         member = get_object_or_404(OrganizationMember, pk=member_id)
         user_administered_workspaces = member.administered_workspaces.all()
+        user_reviewed_workspaces = member.reviewed_workspaces.all()
+        user_coordinated_teams = member.coordinated_teams.all()
+        user_team_memberships = member.team_memberships.all()
+        
+        print("user_administered_workspaces", user_administered_workspaces)
+        print("user_reviewed_workspaces", user_reviewed_workspaces)
+        print("user_coordinated_teams", user_coordinated_teams)
+        print("user_team_memberships", user_team_memberships)
+        # for team_membership in user_team_memberships:
+        #     print(team_membership.team.joined_workspaces.all())
+
 
         if user_administered_workspaces.count() > 0:
             for workspace in user_administered_workspaces:
@@ -636,10 +644,8 @@ def remove_organization_member_view(request, organization_id, member_id):
                     name=workspace_admins_group_name
                 )
                 workspace_admins_group.user_set.remove(member.user)
-                print("success removing user from workspace admins group")
                 workspace.workspace_admin = None
                 workspace.save()
-                print("success removing workspace admin")
 
         user_reviewed_workspaces = member.reviewed_workspaces.all()
         if user_reviewed_workspaces.count() > 0:
@@ -649,11 +655,31 @@ def remove_organization_member_view(request, organization_id, member_id):
                     name=operations_reviewer_group_name
                 )
                 operations_reviewer_group.user_set.remove(member.user)
-                print("success removing user from workspace reviewers group")
                 workspace.operations_reviewer = None
                 workspace.save()
-                print("success removing workspace reviewer")
 
+        user_coordinated_teams = member.coordinated_teams.all()
+        if user_coordinated_teams.count() > 0:
+            for team in user_coordinated_teams:
+                team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
+                team_coordinator_group, _ = Group.objects.get_or_create(
+                name=team_coordinator_group_name)
+                team_coordinator_group.user_set.remove(member.user)
+                team.team_coordinator = None
+                team.save()
+        
+        
+        user_joined_teams = member.team_memberships.all()
+        for team_membership in user_joined_teams:
+            for workspace_team in team_membership.team.joined_workspaces.all():
+                workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+                workspace_team_group, _ = Group.objects.get_or_create(
+                    name=workspace_team_group_name
+                )
+                workspace_team_group.user_set.remove(member.user)
+                print("success removing user from workspace team group")
+                
+        
 
 
         

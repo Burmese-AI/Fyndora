@@ -143,7 +143,6 @@ class WorkspaceTeamEntryCreateView(
     table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
-    # Submitter can't create entries if this is uncommented
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(

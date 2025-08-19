@@ -67,7 +67,7 @@ class OverviewFinanceReportView(
         }
 
     def _get_workspace_context(self, workspace: Workspace):
-        children_qs = workspace.workspace_teams.select_related("team").all()
+        children_qs = workspace.joined_teams.select_related("team").all()
         context_children = []
         # Totals for workspace
         total_income = Decimal("0.00")

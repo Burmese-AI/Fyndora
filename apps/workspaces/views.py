@@ -226,7 +226,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
                     if old_remittance_rate != form.cleaned_data["remittance_rate"]:
                         print("Remittance Rate Changed")
                         # Get All Workspace Teams
-                        workspace_teams = workspace.workspace_teams.all()
+                        workspace_teams = workspace.joined_teams.all()
                         print(f"Workspace Teams: {workspace_teams}")
                         # Update Remittance Due Amount of Each Team's Remittance
                         for workspace_team in workspace_teams:

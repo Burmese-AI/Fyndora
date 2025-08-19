@@ -714,7 +714,7 @@ class TestRemittancePerformance:
         self.organization = OrganizationFactory()
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.teams = [TeamFactory(organization=self.organization) for _ in range(5)]
-        self.workspace_teams = [
+        self.joined_teams = [
             WorkspaceTeamFactory(workspace=self.workspace, team=team)
             for team in self.teams
         ]
@@ -724,7 +724,7 @@ class TestRemittancePerformance:
         """Test performance with bulk operations."""
         # Create multiple remittances with separate workspace teams
         remittances = []
-        for i, workspace_team in enumerate(self.workspace_teams):
+        for i, workspace_team in enumerate(self.joined_teams):
             for j in range(10):  # 10 remittances per team
                 # Create separate workspace team for each remittance
                 separate_workspace_team = WorkspaceTeamFactory(

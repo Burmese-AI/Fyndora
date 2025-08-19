@@ -18,7 +18,7 @@
             <h2 class="text-xl font-semibold text-neutral">{{ workspace.title }}</h2>
 
             <div class="flex flex-wrap gap-2 text-sm">
-              <span class="badge badge-info text-xs">Teams: {{ workspace.workspace_teams.count }}</span>
+              <span class="badge badge-info text-xs">Teams: {{ workspace.joined_teams.count }}</span>
               <span class="badge badge-success text-xs">Admin: {{ workspace.workspace_admin }}</span>
               <span class="badge badge-warning text-xs">Reviewer: {{ workspace.operations_reviewer }}</span>
               <span class="badge badge-accent text-xs">Rate: {{ workspace.remittance_rate }}</span>

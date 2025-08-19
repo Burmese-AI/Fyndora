@@ -8,6 +8,7 @@ from django.http import HttpRequest
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.utils import safe_audit_log
+from apps.organizations.models import Organization, OrganizationExchangeRate
 
 from .base_logger import BaseAuditLogger
 from .metadata_builders import (
@@ -37,7 +38,7 @@ class OrganizationAuditLogger(BaseAuditLogger):
     def log_organization_action(
         self,
         user: User,
-        organization: Any,
+        organization: Organization,
         action: str,
         request: Optional[HttpRequest] = None,
         **kwargs,
@@ -67,13 +68,14 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        self._finalize_and_create_audit(user, action_type, metadata, organization)
+        workspace = getattr(organization, 'workspace', None)
+        self._finalize_and_create_audit(user, action_type, metadata, organization, workspace)
 
     @safe_audit_log
     def log_organization_exchange_rate_action(
         self,
         user: User,
-        exchange_rate: Any,
+        exchange_rate: OrganizationExchangeRate,
         action: str,
         request: Optional[HttpRequest] = None,
         **kwargs,
@@ -127,4 +129,5 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        self._finalize_and_create_audit(user, action_type, metadata, exchange_rate)
+        workspace = getattr(exchange_rate, 'workspace', None)
+        self._finalize_and_create_audit(user, action_type, metadata, exchange_rate, workspace)

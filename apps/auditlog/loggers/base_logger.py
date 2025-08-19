@@ -7,11 +7,8 @@ from typing import Any, Dict, Optional
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 
-from apps.auditlog.services import (
-    audit_create,
-    audit_create_security_event,
-    make_json_serializable,
-)
+from apps.auditlog.services import make_json_serializable
+from apps.auditlog.tasks import audit_create_async, audit_create_security_event_async
 
 logger = logging.getLogger(__name__)
 
@@ -115,24 +112,44 @@ class BaseAuditLogger(ABC):
         action_type: str,
         metadata: Dict[str, Any],
         target_entity: Any = None,
+        workspace: Any = None,
         is_security_event: bool = False,
     ) -> None:
         """Finalize metadata and create audit log entry."""
+        # Prepare user_id
+        user_id = str(user.user_id) if user else None
+        
+        # Prepare target_entity dict
+        target_entity_dict = None
+        if target_entity:
+            target_entity_dict = {
+                "model": target_entity.__class__,
+                "pk": target_entity.pk
+            }
+        
+        # Prepare workspace dict
+        workspace_dict = None
+        if workspace:
+            workspace_dict = {
+                "pk": workspace.pk
+            }
+        
         # Ensure all metadata is JSON serializable
         serializable_metadata = make_json_serializable(metadata)
 
         if is_security_event:
-            audit_create_security_event(
-                user=user,
+            audit_create_security_event_async.delay(
+                user_id=user_id,
                 action_type=action_type,
-                target_entity=target_entity,
+                target_entity=target_entity_dict,
                 metadata=serializable_metadata,
             )
         else:
-            audit_create(
-                user=user,
+            audit_create_async.delay(
+                user_id=user_id,
                 action_type=action_type,
-                target_entity=target_entity,
+                target_entity=target_entity_dict,
+                workspace=workspace_dict,
                 metadata=serializable_metadata,
             )
 

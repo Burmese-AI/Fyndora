@@ -107,8 +107,9 @@ class SystemAuditLogger(BaseAuditLogger):
             )
 
         # Finalize and create audit log
+        workspace = getattr(target_user, 'workspace', None)
         self._finalize_and_create_audit(
-            user, action_mapping[action], metadata, target_user
+            user, action_mapping[action], metadata, target_user, workspace
         )
 
     @safe_audit_log
@@ -147,7 +148,7 @@ class SystemAuditLogger(BaseAuditLogger):
 
         # Finalize and create audit log
         self._finalize_and_create_audit(
-            user, AuditActionType.DATA_EXPORTED, metadata, None
+            user, AuditActionType.DATA_EXPORTED, metadata, None, None
         )
 
     @safe_audit_log
@@ -201,7 +202,7 @@ class SystemAuditLogger(BaseAuditLogger):
 
         # Finalize and create audit log
         self._finalize_and_create_audit(
-            user, AuditActionType.BULK_OPERATION_PERFORMED, metadata, None
+            user, AuditActionType.BULK_OPERATION_PERFORMED, metadata, None, None
         )
 
     @safe_audit_log
@@ -240,8 +241,9 @@ class SystemAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
+        workspace = getattr(file_obj, 'workspace', None)
         self._finalize_and_create_audit(
-            user, action_mapping[action], metadata, file_obj
+            user, action_mapping[action], metadata, file_obj, workspace
         )
 
     @safe_audit_log
@@ -294,5 +296,5 @@ class SystemAuditLogger(BaseAuditLogger):
 
         # Finalize and create audit log
         self._finalize_and_create_audit(
-            user, AuditActionType.OPERATION_FAILED, metadata, None
+            user, AuditActionType.OPERATION_FAILED, metadata, None, None
         )

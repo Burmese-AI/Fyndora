@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.utils import safe_audit_log
+from apps.entries.models import Entry
 
 from .base_logger import BaseAuditLogger
 from .metadata_builders import (
@@ -43,7 +44,7 @@ class EntryAuditLogger(BaseAuditLogger):
     def log_entry_workflow_action(
         self,
         user: User,
-        entry: Any,
+        entry: Entry,
         action: str,
         request: Optional[HttpRequest] = None,
         workflow_stage: Optional[str] = None,
@@ -82,13 +83,14 @@ class EntryAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        self._finalize_and_create_audit(user, action_type, metadata, entry)
+        workspace = getattr(entry, 'workspace', None)
+        self._finalize_and_create_audit(user, action_type, metadata, entry, workspace)
 
     @safe_audit_log
     def log_entry_action(
         self,
         user: User,
-        entry: Any,
+        entry: Entry,
         action: str,
         request: Optional[HttpRequest] = None,
         **kwargs,
@@ -171,7 +173,8 @@ class EntryAuditLogger(BaseAuditLogger):
             )
 
         # Finalize and create audit log
-        self._finalize_and_create_audit(user, action_type, metadata, entry)
+        workspace = getattr(entry, 'workspace', None)
+        self._finalize_and_create_audit(user, action_type, metadata, entry, workspace)
 
     @safe_audit_log
     def log_status_change(
@@ -199,6 +202,7 @@ class EntryAuditLogger(BaseAuditLogger):
         }
 
         # Finalize and create audit log
+        workspace = getattr(entity, 'workspace', None)
         self._finalize_and_create_audit(
-            user, AuditActionType.ENTRY_STATUS_CHANGED, metadata, entity
+            user, AuditActionType.ENTRY_STATUS_CHANGED, metadata, entity, workspace
         )

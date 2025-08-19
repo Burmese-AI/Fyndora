@@ -123,7 +123,7 @@ class CreateWorkspaceTeamEntryForm(BaseEntryForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        
+
         occurred_at = cleaned_data.get("occurred_at")
         today = date.today()
 
@@ -251,7 +251,7 @@ class BaseUpdateEntryForm(BaseEntryForm):
 class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
-        
+
         occurred_at = cleaned_data.get("occurred_at")
         today = date.today()
 
@@ -264,7 +264,7 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
             raise forms.ValidationError(
                 "Entries can only be submitted during the workspace period."
             )
-        
+
         new_status = cleaned_data.get("status")
         # if new status is 'Approved', user must be OR, OA
         if new_status is EntryStatus.APPROVED:

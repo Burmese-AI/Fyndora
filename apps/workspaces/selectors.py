@@ -55,7 +55,6 @@ def get_all_related_workspace_teams(organization, user, group_by_workspace=True)
     - Otherwise, filters teams the user is directly involved in
     """
     is_owner = organization.owner and organization.owner.user == user
-    print(f"is_owner => {is_owner}")
     qs = (
         WorkspaceTeam.objects.filter(workspace__organization=organization)
         .select_related("workspace")
@@ -63,11 +62,22 @@ def get_all_related_workspace_teams(organization, user, group_by_workspace=True)
     )
 
     if not is_owner:
+        # Note: TeamMember inherits SoftDeleteModel, so the default manager
+        # automatically filters out soft-deleted records. This means `user_team_ids`
+        # only includes active members, no need to explicitly filter `deleted_at__isnull=True`.
+
+        # Get All teams the user is a part of under this organization
+        user_team_ids = TeamMember.objects.filter(
+            team__organization=organization,
+            organization_member__user=user,
+        ).values_list("team_id", flat=True)
+
+        # Get all workspace teams related to the teams the user is a part of
         qs = qs.filter(
             Q(workspace__workspace_admin__user=user)
             | Q(workspace__operations_reviewer__user=user)
+            | Q(team__team_id__in=user_team_ids)
             | Q(team__team_coordinator__user=user)
-            | Q(team__members__organization_member__user=user)
         ).distinct()
 
     if not group_by_workspace:

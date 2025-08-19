@@ -300,7 +300,7 @@ class WorkspaceTeamEntryDeleteView(
                 request, "You do not have permission to delete this entry."
             )
         return super().dispatch(request, *args, **kwargs)
-    
+
     # Overriding get_object for a tighter fetch!
     # Entries can't be deleted once their status has been changed.
     # The normal `get_object` just grabs it by PK. This means we *could* fetch

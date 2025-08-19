@@ -102,7 +102,7 @@ class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         # Gettting all workspace teams under the current workspace
-        context["team_options"] = self.workspace.workspace_teams.select_related(
+        context["team_options"] = self.workspace.joined_teams.select_related(
             "team"
         ).all()
         # Overriding context values

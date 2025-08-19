@@ -55,6 +55,7 @@ from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
 from django.contrib.auth.models import Group
+from apps.core.utils import revoke_workspace_admin_permission, revoke_operations_reviewer_permission, revoke_team_coordinator_permission, revoke_workspace_team_member_permission
 
 
 # Create your views here.
@@ -628,33 +629,24 @@ def remove_organization_member_view(request, organization_id, member_id):
 
         user_administered_workspaces = member.administered_workspaces.all()
         if user_administered_workspaces.count() > 0:
+            #revoke workspace admin permission from every workspace that the user is admin of
             for workspace in user_administered_workspaces:
-                workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
-                workspace_admins_group, _ = Group.objects.get_or_create(
-                    name=workspace_admins_group_name
-                )
-                workspace_admins_group.user_set.remove(member.user)
+                revoke_workspace_admin_permission(member.user, workspace)
                 workspace.workspace_admin = None
                 workspace.save()
 
         user_reviewed_workspaces = member.reviewed_workspaces.all()
         if user_reviewed_workspaces.count() > 0:
+            #revoke operations reviewer permission from every workspace that the user is reviewer of
             for workspace in user_reviewed_workspaces:
-                operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
-                operations_reviewer_group, _ = Group.objects.get_or_create(
-                    name=operations_reviewer_group_name
-                )
-                operations_reviewer_group.user_set.remove(member.user)
+                revoke_operations_reviewer_permission(member.user, workspace)
                 workspace.operations_reviewer = None
                 workspace.save()
 
         user_coordinated_teams = member.coordinated_teams.all()
         if user_coordinated_teams.count() > 0:
             for team in user_coordinated_teams:
-                team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
-                team_coordinator_group, _ = Group.objects.get_or_create(
-                name=team_coordinator_group_name)
-                team_coordinator_group.user_set.remove(member.user)
+                revoke_team_coordinator_permission(member.user, team)
                 team.team_coordinator = None
                 team.save()
         
@@ -662,11 +654,7 @@ def remove_organization_member_view(request, organization_id, member_id):
         user_joined_teams = member.team_memberships.all()
         for team_membership in user_joined_teams:
             for workspace_team in team_membership.team.joined_workspaces.all():
-                workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
-                workspace_team_group, _ = Group.objects.get_or_create(
-                    name=workspace_team_group_name
-                )
-                workspace_team_group.user_set.remove(member.user)
+                revoke_workspace_team_member_permission(member.user, workspace_team)
                 #if the user is in teams , remove the user from the team
                 team_membership.delete()
 

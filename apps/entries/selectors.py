@@ -118,7 +118,9 @@ def get_entries(
 
     print("TESTING EXCHANGE RATES")
     for each in queryset:
-        print(f">>>> {each.amount} | {each.org_exchange_rate_ref} | {each.workspace_exchange_rate_ref}")
+        print(
+            f">>>> {each.amount} | {each.org_exchange_rate_ref} | {each.workspace_exchange_rate_ref}"
+        )
 
     return queryset
 

@@ -775,6 +775,8 @@ class Command(BaseCommand):
                         assign_workspace_team_permissions(
                             workspace_team,
                             request_user=workspace.organization.owner.user,
+                            workspace=workspace,
+                            team=team,
                         )
                         self.stdout.write(
                             f"    - Assigned workspace team permissions for {team.title} in {workspace.title}"

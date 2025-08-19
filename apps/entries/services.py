@@ -167,13 +167,13 @@ def update_entry_user_inputs(
 
     if new_exchange_rate_used:
         entry.exchange_rate_used = new_exchange_rate_used.rate
-        #Reset org_exchange_rate_ref
+        # Reset org_exchange_rate_ref
         entry.org_exchange_rate_ref = (
             new_exchange_rate_used
             if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
             else None
         )
-        #Reset workspace_exchange_rate_ref
+        # Reset workspace_exchange_rate_ref
         entry.workspace_exchange_rate_ref = (
             new_exchange_rate_used
             if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)

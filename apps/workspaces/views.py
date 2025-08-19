@@ -607,7 +607,7 @@ class SubmissionTeamListView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["organization"] = get_organization_by_id(self.kwargs["organization_id"])
-        context["hide_management_access"] = True
+        # context["hide_management_access"] = True
         grouped_teams = get_all_related_workspace_teams(
             organization=context["organization"],
             user=self.request.user,

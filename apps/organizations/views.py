@@ -644,11 +644,11 @@ def remove_organization_member_view(request, organization_id, member_id):
         user_reviewed_workspaces = member.reviewed_workspaces.all()
         if user_reviewed_workspaces.count() > 0:
             for workspace in user_reviewed_workspaces:
-                operations_reviewers_group_name = f"Operations Reviewers - {workspace.workspace_id}"
-                operations_reviewers_group, _ = Group.objects.get_or_create(
-                    name=operations_reviewers_group_name
+                operations_reviewer_group_name = f"Operations Reviewer - {workspace.workspace_id}"
+                operations_reviewer_group, _ = Group.objects.get_or_create(
+                    name=operations_reviewer_group_name
                 )
-                operations_reviewers_group.user_set.remove(member.user)
+                operations_reviewer_group.user_set.remove(member.user)
                 print("success removing user from workspace reviewers group")
                 workspace.operations_reviewer = None
                 workspace.save()

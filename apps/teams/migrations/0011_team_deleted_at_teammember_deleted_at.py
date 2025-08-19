@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0010_alter_teammember_role'),
+        ("teams", "0010_alter_teammember_role"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='team',
-            name='deleted_at',
+            model_name="team",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='teammember',
-            name='deleted_at',
+            model_name="teammember",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

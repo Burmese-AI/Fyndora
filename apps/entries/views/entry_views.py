@@ -300,8 +300,8 @@ class WorkspaceTeamEntryDeleteView(
                 request, "You do not have permission to delete this entry."
             )
         return super().dispatch(request, *args, **kwargs)
-    
-    #Overriding this method to solve discrepency temporarily
+
+    # Overriding this method to solve discrepency temporarily
     def get_object(self, queryset=None):
         return get_object_or_404(
             Entry,
@@ -322,7 +322,9 @@ class WorkspaceTeamEntryDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )

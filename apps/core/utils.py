@@ -7,6 +7,7 @@ from apps.core.permissions import OrganizationPermissions
 from decimal import Decimal, ROUND_HALF_UP
 from django.contrib.auth.models import Group
 
+
 def percent_change(current: float, previous: float) -> str:
     if previous == 0:
         return "0% change"
@@ -98,6 +99,7 @@ def can_manage_organization(user, organization):
     """
     return user.has_perm(OrganizationPermissions.MANAGE_ORGANIZATION, organization)
 
+
 def revoke_workspace_admin_permission(user, workspace):
     workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
     workspace_admins_group, _ = Group.objects.get_or_create(
@@ -113,12 +115,14 @@ def revoke_operations_reviewer_permission(user, workspace):
     )
     operations_reviewer_group.user_set.remove(user)
 
+
 def revoke_team_coordinator_permission(user, team):
     team_coordinator_group_name = f"Team Coordinator - {team.team_id}"
     team_coordinator_group, _ = Group.objects.get_or_create(
         name=team_coordinator_group_name
     )
     team_coordinator_group.user_set.remove(user)
+
 
 def revoke_workspace_team_member_permission(user, workspace_team):
     workspace_team_group_name = f"Workspace Team - {workspace_team.workspace_team_id}"

@@ -9,7 +9,6 @@ from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
 
 
-
 class Organization(baseModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True

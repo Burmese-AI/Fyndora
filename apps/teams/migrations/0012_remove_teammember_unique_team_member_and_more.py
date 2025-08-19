@@ -4,19 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0031_remove_organization_expense'),
-        ('teams', '0011_team_deleted_at_teammember_deleted_at'),
+        ("organizations", "0031_remove_organization_expense"),
+        ("teams", "0011_team_deleted_at_teammember_deleted_at"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='teammember',
-            name='unique_team_member',
+            model_name="teammember",
+            name="unique_team_member",
         ),
         migrations.AddConstraint(
-            model_name='teammember',
-            constraint=models.UniqueConstraint(condition=models.Q(('deleted_at__isnull', True)), fields=('team', 'organization_member'), name='unique_team_member'),
+            model_name="teammember",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("deleted_at__isnull", True)),
+                fields=("team", "organization_member"),
+                name="unique_team_member",
+            ),
         ),
     ]

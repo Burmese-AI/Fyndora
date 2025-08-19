@@ -7,9 +7,7 @@ from guardian.shortcuts import assign_perm
 from apps.workspaces.models import WorkspaceTeam
 
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.core.roles import get_permissions_for_role
 from apps.core.utils import model_update
-from apps.organizations.models import OrganizationMember
 from apps.teams.exceptions import (
     TeamCreationError,
     TeamMemberCreationError,

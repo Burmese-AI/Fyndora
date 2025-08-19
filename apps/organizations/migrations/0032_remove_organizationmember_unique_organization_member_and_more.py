@@ -5,24 +5,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0031_remove_organization_expense'),
+        ("organizations", "0031_remove_organization_expense"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='organizationmember',
-            name='unique_organization_member',
+            model_name="organizationmember",
+            name="unique_organization_member",
         ),
         migrations.AddField(
-            model_name='organizationmember',
-            name='deleted_at',
+            model_name="organizationmember",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddConstraint(
-            model_name='organizationmember',
-            constraint=models.UniqueConstraint(condition=models.Q(('deleted_at__isnull', True)), fields=('organization', 'user'), name='unique_organization_member'),
+            model_name="organizationmember",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("deleted_at__isnull", True)),
+                fields=("organization", "user"),
+                name="unique_organization_member",
+            ),
         ),
     ]

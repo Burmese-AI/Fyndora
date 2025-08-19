@@ -54,8 +54,12 @@ from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
-from django.contrib.auth.models import Group
-from apps.core.utils import revoke_workspace_admin_permission, revoke_operations_reviewer_permission, revoke_team_coordinator_permission, revoke_workspace_team_member_permission
+from apps.core.utils import (
+    revoke_workspace_admin_permission,
+    revoke_operations_reviewer_permission,
+    revoke_team_coordinator_permission,
+    revoke_workspace_team_member_permission,
+)
 
 
 # Create your views here.
@@ -620,16 +624,14 @@ class OrganizationExchangerateDeleteView(
         return response
 
 
-
 def remove_organization_member_view(request, organization_id, member_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
         member = get_object_or_404(OrganizationMember, pk=member_id)
-    
 
         user_administered_workspaces = member.administered_workspaces.all()
         if user_administered_workspaces.count() > 0:
-            #revoke workspace admin permission from every workspace that the user is admin of
+            # revoke workspace admin permission from every workspace that the user is admin of
             for workspace in user_administered_workspaces:
                 revoke_workspace_admin_permission(member.user, workspace)
                 workspace.workspace_admin = None
@@ -637,7 +639,7 @@ def remove_organization_member_view(request, organization_id, member_id):
 
         user_reviewed_workspaces = member.reviewed_workspaces.all()
         if user_reviewed_workspaces.count() > 0:
-            #revoke operations reviewer permission from every workspace that the user is reviewer of
+            # revoke operations reviewer permission from every workspace that the user is reviewer of
             for workspace in user_reviewed_workspaces:
                 revoke_operations_reviewer_permission(member.user, workspace)
                 workspace.operations_reviewer = None
@@ -649,16 +651,15 @@ def remove_organization_member_view(request, organization_id, member_id):
                 revoke_team_coordinator_permission(member.user, team)
                 team.team_coordinator = None
                 team.save()
-        
-        
+
         user_joined_teams = member.team_memberships.all()
         for team_membership in user_joined_teams:
             for workspace_team in team_membership.team.joined_workspaces.all():
                 revoke_workspace_team_member_permission(member.user, workspace_team)
-                #if the user is in teams , remove the user from the team
+                # if the user is in teams , remove the user from the team
                 team_membership.delete()
 
-        #after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
+        # after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
         member.delete()
 
         messages.success(request, "Organization member removed successfully.")

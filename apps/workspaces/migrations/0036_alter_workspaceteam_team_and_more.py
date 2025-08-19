@@ -5,21 +5,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('teams', '0012_remove_teammember_unique_team_member_and_more'),
-        ('workspaces', '0035_remove_workspace_expense'),
+        ("teams", "0012_remove_teammember_unique_team_member_and_more"),
+        ("workspaces", "0035_remove_workspace_expense"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='workspaceteam',
-            name='team',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='joined_workspaces', to='teams.team'),
+            model_name="workspaceteam",
+            name="team",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="joined_workspaces",
+                to="teams.team",
+            ),
         ),
         migrations.AlterField(
-            model_name='workspaceteam',
-            name='workspace',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='joined_teams', to='workspaces.workspace'),
+            model_name="workspaceteam",
+            name="workspace",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="joined_teams",
+                to="workspaces.workspace",
+            ),
         ),
     ]

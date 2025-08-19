@@ -60,6 +60,7 @@ class WorkspaceExpenseListView(
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Any]:
+        print(f"workspace =>  {self.workspace}")
         return get_entries(
             organization=self.organization,
             workspace=self.workspace,

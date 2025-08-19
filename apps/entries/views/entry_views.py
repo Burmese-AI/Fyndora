@@ -300,8 +300,15 @@ class WorkspaceTeamEntryDeleteView(
                 request, "You do not have permission to delete this entry."
             )
         return super().dispatch(request, *args, **kwargs)
-
-    # Overriding this method to solve discrepency temporarily
+    
+    # Overriding get_object for a tighter fetch!
+    # Entries can't be deleted once their status has been changed.
+    # The normal `get_object` just grabs it by PK. This means we *could* fetch
+    # an entry that exists but is ultimately undeletable due to rules.
+    # While not a fatal error (it just won't delete), it's a bit messy.
+    #
+    # we make sure we're *only* trying to delete entries that strictly match
+    # It's an indirect fix that just makes things cleaner.
     def get_object(self, queryset=None):
         return get_object_or_404(
             Entry,

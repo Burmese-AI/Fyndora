@@ -624,19 +624,9 @@ def remove_organization_member_view(request, organization_id, member_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
         member = get_object_or_404(OrganizationMember, pk=member_id)
+    
+
         user_administered_workspaces = member.administered_workspaces.all()
-        user_reviewed_workspaces = member.reviewed_workspaces.all()
-        user_coordinated_teams = member.coordinated_teams.all()
-        user_team_memberships = member.team_memberships.all()
-        
-        print("user_administered_workspaces", user_administered_workspaces)
-        print("user_reviewed_workspaces", user_reviewed_workspaces)
-        print("user_coordinated_teams", user_coordinated_teams)
-        print("user_team_memberships", user_team_memberships)
-        # for team_membership in user_team_memberships:
-        #     print(team_membership.team.joined_workspaces.all())
-
-
         if user_administered_workspaces.count() > 0:
             for workspace in user_administered_workspaces:
                 workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
@@ -677,12 +667,10 @@ def remove_organization_member_view(request, organization_id, member_id):
                     name=workspace_team_group_name
                 )
                 workspace_team_group.user_set.remove(member.user)
-                print("success removing user from workspace team group")
-                
-        
 
+        #after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
+        member.delete()
 
-        
         messages.success(request, "Organization member removed successfully.")
         return redirect("organization_member_list", organization_id=organization_id)
     except Exception:

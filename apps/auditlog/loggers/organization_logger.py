@@ -1,7 +1,7 @@
 """Organization-specific audit logger for organization and exchange rate operations."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from django.contrib.auth.models import User
 from django.http import HttpRequest

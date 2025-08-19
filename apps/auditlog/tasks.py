@@ -57,6 +57,7 @@ def audit_create_async(
         if workspace:
             try:
                 from apps.workspaces.models import Workspace
+
                 workspace_instance = Workspace.objects.get(pk=workspace["pk"])
             except (KeyError, ObjectDoesNotExist) as e:
                 logger.warning(f"Workspace not found: {e}")

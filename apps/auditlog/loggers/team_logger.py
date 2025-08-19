@@ -68,7 +68,7 @@ class TeamAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(team, 'workspace', None)
+        workspace = getattr(team, "workspace", None)
         self._finalize_and_create_audit(user, action_type, metadata, team, workspace)
 
     @safe_audit_log
@@ -164,5 +164,7 @@ class TeamAuditLogger(BaseAuditLogger):
             )
 
         # Finalize and create audit log
-        workspace = getattr(team, 'workspace', None)
-        self._finalize_and_create_audit(user, action_mapping[action], metadata, team, workspace)
+        workspace = getattr(team, "workspace", None)
+        self._finalize_and_create_audit(
+            user, action_mapping[action], metadata, team, workspace
+        )

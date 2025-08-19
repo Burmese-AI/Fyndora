@@ -118,22 +118,20 @@ class BaseAuditLogger(ABC):
         """Finalize metadata and create audit log entry."""
         # Prepare user_id
         user_id = str(user.user_id) if user else None
-        
+
         # Prepare target_entity dict
         target_entity_dict = None
         if target_entity:
             target_entity_dict = {
                 "model": target_entity.__class__,
-                "pk": target_entity.pk
+                "pk": target_entity.pk,
             }
-        
+
         # Prepare workspace dict
         workspace_dict = None
         if workspace:
-            workspace_dict = {
-                "pk": workspace.pk
-            }
-        
+            workspace_dict = {"pk": workspace.pk}
+
         # Ensure all metadata is JSON serializable
         serializable_metadata = make_json_serializable(metadata)
 

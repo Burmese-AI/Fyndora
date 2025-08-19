@@ -107,7 +107,7 @@ class SystemAuditLogger(BaseAuditLogger):
             )
 
         # Finalize and create audit log
-        workspace = getattr(target_user, 'workspace', None)
+        workspace = getattr(target_user, "workspace", None)
         self._finalize_and_create_audit(
             user, action_mapping[action], metadata, target_user, workspace
         )
@@ -241,7 +241,7 @@ class SystemAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(file_obj, 'workspace', None)
+        workspace = getattr(file_obj, "workspace", None)
         self._finalize_and_create_audit(
             user, action_mapping[action], metadata, file_obj, workspace
         )

@@ -83,7 +83,7 @@ class EntryAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(entry, 'workspace', None)
+        workspace = getattr(entry, "workspace", None)
         self._finalize_and_create_audit(user, action_type, metadata, entry, workspace)
 
     @safe_audit_log
@@ -173,7 +173,7 @@ class EntryAuditLogger(BaseAuditLogger):
             )
 
         # Finalize and create audit log
-        workspace = getattr(entry, 'workspace', None)
+        workspace = getattr(entry, "workspace", None)
         self._finalize_and_create_audit(user, action_type, metadata, entry, workspace)
 
     @safe_audit_log
@@ -202,7 +202,7 @@ class EntryAuditLogger(BaseAuditLogger):
         }
 
         # Finalize and create audit log
-        workspace = getattr(entity, 'workspace', None)
+        workspace = getattr(entity, "workspace", None)
         self._finalize_and_create_audit(
             user, AuditActionType.ENTRY_STATUS_CHANGED, metadata, entity, workspace
         )

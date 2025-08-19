@@ -43,17 +43,18 @@ def get_entries(
     ]
     print(f">>> expense types => {expense_entry_types}")
     team_entry_types = [et for et in entry_types if et not in expense_entry_types]
+    print(f">>>> team entry types => {team_entry_types}")
 
     filters = Q()
-    print(f">>>> team entry types => {team_entry_types}")
+    
     if expense_entry_types:
         expense_filter = Q(entry_type__in=expense_entry_types)
-        if organization:
-            expense_filter &= Q(organization=organization)
-        elif workspace:
+        if workspace:
             expense_filter &= Q(workspace=workspace)
+        elif organization:
+            expense_filter &= Q(organization=organization)
         filters |= expense_filter
-    print(f">>>> expense filter => {filters}")
+    print(f">>>> after applying expense filter => {filters}")
 
     if team_entry_types:
         print(team_entry_types)
@@ -74,7 +75,7 @@ def get_entries(
             )
 
         filters |= team_filter
-    print(f">>>> team filter => {filters}")
+    print(f">>>> after applying team filter => {filters}")
 
     if not filters:
         print(">>>> Returning None")
@@ -115,11 +116,6 @@ def get_entries(
         "submitted_by_team_member__organization_member__user",
         "last_status_modified_by__user",
     )
-
-    print("TESTING EXCHANGE RATES")
-    for each in queryset:
-        print(f">>>> {each.amount} | {each.org_exchange_rate_ref} | {each.workspace_exchange_rate_ref}")
-
     return queryset
 
 

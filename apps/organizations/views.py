@@ -667,6 +667,8 @@ def remove_organization_member_view(request, organization_id, member_id):
                     name=workspace_team_group_name
                 )
                 workspace_team_group.user_set.remove(member.user)
+                #if the user is in teams , remove the user from the team
+                team_membership.delete()
 
         #after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
         member.delete()

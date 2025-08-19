@@ -54,6 +54,7 @@ from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
+from django.contrib.auth.models import Group
 
 
 # Create your views here.
@@ -616,3 +617,51 @@ class OrganizationExchangerateDeleteView(
 
         response = HttpResponse(f"{message_html}{table_html}")
         return response
+
+
+
+def remove_organization_member_view(request, organization_id, member_id):
+    try:
+        # print("request.user", request.user)
+        # print("organization_id", organization_id)
+        # print("member_id", member_id)
+        organization = get_object_or_404(Organization, pk=organization_id)
+        member = get_object_or_404(OrganizationMember, pk=member_id)
+        user_administered_workspaces = member.administered_workspaces.all()
+
+        if user_administered_workspaces.count() > 0:
+            for workspace in user_administered_workspaces:
+                workspace_admins_group_name = f"Workspace Admins - {workspace.workspace_id}"
+                workspace_admins_group, _ = Group.objects.get_or_create(
+                    name=workspace_admins_group_name
+                )
+                workspace_admins_group.user_set.remove(member.user)
+                print("success removing user from workspace admins group")
+                workspace.workspace_admin = None
+                workspace.save()
+                print("success removing workspace admin")
+
+        user_reviewed_workspaces = member.reviewed_workspaces.all()
+        if user_reviewed_workspaces.count() > 0:
+            for workspace in user_reviewed_workspaces:
+                operations_reviewers_group_name = f"Operations Reviewers - {workspace.workspace_id}"
+                operations_reviewers_group, _ = Group.objects.get_or_create(
+                    name=operations_reviewers_group_name
+                )
+                operations_reviewers_group.user_set.remove(member.user)
+                print("success removing user from workspace reviewers group")
+                workspace.operations_reviewer = None
+                workspace.save()
+                print("success removing workspace reviewer")
+
+
+
+        
+        messages.success(request, "Organization member removed successfully.")
+        return redirect("organization_member_list", organization_id=organization_id)
+    except Exception:
+        messages.error(
+            request,
+            "An error occurred while removing organization member. Please try again later.",
+        )
+        return redirect("organization_member_list", organization_id=organization_id)

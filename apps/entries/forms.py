@@ -6,7 +6,6 @@ from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
 from datetime import date
 from apps.currencies.models import Currency
-from django.utils import timezone
 from apps.currencies.selectors import get_org_defined_currencies
 
 
@@ -56,7 +55,7 @@ class BaseEntryForm(forms.ModelForm):
                 attrs={
                     "type": "date",
                     "class": "input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
-                    "required": True
+                    "required": True,
                 },
             ),
         }

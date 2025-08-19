@@ -131,10 +131,10 @@ class WorkspaceTeam(baseModel):
         primary_key=True, default=uuid.uuid4, editable=False
     )
     team = models.ForeignKey(
-        Team, on_delete=models.CASCADE, related_name="workspace_teams"
+        Team, on_delete=models.CASCADE, related_name="joined_workspaces"
     )
     workspace = models.ForeignKey(
-        Workspace, on_delete=models.CASCADE, related_name="workspace_teams"
+        Workspace, on_delete=models.CASCADE, related_name="joined_teams"
     )
     custom_remittance_rate = models.DecimalField(
         max_digits=5,  # 0.00 - 100.00

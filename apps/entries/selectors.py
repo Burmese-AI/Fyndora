@@ -116,6 +116,7 @@ def get_entries(
         "submitted_by_team_member__organization_member__user",
         "last_status_modified_by__user",
     )
+
     return queryset
 
 

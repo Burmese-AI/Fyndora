@@ -143,7 +143,6 @@ class WorkspaceTeamEntryCreateView(
     table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
-    # Submitter can't create entries if this is uncommented
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(
@@ -330,7 +329,9 @@ class WorkspaceTeamEntryDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")] if self.request.GET.get("status") else [EntryStatus.PENDING],
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
             type_filter=self.request.GET.get("type"),
             search=self.request.GET.get("search"),
         )

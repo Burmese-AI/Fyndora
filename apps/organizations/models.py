@@ -9,6 +9,7 @@ from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
 
 
+
 class Organization(baseModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
@@ -104,7 +105,7 @@ class Organization(baseModel):
         return self.title
 
 
-class OrganizationMember(baseModel):
+class OrganizationMember(baseModel, SoftDeleteModel):
     organization_member_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -129,6 +130,7 @@ class OrganizationMember(baseModel):
             models.UniqueConstraint(
                 fields=["organization", "user"],
                 name="unique_organization_member",
+                condition=models.Q(deleted_at__isnull=True),
             )
         ]
         ordering = ["-created_at"]

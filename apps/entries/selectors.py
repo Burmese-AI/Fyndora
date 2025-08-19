@@ -46,7 +46,7 @@ def get_entries(
     print(f">>>> team entry types => {team_entry_types}")
 
     filters = Q()
-    
+
     if expense_entry_types:
         expense_filter = Q(entry_type__in=expense_entry_types)
         if workspace:

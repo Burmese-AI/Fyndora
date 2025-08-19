@@ -62,18 +62,17 @@ def get_all_related_workspace_teams(organization, user, group_by_workspace=True)
     )
 
     if not is_owner:
-        
         # Note: TeamMember inherits SoftDeleteModel, so the default manager
         # automatically filters out soft-deleted records. This means `user_team_ids`
         # only includes active members, no need to explicitly filter `deleted_at__isnull=True`.
-        
-        #Get All teams the user is a part of under this organization
+
+        # Get All teams the user is a part of under this organization
         user_team_ids = TeamMember.objects.filter(
             team__organization=organization,
             organization_member__user=user,
-        ).values_list('team_id', flat=True)
+        ).values_list("team_id", flat=True)
 
-        #Get all workspace teams related to the teams the user is a part of
+        # Get all workspace teams related to the teams the user is a part of
         qs = qs.filter(
             Q(workspace__workspace_admin__user=user)
             | Q(workspace__operations_reviewer__user=user)

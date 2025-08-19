@@ -5,9 +5,10 @@ import uuid
 from apps.teams.constants import TeamMemberRole
 from apps.organizations.models import Organization
 from apps.core.permissions import TeamPermissions
+from apps.core.models import SoftDeleteModel
 
 
-class Team(baseModel):
+class Team(baseModel, SoftDeleteModel):
     team_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(
         Organization,
@@ -47,7 +48,7 @@ class Team(baseModel):
         return f"{self.title}"
 
 
-class TeamMember(baseModel):
+class TeamMember(baseModel, SoftDeleteModel):
     team_member_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -66,7 +67,9 @@ class TeamMember(baseModel):
         verbose_name_plural = "team members"
         constraints = [
             models.UniqueConstraint(
-                fields=["team", "organization_member"], name="unique_team_member"
+                fields=["team", "organization_member"],
+                name="unique_team_member",
+                condition=models.Q(deleted_at__isnull=True),
             )
         ]
         ordering = ["-created_at"]

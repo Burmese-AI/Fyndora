@@ -84,7 +84,7 @@ class BaseEntryForm(forms.ModelForm):
         
         occurred_at = cleaned_data.get("occurred_at")
         today = date.today()
-
+        
         if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
             raise forms.ValidationError(
                 "The occurred date must be within the workspace period."

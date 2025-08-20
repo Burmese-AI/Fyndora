@@ -130,3 +130,9 @@ def revoke_workspace_team_member_permission(user, workspace_team):
         name=workspace_team_group_name
     )
     workspace_team_group.user_set.remove(user)
+
+
+def check_if_member_is_owner(member, organization):
+    if member.user == organization.owner.user:
+        return True
+    return False

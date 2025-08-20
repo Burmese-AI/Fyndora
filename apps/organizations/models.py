@@ -89,6 +89,10 @@ class Organization(baseModel, SoftDeleteModel):
                 OrganizationPermissions.VIEW_REPORT_PAGE,
                 OrganizationPermissions.VIEW_REPORT_PAGE.label,
             ),
+            (
+                OrganizationPermissions.REMOVE_ORG_MEMBER,
+                OrganizationPermissions.REMOVE_ORG_MEMBER.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

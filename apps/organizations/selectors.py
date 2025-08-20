@@ -14,6 +14,7 @@ def get_user_organizations(user):
     Returns all organizations where the user is an active member.
     """
     return Organization.objects.filter(
+        members__user=user, members__is_active=True, members__deleted_at__isnull=True
         members__user=user,
         members__is_active=True,
         members__deleted_at__isnull=True,

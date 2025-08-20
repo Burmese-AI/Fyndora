@@ -1,5 +1,6 @@
 <tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ member.pk }}" class="hover:bg-lemonade-100 text-lemonade-900">
     <td class="font-medium">{{ member.user.username }}</td>
+    <td class="font-medium">{{ member.user.email }}</td>
     <td>
       <span class="badge 
         {% if member.is_active %}

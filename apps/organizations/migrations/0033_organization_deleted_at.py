@@ -4,28 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-<<<<<<< HEAD
-
-    dependencies = [
-        ('organizations', '0032_remove_organizationmember_unique_organization_member_and_more'),
-=======
     dependencies = [
         (
             "organizations",
             "0032_remove_organizationmember_unique_organization_member_and_more",
         ),
->>>>>>> 20882864e3fdda58e485e7fb5fb893f3526894b2
     ]
 
     operations = [
         migrations.AddField(
-<<<<<<< HEAD
-            model_name='organization',
-            name='deleted_at',
-=======
             model_name="organization",
             name="deleted_at",
->>>>>>> 20882864e3fdda58e485e7fb5fb893f3526894b2
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

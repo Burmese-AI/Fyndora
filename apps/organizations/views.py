@@ -62,6 +62,7 @@ from apps.core.utils import (
 )
 from apps.core.utils import check_if_member_is_owner
 from apps.organizations.utils import remove_permissions_from_member
+from apps.organizations.selectors import get_organization_member_by_id
 
 # Create your views here.
 @login_required
@@ -635,9 +636,10 @@ class OrganizationExchangerateDeleteView(
 
 def remove_organization_member_view(request, organization_id, member_id):
     try:
-        organization = get_object_or_404(Organization, pk=organization_id)
-        member = get_object_or_404(OrganizationMember, pk=member_id)
+        organization = get_organization_by_id(organization_id)
+        member = get_organization_member_by_id(member_id)
 
+        #no one can remove the owner of the organization
         if check_if_member_is_owner(member, organization):
             messages.error(request, "You cannot remove the owner of the organization.")
             return redirect("organization_member_list", organization_id=organization_id)

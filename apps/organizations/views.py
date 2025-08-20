@@ -63,6 +63,7 @@ from apps.core.utils import (
 from apps.core.utils import check_if_member_is_owner
 from apps.organizations.utils import remove_permissions_from_member
 from apps.organizations.selectors import get_organization_member_by_id
+from apps.organizations.permissions import can_remove_org_member
 
 # Create your views here.
 @login_required
@@ -639,6 +640,12 @@ def remove_organization_member_view(request, organization_id, member_id):
         organization = get_organization_by_id(organization_id)
         member = get_organization_member_by_id(member_id)
 
+        # check if the user has the permission to remove the organization member
+        if not can_remove_org_member(request.user,organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to remove this organization member.",
+            )
         #no one can remove the owner of the organization
         if check_if_member_is_owner(member, organization):
             messages.error(request, "You cannot remove the owner of the organization.")

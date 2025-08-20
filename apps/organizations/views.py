@@ -119,7 +119,8 @@ def home_view(request):
         template = "organizations/home.html"
 
         return render(request, template, context)
-    except Exception:
+    except Exception as e:
+        print(f"Exception in home_view: {e}")
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 

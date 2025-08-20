@@ -232,7 +232,8 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        query = OrganizationMember.objects.filter(organization=self.organization)
+        #list down all members except the owner to prevent the owner from being deleted
+        query = OrganizationMember.objects.filter(organization=self.organization).exclude(user=self.organization.owner.user)
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:

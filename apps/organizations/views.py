@@ -60,7 +60,7 @@ from apps.core.utils import (
     revoke_team_coordinator_permission,
     revoke_workspace_team_member_permission,
 )
-
+from apps.core.utils import check_if_member_is_owner
 
 # Create your views here.
 @login_required
@@ -636,6 +636,10 @@ def remove_organization_member_view(request, organization_id, member_id):
     try:
         organization = get_object_or_404(Organization, pk=organization_id)
         member = get_object_or_404(OrganizationMember, pk=member_id)
+
+        if check_if_member_is_owner(member, organization):
+            messages.error(request, "You cannot remove the owner of the organization.")
+            return redirect("organization_member_list", organization_id=organization_id)
 
         user_administered_workspaces = member.administered_workspaces.all()
         if user_administered_workspaces.count() > 0:

@@ -14,7 +14,9 @@ def get_user_organizations(user):
     Returns all organizations where the user is an active member.
     """
     return Organization.objects.filter(
-        members__user=user, members__is_active=True, members__deleted_at__isnull=True
+        members__user=user,
+        members__is_active=True,
+        members__deleted_at__isnull=True,
     ).select_related("owner")
 
 
@@ -37,6 +39,16 @@ def get_organization_members_count(organization):
         return int(count) if count is not None else 0
     except Exception:
         return 0
+
+
+def get_organization_member_by_id(member_id):
+    """
+    Returns the organization member by its ID.
+    """
+    try:
+        return OrganizationMember.objects.get(organization_member_id=member_id)
+    except Exception:
+        return None
 
 
 def get_workspaces_count(organization):

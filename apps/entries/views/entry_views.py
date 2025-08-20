@@ -34,6 +34,7 @@ from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
     can_update_workspace_team_entry,
+    can_update_other_submitters_entry,
 )
 from .base_views import (
     TeamLevelEntryView,
@@ -43,10 +44,6 @@ from .mixins import (
     EntryRequiredMixin,
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering,
-)
-from apps.entries.utils import (
-    can_update_other_submitters_entry,
-    can_update_workspace_team_entry,
 )
 from apps.entries.utils import can_view_total_workspace_teams_entries
 

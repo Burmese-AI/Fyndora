@@ -9,7 +9,7 @@ from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
 
 
-class Organization(baseModel):
+class Organization(baseModel, SoftDeleteModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
     )
@@ -88,6 +88,10 @@ class Organization(baseModel):
             (
                 OrganizationPermissions.VIEW_REPORT_PAGE,
                 OrganizationPermissions.VIEW_REPORT_PAGE.label,
+            ),
+            (
+                OrganizationPermissions.REMOVE_ORG_MEMBER,
+                OrganizationPermissions.REMOVE_ORG_MEMBER.label,
             ),
         )
         constraints = [

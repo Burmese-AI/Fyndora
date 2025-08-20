@@ -54,12 +54,10 @@ from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
-from apps.core.utils import (
-    revoke_workspace_admin_permission,
-    revoke_operations_reviewer_permission,
-    revoke_team_coordinator_permission,
-    revoke_workspace_team_member_permission,
-)
+from apps.core.utils import check_if_member_is_owner
+from apps.organizations.utils import remove_permissions_from_member
+from apps.organizations.selectors import get_organization_member_by_id
+from apps.organizations.permissions import can_remove_org_member
 
 
 # Create your views here.
@@ -119,7 +117,8 @@ def home_view(request):
         template = "organizations/home.html"
 
         return render(request, template, context)
-    except Exception:
+    except Exception as e:
+        print(f"Exception in home_view: {e}")
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 
@@ -231,7 +230,10 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        query = OrganizationMember.objects.filter(organization=self.organization)
+        # list down all members except the owner to prevent the owner from being deleted
+        query = OrganizationMember.objects.filter(
+            organization=self.organization
+        ).exclude(user=self.organization.owner.user)
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -386,7 +388,7 @@ def delete_organization_view(request, organization_id):
             messages.success(request, "Organization deleted successfully.")
             response = HttpResponse()
             # Client-side redirect
-            response['HX-Redirect'] = '/'
+            response["HX-Redirect"] = "/"
             return response
         else:
             return render(
@@ -394,7 +396,7 @@ def delete_organization_view(request, organization_id):
                 "organizations/partials/delete_organization_form.html",
                 {"organization": organization},
             )
-    except Exception as e:
+    except Exception:
         messages.error(
             request,
             "An error occurred while deleting organization. Please try again later.",
@@ -407,7 +409,6 @@ def delete_organization_view(request, organization_id):
         )
 
         return HttpResponse(f"{message_html}")
-        
 
 
 class OrganizationExchangeRateCreateView(
@@ -632,38 +633,22 @@ class OrganizationExchangerateDeleteView(
 
 def remove_organization_member_view(request, organization_id, member_id):
     try:
-        organization = get_object_or_404(Organization, pk=organization_id)
-        member = get_object_or_404(OrganizationMember, pk=member_id)
+        organization = get_organization_by_id(organization_id)
+        member = get_organization_member_by_id(member_id)
 
-        user_administered_workspaces = member.administered_workspaces.all()
-        if user_administered_workspaces.count() > 0:
-            # revoke workspace admin permission from every workspace that the user is admin of
-            for workspace in user_administered_workspaces:
-                revoke_workspace_admin_permission(member.user, workspace)
-                workspace.workspace_admin = None
-                workspace.save()
+        # check if the user has the permission to remove the organization member
+        if not can_remove_org_member(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to remove this organization member.",
+            )
+        # no one can remove the owner of the organization
+        if check_if_member_is_owner(member, organization):
+            messages.error(request, "You cannot remove the owner of the organization.")
+            return redirect("organization_member_list", organization_id=organization_id)
 
-        user_reviewed_workspaces = member.reviewed_workspaces.all()
-        if user_reviewed_workspaces.count() > 0:
-            # revoke operations reviewer permission from every workspace that the user is reviewer of
-            for workspace in user_reviewed_workspaces:
-                revoke_operations_reviewer_permission(member.user, workspace)
-                workspace.operations_reviewer = None
-                workspace.save()
-
-        user_coordinated_teams = member.coordinated_teams.all()
-        if user_coordinated_teams.count() > 0:
-            for team in user_coordinated_teams:
-                revoke_team_coordinator_permission(member.user, team)
-                team.team_coordinator = None
-                team.save()
-
-        user_joined_teams = member.team_memberships.all()
-        for team_membership in user_joined_teams:
-            for workspace_team in team_membership.team.joined_workspaces.all():
-                revoke_workspace_team_member_permission(member.user, workspace_team)
-                # if the user is in teams , remove the user from the team
-                team_membership.delete()
+        # remove all permissions from the member
+        remove_permissions_from_member(member, organization)
 
         # after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
         member.delete()

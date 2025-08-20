@@ -137,6 +137,10 @@ class OrganizationPermissions(models.TextChoices):
         "view_report_page",
         "Can view report page by Org Owner",
     )
+    REMOVE_ORG_MEMBER = (
+        "remove_org_member",
+        "Can remove org member from organization only by Org Owner",
+    )
 
 
 class TeamPermissions(models.TextChoices):

@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organizations', '0032_remove_organizationmember_unique_organization_member_and_more'),
+        (
+            "organizations",
+            "0032_remove_organizationmember_unique_organization_member_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='deleted_at',
+            model_name="organization",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

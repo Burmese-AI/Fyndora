@@ -54,16 +54,11 @@ from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
-from apps.core.utils import (
-    revoke_workspace_admin_permission,
-    revoke_operations_reviewer_permission,
-    revoke_team_coordinator_permission,
-    revoke_workspace_team_member_permission,
-)
 from apps.core.utils import check_if_member_is_owner
 from apps.organizations.utils import remove_permissions_from_member
 from apps.organizations.selectors import get_organization_member_by_id
 from apps.organizations.permissions import can_remove_org_member
+
 
 # Create your views here.
 @login_required
@@ -235,8 +230,10 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        #list down all members except the owner to prevent the owner from being deleted
-        query = OrganizationMember.objects.filter(organization=self.organization).exclude(user=self.organization.owner.user)
+        # list down all members except the owner to prevent the owner from being deleted
+        query = OrganizationMember.objects.filter(
+            organization=self.organization
+        ).exclude(user=self.organization.owner.user)
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -391,7 +388,7 @@ def delete_organization_view(request, organization_id):
             messages.success(request, "Organization deleted successfully.")
             response = HttpResponse()
             # Client-side redirect
-            response['HX-Redirect'] = '/'
+            response["HX-Redirect"] = "/"
             return response
         else:
             return render(
@@ -399,7 +396,7 @@ def delete_organization_view(request, organization_id):
                 "organizations/partials/delete_organization_form.html",
                 {"organization": organization},
             )
-    except Exception as e:
+    except Exception:
         messages.error(
             request,
             "An error occurred while deleting organization. Please try again later.",
@@ -412,7 +409,6 @@ def delete_organization_view(request, organization_id):
         )
 
         return HttpResponse(f"{message_html}")
-        
 
 
 class OrganizationExchangeRateCreateView(
@@ -641,16 +637,16 @@ def remove_organization_member_view(request, organization_id, member_id):
         member = get_organization_member_by_id(member_id)
 
         # check if the user has the permission to remove the organization member
-        if not can_remove_org_member(request.user,organization):
+        if not can_remove_org_member(request.user, organization):
             return permission_denied_view(
                 request,
                 "You do not have permission to remove this organization member.",
             )
-        #no one can remove the owner of the organization
+        # no one can remove the owner of the organization
         if check_if_member_is_owner(member, organization):
             messages.error(request, "You cannot remove the owner of the organization.")
             return redirect("organization_member_list", organization_id=organization_id)
-        
+
         # remove all permissions from the member
         remove_permissions_from_member(member, organization)
 

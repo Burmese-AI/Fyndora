@@ -1,3 +1,10 @@
+from apps.core.utils import (
+    revoke_workspace_admin_permission,
+    revoke_operations_reviewer_permission,
+    revoke_team_coordinator_permission,
+    revoke_workspace_team_member_permission,
+)
+
 """
 Utility functions for organization audit logging.
 """
@@ -121,19 +128,13 @@ def extract_request_metadata():
     }
 
 
-from apps.core.utils import (
-    revoke_workspace_admin_permission,
-    revoke_operations_reviewer_permission,
-    revoke_team_coordinator_permission,
-    revoke_workspace_team_member_permission,
-)
 def remove_permissions_from_member(member, organization):
     """
     Removing permissions from member.
     """
     user_administered_workspaces = member.administered_workspaces.all()
     if user_administered_workspaces.count() > 0:
-           # revoke workspace admin permission from every workspace that the user is admin of
+        # revoke workspace admin permission from every workspace that the user is admin of
         for workspace in user_administered_workspaces:
             revoke_workspace_admin_permission(member.user, workspace)
             workspace.workspace_admin = None
@@ -141,7 +142,7 @@ def remove_permissions_from_member(member, organization):
 
     user_reviewed_workspaces = member.reviewed_workspaces.all()
     if user_reviewed_workspaces.count() > 0:
-         # revoke operations reviewer permission from every workspace that the user is reviewer of
+        # revoke operations reviewer permission from every workspace that the user is reviewer of
         for workspace in user_reviewed_workspaces:
             revoke_operations_reviewer_permission(member.user, workspace)
             workspace.operations_reviewer = None
@@ -158,5 +159,5 @@ def remove_permissions_from_member(member, organization):
     for team_membership in user_joined_teams:
         for workspace_team in team_membership.team.joined_workspaces.all():
             revoke_workspace_team_member_permission(member.user, workspace_team)
-                # if the user is in teams , remove the user from the team
+            # if the user is in teams , remove the user from the team
             team_membership.delete()

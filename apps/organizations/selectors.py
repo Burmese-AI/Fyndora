@@ -40,6 +40,7 @@ def get_organization_members_count(organization):
     except Exception:
         return 0
 
+
 def get_organization_member_by_id(member_id):
     """
     Returns the organization member by its ID.
@@ -48,6 +49,7 @@ def get_organization_member_by_id(member_id):
         return OrganizationMember.objects.get(organization_member_id=member_id)
     except Exception:
         return None
+
 
 def get_workspaces_count(organization):
     """

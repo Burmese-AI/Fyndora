@@ -72,7 +72,7 @@ class Entry(baseModel, SoftDeleteModel):
     )
     submitted_by_org_member = models.ForeignKey(
         OrganizationMember,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="entries",
@@ -80,7 +80,7 @@ class Entry(baseModel, SoftDeleteModel):
 
     submitted_by_team_member = models.ForeignKey(
         TeamMember,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="entries",

@@ -382,26 +382,32 @@ def delete_organization_view(request, organization_id):
             return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
-            # delete organization
             organization.delete()
             messages.success(request, "Organization deleted successfully.")
-            return redirect("/")
+            response = HttpResponse()
+            # Client-side redirect
+            response['HX-Redirect'] = '/'
+            return response
         else:
             return render(
                 request,
                 "organizations/partials/delete_organization_form.html",
                 {"organization": organization},
             )
-    except Exception:
+    except Exception as e:
         messages.error(
             request,
             "An error occurred while deleting organization. Please try again later.",
         )
-        return render(
-            request,
-            "organizations/partials/delete_organization_form.html",
-            {"organization": organization},
+        context = {
+            "is_oob": True,
+        }
+        message_html = render_to_string(
+            "includes/message.html", context=context, request=request
         )
+
+        return HttpResponse(f"{message_html}")
+        
 
 
 class OrganizationExchangeRateCreateView(

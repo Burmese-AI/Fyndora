@@ -1,7 +1,11 @@
 {% extends "components/new_base_modal.html" %}
 
 {% block modal_content %}
-<form action="{% url 'delete_organization' organization_id=request.resolver_match.kwargs.organization_id %}"  class="modal-box w-4xl shadow-xl rounded-lg"  method="post" class="space-y-0">
+<form 
+    hx-post="{% url 'delete_organization' organization.pk %}"
+    hx-swap="none"
+    class="modal-box w-4xl shadow-xl rounded-lg space-y-0"  
+    > 
     {% csrf_token %}
    
         <div class="flex items-center gap-4 mb-6">

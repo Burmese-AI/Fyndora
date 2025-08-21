@@ -177,7 +177,7 @@ class WorkspaceAuditLogger(BaseAuditLogger):
 
         # Finalize and create audit log
         self._finalize_and_create_audit(
-            user, action_mapping[action], metadata, workspace, workspace
+            user, action_mapping[action], metadata, team, workspace
         )
 
     @safe_audit_log

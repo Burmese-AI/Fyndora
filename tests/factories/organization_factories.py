@@ -27,9 +27,6 @@ class OrganizationFactory(DjangoModelFactory):
     title = factory.Sequence(lambda n: f"Organization {n}")
     description = factory.Faker("text", max_nb_chars=200)
     status = StatusChoices.ACTIVE
-    expense = Decimal("0.00")
-
-    # Owner will be set separately when needed
 
 
 class OrganizationWithOwnerFactory(OrganizationFactory):

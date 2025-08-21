@@ -45,10 +45,20 @@ def audit_create_async(
         entity_instance = None
         if target_entity:
             try:
-                model_class = target_entity["model"]
+                model_path = target_entity["model"]
                 entity_pk = target_entity["pk"]
+                
+                # Import the model class from the string path
+                from django.apps import apps
+                # model_path format: 'apps.workspaces.models.Team'
+                # Extract app_label and model_name
+                path_parts = model_path.split('.')
+                app_label = path_parts[1]  # 'workspaces' from 'apps.workspaces.models.Team'
+                model_name = path_parts[-1]  # 'Team' from 'apps.workspaces.models.Team'
+                model_class = apps.get_model(app_label, model_name)
+                
                 entity_instance = model_class.objects.get(pk=entity_pk)
-            except (KeyError, ObjectDoesNotExist) as e:
+            except (KeyError, ObjectDoesNotExist, LookupError) as e:
                 logger.warning(f"Target entity not found: {e}")
                 return None
 
@@ -107,10 +117,20 @@ def audit_create_security_event_async(
         entity_instance = None
         if target_entity:
             try:
-                model_class = target_entity["model"]
+                model_path = target_entity["model"]
                 entity_pk = target_entity["pk"]
+                
+                # Import the model class from the string path
+                from django.apps import apps
+                # model_path format: 'apps.workspaces.models.Team'
+                # Extract app_label and model_name
+                path_parts = model_path.split('.')
+                app_label = path_parts[1]  # 'workspaces' from 'apps.workspaces.models.Team'
+                model_name = path_parts[-1]  # 'Team' from 'apps.workspaces.models.Team'
+                model_class = apps.get_model(app_label, model_name)
+                
                 entity_instance = model_class.objects.get(pk=entity_pk)
-            except (KeyError, ObjectDoesNotExist) as e:
+            except (KeyError, ObjectDoesNotExist, LookupError) as e:
                 logger.warning(f"Target entity not found: {e}")
                 return None
 

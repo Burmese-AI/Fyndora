@@ -14,19 +14,19 @@ from tests.factories.organization_factories import (
 
 
 class TeamFactory(DjangoModelFactory):
-    """Factory for creating fundraising Team instances."""
+    """Factory for creating Team instances."""
 
     class Meta:
         model = Team
 
     organization = factory.SubFactory(OrganizationFactory)
-    title = factory.Sequence(lambda n: f"Fundraising Team {n}")
+    title = factory.Sequence(lambda n: f"Team {n}")
     description = factory.Faker("sentence", nb_words=6)
     # team_coordinator and created_by are None by default
 
 
 class TeamWithCoordinatorFactory(TeamFactory):
-    """Factory for creating fundraising Team with a coordinator."""
+    """Factory for creating Team with a coordinator."""
 
     class Meta:
         model = Team
@@ -46,14 +46,14 @@ class TeamWithCoordinatorFactory(TeamFactory):
 
 
 class TeamMemberFactory(DjangoModelFactory):
-    """Factory for creating TeamMember instances (field agents, coordinators, etc.)."""
+    """Factory for creating TeamMember instances"""
 
     class Meta:
         model = TeamMember
 
     organization_member = factory.SubFactory(OrganizationMemberFactory)
     team = factory.SubFactory(TeamFactory)
-    role = TeamMemberRole.SUBMITTER  # Default to field agent
+    role = TeamMemberRole.SUBMITTER
 
 
 class AuditorMemberFactory(TeamMemberFactory):

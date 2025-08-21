@@ -30,7 +30,6 @@ class WorkspaceFactory(DjangoModelFactory):
     remittance_rate = Decimal("90.00")
     start_date = factory.LazyFunction(lambda: date.today())
     end_date = factory.LazyFunction(lambda: date.today() + timedelta(days=365))
-    expense = Decimal("0.00")
 
     # workspace_admin and created_by will be set when needed
 

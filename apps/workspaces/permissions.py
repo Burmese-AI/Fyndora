@@ -99,7 +99,7 @@ def assign_workspace_permissions(workspace, request_user=None):
                     user=request_user,
                     target_user=workspace.workspace_admin
                     or workspace.organization.owner,
-                    permission="workspace_permissions_setup",
+                    permission_type="workspace_permissions_setup",
                     action="grant",
                     reason="Workspace permission initialization",
                     workspace_id=str(workspace.workspace_id),
@@ -186,7 +186,7 @@ def update_workspace_admin_group(
                 BusinessAuditLogger.log_permission_change(
                     user=request_user,
                     target_user=target_user,
-                    permission="workspace_admin_role",
+                    permission_type="workspace_admin_role",
                     action="grant" if new_admin else "revoke",
                     reason="Workspace admin role change",
                     workspace_id=str(workspace.workspace_id),
@@ -212,7 +212,7 @@ def update_workspace_admin_group(
                 BusinessAuditLogger.log_permission_change(
                     user=request_user,
                     target_user=target_user,
-                    permission="operations_reviewer_role",
+                    permission_type="operations_reviewer_role",
                     action="grant" if new_operations_reviewer else "revoke",
                     reason="Operations reviewer role change",
                     workspace_id=str(workspace.workspace_id),
@@ -349,7 +349,7 @@ def assign_workspace_team_permissions(
                 BusinessAuditLogger.log_permission_change(
                     user=request_user,
                     target_user=target_user,
-                    permission="workspace_team_permissions",
+                    permission_type="workspace_team_permissions",
                     action="grant",
                     reason="Workspace team permission assignment",
                     workspace_id=str(workspace_team.workspace.workspace_id),
@@ -413,7 +413,7 @@ def remove_workspace_team_permissions(workspace_team, request_user=None):
                         BusinessAuditLogger.log_permission_change(
                             user=request_user,
                             target_user=target_user,
-                            permission="workspace_team_permissions",
+                            permission_type="workspace_team_permissions",
                             action="revoke",
                             reason="Workspace team permission removal",
                             workspace_id=str(workspace_team.workspace.workspace_id),

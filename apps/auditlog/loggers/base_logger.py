@@ -2,13 +2,14 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 
 from apps.auditlog.services import make_json_serializable
 from apps.auditlog.tasks import audit_create_async, audit_create_security_event_async
+from apps.organizations.models import OrganizationMember
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class BaseAuditLogger(ABC):
 
     @staticmethod
     def _finalize_and_create_audit(
-        user: User,
+        user: Union[User, OrganizationMember],
         action_type: str,
         metadata: Dict[str, Any],
         target_entity: Any = None,
@@ -117,13 +118,21 @@ class BaseAuditLogger(ABC):
     ) -> None:
         """Finalize metadata and create audit log entry."""
         # Prepare user_id
-        user_id = str(user.user_id) if user else None
+        if user:
+            if hasattr(user, 'user'):
+                # OrganizationMember object
+                user_id = str(user.user.user_id)
+            else:
+                # User object
+                user_id = str(user.user_id)
+        else:
+            user_id = None
 
         # Prepare target_entity dict
         target_entity_dict = None
         if target_entity:
             target_entity_dict = {
-                "model": target_entity.__class__,
+                "model": f"{target_entity.__class__.__module__}.{target_entity.__class__.__name__}",
                 "pk": target_entity.pk,
             }
 

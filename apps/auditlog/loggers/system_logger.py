@@ -1,7 +1,7 @@
 """System-specific audit logger for permissions, bulk operations, and system events."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from django.contrib.auth.models import User
 from django.http import HttpRequest
@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.utils import safe_audit_log
+from apps.organizations.models import OrganizationMember
 
 from .base_logger import BaseAuditLogger
 from .metadata_builders import (
@@ -42,8 +43,8 @@ class SystemAuditLogger(BaseAuditLogger):
     @safe_audit_log
     def log_permission_change(
         self,
-        user: User,
-        target_user: User,
+        user: Union[User, OrganizationMember],
+        target_user: Union[User, OrganizationMember],
         permission_type: str,
         action: str,
         request: Optional[HttpRequest] = None,
@@ -72,10 +73,18 @@ class SystemAuditLogger(BaseAuditLogger):
         }
 
         # Add target user metadata
+        # Handle both User and OrganizationMember objects
+        if hasattr(target_user, 'user'):  # OrganizationMember
+            target_user_id = str(target_user.user.user_id)
+            target_user_email = target_user.user.email
+        else:  # User
+            target_user_id = str(target_user.user_id)
+            target_user_email = target_user.email
+            
         metadata.update(
             {
-                "target_user_id": str(target_user.user_id),
-                "target_user_email": target_user.email,
+                "target_user_id": target_user_id,
+                "target_user_email": target_user_email,
                 "grantor_id": str(user.user_id),
                 "grantor_email": user.email,
                 "permission_timestamp": timezone.now().isoformat(),

@@ -187,6 +187,8 @@ def is_critical_action(action_type):
         "remittance_deleted",
         "unauthorized_access_attempt",
         "data_exported",
+        "permission_revoked",
+        "system_error",
     ]
 
     return action_value in critical_actions

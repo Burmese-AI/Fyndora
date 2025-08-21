@@ -1,7 +1,7 @@
 import logging
 import uuid
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Dict, Optional
 
 from django.contrib.auth import get_user_model
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def make_json_serializable(obj):
     """
     Convert objects to JSON serializable format.
-    Raises TypeError for truly non-serializable objects.
+    Handles Django model instances by converting them to strings.
     """
     if obj is None:
         return None
@@ -40,9 +40,8 @@ def make_json_serializable(obj):
     elif isinstance(obj, (list, tuple)):
         return [make_json_serializable(item) for item in obj]
     else:
-        # For truly non-serializable objects, raise an exception
-        # instead of converting to string
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+        # For Django model instances and other objects, convert to string
+        return str(obj)
 
 
 def audit_create(
@@ -120,12 +119,14 @@ def audit_create_security_event(
     """
     Service to create security-related audit log entries.
     """
+    
     enhanced_metadata = make_json_serializable(metadata or {})
     enhanced_metadata.update(
         {
             "event_category": "security",
             "is_security_related": True,
             "requires_investigation": True,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )
 

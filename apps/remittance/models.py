@@ -94,5 +94,11 @@ class Remittance(baseModel):
     def check_if_overpaid(self):
         self.is_overpaid = self.paid_amount > self.due_amount
 
+    def remaining_amount(self):
+        if self.is_overpaid:
+            return self.paid_amount - self.due_amount
+        else:
+            return self.due_amount - self.paid_amount
+
     def __str__(self):
         return f"Remittance {self.remittance_id} - {self.workspace.title} (Status: {self.get_status_display()})"

@@ -10,6 +10,7 @@ from apps.entries.models import Entry
 from apps.entries.selectors import get_total_amount_of_entries
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.remittance.constants import RemittanceStatus
+from apps.remittance.exceptions import RemittanceConfirmPaymentException
 from apps.remittance.models import Remittance
 from apps.remittance.permissions import RemittancePermissions
 from apps.workspaces.models import WorkspaceTeam
@@ -103,23 +104,20 @@ def update_remittance_based_on_entry_status_change(
     )
 
 
-def remittance_confirm_payment(*, remittance, user):
+def remittance_confirm_payment(*, remittance, user, organization_id):
     """
     Confirms a remittance payment.
     """
-    workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
-        raise PermissionDenied("You do not have permission to confirm this remittance.")
 
-    if remittance.paid_amount < remittance.due_amount:
-        raise ValidationError(
-            "Cannot confirm payment: The due amount has not been fully paid."
-        )
+    # if remittance.paid_amount < remittance.due_amount:
+    #     raise RemittanceConfirmPaymentException(
+    #         "Cannot confirm payment: The due amount has not been fully paid."
+    #     )
 
     # Get the OrganizationMember instance for the user
     organization_member = get_orgMember_by_user_id_and_organization_id(
         user_id=user.pk,
-        organization_id=remittance.workspace_team.workspace.organization.pk,
+        organization_id=organization_id,
     )
 
     updated_remittance = model_update(
@@ -139,10 +137,6 @@ def remittance_record_payment(*, remittance, user, amount):
     Records a payment against a remittance.
     """
     workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE, workspace):
-        raise PermissionDenied(
-            "You do not have permission to record a payment for this remittance."
-        )
 
     if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(

@@ -142,8 +142,6 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
                 response["HX-trigger"] = "error"
                 return response
         else:
-            messages.error(request, "Invalid request method and this is a GET request")
-            print("this is a get request")
             context = {
                 "remittance": remittance,
                 "organization": organization,

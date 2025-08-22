@@ -252,10 +252,11 @@ class EntryWithReviewFactory(EntryFactory):
             else:
                 self.status_note = f"Financial transaction {self.status} after review."
             self.save()
-            
-            
+
+
 class OrganizationExpenseEntryFactory(EntryFactory):
     """Factory for creating organization-level expense entries."""
+
     entry_type = EntryType.ORG_EXP
     submitted_by_org_member = factory.SubFactory(OrganizationMemberFactory)
     submitted_by_team_member = None
@@ -269,6 +270,7 @@ class OrganizationExpenseEntryFactory(EntryFactory):
 
 class WorkspaceExpenseEntryFactory(EntryFactory):
     """Factory for creating workspace-level expense entries."""
+
     entry_type = EntryType.WORKSPACE_EXP
     submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
     submitted_by_org_member = None
@@ -277,6 +279,7 @@ class WorkspaceExpenseEntryFactory(EntryFactory):
         lambda obj: obj.workspace_exchange_rate_ref or None
     )
 
+
 # in tests/factories/entry_factories.py (or wherever your entry factories live)
 import factory
 from apps.entries.models import Entry
@@ -284,13 +287,16 @@ from apps.entries.constants import EntryStatus
 from .organization_factories import OrganizationMemberFactory
 from .team_factories import TeamMemberFactory
 
+
 class ReviewedEntryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Entry
 
     # You can choose either team member or org member
     submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
-    organization = factory.LazyAttribute(lambda o: o.submitted_by_team_member.organization_member.organization)
+    organization = factory.LazyAttribute(
+        lambda o: o.submitted_by_team_member.organization_member.organization
+    )
     workspace = None
     workspace_team = None
     entry_type = "INCOME"

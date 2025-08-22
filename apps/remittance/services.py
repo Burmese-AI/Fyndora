@@ -109,10 +109,10 @@ def remittance_confirm_payment(*, remittance, user, organization_id):
     Confirms a remittance payment.
     """
 
-    # if remittance.paid_amount < remittance.due_amount:
-    #     raise RemittanceConfirmPaymentException(
-    #         "Cannot confirm payment: The due amount has not been fully paid."
-    #     )
+    if remittance.paid_amount < remittance.due_amount:
+        raise RemittanceConfirmPaymentException(
+            "Cannot confirm payment: The due amount has not been fully paid."
+        )
 
     # Get the OrganizationMember instance for the user
     organization_member = get_orgMember_by_user_id_and_organization_id(

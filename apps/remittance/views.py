@@ -17,6 +17,7 @@ from .exceptions import RemittanceConfirmPaymentException
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 
+
 # developed by THA for the remittance list by each workspace team
 # this is display the remittance list by each workspace team (due amount , paid amount , status , etc)
 def remittance_list_view(request, organization_id):
@@ -84,6 +85,7 @@ def remittance_list_view(request, organization_id):
         }
         return render(request, "remittance/index.html", context)
 
+
 def remittance_confirm_payment_view(request, organization_id, remittance_id):
     """
     View to confirm a remittance payment.
@@ -91,39 +93,56 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     try:
         remittance = get_object_or_404(Remittance, pk=remittance_id)
         try:
-            remittance_confirm_payment(remittance=remittance, user=request.user, organization_id=organization_id)
+            remittance_confirm_payment(
+                remittance=remittance,
+                user=request.user,
+                organization_id=organization_id,
+            )
             messages.success(request, "Remittance confirmed successfully")
             context = {
                 "organization": get_organization_by_id(organization_id),
-                "remittances": get_remittances_under_organization(organization_id=organization_id),
-                "is_oob": True
+                "remittances": get_remittances_under_organization(
+                    organization_id=organization_id
+                ),
+                "is_oob": True,
             }
             message_html = render_to_string(
-                            "includes/message.html", context=context, request=request
-                        )
+                "includes/message.html", context=context, request=request
+            )
             remittance_table_html = render_to_string(
-                            "remittance/components/remittance_table.html",
-                            context=context,
-                            request=request,
-                        )
-            remittance_table_html = render_to_string(
-                            "remittance/components/remittance_table.html",
-                            context=context,
-                            request=request,
-                        )
-            response = HttpResponse(
-                            f"{message_html} {remittance_table_html}"
-                        )
+                "remittance/components/remittance_table.html",
+                context=context,
+                request=request,
+            )
+            response = HttpResponse(f"{message_html} {remittance_table_html}")
             response["HX-trigger"] = "success"
             return response
 
         except RemittanceConfirmPaymentException as e:
             messages.error(request, str(e))
-            return redirect("remittance_list", organization_id=organization_id)
+            context = {
+                "organization": get_organization_by_id(organization_id),
+                "remittances": get_remittances_under_organization(
+                    organization_id=organization_id
+                ),
+                "is_oob": True,
+            }
+            message_html = render_to_string(
+                "includes/message.html", context=context, request=request
+            )
+            remittance_table_html = render_to_string(
+                "remittance/components/remittance_table.html",
+                context=context,
+                request=request,
+            )
+            response = HttpResponse(f"{message_html} {remittance_table_html}")
+            response["HX-trigger"] = "error"
+            return response
     except Exception as e:
         messages.error(request, "Error in remittance_confirm_payment_view")
         print(f"Error in remittance_confirm_payment_view: {e}")
         return redirect("remittance_list", organization_id=organization_id)
+
 
 # this view will not be currently used
 # class RemittanceListView(LoginRequiredMixin, ListView):

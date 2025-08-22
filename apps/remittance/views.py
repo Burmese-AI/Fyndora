@@ -16,6 +16,8 @@ from django.contrib import messages
 from .exceptions import RemittanceConfirmPaymentException
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from apps.remittance.utils import can_confirm_remittance_payment
+from apps.core.utils import permission_denied_view
 
 
 # developed by THA for the remittance list by each workspace team
@@ -91,8 +93,11 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     View to confirm a remittance payment.
     """
     try:
-        remittance = get_object_or_404(Remittance, pk=remittance_id)
+       
         organization = get_organization_by_id(organization_id)
+        remittance = get_object_or_404(Remittance, pk=remittance_id)
+        if not can_confirm_remittance_payment(request.user, organization):
+            return permission_denied_view(request, "You do not have permission to confirm this remittance payment.")
 
         if request.method == "POST":
             try:

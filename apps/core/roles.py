@@ -26,6 +26,7 @@ ROLES = {
         OrganizationPermissions.DELETE_ORG_CURRENCY,
         OrganizationPermissions.VIEW_REPORT_PAGE,
         OrganizationPermissions.REMOVE_ORG_MEMBER,
+        OrganizationPermissions.CONFIRM_REMITTANCE_PAYMENT,
         WorkspacePermissions.CHANGE_WORKSPACE_CURRENCY,
         WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
     ],

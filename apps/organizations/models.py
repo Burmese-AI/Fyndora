@@ -93,6 +93,10 @@ class Organization(baseModel, SoftDeleteModel):
                 OrganizationPermissions.REMOVE_ORG_MEMBER,
                 OrganizationPermissions.REMOVE_ORG_MEMBER.label,
             ),
+            (
+                OrganizationPermissions.CONFIRM_REMITTANCE_PAYMENT,
+                OrganizationPermissions.CONFIRM_REMITTANCE_PAYMENT.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(

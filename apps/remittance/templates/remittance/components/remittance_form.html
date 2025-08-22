@@ -46,6 +46,14 @@ hx-swap="innerHTML"
         </div>
         <div class="mb-8">
             <div class="bg-base-100 border border-base-200 rounded-lg p-4">
+                {% if remittance.confirmed_by %}
+                    <p class="text-gray-900 text-lg font-semibold mb-1">
+                        This remittance has already been confirmed by {{ remittance.confirmed_by.user.first_name }} {{ remittance.confirmed_by.user.last_name }} on {{ remittance.confirmed_at|date:"F d, Y" }}.
+                    </p>
+                    <p class="text-gray-500 text-sm">
+                        Do you want to receive more remittance for this workspace?
+                    </p>
+                {% else %}
                 <p class="text-gray-900 text-lg font-semibold mb-1">
                     Are you <span class="text-green-700 font-bold">absolutely sure</span> you want to confirm payment for remittance
                     <span class="font-bold text-gray-800">{{ remittance.workspace_team.team.title }} of {{ remittance.workspace_team.workspace.title }} Workspace</span>?
@@ -53,6 +61,7 @@ hx-swap="innerHTML"
                 <p class="text-gray-500 text-sm">
                     This action can be reversed. You can still add more payment to this remittance. However, please ensure all payment details are correct.
                 </p>
+                {% endif %}
             </div>
         </div>
         <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8">

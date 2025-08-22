@@ -9,6 +9,15 @@ from apps.core.selectors import (
 )
 from apps.remittance.selectors import get_remittances_under_organization
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, redirect
+from .services import remittance_confirm_payment
+from .models import Remittance
+from django.contrib import messages
+from .exceptions import RemittanceConfirmPaymentException
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from apps.remittance.utils import can_confirm_remittance_payment
+from apps.core.utils import permission_denied_view
 
 
 # developed by THA for the remittance list by each workspace team
@@ -77,6 +86,90 @@ def remittance_list_view(request, organization_id):
             "workspaces": get_workspaces_under_organization(organization_id) or [],
         }
         return render(request, "remittance/index.html", context)
+
+
+def remittance_confirm_payment_view(request, organization_id, remittance_id):
+    """
+    View to confirm a remittance payment.
+    """
+    try:
+        organization = get_organization_by_id(organization_id)
+        remittance = get_object_or_404(Remittance, pk=remittance_id)
+        if not can_confirm_remittance_payment(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to confirm this remittance payment.",
+            )
+
+        if request.method == "POST":
+            try:
+                updated_remittance = remittance_confirm_payment(
+                    remittance=remittance,
+                    user=request.user,
+                    organization_id=organization_id,
+                )
+                # if update remittance.confirmed_by is not None, for the message , we show confirmed message
+                if updated_remittance.confirmed_by is not None:
+                    messages.success(
+                        request, "Remittance Payment Confirmed successfully"
+                    )
+                else:
+                    # if update remittance.confirmed_by is None, for the message , we show updated message
+                    messages.success(request, "Remittance Payment Updated successfully")
+                context = {
+                    "organization": organization,
+                    "remittances": get_remittances_under_organization(
+                        organization_id=organization_id
+                    ),
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                remittance_table_html = render_to_string(
+                    "remittance/components/remittance_table.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {remittance_table_html}")
+                response["HX-trigger"] = "success"
+                return response
+
+            except RemittanceConfirmPaymentException as e:
+                messages.error(request, str(e))
+                context = {
+                    "organization": organization,
+                    "remittances": get_remittances_under_organization(
+                        organization_id=organization_id
+                    ),
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                remittance_table_html = render_to_string(
+                    "remittance/components/remittance_table.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {remittance_table_html}")
+                response["HX-trigger"] = "error"
+                return response
+        else:
+            # if the request is not a POST request, then we need to render the form template
+            context = {
+                "remittance": remittance,
+                "organization": organization,
+            }
+            return render(
+                request,
+                "remittance/components/remittance_form.html",
+                context,
+            )
+    except Exception as e:
+        messages.error(request, "Error in remittance_confirm_payment_view")
+        print(f"Error in remittance_confirm_payment_view: {e}")
+        return redirect("remittance_list", organization_id=organization_id)
 
 
 # this view will not be currently used

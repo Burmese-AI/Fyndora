@@ -141,6 +141,10 @@ class OrganizationPermissions(models.TextChoices):
         "remove_org_member",
         "Can remove org member from organization only by Org Owner",
     )
+    CONFIRM_REMITTANCE_PAYMENT = (
+        "confirm_remittance_payment",
+        "Can confirm remittance payment only by Org Owner",
+    )
 
 
 class TeamPermissions(models.TextChoices):

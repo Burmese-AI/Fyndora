@@ -38,7 +38,7 @@ from .entry_factories import (
     TeamSubmittedEntryFactory,
     OrganizationExpenseEntryFactory,
     WorkspaceExpenseEntryFactory,
-    ReviewedEntryFactory
+    ReviewedEntryFactory,
 )
 from .organization_factories import (
     ArchivedOrganizationFactory,

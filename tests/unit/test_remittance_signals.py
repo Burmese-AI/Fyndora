@@ -152,14 +152,14 @@
 #             cursor.execute(
 #                 """
 #                 INSERT INTO entries_entry (
-#                     entry_id, 
-#                     submitter_content_type_id, 
-#                     submitter_object_id, 
-#                     workspace_id, 
-#                     entry_type, 
-#                     amount, 
-#                     description, 
-#                     status, 
+#                     entry_id,
+#                     submitter_content_type_id,
+#                     submitter_object_id,
+#                     workspace_id,
+#                     entry_type,
+#                     amount,
+#                     description,
+#                     status,
 #                     is_flagged,
 #                     submitted_at,
 #                     created_at,

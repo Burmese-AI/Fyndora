@@ -5,6 +5,7 @@ from apps.currencies.models import Currency
 # Common ISO4217 currency codes
 CURRENCY_CODES = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY"]
 
+
 class CurrencyFactory(DjangoModelFactory):
     """Factory for creating Currency instances."""
 

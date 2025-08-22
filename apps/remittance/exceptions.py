@@ -1,0 +1,2 @@
+class RemittanceConfirmPaymentException(Exception):
+    pass

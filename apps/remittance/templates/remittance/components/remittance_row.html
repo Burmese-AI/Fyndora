@@ -3,7 +3,7 @@
 
 <tr 
     {% if is_oob %}hx-swap-oob="true"{% endif %}
-    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-yellow-100{% endif %}" 
+    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-yellow-100 {% elif not remittance.paid_within_deadlines %}bg-red-100{% endif %}" 
     id="remittance_row-{{ remittance.remittance_id }}"
 >
     <!-- Member Info -->

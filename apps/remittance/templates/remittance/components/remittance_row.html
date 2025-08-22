@@ -3,7 +3,7 @@
 
 <tr 
     {% if is_oob %}hx-swap-oob="true"{% endif %}
-    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-red-100{% endif %}" 
+    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-yellow-100{% endif %}" 
     id="remittance_row-{{ remittance.remittance_id }}"
 >
     <!-- Member Info -->
@@ -68,15 +68,15 @@
     <td>
         <div class="flex justify-center space-x-2">
             {% if remittance.confirmed_by %}
-                <button class="btn btn-success btn-sm">
-                    <i class="fas fa-eye">Received</i>
+                <button  hx-get="{% url 'remittance_confirm_payment' organization_id=organization.organization_id remittance_id=remittance.remittance_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-success btn-sm">
+                    <i class="fas fa-eye">Confirmed</i>
                 </button>
             {% else %}
             <button 
             hx-get="{% url 'remittance_confirm_payment' organization_id=organization.organization_id remittance_id=remittance.remittance_id %}" 
             hx-target="#modal-placeholder" 
             hx-swap="innerHTML" 
-            class="btn btn-sm btn-ghost hover:bg-red-800 hover:text-white"
+            class="btn btn-sm btn-ghost hover:bg-success"
             >
                 <i class="fas fa-eye">Confirm</i>
             </button>

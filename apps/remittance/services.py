@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -11,7 +11,6 @@ from apps.entries.selectors import get_total_amount_of_entries
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
-from apps.remittance.permissions import RemittancePermissions
 from apps.workspaces.models import WorkspaceTeam
 
 
@@ -107,7 +106,7 @@ def remittance_confirm_payment(*, remittance, user, organization_id):
     """
     Confirms a remittance payment.
     """
-    #I think we should allows the user to decide whether to confirm the payment or not rather than denying form the system... i specifically added warning message in the template
+    # I think we should allow the user to decide whether to confirm the payment or not rather than denying form the system... i specifically added warning message in the template
     # if remittance.paid_amount < remittance.due_amount:
     #     raise RemittanceConfirmPaymentException(
     #         "Cannot confirm payment: The due amount has not been fully paid."
@@ -138,7 +137,7 @@ def remittance_record_payment(*, remittance, user, amount):
     """
     Records a payment against a remittance.
     """
-    workspace = remittance.workspace_team.workspace
+    
 
     if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(

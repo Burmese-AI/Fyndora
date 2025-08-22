@@ -93,7 +93,7 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     try:
         remittance = get_object_or_404(Remittance, pk=remittance_id)
         organization = get_organization_by_id(organization_id)
-        
+
         if request.method == "POST":
             try:
                 updated_remittance = remittance_confirm_payment(
@@ -101,11 +101,13 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
                     user=request.user,
                     organization_id=organization_id,
                 )
-                #if update remittance.confirmed_by is not None, for the message , we show confirmed message
+                # if update remittance.confirmed_by is not None, for the message , we show confirmed message
                 if updated_remittance.confirmed_by is not None:
-                    messages.success(request, "Remittance Payment Confirmed successfully")
+                    messages.success(
+                        request, "Remittance Payment Confirmed successfully"
+                    )
                 else:
-                    #if update remittance.confirmed_by is None, for the message , we show updated message
+                    # if update remittance.confirmed_by is None, for the message , we show updated message
                     messages.success(request, "Remittance Payment Updated successfully")
                 context = {
                     "organization": organization,
@@ -147,6 +149,7 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
                 response["HX-trigger"] = "error"
                 return response
         else:
+            # if the request is not a POST request, then we need to render the form template
             context = {
                 "remittance": remittance,
                 "organization": organization,

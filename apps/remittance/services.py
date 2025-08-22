@@ -137,7 +137,6 @@ def remittance_record_payment(*, remittance, user, amount):
     """
     Records a payment against a remittance.
     """
-    
 
     if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(

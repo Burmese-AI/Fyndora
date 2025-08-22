@@ -4,15 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('remittance', '0011_merge_20250801_0435'),
+        ("remittance", "0011_merge_20250801_0435"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='remittance',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('partial', 'Partially Paid'), ('paid', 'Paid'), ('overpaid', 'Overpaid'), ('overdue', 'Overdue'), ('canceled', 'Canceled')], default='pending', max_length=20),
+            model_name="remittance",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("partial", "Partially Paid"),
+                    ("paid", "Paid"),
+                    ("overpaid", "Overpaid"),
+                    ("overdue", "Overdue"),
+                    ("canceled", "Canceled"),
+                ],
+                default="pending",
+                max_length=20,
+            ),
         ),
     ]

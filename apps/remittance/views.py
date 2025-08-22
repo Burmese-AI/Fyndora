@@ -93,11 +93,13 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     View to confirm a remittance payment.
     """
     try:
-       
         organization = get_organization_by_id(organization_id)
         remittance = get_object_or_404(Remittance, pk=remittance_id)
         if not can_confirm_remittance_payment(request.user, organization):
-            return permission_denied_view(request, "You do not have permission to confirm this remittance payment.")
+            return permission_denied_view(
+                request,
+                "You do not have permission to confirm this remittance payment.",
+            )
 
         if request.method == "POST":
             try:

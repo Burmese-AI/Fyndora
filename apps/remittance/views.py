@@ -96,12 +96,17 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
         
         if request.method == "POST":
             try:
-                remittance_confirm_payment(
+                updated_remittance = remittance_confirm_payment(
                     remittance=remittance,
                     user=request.user,
                     organization_id=organization_id,
                 )
-                messages.success(request, "Remittance confirmed successfully")
+                #if update remittance.confirmed_by is not None, for the message , we show confirmed message
+                if updated_remittance.confirmed_by is not None:
+                    messages.success(request, "Remittance Payment Confirmed successfully")
+                else:
+                    #if update remittance.confirmed_by is None, for the message , we show updated message
+                    messages.success(request, "Remittance Payment Updated successfully")
                 context = {
                     "organization": organization,
                     "remittances": get_remittances_under_organization(

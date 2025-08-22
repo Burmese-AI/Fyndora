@@ -1,4 +1,5 @@
 from decimal import Decimal
+from tkinter import N
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -109,16 +110,19 @@ def remittance_confirm_payment(*, remittance, user, organization_id):
     Confirms a remittance payment.
     """
 
-    if remittance.paid_amount < remittance.due_amount:
-        raise RemittanceConfirmPaymentException(
-            "Cannot confirm payment: The due amount has not been fully paid."
-        )
+    # if remittance.paid_amount < remittance.due_amount:
+    #     raise RemittanceConfirmPaymentException(
+    #         "Cannot confirm payment: The due amount has not been fully paid."
+    #     )
 
-    # Get the OrganizationMember instance for the user
-    organization_member = get_orgMember_by_user_id_and_organization_id(
-        user_id=user.pk,
-        organization_id=organization_id,
-    )
+    # if the remittance is already confirmed, then we need to update the confirmed_by and confirmed_at fields which means we have to remove the confirmed_by field and set it to None
+    if remittance.confirmed_by:
+        organization_member = None;
+    else:
+        organization_member = get_orgMember_by_user_id_and_organization_id(
+            user_id=user.pk,
+            organization_id=organization_id,
+        )
 
     updated_remittance = model_update(
         instance=remittance,

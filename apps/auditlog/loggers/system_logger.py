@@ -211,7 +211,7 @@ class SystemAuditLogger(BaseAuditLogger):
 
         # Finalize and create audit log
         self._finalize_and_create_audit(
-            user, AuditActionType.BULK_OPERATION_PERFORMED, metadata, None, None
+            user, AuditActionType.BULK_OPERATION, metadata, None, None
         )
 
     @safe_audit_log

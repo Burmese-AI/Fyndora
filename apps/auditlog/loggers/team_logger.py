@@ -57,12 +57,15 @@ class TeamAuditLogger(BaseAuditLogger):
         metadata.update(EntityMetadataBuilder.build_team_metadata(team))
 
         # Add CRUD action metadata
+        # Extract parameters to avoid duplicate keyword arguments
+        updated_fields = kwargs.pop("updated_fields", [])
+        soft_delete = kwargs.pop("soft_delete", False)
         metadata.update(
             UserActionMetadataBuilder.build_crud_action_metadata(
                 user,
                 action,
-                updated_fields=kwargs.get("updated_fields", []),
-                soft_delete=kwargs.get("soft_delete", False),
+                updated_fields=updated_fields,
+                soft_delete=soft_delete,
                 **kwargs,
             )
         )

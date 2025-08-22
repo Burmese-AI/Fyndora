@@ -71,14 +71,19 @@ class EntryAuditLogger(BaseAuditLogger):
         metadata.update(EntityMetadataBuilder.build_entry_metadata(entry))
 
         # Add workflow metadata
+        # Extract notes and reason from kwargs to avoid duplicate keyword arguments
+        workflow_kwargs = kwargs.copy()
+        notes = workflow_kwargs.pop("notes", "")
+        reason = workflow_kwargs.pop("reason", "")
+        
         metadata.update(
             WorkflowMetadataBuilder.build_workflow_metadata(
                 user,
                 action,
                 workflow_stage,
-                notes=kwargs.get("notes", ""),
-                reason=kwargs.get("reason", ""),
-                **kwargs,
+                notes=notes,
+                reason=reason,
+                **workflow_kwargs,
             )
         )
 

@@ -57,12 +57,14 @@ class OrganizationAuditLogger(BaseAuditLogger):
         metadata.update(EntityMetadataBuilder.build_organization_metadata(organization))
 
         # Add CRUD action metadata
+        updated_fields = kwargs.pop("updated_fields", [])
+        soft_delete = kwargs.pop("soft_delete", False)
         metadata.update(
             UserActionMetadataBuilder.build_crud_action_metadata(
                 user,
                 action,
-                updated_fields=kwargs.get("updated_fields", []),
-                soft_delete=kwargs.get("soft_delete", False),
+                updated_fields=updated_fields,
+                soft_delete=soft_delete,
                 **kwargs,
             )
         )
@@ -98,6 +100,11 @@ class OrganizationAuditLogger(BaseAuditLogger):
         metadata = self._build_base_metadata(action, request, **kwargs)
         metadata["operation_type"] = f"organization_exchange_rate_{action}"
 
+        # Add organization-specific metadata
+        organization = getattr(exchange_rate, 'organization', None)
+        if organization:
+            metadata.update(EntityMetadataBuilder.build_organization_metadata(organization))
+
         # Add exchange rate-specific metadata
         if exchange_rate:
             metadata.update(
@@ -118,12 +125,14 @@ class OrganizationAuditLogger(BaseAuditLogger):
             )
 
         # Add CRUD action metadata
+        updated_fields = kwargs.pop("updated_fields", [])
+        soft_delete = kwargs.pop("soft_delete", False)
         metadata.update(
             UserActionMetadataBuilder.build_crud_action_metadata(
                 user,
                 action,
-                updated_fields=kwargs.get("updated_fields", []),
-                soft_delete=kwargs.get("soft_delete", False),
+                updated_fields=updated_fields,
+                soft_delete=soft_delete,
                 **kwargs,
             )
         )

@@ -65,8 +65,6 @@ class WorkspaceAuditLogger(BaseAuditLogger):
             UserActionMetadataBuilder.build_crud_action_metadata(
                 user,
                 action,
-                updated_fields=kwargs.get("updated_fields", []),
-                soft_delete=kwargs.get("soft_delete", False),
                 **kwargs,
             )
         )

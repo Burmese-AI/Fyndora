@@ -13,7 +13,6 @@ from apps.remittance.exceptions import (
     RemittanceConfirmPaymentException,
     RemittancePaymentAmountException,
     RemittanceRecordPaymentException,
-    RemittanceStatusUpdateException,
 )
 from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus

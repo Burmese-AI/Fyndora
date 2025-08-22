@@ -3,7 +3,7 @@
 
 <tr 
     {% if is_oob %}hx-swap-oob="true"{% endif %}
-    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-warning/100{% endif %}" 
+    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-red-100{% endif %}" 
     id="remittance_row-{{ remittance.remittance_id }}"
 >
     <!-- Member Info -->
@@ -43,7 +43,7 @@
     <!-- Remaining Amount -->
     <td>
         {% if remittance.is_overpaid %}
-            <span class="text-green-500">
+            <span class="text-red-500">
                 {{ remittance.remaining_amount|intcomma }} (Overpaid)
             </span>
         {% else %}

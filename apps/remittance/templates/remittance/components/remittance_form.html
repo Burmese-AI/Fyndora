@@ -1,0 +1,41 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<form 
+hx-post="{% url 'remittance_confirm_payment' remittance_id=remittance.remittance_id organization_id=organization.organization_id %}"
+hx-swap="none"
+class="modal-box w-4xl shadow-xl rounded-lg space-y-0"  
+hx-target="#modal-placeholder" 
+hx-swap="innerHTML"
+    > 
+    {% csrf_token %}
+   
+        <div class="flex items-center gap-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-red-700 tracking-tight">Confirm Remittance Payment</h2>
+                <p class="text-sm text-red-500 font-semibold mt-1">This action is permanent and cannot be undone.</p>
+            </div>
+        </div>
+        <div class="mb-8">
+            <p class="text-gray-800 text-base font-medium mb-2">
+                Are you absolutely sure you want to <span class="text-red-700 font-bold">confirm</span> the remittance payment
+                <span class="font-bold text-gray-900">"{{ remittance.remittance_id }}"</span>?
+            </p>
+        </div>
+        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
+            <button type="button"
+                class="inline-flex items-center justify-center px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition font-medium shadow-sm"
+                onclick="this.closest('.modal').removeAttribute('open')">
+                Cancel
+            </button>
+            <button type="submit"
+                class="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-red-600 text-white font-bold shadow hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 border border-red-700">
+                <svg class="h-5 w-5 mr-2 -ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                </svg>
+                Confirm
+            </button>
+        </div>
+ 
+</form>
+{% endblock %}

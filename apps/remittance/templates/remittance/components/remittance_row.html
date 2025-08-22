@@ -72,11 +72,14 @@
                     <i class="fas fa-eye">Received</i>
                 </button>
             {% else %}
-                <a hx-get="{% url 'remittance_confirm_payment' organization_id=organization.organization_id remittance_id=remittance.remittance_id %}" hx-swap="outerHTML">
-                    <button class="btn btn-primary btn-sm">
-                        <i class="fas fa-eye">Confirm</i>
-                    </button>
-                </a>
+            <button 
+            hx-get="{% url 'remittance_confirm_payment' organization_id=organization.organization_id remittance_id=remittance.remittance_id %}" 
+            hx-target="#modal-placeholder" 
+            hx-swap="innerHTML" 
+            class="btn btn-sm btn-ghost hover:bg-red-800 hover:text-white"
+            >
+                <i class="fas fa-eye">Confirm</i>
+            </button>
             {% endif %}
         </div>
     </td>

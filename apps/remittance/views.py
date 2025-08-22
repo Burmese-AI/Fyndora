@@ -92,52 +92,67 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     """
     try:
         remittance = get_object_or_404(Remittance, pk=remittance_id)
-        try:
-            remittance_confirm_payment(
-                remittance=remittance,
-                user=request.user,
-                organization_id=organization_id,
-            )
-            messages.success(request, "Remittance confirmed successfully")
-            context = {
-                "organization": get_organization_by_id(organization_id),
-                "remittances": get_remittances_under_organization(
-                    organization_id=organization_id
-                ),
-                "is_oob": True,
-            }
-            message_html = render_to_string(
-                "includes/message.html", context=context, request=request
-            )
-            remittance_table_html = render_to_string(
-                "remittance/components/remittance_table.html",
-                context=context,
-                request=request,
-            )
-            response = HttpResponse(f"{message_html} {remittance_table_html}")
-            response["HX-trigger"] = "success"
-            return response
+        organization = get_organization_by_id(organization_id)
+        
+        if request.method == "POST":
+            try:
+                remittance_confirm_payment(
+                    remittance=remittance,
+                    user=request.user,
+                    organization_id=organization_id,
+                )
+                messages.success(request, "Remittance confirmed successfully")
+                context = {
+                    "organization": organization,
+                    "remittances": get_remittances_under_organization(
+                        organization_id=organization_id
+                    ),
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                remittance_table_html = render_to_string(
+                    "remittance/components/remittance_table.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {remittance_table_html}")
+                response["HX-trigger"] = "success"
+                return response
 
-        except RemittanceConfirmPaymentException as e:
-            messages.error(request, str(e))
+            except RemittanceConfirmPaymentException as e:
+                messages.error(request, str(e))
+                context = {
+                    "organization": organization,
+                    "remittances": get_remittances_under_organization(
+                        organization_id=organization_id
+                    ),
+                    "is_oob": True,
+                }
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                remittance_table_html = render_to_string(
+                    "remittance/components/remittance_table.html",
+                    context=context,
+                    request=request,
+                )
+                response = HttpResponse(f"{message_html} {remittance_table_html}")
+                response["HX-trigger"] = "error"
+                return response
+        else:
+            messages.error(request, "Invalid request method and this is a GET request")
+            print("this is a get request")
             context = {
-                "organization": get_organization_by_id(organization_id),
-                "remittances": get_remittances_under_organization(
-                    organization_id=organization_id
-                ),
-                "is_oob": True,
+                "remittance": remittance,
+                "organization": organization,
             }
-            message_html = render_to_string(
-                "includes/message.html", context=context, request=request
+            return render(
+                request,
+                "remittance/components/remittance_form.html",
+                context,
             )
-            remittance_table_html = render_to_string(
-                "remittance/components/remittance_table.html",
-                context=context,
-                request=request,
-            )
-            response = HttpResponse(f"{message_html} {remittance_table_html}")
-            response["HX-trigger"] = "error"
-            return response
     except Exception as e:
         messages.error(request, "Error in remittance_confirm_payment_view")
         print(f"Error in remittance_confirm_payment_view: {e}")

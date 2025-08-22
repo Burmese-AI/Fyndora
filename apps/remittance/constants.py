@@ -5,5 +5,6 @@ class RemittanceStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     PARTIAL = "partial", "Partially Paid"
     PAID = "paid", "Paid"
+    OVERPAID = "overpaid", "Overpaid"
     OVERDUE = "overdue", "Overdue"
     CANCELED = "canceled", "Canceled"

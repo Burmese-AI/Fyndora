@@ -35,8 +35,12 @@ def get_remittances_under_organization(
         )
 
         # Add remaining amount calculation
+        # to show overpaid amount in the table but not in -minus
         for remittance in remittances:
-            remittance.remaining_amount = remittance.due_amount - remittance.paid_amount
+            if remittance.paid_amount > remittance.due_amount:
+                remittance.remaining_amount = remittance.paid_amount - remittance.due_amount
+            else:
+                remittance.remaining_amount = remittance.due_amount - remittance.paid_amount
 
         return remittances
     except Exception as e:

@@ -1,12 +1,15 @@
 {% load humanize %}
 
 
-<tr {% if is_oob %}hx-swap-oob="true"{% endif %} class="hover:bg-base-100 transition-colors" id="remittance_row-{{ remittance.remittance_id }}">
+<tr 
+    {% if is_oob %}hx-swap-oob="true"{% endif %}
+    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-warning/100{% endif %}" 
+    id="remittance_row-{{ remittance.remittance_id }}"
+>
     <!-- Member Info -->
     <td>
         <!-- Workspace Title -->
         <div class="flex items-center space-x-3">
-            
             <div>
                 <div class="font-bold text-base">
                     {{remittance.workspace_team.workspace.title }}
@@ -17,7 +20,6 @@
     <!-- Team Title -->
     <td>
         <div class="flex items-center space-x-3">
-            
             <div>
                 <div class="font-bold text-base">
                     {{remittance.workspace_team.team.title }}
@@ -40,7 +42,13 @@
 
     <!-- Remaining Amount -->
     <td>
-        {{ remittance.remaining_amount|intcomma }}
+        {% if remittance.is_overpaid %}
+            <span class="text-green-500">
+                {{ remittance.remaining_amount|intcomma }} (Overpaid)
+            </span>
+        {% else %}
+            {{ remittance.remaining_amount|intcomma }} 
+        {% endif %}
     </td>
     
     <!-- Status of the remittance -->
@@ -61,10 +69,11 @@
         <div class="flex justify-center space-x-2">
             {% if remittance.confirmed_by %}
                 <button class="btn btn-success btn-sm">
+                    {{remittance.is_overpaid}}
                     <i class="fas fa-eye">Received</i>
                 </button>
             {% else %}
-                <button class="btn btn-warning btn-sm">
+                <button class="btn btn-primary btn-sm">
                     <i class="fas fa-eye">Confirm</i>
                 </button>
             {% endif %}

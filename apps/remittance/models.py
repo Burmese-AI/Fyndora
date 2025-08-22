@@ -78,6 +78,8 @@ class Remittance(baseModel):
             self.status = RemittanceStatus.PENDING
         elif self.paid_amount < self.due_amount:
             self.status = RemittanceStatus.PARTIAL
+        elif self.paid_amount > self.due_amount:
+            self.status = RemittanceStatus.OVERPAID
         else:
             self.status = RemittanceStatus.PAID
 

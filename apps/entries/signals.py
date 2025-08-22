@@ -17,7 +17,7 @@ def keep_remittance_updated_with_entry(sender, instance, created, **kwargs):
     ]:
         return
 
-    print("About to update remittance")
+    # print("About to update remittance")
     handle_remittance_update(
         updated_entry=instance,
         update_due_amount=instance.entry_type

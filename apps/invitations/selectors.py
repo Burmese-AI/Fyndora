@@ -65,6 +65,14 @@ def invitation_exists(pk: str) -> bool:
     return Invitation.objects.filter(pk=pk).exists()
 
 
+def get_invitation_by_id(pk: int) -> Invitation:
+    """Get invitation by id"""
+    try:
+        return Invitation.objects.get(pk=pk)
+    except Invitation.DoesNotExist:
+        raise Invitation.DoesNotExist("Invitation not found")
+
+
 User = get_user_model()
 
 

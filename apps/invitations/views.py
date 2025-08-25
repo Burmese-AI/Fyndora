@@ -22,6 +22,7 @@ from django.http import HttpResponse
 from django.core.paginator import Paginator
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
+from .selectors import get_invitation_by_id
 
 
 class InvitationListView(LoginRequiredMixin, ListView):
@@ -207,3 +208,16 @@ def accept_invitation_view(request, invitation_token):
 
     # Note: redirect user to org dashboard when the page is built
     return redirect("home")
+
+
+
+
+def cancel_invitation_view(request, invitation_id):
+    try:
+        invitation = get_invitation_by_id(invitation_id)
+        organization = invitation.organization
+        messages.success(request, "Invitation cancelled successfully Testing Purposes")
+        return redirect("invitation_list", organization_id=organization.organization_id)
+    except Exception as e:
+        messages.error(request, "Failed to cancel invitation")
+        return redirect("invitation_list", organization_id=organization.organization_id)

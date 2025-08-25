@@ -649,7 +649,7 @@ def remove_organization_member_view(request, organization_id, member_id):
         # no one can remove the owner of the organization
         if check_if_member_is_owner(member, organization):
             messages.error(request, "You cannot remove the owner of the organization.")
-            return redirect("organization_member_list", organization_id=organization_id)
+            return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))
 
         # remove all permissions from the member
         remove_permissions_from_member(member, organization)
@@ -658,10 +658,10 @@ def remove_organization_member_view(request, organization_id, member_id):
         member.delete()
 
         messages.success(request, "Organization member removed successfully.")
-        return redirect("organization_member_list", organization_id=organization_id)
+        return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))
     except Exception:
         messages.error(
             request,
             "An error occurred while removing organization member. Please try again later.",
         )
-        return redirect("organization_member_list", organization_id=organization_id)
+        return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))

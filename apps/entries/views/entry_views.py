@@ -256,7 +256,6 @@ class WorkspaceTeamEntryUpdateView(
         from ..services import update_entry_status, update_entry_user_inputs
 
         if self.entry.status == EntryStatus.PENDING:
-            print("Triggered due to pending status")
             update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,

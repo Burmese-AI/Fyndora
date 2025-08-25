@@ -41,5 +41,4 @@ def get_remittances_under_organization(
 
         return remittances
     except Exception as e:
-        print(f"Error in get_remiitances_under_organization: {str(e)}")
         return None

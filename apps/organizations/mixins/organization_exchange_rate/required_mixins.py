@@ -16,7 +16,6 @@ class OrganizationExchangeRateRequiredMixin:
             organization=self.organization,
         )
         self.instance = self.exchange_rate
-        print(f"Update org_exchange_rate note: {self.instance.note}")
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)

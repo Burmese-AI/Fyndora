@@ -1,0 +1,30 @@
+{% load humanize %}
+
+<tr class="hover transition-colors duration-150 {% if level > 0 %}bg-base-200{% endif %}">
+    <td class="font-medium" style="padding-left: {{ level|default:0|add:1 }}rem;">
+        {{ node.title }}
+    </td>
+    <td class="text-right text-neutral">{{ node.total_income|floatformat:2|intcomma }}</td>
+    <td class="text-right text-neutral">{{ node.total_expense|floatformat:2|intcomma }}</td>
+    <td class="text-right text-primary">{{ node.net_income|floatformat:2|intcomma }}</td>
+    <td class="text-right">
+        <div class="flex flex-col items-end leading-tight">
+        {% if node.remittance_rate %}
+            <span class="text-red-600 text-xs font-semibold">
+            Rate: {{ node.remittance_rate }}%
+            </span>
+        {% elif node.parent_lvl_total_expense %}
+            <span class="text-red-600 text-xs font-semibold">
+            Expense: -{{ node.parent_lvl_total_expense|floatformat:2|intcomma }}
+            </span>
+        {% endif %}
+        <span class="font-medium text-neutral">{{ node.org_share|floatformat:2|intcomma }}</span>
+        </div>
+    </td>
+</tr>
+
+{% if node.children %}
+    {% for child in node.children %}
+        {% include "reports/partials/finance_row.html" with node=child level=level|add:1 %}
+    {% endfor %}
+{% endif %}

@@ -122,7 +122,6 @@ def home_view(request):
 
         return render(request, template, context)
     except Exception as e:
-        print(f"Exception in home_view: {e}")
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 
@@ -186,7 +185,6 @@ def create_organization_view(request):
                 response = HttpResponse(f"{message_template} {form_template}")
                 return response
     except Exception as e:
-        print(f"Exception in create_organization_view: {e}")
         messages.error(
             request,
             "An error occurred while creating organization. Please try again later.",
@@ -369,7 +367,6 @@ def edit_organization_view(request, organization_id):
             )
 
     except Exception as e:
-        print(e)
         messages.error(
             request,
             "An error occurred while updating organization. Please try again later.",

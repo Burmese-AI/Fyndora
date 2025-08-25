@@ -31,11 +31,6 @@ class Invitation(baseModel):
 
     @property
     def is_expired(self):
-        print(self.expired_at)
-        print(timezone.now())
-        print(
-            f"Expired: {self.expired_at < timezone.now()} | self.expired_at < timezone.now()"
-        )
         return self.expired_at < timezone.now()
 
     @property

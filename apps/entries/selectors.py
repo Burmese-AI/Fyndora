@@ -41,9 +41,7 @@ def get_entries(
     expense_entry_types = [
         et for et in entry_types if et in (EntryType.ORG_EXP, EntryType.WORKSPACE_EXP)
     ]
-    print(f">>> expense types => {expense_entry_types}")
     team_entry_types = [et for et in entry_types if et not in expense_entry_types]
-    print(f">>>> team entry types => {team_entry_types}")
 
     filters = Q()
 
@@ -54,10 +52,8 @@ def get_entries(
         elif organization:
             expense_filter &= Q(organization=organization)
         filters |= expense_filter
-    print(f">>>> after applying expense filter => {filters}")
 
     if team_entry_types:
-        print(team_entry_types)
         if workspace_team:
             team_filter = Q(
                 entry_type__in=team_entry_types,
@@ -75,19 +71,15 @@ def get_entries(
             )
 
         filters |= team_filter
-    print(f">>>> after applying team filter => {filters}")
 
     if not filters:
-        print(">>>> Returning None")
         return Entry.objects.none()
 
     queryset = Entry.objects.filter(filters).distinct()
-    print(f">>>> queryset 0 => {queryset}")
     if annotate_attachment_count:
         queryset = queryset.annotate(attachment_count=Count("attachments"))
 
     # 🔹 Apply additional filters
-    print(f"statuses => {statuses}")
     if statuses:
         queryset = queryset.filter(status__in=statuses)
     if type_filter:

@@ -127,7 +127,6 @@ class OrganizationExpenseCreateView(
         )
 
     def perform_service(self, form):
-        # print("🧼 Cleaned Data:", form.cleaned_data)  # TEMP DEBUG
         create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],

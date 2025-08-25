@@ -92,24 +92,26 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <!-- Currencies Section -->
     {% if allowed_currencies %}
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-      <div class="flex items-center gap-2 mb-3">
-        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-        </svg>
-        <h3 class="font-semibold text-gray-900">Supported Currencies</h3>
+    <a href="{% url 'settings' organization_id=organization.pk %}" class="block">
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 transition-all duration-200 cursor-pointer group">
+        <div class="flex items-center gap-2 mb-3">
+          <svg class="w-5 h-5 text-green-600 group-hover:text-green-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+          </svg>
+          <h3 class="font-semibold text-gray-900 group-hover:text-green-700 transition-colors duration-200">Supported Currencies</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {% for currency in allowed_currencies %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 group-hover:bg-green-200 group-hover:text-green-900 transition-all duration-200">
+              {{ currency.currency.code }}
+              {% if currency.currency.name %}
+                <span class="ml-1 text-green-600 group-hover:text-green-700">({{ currency.currency.name }})</span>
+              {% endif %}
+            </span>
+          {% endfor %}
+        </div>
       </div>
-      <div class="flex flex-wrap gap-2">
-        {% for currency in allowed_currencies %}
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            {{ currency.currency.code }}
-            {% if currency.currency.name %}
-              <span class="ml-1 text-green-600">({{ currency.currency.name }})</span>
-            {% endif %}
-          </span>
-        {% endfor %}
-      </div>
-    </div>
+    </a>
     {% endif %}
 
     <!-- Organization Details -->

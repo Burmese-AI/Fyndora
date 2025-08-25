@@ -98,3 +98,4 @@ class OrganizationExchangeRateFactory(DjangoModelFactory):
     effective_date = factory.LazyFunction(lambda: date.today())
     note = factory.Faker("text", max_nb_chars=100)
     added_by = factory.SubFactory(OrganizationMemberFactory)
+

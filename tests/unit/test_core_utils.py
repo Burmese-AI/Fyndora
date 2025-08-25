@@ -10,162 +10,160 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.core.utils import model_update
-from apps.core.models import baseModel
-from tests.factories import OrganizationFactory
+from apps.entries.models import Entry
+from tests.factories import EntryFactory
+from django.test import RequestFactory
+from apps.core.utils import permission_denied_view
+from django.http import HttpResponse
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib import messages
+from django_htmx.http import HttpResponseClientRedirect
 
-
-# Helper model for testing model_update utility
-class UtilityTestModel(baseModel):
-    """Helper model for utility testing."""
-
-    name = models.CharField(max_length=100)
-    amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        app_label = "tests"
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
+#initially, ko swam used org models to test the decimal field by using the expense field of the org model.However , as we removed the expense field from the org model, we are using the entry model to test the decimal field.
 class TestModelUpdateUtility:
     """Test model_update utility function."""
 
     def test_model_update_valid_data(self):
         """Test model_update with valid data."""
-        # Use Organization model as it already exists
-        org = OrganizationFactory(title="Original Title")
+        # Use Entry model as it already exists with decimal fields
+        test_model = EntryFactory(amount=Decimal("100.00"))
 
-        updated_org = model_update(
-            instance=org,
+        updated_model = model_update(
+            instance=test_model,
             data={
-                "title": "Updated Title",
-                "description": "New description",
+                "description": "Updated Description",
+                "amount": Decimal("200.00"),
             },
-            update_fields=["title", "description"],
+            update_fields=["description", "amount"],
         )
 
-        assert updated_org.title == "Updated Title"
-        assert updated_org.description == "New description"
+        assert updated_model.description == "Updated Description"
+        assert updated_model.amount == Decimal("200.00")
 
         # Verify it was saved
-        updated_org.refresh_from_db()
-        assert updated_org.title == "Updated Title"
-        assert updated_org.description == "New description"
+        updated_model.refresh_from_db()
+        assert updated_model.description == "Updated Description"
+        assert updated_model.amount == Decimal("200.00")
 
     def test_model_update_with_validation_error(self):
         """Test model_update with data that fails validation."""
-        org = OrganizationFactory()
+        test_model = EntryFactory(amount=Decimal("100.00"))
 
-        # Try to update with negative expense (should fail validation)
+        # Try to update with negative amount (should fail validation)
         with pytest.raises(ValidationError):
             model_update(
-                instance=org,
-                data={"expense": Decimal("-100.00")},
-                update_fields=["expense"],
+                instance=test_model,
+                data={"amount": Decimal("-100.00")},
+                update_fields=["amount"],
             )
 
     def test_model_update_without_update_fields(self):
         """Test model_update without specifying update_fields."""
-        org = OrganizationFactory(title="Original Title")
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
 
-        updated_org = model_update(instance=org, data={"title": "Updated Title"})
+        updated_model = model_update(instance=test_model, data={"description": "Updated Description"})
 
-        assert updated_org.title == "Updated Title"
+        assert updated_model.description == "Updated Description"
 
         # Verify it was saved (all fields)
-        updated_org.refresh_from_db()
-        assert updated_org.title == "Updated Title"
+        updated_model.refresh_from_db()
+        assert updated_model.description == "Updated Description"
 
     def test_model_update_partial_fields(self):
         """Test model_update with only specific fields."""
-        org = OrganizationFactory(
-            title="Original Title", description="Original Description"
-        )
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
 
-        updated_org = model_update(
-            instance=org,
+        updated_model = model_update(
+            instance=test_model,
             data={
-                "title": "Updated Title",
                 "description": "Updated Description",
+                "amount": Decimal("200.00"),
             },
-            update_fields=["title"],  # Only update title
+            update_fields=["description"],  # Only update description
         )
 
-        assert updated_org.title == "Updated Title"
-        assert updated_org.description == "Updated Description"  # In memory
+        assert updated_model.description == "Updated Description"
+        assert updated_model.amount == Decimal("200.00")  # In memory
 
-        # Verify only title was saved to database
-        updated_org.refresh_from_db()
-        assert updated_org.title == "Updated Title"
-        # Note: Since we only updated title field, description change may not persist
+        # Verify only description was saved to database
+        updated_model.refresh_from_db()
+        assert updated_model.description == "Updated Description"
+        # Note: Since we only updated description field, amount change may not persist
         # This depends on Django's update_fields behavior
 
     def test_model_update_empty_data(self):
         """Test model_update with empty data."""
-        org = OrganizationFactory(title="Original Title")
-        original_title = org.title
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
+        original_description = test_model.description
 
-        updated_org = model_update(instance=org, data={}, update_fields=[])
+        updated_model = model_update(instance=test_model, data={}, update_fields=[])
 
         # Should remain unchanged
-        assert updated_org.title == original_title
+        assert updated_model.description == original_description
 
-        updated_org.refresh_from_db()
-        assert updated_org.title == original_title
+        updated_model.refresh_from_db()
+        assert updated_model.description == original_description
 
     def test_model_update_returns_instance(self):
         """Test that model_update returns the updated instance."""
-        org = OrganizationFactory()
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
 
         result = model_update(
-            instance=org, data={"title": "New Title"}, update_fields=["title"]
+            instance=test_model, data={"description": "New Description"}, update_fields=["description"]
         )
 
         # Should return the same instance
-        assert result is org
-        assert result.title == "New Title"
+        assert result is test_model
+        assert result.description == "New Description"
 
     def test_model_update_calls_full_clean(self):
         """Test that model_update calls full_clean for validation."""
-        org = OrganizationFactory()
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
 
         # This should trigger validation and fail
         with pytest.raises(ValidationError):
             model_update(
-                instance=org,
+                instance=test_model,
                 data={
-                    "expense": Decimal("-50.00")
-                },  # Negative expense fails validation
-                update_fields=["expense"],
+                    "amount": Decimal("-50.00")
+                },  # Negative amount fails validation
+                update_fields=["amount"],
             )
 
         # Original instance should be unchanged since validation failed
-        org.refresh_from_db()
-        assert org.expense == Decimal("0.00")  # Default value
+        test_model.refresh_from_db()
+        assert test_model.amount == Decimal("100.00")  # Original value
 
     def test_model_update_with_multiple_field_types(self):
         """Test model_update with different field types."""
-        org = OrganizationFactory()
+        test_model = EntryFactory(description="Original Description", amount=Decimal("100.00"))
 
-        updated_org = model_update(
-            instance=org,
+        updated_model = model_update(
+            instance=test_model,
             data={
-                "title": "New Title",
-                "expense": Decimal("250.50"),
-                "description": "New description",
+                "description": "New Description",
+                "amount": Decimal("250.50"),
+                "is_flagged": True,
             },
-            update_fields=["title", "expense", "description"],
+            update_fields=["description", "amount", "is_flagged"],
         )
 
-        assert updated_org.title == "New Title"
-        assert updated_org.expense == Decimal("250.50")
-        assert updated_org.description == "New description"
+        assert updated_model.description == "New Description"
+        assert updated_model.amount == Decimal("250.50")
+        assert updated_model.is_flagged == True
 
         # Verify persistence
-        updated_org.refresh_from_db()
-        assert updated_org.title == "New Title"
-        assert updated_org.expense == Decimal("250.50")
-        assert updated_org.description == "New description"
+        updated_model.refresh_from_db()
+        assert updated_model.description == "New Description"
+        assert updated_model.amount == Decimal("250.50")
+        assert updated_model.is_flagged == True
+
+
+
+
+
+

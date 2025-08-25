@@ -29,6 +29,7 @@ class EntryFactory(DjangoModelFactory):
 
     class Meta:
         model = Entry
+        skip_postgeneration_save = True
 
     entry_id = factory.LazyFunction(uuid.uuid4)
     entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])

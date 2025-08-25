@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.reports",
     "guardian",
     "django_extensions",
+
 ]
 
 SITE_ID = 1

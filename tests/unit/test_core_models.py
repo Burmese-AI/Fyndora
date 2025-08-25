@@ -57,10 +57,10 @@ class TestBaseModelTimestamps(TransactionTestCase):
 
         # Create table for test model
         with connection.schema_editor() as schema_editor:
-            #Delete the table if it exists
+            # Delete the table if it exists
             try:
                 schema_editor.delete_model(CoreTestModel)
-            except Exception as e:
+            except Exception:
                 pass
             schema_editor.create_model(CoreTestModel)
 
@@ -83,8 +83,8 @@ class TestBaseModelTimestamps(TransactionTestCase):
 
         # Verify update behavior
         original_created = instance.created_at
-        
-        #PostgreSQL timestamp has microsecond precision, but small sleeps (like 0.01s) may not register a change consistently on some systems.
+
+        # PostgreSQL timestamp has microsecond precision, but small sleeps (like 0.01s) may not register a change consistently on some systems.
         time.sleep(0.1)
 
         instance.name = "Updated"

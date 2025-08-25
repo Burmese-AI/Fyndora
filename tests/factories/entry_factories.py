@@ -7,16 +7,16 @@ from django.utils import timezone
 
 import factory
 from factory.django import DjangoModelFactory
-
-from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
+from apps.entries.constants import EntryStatus
+from tests.factories.organization_factories import OrganizationMemberFactory
+from tests.factories.team_factories import TeamMemberFactory
+from apps.entries.constants import EntryType
 from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
-    OrganizationMemberFactory,
     OrganizationFactory,
     OrganizationExchangeRateFactory,
 )
-from tests.factories.team_factories import TeamMemberFactory
 from tests.factories.workspace_factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
@@ -282,11 +282,6 @@ class WorkspaceExpenseEntryFactory(EntryFactory):
 
 
 # in tests/factories/entry_factories.py (or wherever your entry factories live)
-import factory
-from apps.entries.models import Entry
-from apps.entries.constants import EntryStatus
-from .organization_factories import OrganizationMemberFactory
-from .team_factories import TeamMemberFactory
 
 
 class ReviewedEntryFactory(factory.django.DjangoModelFactory):

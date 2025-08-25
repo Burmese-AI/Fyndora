@@ -134,10 +134,10 @@ def revoke_workspace_team_member_permission(user, workspace_team):
 
 def check_if_member_is_owner(member, organization):
     # Check if organization has an owner first
-    #this is a edge case, but it's possible that the organization has no owner but i added this for testing purposes
+    # this is a edge case, but it's possible that the organization has no owner but i added this for testing purposes
     if organization.owner is None:
         return False
-    
+
     if member.user == organization.owner.user:
         return True
     return False

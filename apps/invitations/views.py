@@ -216,8 +216,19 @@ def cancel_invitation_view(request, invitation_id):
     try:
         invitation = get_invitation_by_id(invitation_id)
         organization = invitation.organization
-        messages.success(request, "Invitation cancelled successfully Testing Purposes")
-        return redirect("invitation_list", organization_id=organization.organization_id)
+        
+        if request.method == "POST":
+            invitation.is_active = False
+            invitation.save()
+            messages.success(request, "Invitation cancelled successfully post method")
+            return redirect("invitation_list", organization_id=organization.organization_id)
+        else:
+            context = {
+                "invitation": invitation,
+                "organization": organization,
+            }
+            return render(request, "invitations/components/invitation_cancel_form.html", context)
+            
     except Exception as e:
         messages.error(request, "Failed to cancel invitation")
         return redirect("invitation_list", organization_id=organization.organization_id)

@@ -28,6 +28,6 @@
     </td>
 
     <td class="text-center">
-     <a href="{% url 'cancel_invitation' invitation.invitation_id %}" class="btn btn-error btn-sm">Cancel Invitation</a>
+     <a hx-get="{% url 'cancel_invitation' invitation.invitation_id %}" hx-target="#modal-placeholder" hx-swap="innerHTML" class="btn btn-error btn-sm">Cancel Invitation</a>
     </td>
   </tr>

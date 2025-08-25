@@ -9,6 +9,33 @@ from apps.currencies.models import Currency
 from apps.currencies.selectors import get_org_defined_currencies
 
 
+class BaseWorkspaceTeamEntryFormMixin:
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validate if workspace team is still active
+        if self.workspace_team.remittance.confirmed_by:
+            raise forms.ValidationError(
+                "Remittance for this workspace team is already confirmed. Please contact the administrator to enable the submission of entries."
+            )
+
+        # Validate occurred at
+        occurred_at = cleaned_data.get("occurred_at")
+        today = date.today()
+
+        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "The occurred date must be within the workspace period."
+            )
+
+        if not (self.workspace.start_date <= today <= self.workspace.end_date):
+            raise forms.ValidationError(
+                "Entries can only be submitted during the workspace period."
+            )
+
+        return cleaned_data
+
+
 class BaseEntryForm(forms.ModelForm):
     attachment_files = MultipleFileField(
         label="Attachments",
@@ -104,7 +131,7 @@ class CreateOrganizationExpenseEntryForm(BaseEntryForm):
         return cleaned_data
 
 
-class CreateWorkspaceTeamEntryForm(BaseEntryForm):
+class CreateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseEntryForm):
     class Meta(BaseEntryForm.Meta):
         fields = BaseEntryForm.Meta.fields + ["entry_type"]
         widgets = {
@@ -248,22 +275,9 @@ class BaseUpdateEntryForm(BaseEntryForm):
         ]
 
 
-class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
+class UpdateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseUpdateEntryForm):
     def clean(self):
         cleaned_data = super().clean()
-
-        occurred_at = cleaned_data.get("occurred_at")
-        today = date.today()
-
-        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "The occurred date must be within the workspace period."
-            )
-
-        if not (self.workspace.start_date <= today <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "Entries can only be submitted during the workspace period."
-            )
 
         new_status = cleaned_data.get("status")
         # if new status is 'Approved', user must be OR, OA

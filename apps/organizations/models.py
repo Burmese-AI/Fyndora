@@ -166,3 +166,6 @@ class OrganizationExchangeRate(ExchangeRateBaseModel, SoftDeleteModel):
                 name="unique_organization_exchange_rate",
             )
         ]
+
+    def __str__(self) -> str:
+        return f"{self.organization} | {self.currency} | {self.rate} | {self.effective_date}"

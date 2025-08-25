@@ -1,40 +1,22 @@
 {% load humanize %}
 
-{% if not context_parent and not context_children %}
-<div class="hero bg-base-200 rounded-box">
-  <div class="hero-content text-center py-12">
-    <div class="max-w-md">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-      </svg>
-      <h3 class="text-xl font-medium mb-2">No Data Available</h3>
-      <p class="text-base-content/70 mb-6">
-        {% if workspace_filter %}
-          The selected workspace is invalid. Please reset by clicking Clear All button.
-        {% else %}
-          There is currently no data available for your organization.
-        {% endif %}
-      </p>
+<section class="space-y-6">
+  <!-- Header with level indicator and export button -->
+  <div class="flex justify-between items-center">
+    <div class="badge badge-lg badge-{% if report_data.level == 'org' %}primary{% else %}secondary{% endif %}">
+      {% if report_data.level == 'org' %}
+        Organization Level
+      {% elif report_data.level == 'workspace' %}
+        Workspace Level
+      {% else %}
+        Team Level
+      {% endif %}
     </div>
-  </div>
-</div>
-{% else %}
-<section class="card shadow-lg bg-base-100 p-4">
-  <!-- Report Title -->
-  <div class="flex justify-between items-center mb-4">
-    <div>
-      <span class="text-lg font-semibold">
-        {% if workspace_filter %}Workspace{% else %}Organization{% endif %}
-      </span>
-      <span class="font-medium">{{ context_parent.title }}</span>
-    </div>
-
-    <!-- change popover-1 and --anchor-1 names if you have multiple dropdowns -->
-    <button class="btn btn-neutral btn-sm" popovertarget="popover-1" style="anchor-name:--anchor-1">
+    
+    <button class="btn btn-secondary" popovertarget="popover-1" style="anchor-name:--anchor-1">
       Export
     </button>
-
+    
     <ul class="dropdown dropdown-end menu w-52 rounded-box bg-neutral shadow-sm"
         popover id="popover-1" style="position-anchor:--anchor-1">
       <li>
@@ -52,74 +34,97 @@
         </form>
       </li>
     </ul>
-
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="table table-compact w-full sheet-table">
-      <thead>
-        <tr class="bg-base-200">
-          <th class="text-left sticky-col">
-            {% if workspace_filter %}Team{% else %}Workspace{% endif %}
-          </th>
-          <th class="text-right">Total Income</th>
-          <th class="text-right">Total Expense</th>
-          <th class="text-right">Net Income</th>
-          <th class="text-right">Org Share</th>
-        </tr>
-      </thead>
+  <!-- Top Level Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="card bg-base-100 shadow-md p-4">
+      <div class="font-semibold text-neutral text-sm">Net Income</div>
+      <div class="text-{% if report_data.net_income >= 0 %}primary{% else %}red-600{% endif %} text-xl font-bold">
+        {{ report_data.org_share|floatformat:2|intcomma }}
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow-md p-4">
+      <div class="font-semibold text-neutral text-sm">Expense</div>
+      <div class="text-{% if report_data.net_income >= 0 %}primary{% else %}red-600{% endif %} text-xl font-bold">
+        {{ report_data.parent_lvl_total_expense|floatformat:2|intcomma }}
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow-md p-4">
+      <div class="font-semibold text-neutral text-sm">Final Net Profit</div>
+      <div class="text-{% if report_data.final_net_profit >= 0 %}primary{% else %}red-600{% endif %} text-xl font-bold">
+        {{ report_data.final_net_profit|floatformat:2|intcomma }}
+      </div>
+    </div>
+  </div>
 
-      <tbody id="bs-tbody">
-        {% for child in context_children %}
-        <tr class="hover">
-          <td class="font-medium">{{ child.title }}</td>
-          <td class="text-right">{{ child.total_income|floatformat:2|intcomma }}</td>
-          <td class="text-right">{{ child.total_expense|floatformat:2|intcomma }}</td>
-          <td class="text-right">{{ child.net_income|floatformat:2|intcomma }}</td>
-          <td class="text-right">
-            <div class="flex flex-col items-end leading-tight">
-              {% if child.remittance_rate %}
-                <span class="text-red-600 text-xs font-semibold">
-                  Rate: {{ child.remittance_rate }}%
-                </span>
-              {% elif child.parent_lvl_total_expense %}
-                <span class="text-red-600 text-xs font-semibold">
-                  Expense: -{{ child.parent_lvl_total_expense|floatformat:2|intcomma }}
-                </span>
-              {% endif %}
-              <span class="font-medium">{{ child.org_share|floatformat:2|intcomma }}</span>
+  <!-- Workspaces -->
+  {% for workspace in report_data.children %}
+  <div tabindex="{{ forloop.counter }}" class="collapse collapse-arrow bg-base-100 border border-base-300">
+    <div class="collapse-title font-semibold text-neutral">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="font-bold text-lg">{{ workspace.title }}</div>
+        <div class="badge badge-sm badge-secondary">Workspace</div>
+      </div>
+      
+      <!-- Workspace stats card -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-2">
+        <div class="card bg-base-200 shadow-sm p-3">
+          <div class="font-semibold text-neutral text-xs">Total Income</div>
+          <div class="text-primary font-bold">{{ workspace.total_income|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="card bg-base-200 shadow-sm p-3">
+          <div class="font-semibold text-neutral text-xs">Total Expense</div>
+          <div class="text-red-600 font-bold">{{ workspace.total_expense|floatformat:2|intcomma }}</div>
+        </div>
+        <div class="card bg-base-200 shadow-sm p-3">
+          <div class="font-semibold text-neutral text-xs">Net Income</div>
+          <div class="text-{% if workspace.net_income >= 0 %}primary{% else %}red-600{% endif %} font-bold">
+            {{ workspace.net_income|floatformat:2|intcomma }}
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-sm p-3">
+          <div class="font-semibold text-neutral text-xs">Org Share</div>
+          <div class="text-neutral font-bold">{{ workspace.org_share|floatformat:2|intcomma }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapse-content space-y-3">
+      <!-- Teams -->
+      {% for team in workspace.children %}
+      <div class="card bg-base-100 shadow-sm border border-base-300 p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="font-medium text-neutral">{{ team.title }}</div>
+          <div class="badge badge-sm badge-accent">Team</div>
+          {% if team.remittance_rate %}
+          <div class="badge badge-sm badge-outline">Remittance: {{ team.remittance_rate }}%</div>
+          {% endif %}
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div class="text-neutral text-xs">Income</div>
+            <div class="text-primary font-semibold">{{ team.total_income|floatformat:2|intcomma }}</div>
+          </div>
+          <div>
+            <div class="text-neutral text-xs">Expense</div>
+            <div class="text-red-600 font-semibold">{{ team.total_expense|floatformat:2|intcomma }}</div>
+          </div>
+          <div>
+            <div class="text-neutral text-xs">Net</div>
+            <div class="text-{% if team.net_income >= 0 %}primary{% else %}red-600{% endif %} font-semibold">
+              {{ team.net_income|floatformat:2|intcomma }}
             </div>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center py-4 text-sm text-base-content/60">
-            No data available
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-
-      <tfoot>
-        <!-- Totals -->
-        <tr class="bg-neutral text-neutral-content font-semibold">
-          <td class="text-left">Total</td>
-          <td class="text-right">{{ context_parent.total_income|floatformat:2|intcomma }}</td>
-          <td class="text-right">{{ context_parent.total_expense|floatformat:2|intcomma }}</td>
-          <td class="text-right">{{ context_parent.net_income|floatformat:2|intcomma }}</td>
-          <td class="text-right">{{ context_parent.org_share|floatformat:2|intcomma }}</td>
-        </tr>
-
-        <!-- Parent Expenses + Final Profit -->
-        <tr class="font-semibold">
-          <td class="text-left">{{ context_parent.parent_expense_label }}</td>
-          <td class="text-right">{{ context_parent.parent_lvl_total_expense|floatformat:2|intcomma }}</td>
-          <td class="text-right">&nbsp;</td>
-          <td class="text-right bg-neutral text-neutral-content">Final Net Profit</td>
-          <td class="text-right bg-neutral text-neutral-content">{{ context_parent.final_net_profit|floatformat:2|intcomma }}</td>
-        </tr>
-      </tfoot>
-    </table>
+          </div>
+          <div>
+            <div class="text-neutral text-xs">Org Share</div>
+            <div class="text-neutral font-semibold">{{ team.org_share|floatformat:2|intcomma }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
+  {% endfor %}
 </section>
-{% endif %}

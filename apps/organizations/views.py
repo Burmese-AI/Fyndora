@@ -73,6 +73,9 @@ def dashboard_view(request, organization_id):
         members_count = get_organization_members_count(organization)
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
+        allowed_currencies = OrganizationExchangeRate.objects.filter(
+            organization=organization
+        ).distinct("currency")
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -80,6 +83,7 @@ def dashboard_view(request, organization_id):
             "workspaces_count": workspaces_count,
             "teams_count": teams_count,
             "owner": owner,
+            "allowed_currencies": allowed_currencies,
         }
         return render(request, "organizations/dashboard.html", context)
     except Exception:
@@ -312,7 +316,11 @@ def edit_organization_view(request, organization_id):
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():
-                update_organization_from_form(form=form, organization=organization)
+                update_organization_from_form(
+                    form=form,
+                    organization=organization,
+                    user=request.user,
+                )
                 organization = get_object_or_404(Organization, pk=organization_id)
                 owner = organization.owner.user if organization.owner else None
                 messages.success(request, "Organization updated successfully!")

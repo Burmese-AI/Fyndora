@@ -13,10 +13,20 @@ hx-swap="innerHTML"
         <div class="mb-8">
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-red-50 border border-red-200 rounded-lg p-5 shadow-sm">
                 <div class="flex-1">
-                    <h2 class="text-2xl font-extrabold text-red-800 tracking-tight mb-1">Confirm Remittance Payment</h2>
-                    <p class="text-base text-red-600 font-medium">
-                        Please review the details below before confirming this remittance payment.
-                    </p>
+                    {% if remittance.confirmed_by %}
+                        <h2 class="text-2xl font-extrabold text-red-800 tracking-tight mb-1">Remittance Already Confirmed ,</h2>
+                        <p class="text-base text-red-600 font-medium">
+                            This remittance has already been confirmed by {{ remittance.confirmed_by.user.first_name }} {{ remittance.confirmed_by.user.last_name }} on {{ remittance.confirmed_at|date:"F d, Y" }}.
+                        </p>
+                        <p class="text-base text-red-600 font-medium">
+                            Do you want to receive more remittance for this workspace?
+                        </p>
+                    {% else %}
+                        <h2 class="text-2xl font-extrabold text-red-800 tracking-tight mb-1">Confirm Remittance Payment</h2>
+                        <p class="text-base text-red-600 font-medium">
+                            Please review the details below before confirming this remittance payment.
+                        </p>
+                    {% endif %}
                 </div>
                 <div>
                     {% if remittance.remaining_amount > 0 and not remittance.is_overpaid %}
@@ -86,7 +96,11 @@ hx-swap="innerHTML"
                 <svg class="h-5 w-5 mr-2 -ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
                 </svg>
-                Confirm Payment
+                {% if remittance.confirmed_by %}
+                    Accept More Remittance
+                {% else %}
+                    Confirm Payment
+                {% endif %}
             </button>
         </div>
  

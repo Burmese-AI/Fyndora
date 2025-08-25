@@ -28,7 +28,6 @@ def get_entries(
     workspace_id: str = None,
     search: str = None,
     prefetch_attachments: bool = False,
-    sort_by: str = None,
     annotate_attachment_count: bool = False,
 ) -> QuerySet:
     """
@@ -75,11 +74,11 @@ def get_entries(
     if not filters:
         return Entry.objects.none()
 
-    queryset = Entry.objects.filter(filters).distinct()
+    queryset = Entry.objects.filter(filters)
     if annotate_attachment_count:
         queryset = queryset.annotate(attachment_count=Count("attachments"))
 
-    # 🔹 Apply additional filters
+    # Apply additional filters
     if statuses:
         queryset = queryset.filter(status__in=statuses)
     if type_filter:
@@ -90,9 +89,6 @@ def get_entries(
         queryset = queryset.filter(workspace_pk=workspace_id)
     if search:
         queryset = queryset.filter(Q(description__icontains=search))
-
-    if sort_by:
-        queryset = queryset.order_by(sort_by)
 
     if prefetch_attachments:
         queryset = queryset.prefetch_related("attachments")
@@ -109,7 +105,7 @@ def get_entries(
         "last_status_modified_by__user",
     )
 
-    return queryset
+    return queryset.order_by("-occurred_at")
 
 
 def get_total_amount_of_entries(

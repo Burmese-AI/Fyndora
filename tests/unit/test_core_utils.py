@@ -18,6 +18,7 @@ from django.http import HttpResponse
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib import messages
 from django_htmx.http import HttpResponseClientRedirect
+from tests.factories import CustomUserFactory, OrganizationMemberFactory
 
 
 
@@ -161,6 +162,241 @@ class TestModelUpdateUtility:
         assert updated_model.description == "New Description"
         assert updated_model.amount == Decimal("250.50")
         assert updated_model.is_flagged == True
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestCoreUtilityFunctions:
+    """Test core utility functions."""
+
+    def setup_method(self):
+        """Set up test data."""
+        from tests.factories import (
+            CustomUserFactory, 
+            OrganizationFactory, 
+            OrganizationMemberFactory,
+            WorkspaceFactory,
+            TeamFactory,
+            WorkspaceTeamFactory
+        )
+        from django.contrib.auth.models import Group
+        from apps.core.permissions import OrganizationPermissions
+        
+        self.user = CustomUserFactory()
+        self.organization = OrganizationFactory()
+        self.organization_member = OrganizationMemberFactory(
+            user=self.user,
+            organization=self.organization
+        )
+        self.workspace = WorkspaceFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        self.workspace_team = WorkspaceTeamFactory(
+            workspace=self.workspace,
+            team=self.team
+        )
+        self.OrganizationPermissions = OrganizationPermissions
+        self.Group = Group
+
+    def test_can_manage_organization_with_permission(self):
+        """Test can_manage_organization returns True when user has permission."""
+        from apps.core.utils import can_manage_organization
+        
+        # Mock user.has_perm to return True
+        self.user.has_perm = lambda perm, obj: True
+        
+        result = can_manage_organization(self.user, self.organization)
+        assert result is True
+
+    def test_can_manage_organization_without_permission(self):
+        """Test can_manage_organization returns False when user lacks permission."""
+        from apps.core.utils import can_manage_organization
+        
+        # Mock user.has_perm to return False
+        self.user.has_perm = lambda perm, obj: False
+        
+        result = can_manage_organization(self.user, self.organization)
+        assert result is False
+
+    def test_can_manage_organization_calls_has_perm_with_correct_parameters(self):
+        """Test can_manage_organization calls has_perm with correct permission and organization."""
+        from apps.core.utils import can_manage_organization
+        
+        # Track calls to has_perm
+        called_perms = []
+        called_objs = []
+        
+        def mock_has_perm(perm, obj):
+            called_perms.append(perm)
+            called_objs.append(obj)
+            return True
+        
+        self.user.has_perm = mock_has_perm
+        
+        can_manage_organization(self.user, self.organization)
+        
+        assert len(called_perms) == 1
+        assert called_perms[0] == self.OrganizationPermissions.MANAGE_ORGANIZATION
+        assert len(called_objs) == 1
+        assert called_objs[0] == self.organization
+
+    def test_revoke_workspace_admin_permission(self):
+        """Test revoke_workspace_admin_permission removes user from workspace admin group."""
+        from apps.core.utils import revoke_workspace_admin_permission
+        
+        # Create workspace admin group and add user
+        group_name = f"Workspace Admins - {self.workspace.workspace_id}"
+        group = self.Group.objects.create(name=group_name)
+        group.user_set.add(self.user)
+        
+        # Verify user is in group
+        assert self.user in group.user_set.all()
+        
+        # Revoke permission
+        revoke_workspace_admin_permission(self.user, self.workspace)
+        
+        # Verify user is removed from group
+        group.refresh_from_db()
+        assert self.user not in group.user_set.all()
+
+    def test_revoke_workspace_admin_permission_creates_group_if_not_exists(self):
+        """Test revoke_workspace_admin_permission creates group if it doesn't exist."""
+        from apps.core.utils import revoke_workspace_admin_permission
+        
+        group_name = f"Workspace Admins - {self.workspace.workspace_id}"
+        
+        # Verify group doesn't exist initially
+        assert not self.Group.objects.filter(name=group_name).exists()
+        
+        # Revoke permission (should create group)
+        revoke_workspace_admin_permission(self.user, self.workspace)
+        
+        # Verify group was created
+        assert self.Group.objects.filter(name=group_name).exists()
+
+    def test_revoke_operations_reviewer_permission(self):
+        """Test revoke_operations_reviewer_permission removes user from operations reviewer group."""
+        from apps.core.utils import revoke_operations_reviewer_permission
+        
+        # Create operations reviewer group and add user
+        group_name = f"Operations Reviewer - {self.workspace.workspace_id}"
+        group = self.Group.objects.create(name=group_name)
+        group.user_set.add(self.user)
+        
+        # Verify user is in group
+        assert self.user in group.user_set.all()
+        
+        # Revoke permission
+        revoke_operations_reviewer_permission(self.user, self.workspace)
+        
+        # Verify user is removed from group
+        group.refresh_from_db()
+        assert self.user not in group.user_set.all()
+
+    def test_revoke_team_coordinator_permission(self):
+        """Test revoke_team_coordinator_permission removes user from team coordinator group."""
+        from apps.core.utils import revoke_team_coordinator_permission
+        
+        # Create team coordinator group and add user
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = self.Group.objects.create(name=group_name)
+        group.user_set.add(self.user)
+        
+        # Verify user is in group
+        assert self.user in group.user_set.all()
+        
+        # Revoke permission
+        revoke_team_coordinator_permission(self.user, self.team)
+        
+        # Verify user is removed from group
+        group.refresh_from_db()
+        assert self.user not in group.user_set.all()
+
+    def test_revoke_workspace_team_member_permission(self):
+        """Test revoke_workspace_team_member_permission removes user from workspace team group."""
+        from apps.core.utils import revoke_workspace_team_member_permission
+        
+        # Create workspace team group and add user
+        group_name = f"Workspace Team - {self.workspace_team.workspace_team_id}"
+        group = self.Group.objects.create(name=group_name)
+        group.user_set.add(self.user)
+        
+        # Verify user is in group
+        assert self.user in group.user_set.all()
+        
+        # Revoke permission
+        revoke_workspace_team_member_permission(self.user, self.workspace_team)
+        
+        # Verify user is removed from group
+        group.refresh_from_db()
+        assert self.user not in group.user_set.all()
+
+    def test_revoke_permissions_with_user_not_in_group(self):
+        """Test revoke functions handle case where user is not in group gracefully."""
+        from apps.core.utils import (
+            revoke_workspace_admin_permission,
+            revoke_operations_reviewer_permission,
+            revoke_team_coordinator_permission,
+            revoke_workspace_team_member_permission
+        )
+        
+        # These should not raise errors even if user is not in group
+        revoke_workspace_admin_permission(self.user, self.workspace)
+        revoke_operations_reviewer_permission(self.user, self.workspace)
+        revoke_team_coordinator_permission(self.user, self.team)
+        revoke_workspace_team_member_permission(self.user, self.workspace_team)
+
+    def test_check_if_member_is_owner_true(self):
+        """Test check_if_member_is_owner returns True when member is organization owner."""
+        from apps.core.utils import check_if_member_is_owner
+        
+        # Set the member as organization owner
+        self.organization.owner = self.organization_member
+        self.organization.save()
+        
+        result = check_if_member_is_owner(self.organization_member, self.organization)
+        assert result is True
+
+    def test_check_if_member_is_owner_false(self):
+        """Test check_if_member_is_owner returns False when member is not organization owner."""
+        from apps.core.utils import check_if_member_is_owner
+        
+        # Create another member who is not the owner
+        other_member = OrganizationMemberFactory(organization=self.organization)
+        
+        result = check_if_member_is_owner(other_member, self.organization)
+        assert result is False
+
+    def test_check_if_member_is_owner_with_none_owner(self):
+        """Test check_if_member_is_owner handles case where organization has no owner."""
+        from apps.core.utils import check_if_member_is_owner
+        
+        # Ensure organization has no owner
+        self.organization.owner = None
+        self.organization.save()
+        
+        result = check_if_member_is_owner(self.organization_member, self.organization)
+        assert result is False
+
+    def test_check_if_member_is_owner_compares_user_objects(self):
+        """Test check_if_member_is_owner correctly compares user objects."""
+        from apps.core.utils import check_if_member_is_owner
+        
+        # Set the member as organization owner
+        self.organization.owner = self.organization_member
+        self.organization.save()
+        
+        # Create another member with different user but same organization
+        other_user = CustomUserFactory()
+        other_member = OrganizationMemberFactory(
+            user=other_user,
+            organization=self.organization
+        )
+        
+        # Should return True for owner member
+        assert check_if_member_is_owner(self.organization_member, self.organization) is True
+        
+        # Should return False for non-owner member
+        assert check_if_member_is_owner(other_member, self.organization) is False
 
 
 

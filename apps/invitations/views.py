@@ -22,7 +22,8 @@ from django.http import HttpResponse
 from django.core.paginator import Paginator
 from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
-from .selectors import get_invitation_by_id
+from .selectors import get_invitation_by_id, get_invitations_for_organization
+from .services import delete_invitation
 
 
 class InvitationListView(LoginRequiredMixin, ListView):
@@ -218,11 +219,26 @@ def cancel_invitation_view(request, invitation_id):
         organization = invitation.organization
         
         if request.method == "POST":
-            invitation.is_active = False
-            invitation.save()
-            messages.success(request, "Invitation cancelled successfully post method")
-            return redirect("invitation_list", organization_id=organization.organization_id)
+            # delete the invitation
+            delete_invitation(invitation)
+            invitation_list = get_invitations_for_organization(organization.organization_id)
+            context = {
+                "invitations": invitation_list,
+                "organization": organization,
+                "is_oob": True,
+            }
+            messages.success(request, "Invitation cancelled successfully")
+            message_html = render_to_string(
+                "includes/message.html", context=context, request=request
+            )
+            table_html = render_to_string(
+                "invitations/partials/table.html", context=context, request=request
+            )
+            response = HttpResponse(f"{message_html} {table_html}")
+            response["HX-trigger"] = "success"
+            return response
         else:
+            #get request means fetching the modal
             context = {
                 "invitation": invitation,
                 "organization": organization,

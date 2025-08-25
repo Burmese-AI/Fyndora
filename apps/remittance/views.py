@@ -169,7 +169,7 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
     except Exception as e:
         messages.error(request, "Error in remittance_confirm_payment_view")
         print(f"Error in remittance_confirm_payment_view: {e}")
-        return redirect(reverse("remittance_list", kwargs={"organization_id": organization_id}))
+        return redirect("remittance_list", organization_id=organization_id)
 
 
 # this view will not be currently used

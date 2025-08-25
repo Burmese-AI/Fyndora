@@ -88,6 +88,7 @@ def deactivate_all_unused_active_invitations(email: str, organization: Organizat
         is_active=True,
     ).update(is_active=False)
 
+
 def delete_invitation(invitation: Invitation):
     """Delete an invitation"""
     invitation.delete()

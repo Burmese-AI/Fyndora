@@ -211,17 +211,17 @@ def accept_invitation_view(request, invitation_token):
     return redirect("home")
 
 
-
-
 def cancel_invitation_view(request, invitation_id):
     try:
         invitation = get_invitation_by_id(invitation_id)
         organization = invitation.organization
-        
+
         if request.method == "POST":
             # delete the invitation
             delete_invitation(invitation)
-            invitation_list = get_invitations_for_organization(organization.organization_id)
+            invitation_list = get_invitations_for_organization(
+                organization.organization_id
+            )
             context = {
                 "invitations": invitation_list,
                 "organization": organization,
@@ -238,13 +238,15 @@ def cancel_invitation_view(request, invitation_id):
             response["HX-trigger"] = "success"
             return response
         else:
-            #get request means fetching the modal
+            # get request means fetching the modal
             context = {
                 "invitation": invitation,
                 "organization": organization,
             }
-            return render(request, "invitations/components/invitation_cancel_form.html", context)
-            
-    except Exception as e:
+            return render(
+                request, "invitations/components/invitation_cancel_form.html", context
+            )
+
+    except Exception:
         messages.error(request, "Failed to cancel invitation")
         return redirect("invitation_list", organization_id=organization.organization_id)

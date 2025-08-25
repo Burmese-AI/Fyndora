@@ -58,7 +58,7 @@ from apps.core.utils import check_if_member_is_owner
 from apps.organizations.utils import remove_permissions_from_member
 from apps.organizations.selectors import get_organization_member_by_id
 from apps.organizations.permissions import can_remove_org_member
-from apps.currencies.models import Currency
+
 
 # Create your views here.
 @login_required
@@ -73,7 +73,9 @@ def dashboard_view(request, organization_id):
         members_count = get_organization_members_count(organization)
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
-        allowed_currencies = OrganizationExchangeRate.objects.filter(organization=organization).distinct("currency")
+        allowed_currencies = OrganizationExchangeRate.objects.filter(
+            organization=organization
+        ).distinct("currency")
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -651,7 +653,7 @@ def remove_organization_member_view(request, organization_id, member_id):
         # no one can remove the owner of the organization
         if check_if_member_is_owner(member, organization):
             messages.error(request, "You cannot remove the owner of the organization.")
-            return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))
+            return redirect("organization_member_list", organization_id=organization_id)
 
         # remove all permissions from the member
         remove_permissions_from_member(member, organization)
@@ -660,10 +662,10 @@ def remove_organization_member_view(request, organization_id, member_id):
         member.delete()
 
         messages.success(request, "Organization member removed successfully.")
-        return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))
+        return redirect("organization_member_list", organization_id=organization_id)
     except Exception:
         messages.error(
             request,
             "An error occurred while removing organization member. Please try again later.",
         )
-        return redirect(reverse("organization_member_list", kwargs={"organization_id": organization_id}))
+        return redirect("organization_member_list", organization_id=organization_id)

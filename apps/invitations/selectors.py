@@ -21,7 +21,9 @@ def get_organization_member_by_user_and_organization(
 
 def get_invitations_for_organization(organization_id: int):
     """Get all invitations for a specific organization"""
-    return Invitation.objects.filter(organization=organization_id).order_by("-created_at")
+    return Invitation.objects.filter(organization=organization_id).order_by(
+        "-created_at"
+    )
 
 
 def get_invitation_by_token(

@@ -46,8 +46,6 @@ class WorkspaceRequiredMixin(OrganizationRequiredMixin):
     is_workspace_admin = None
     is_operation_reviewer = None
 
-    
-
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         workspace_id = kwargs.get("workspace_id")

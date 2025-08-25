@@ -68,7 +68,7 @@ def teams_view(request, organization_id):
         return render(request, "teams/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect(reverse("teams", kwargs={"organization_id": organization_id}))
+        return redirect("teams", organization_id=organization_id)
 
 
 def create_team_view(request, organization_id):
@@ -329,7 +329,7 @@ def get_team_members_view(request, organization_id, team_id):
         return render(request, "team_members/index.html", context)
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect(reverse("teams", kwargs={"organization_id": organization_id}))
+        return redirect("teams", organization_id=organization_id)
 
 
 def add_team_member_view(request, organization_id, team_id):
@@ -420,7 +420,7 @@ def add_team_member_view(request, organization_id, team_id):
             )
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)}")
-        return redirect(reverse("teams", kwargs={"organization_id": organization_id}))
+        return redirect("teams", organization_id=organization_id)
 
 
 def remove_team_member_view(request, organization_id, team_id, team_member_id):

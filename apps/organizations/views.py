@@ -312,7 +312,11 @@ def edit_organization_view(request, organization_id):
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():
-                update_organization_from_form(form=form, organization=organization)
+                update_organization_from_form(
+                    form=form,
+                    organization=organization,
+                    user=request.user,
+                )
                 organization = get_object_or_404(Organization, pk=organization_id)
                 owner = organization.owner.user if organization.owner else None
                 messages.success(request, "Organization updated successfully!")

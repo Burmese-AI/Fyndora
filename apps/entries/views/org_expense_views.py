@@ -3,6 +3,7 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.core.utils import permission_denied_view
 from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
@@ -254,6 +255,10 @@ class OrganizationExpenseBulkDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
 
     def perform_action(self, request, entries):
@@ -308,13 +313,28 @@ class OrganizationExpenseBulkUpdateView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
+            statuses=[self.request.GET.get("status")]
+            if self.request.GET.get("status")
+            else [EntryStatus.PENDING],
+            search=self.request.GET.get("search"),
         )
         
     def perform_action(self, request, entries):
-        valid_entries = [entry for entry in entries if self.validate_entry(entry)]
+        status = request.POST.get("status")
+        status_note = request.POST.get("status_note")
+        valid_entries = []
+        
+        for entry in entries:
+            if self.validate_entry(entry):
+                entry.status = status
+                entry.last_status_modified_by = self.org_member
+                entry.status_note = status_note
+                entry.status_last_updated_at = timezone.now()
+                valid_entries.append(entry)        
         if not valid_entries:
             return False, "No valid entries"
-        return Entry.objects.bulk_update(valid_entries, ["status", "status_note"]), f"Updated {len(valid_entries)} entries"
+        Entry.objects.bulk_update(valid_entries, ["status", "status_note", "last_status_modified_by", "status_last_updated_at"])
+        return True, f"Updated {len(valid_entries)} entries"
 
     def validate_entry(self, entry):
         return True

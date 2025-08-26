@@ -15,6 +15,10 @@ ALLOWED_HOSTS = ["testserver", "localhost", "127.0.0.1"]
 
 # Application definition
 INSTALLED_APPS = [
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -31,9 +35,13 @@ INSTALLED_APPS = [
     "apps.invitations",
     "apps.teams",
     "apps.remittance",
+    "apps.currencies",
+    "apps.emails",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -62,6 +70,12 @@ TEMPLATES = [
 ]
 
 AUTH_USER_MODEL = "accounts.CustomUser"
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
 
 # Use SQLite for testing - faster and doesn't require external dependencies
 DATABASES = {

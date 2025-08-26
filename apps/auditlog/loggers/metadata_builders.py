@@ -172,7 +172,7 @@ class EntityMetadataBuilder:
             "entry_description": getattr(entry, "description", ""),
             "entry_status": getattr(entry, "status", ""),
             "entry_amount": str(entry.amount) if getattr(entry, "amount", None) else None,
-            "entry_currency": getattr(entry, "currency", ""),
+            "entry_currency": str(getattr(entry, "currency", "")),
             "entry_type": getattr(entry, "entry_type", ""),
             "workspace_id": BaseAuditLogger._safe_get_related_field(
                 entry, "workspace.workspace_id", str

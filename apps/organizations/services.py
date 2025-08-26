@@ -77,7 +77,7 @@ def create_organization_with_owner(*, form, user) -> Organization:
             BusinessAuditLogger.log_permission_change(
                 user=user,
                 target_user=user,
-                permission="organization.owner",
+                permission_type="organization.owner",
                 action="grant",
                 request=None,  # No request context available in service layer
                 organization_id=str(organization.organization_id),

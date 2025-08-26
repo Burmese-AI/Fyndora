@@ -12,6 +12,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from unittest.mock import patch
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
@@ -21,6 +22,7 @@ from tests.factories import (
     EntryFactory,
     WorkspaceFactory,
 )
+from tests.factories.auditlog_factories import AuditTrailFactory
 
 User = get_user_model()
 
@@ -227,3 +229,425 @@ class TestAuditCreateService(TestCase):
         self.assertEqual(
             user_audit.target_entity_type, ContentType.objects.get_for_model(user)
         )
+
+
+@pytest.mark.unit
+class TestAuditCreateAuthenticationEvent(TestCase):
+    """Test audit_create_authentication_event service function."""
+
+    @pytest.mark.django_db
+    @patch('apps.auditlog.services.audit_create')
+    def test_authentication_event_basic(self, mock_audit_create):
+        """Test basic authentication event creation."""
+        from apps.auditlog.services import audit_create_authentication_event
+        
+        user = CustomUserFactory()
+        
+        audit_create_authentication_event(
+            user=user,
+            action_type=AuditActionType.LOGIN_SUCCESS,
+            metadata={'ip_address': '192.168.1.1'}
+        )
+        
+        # Verify audit_create was called with enhanced metadata
+        mock_audit_create.assert_called_once()
+        call_args = mock_audit_create.call_args
+        
+        self.assertEqual(call_args[1]['user'], user)
+        self.assertEqual(call_args[1]['action_type'], AuditActionType.LOGIN_SUCCESS)
+        
+        # Check enhanced metadata
+        metadata = call_args[1]['metadata']
+        self.assertEqual(metadata['event_category'], 'authentication')
+        self.assertEqual(metadata['ip_address'], '192.168.1.1')
+
+    @pytest.mark.django_db
+    @patch('apps.auditlog.services.audit_create')
+    def test_authentication_event_failed_login(self, mock_audit_create):
+        """Test failed login authentication event."""
+        from apps.auditlog.services import audit_create_authentication_event
+        
+        audit_create_authentication_event(
+            user=None,
+            action_type=AuditActionType.LOGIN_FAILED,
+            metadata={
+                'username_attempted': 'invalid_user',
+                'ip_address': '192.168.1.100',
+                'failure_reason': 'invalid_credentials'
+            }
+        )
+        
+        mock_audit_create.assert_called_once()
+        call_args = mock_audit_create.call_args
+        
+        self.assertIsNone(call_args[1]['user'])
+        self.assertEqual(call_args[1]['action_type'], AuditActionType.LOGIN_FAILED)
+        
+        metadata = call_args[1]['metadata']
+        self.assertEqual(metadata['event_category'], 'authentication')
+        self.assertEqual(metadata['username_attempted'], 'invalid_user')
+        self.assertEqual(metadata['failure_reason'], 'invalid_credentials')
+
+
+@pytest.mark.unit
+class TestAuditCreateSecurityEvent(TestCase):
+    """Test audit_create_security_event service function."""
+
+    @pytest.mark.django_db
+    @patch('apps.auditlog.services.audit_create')
+    def test_security_event_basic(self, mock_audit_create):
+        """Test basic security event creation."""
+        from apps.auditlog.services import audit_create_security_event
+        
+        user = CustomUserFactory()
+        
+        audit_create_security_event(
+            user=user,
+            action_type=AuditActionType.PERMISSION_GRANTED,
+            metadata={'permission': 'admin_access', 'resource': 'workspace_1'}
+        )
+        
+        mock_audit_create.assert_called_once()
+        call_args = mock_audit_create.call_args
+        
+        self.assertEqual(call_args[1]['user'], user)
+        self.assertEqual(call_args[1]['action_type'], AuditActionType.PERMISSION_GRANTED)
+        
+        # Check enhanced metadata
+        metadata = call_args[1]['metadata']
+        self.assertEqual(metadata['event_category'], 'security')
+        self.assertTrue(metadata['is_security_related'])
+        self.assertEqual(metadata['permission'], 'admin_access')
+        self.assertIn('timestamp', metadata)
+
+    @pytest.mark.django_db
+    @patch('apps.auditlog.services.audit_create')
+    def test_security_event_data_export(self, mock_audit_create):
+        """Test data export security event."""
+        from apps.auditlog.services import audit_create_security_event
+        
+        user = CustomUserFactory()
+        
+        audit_create_security_event(
+            user=user,
+            action_type=AuditActionType.DATA_EXPORTED,
+            metadata={
+                'export_type': 'entries',
+                'record_count': 1500,
+                'export_format': 'csv',
+                'reason': 'compliance_audit'
+            }
+        )
+        
+        mock_audit_create.assert_called_once()
+        call_args = mock_audit_create.call_args
+        
+        metadata = call_args[1]['metadata']
+        self.assertEqual(metadata['event_category'], 'security')
+        self.assertTrue(metadata['is_security_related'])
+        self.assertEqual(metadata['export_type'], 'entries')
+        self.assertEqual(metadata['record_count'], 1500)
+
+
+@pytest.mark.unit
+class TestAuditCleanupExpiredLogs(TestCase):
+    """Test audit_cleanup_expired_logs service function."""
+
+    @pytest.mark.django_db
+    def test_cleanup_expired_logs_basic(self):
+        """Test basic cleanup of expired logs."""
+        from apps.auditlog.services import audit_cleanup_expired_logs
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Create old audit logs
+        old_date = timezone.now() - timedelta(days=400)  # Older than default retention
+        recent_date = timezone.now() - timedelta(days=30)  # Within retention period
+        
+        # Create old logs that should be deleted
+        old_audit1 = AuditTrailFactory(
+            action_type=AuditActionType.ENTRY_CREATED
+        )
+        old_audit2 = AuditTrailFactory(
+            action_type=AuditActionType.ENTRY_UPDATED
+        )
+        
+        # Create recent logs that should be kept
+        recent_audit = AuditTrailFactory(
+            action_type=AuditActionType.ENTRY_CREATED
+        )
+        
+        # Update timestamps manually (auto_now_add=True prevents setting during creation)
+        AuditTrail.objects.filter(audit_id=old_audit1.audit_id).update(timestamp=old_date)
+        AuditTrail.objects.filter(audit_id=old_audit2.audit_id).update(timestamp=old_date)
+        AuditTrail.objects.filter(audit_id=recent_audit.audit_id).update(timestamp=recent_date)
+        
+        # Run cleanup
+        cleanup_stats = audit_cleanup_expired_logs()
+        
+        # Verify old logs were deleted
+        self.assertFalse(AuditTrail.objects.filter(audit_id=old_audit1.audit_id).exists())
+        self.assertFalse(AuditTrail.objects.filter(audit_id=old_audit2.audit_id).exists())
+        
+        # Verify recent logs were kept
+        self.assertTrue(AuditTrail.objects.filter(audit_id=recent_audit.audit_id).exists())
+
+        
+        # Verify return count
+        self.assertEqual(cleanup_stats['total_deleted'], 2)
+
+    @pytest.mark.django_db
+    def test_cleanup_authentication_logs_retention(self):
+        """Test cleanup with different retention for authentication logs."""
+        from apps.auditlog.services import audit_cleanup_expired_logs
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Create old authentication logs (should have longer retention)
+        old_auth_date = timezone.now() - timedelta(days=400)
+        old_regular_date = timezone.now() - timedelta(days=400)
+        
+        old_auth_audit = AuditTrailFactory(
+            action_type=AuditActionType.LOGIN_SUCCESS
+        )
+        old_regular_audit = AuditTrailFactory(
+            action_type=AuditActionType.ENTRY_CREATED
+        )
+        
+        # Update timestamps manually (auto_now_add=True prevents setting during creation)
+        AuditTrail.objects.filter(audit_id=old_auth_audit.audit_id).update(timestamp=old_auth_date)
+        AuditTrail.objects.filter(audit_id=old_regular_audit.audit_id).update(timestamp=old_regular_date)
+        
+        # Run cleanup
+        cleanup_stats = audit_cleanup_expired_logs()
+        
+        # Both should be deleted as they're very old
+        self.assertFalse(AuditTrail.objects.filter(audit_id=old_auth_audit.audit_id).exists())
+        self.assertFalse(AuditTrail.objects.filter(audit_id=old_regular_audit.audit_id).exists())
+        
+        self.assertEqual(cleanup_stats['total_deleted'], 2)
+
+    @pytest.mark.django_db
+    def test_cleanup_no_expired_logs(self):
+        """Test cleanup when no logs are expired."""
+        from apps.auditlog.services import audit_cleanup_expired_logs
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Create recent logs
+        recent_date = timezone.now() - timedelta(days=30)
+        
+        recent_audit1 = AuditTrailFactory(
+            action_type=AuditActionType.ENTRY_CREATED,
+            timestamp=recent_date
+        )
+        recent_audit2 = AuditTrailFactory(
+            action_type=AuditActionType.LOGIN_SUCCESS,
+            timestamp=recent_date
+        )
+        
+        # Run cleanup
+        cleanup_stats = audit_cleanup_expired_logs()
+        
+        # Verify no logs were deleted
+        self.assertTrue(AuditTrail.objects.filter(audit_id=recent_audit1.audit_id).exists())
+        self.assertTrue(AuditTrail.objects.filter(audit_id=recent_audit2.audit_id).exists())
+        
+        self.assertEqual(cleanup_stats['total_deleted'], 0)
+
+
+@pytest.mark.unit
+class TestMakeJsonSerializable(TestCase):
+    """Test make_json_serializable utility function."""
+
+    def test_make_json_serializable_basic_types(self):
+        """Test serialization of basic Python types."""
+        from apps.auditlog.services import make_json_serializable
+        
+        # Test basic types that should pass through unchanged
+        self.assertEqual(make_json_serializable("string"), "string")
+        self.assertEqual(make_json_serializable(123), 123)
+        self.assertEqual(make_json_serializable(123.45), 123.45)
+        self.assertEqual(make_json_serializable(True), True)
+        self.assertEqual(make_json_serializable(None), None)
+        
+        # Test collections
+        self.assertEqual(make_json_serializable([1, 2, 3]), [1, 2, 3])
+        self.assertEqual(make_json_serializable({"key": "value"}), {"key": "value"})
+
+    def test_make_json_serializable_datetime(self):
+        """Test serialization of datetime objects."""
+        from apps.auditlog.services import make_json_serializable
+        from django.utils import timezone
+        from datetime import datetime
+        
+        # Test timezone-aware datetime
+        dt = timezone.now()
+        result = make_json_serializable(dt)
+        self.assertIsInstance(result, str)
+        self.assertIn("T", result)  # ISO format
+        
+        # Test naive datetime
+        naive_dt = datetime(2023, 1, 1, 12, 0, 0)
+        result = make_json_serializable(naive_dt)
+        self.assertIsInstance(result, str)
+
+    def test_make_json_serializable_model_instance(self):
+        """Test serialization of Django model instances."""
+        from apps.auditlog.services import make_json_serializable
+        
+        user = CustomUserFactory()
+        result = make_json_serializable(user)
+        
+        # Should return string representation
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, str(user))
+
+    def test_make_json_serializable_complex_nested(self):
+        """Test serialization of complex nested structures."""
+        from apps.auditlog.services import make_json_serializable
+        from django.utils import timezone
+        
+        user = CustomUserFactory()
+        complex_data = {
+            "user": user,
+            "timestamp": timezone.now(),
+            "metadata": {
+                "nested": {
+                    "values": [1, 2, user],
+                    "flags": [True, False]
+                }
+            },
+            "list_with_objects": [user, "string", 123]
+        }
+        
+        result = make_json_serializable(complex_data)
+        
+        # Verify structure is preserved
+        self.assertIsInstance(result, dict)
+        self.assertIn("user", result)
+        self.assertIn("timestamp", result)
+        self.assertIn("metadata", result)
+        
+        # Verify objects were serialized
+        self.assertIsInstance(result["user"], str)
+        self.assertIsInstance(result["timestamp"], str)
+        self.assertIsInstance(result["list_with_objects"][0], str)
+        
+        # Verify nested structure
+        self.assertIsInstance(result["metadata"]["nested"]["values"][2], str)
+
+
+@pytest.mark.unit
+class TestAuditServicesIntegration(TestCase):
+    """Test integration scenarios for audit services."""
+
+    @pytest.mark.django_db
+    def test_audit_create_with_workspace_detection(self):
+        """Test audit creation with automatic workspace detection."""
+        from apps.auditlog.services import audit_create
+        
+        workspace = WorkspaceFactory()
+        entry = EntryFactory(workspace=workspace)
+        user = CustomUserFactory()
+        
+        audit = audit_create(
+            user=user,
+            action_type=AuditActionType.ENTRY_UPDATED,
+            target_entity=entry,
+            metadata={"field_changed": "title", "old_value": "Old Title", "new_value": "New Title"}
+        )
+        
+        # Verify audit was created correctly
+        self.assertEqual(audit.user, user)
+        self.assertEqual(audit.action_type, AuditActionType.ENTRY_UPDATED)
+        self.assertEqual(audit.target_entity, entry)
+        
+        # Verify metadata was serialized
+        self.assertIn("field_changed", audit.metadata)
+        self.assertEqual(audit.metadata["field_changed"], "title")
+
+    @pytest.mark.django_db
+    def test_concurrent_audit_creation(self):
+        """Test concurrent audit creation doesn't cause conflicts."""
+        from apps.auditlog.services import audit_create
+        import threading
+        import time
+        
+        created_audits = []
+        errors = []
+        
+        def create_audit(index):
+            try:
+                # Create fresh user and entry objects in each thread
+                user = CustomUserFactory()
+                entry = EntryFactory()
+                
+                audit = audit_create(
+                    user=user,
+                    action_type=AuditActionType.ENTRY_CREATED,
+                    target_entity=entry,
+                    metadata={"view_index": index, "timestamp": time.time()}
+                )
+                created_audits.append(audit)
+            except Exception as e:
+                errors.append(e)
+        
+        # Create multiple threads to simulate concurrent access
+        threads = []
+        for i in range(10):
+            thread = threading.Thread(target=create_audit, args=(i,))
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+        
+        # Verify no errors occurred
+        self.assertEqual(len(errors), 0, f"Errors occurred: {errors}")
+        
+        # Filter out None values (failed audit creations)
+        successful_audits = [audit for audit in created_audits if audit is not None]
+        
+        # Verify all audits were created successfully
+        self.assertEqual(len(successful_audits), 10)
+        
+        # Verify all audits are unique
+        audit_ids = [audit.audit_id for audit in successful_audits]
+        self.assertEqual(len(set(audit_ids)), 10)
+
+    @pytest.mark.django_db
+    def test_bulk_audit_creation_performance(self):
+        """Test performance of bulk audit creation."""
+        from apps.auditlog.services import audit_create
+        import time
+        
+        user = CustomUserFactory()
+        entry = EntryFactory()
+        
+        start_time = time.time()
+        
+        # Create multiple audits
+        for i in range(100):
+            audit_create(
+                user=user,
+                action_type=AuditActionType.ENTRY_CREATED,
+                target_entity=entry,
+                metadata={"batch_index": i}
+            )
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        # Performance assertion (should complete within reasonable time)
+        self.assertLess(duration, 10.0, "Bulk audit creation took too long")
+        
+        # Verify all audits were created
+        audit_count = AuditTrail.objects.filter(
+            user=user,
+            action_type=AuditActionType.ENTRY_CREATED,
+            target_entity_id=entry.entry_id
+        ).count()
+        
+        self.assertEqual(audit_count, 100)

@@ -81,7 +81,7 @@ class StatusChangedAuditFactory(AuditTrailFactory):
 class FlaggedAuditFactory(AuditTrailFactory):
     """Factory for flagged entity audit logs."""
 
-    action_type = "flagged"
+    action_type = AuditActionType.ENTRY_FLAGGED
     metadata = factory.LazyAttribute(
         lambda obj: {
             "flag_reason": "Requires additional review",
@@ -94,7 +94,7 @@ class FlaggedAuditFactory(AuditTrailFactory):
 class FileUploadedAuditFactory(AuditTrailFactory):
     """Factory for file upload audit logs."""
 
-    action_type = "file_uploaded"
+    action_type = AuditActionType.FILE_UPLOADED
     target_entity_type = factory.LazyAttribute(
         lambda obj: ContentType.objects.get(model="attachment")
     )
@@ -118,6 +118,71 @@ class SystemAuditFactory(AuditTrailFactory):
         lambda obj: {
             "system_action": f"Automated {obj.action_type}",
             "triggered_by": "system_cron",
+        }
+    )
+
+
+class OrganizationCreatedAuditFactory(AuditTrailFactory):
+    """Factory for organization creation audit logs."""
+
+    action_type = AuditActionType.ORGANIZATION_CREATED
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(app_label="organizations", model="organization")
+    )
+    metadata = factory.LazyAttribute(
+        lambda obj: {
+            "organization_name": "Test Organization",
+            "created_by": obj.user.username if obj.user else "System",
+            "initial_status": "active",
+        }
+    )
+
+
+class WorkspaceCreatedAuditFactory(AuditTrailFactory):
+    """Factory for workspace creation audit logs."""
+
+    action_type = AuditActionType.WORKSPACE_CREATED
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(app_label="workspaces", model="workspace")
+    )
+    metadata = factory.LazyAttribute(
+        lambda obj: {
+            "workspace_name": "Test Workspace",
+            "created_by": obj.user.username if obj.user else "System",
+            "organization_id": str(uuid.uuid4()),
+        }
+    )
+
+
+class TeamMemberAddedAuditFactory(AuditTrailFactory):
+    """Factory for team member addition audit logs."""
+
+    action_type = AuditActionType.TEAM_MEMBER_ADDED
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(app_label="teams", model="team")
+    )
+    metadata = factory.LazyAttribute(
+        lambda obj: {
+            "member_username": "new_member",
+            "added_by": obj.user.username if obj.user else "System",
+            "role": "member",
+            "team_id": str(uuid.uuid4()),
+        }
+    )
+
+
+class AuthenticationAuditFactory(AuditTrailFactory):
+    """Factory for authentication-related audit logs."""
+
+    action_type = AuditActionType.LOGIN_SUCCESS
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(app_label="accounts", model="customuser")
+    )
+    metadata = factory.LazyAttribute(
+        lambda obj: {
+            "ip_address": "192.168.1.100",
+            "user_agent": "Mozilla/5.0 Test Browser",
+            "login_method": "password",
         }
     )
 
@@ -186,7 +251,7 @@ class BulkAuditTrailFactory(AuditTrailFactory):
             target_entity_type = ContentType.objects.get(model="entry")
         workflow_steps = [
             {
-                "action_type": "entry_created",
+                "action_type": AuditActionType.ENTRY_CREATED,
                 "metadata": {
                     "status": "draft",
                     "created_by": user.username,
@@ -194,7 +259,7 @@ class BulkAuditTrailFactory(AuditTrailFactory):
                 },
             },
             {
-                "action_type": "status_changed",
+                "action_type": AuditActionType.ENTRY_STATUS_CHANGED,
                 "metadata": {
                     "old_status": "draft",
                     "new_status": "submitted",
@@ -202,7 +267,7 @@ class BulkAuditTrailFactory(AuditTrailFactory):
                 },
             },
             {
-                "action_type": "status_changed",
+                "action_type": AuditActionType.ENTRY_STATUS_CHANGED,
                 "metadata": {
                     "old_status": "submitted",
                     "new_status": "approved",

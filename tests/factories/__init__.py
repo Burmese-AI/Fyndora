@@ -36,6 +36,9 @@ from .entry_factories import (
     RemittanceEntryFactory,
     SmallAmountEntryFactory,
     TeamSubmittedEntryFactory,
+    OrganizationExpenseEntryFactory,
+    WorkspaceExpenseEntryFactory,
+    ReviewedEntryFactory,
 )
 from .organization_factories import (
     ArchivedOrganizationFactory,

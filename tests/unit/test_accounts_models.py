@@ -5,6 +5,7 @@ Following the test plan: Accounts App (apps.accounts)
 - CustomUser Model Tests
 - CustomUserManager Tests
 - Authentication Tests
+Notes => Modified some tests by THA and 100% covered.
 """
 
 import pytest

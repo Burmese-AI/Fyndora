@@ -72,7 +72,7 @@ class Entry(baseModel, SoftDeleteModel):
     )
     submitted_by_org_member = models.ForeignKey(
         OrganizationMember,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="entries",
@@ -80,7 +80,7 @@ class Entry(baseModel, SoftDeleteModel):
 
     submitted_by_team_member = models.ForeignKey(
         TeamMember,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="entries",
@@ -107,29 +107,13 @@ class Entry(baseModel, SoftDeleteModel):
     def submitter(self):
         """Return the submitter (either team member or organization member)."""
         if self.submitted_by_org_member:
-            print(f"in model org => {self.submitted_by_org_member}")
             return self.submitted_by_org_member.user.username
-        print(f"in model team => {self.submitted_by_team_member}")
         return self.submitted_by_team_member.organization_member.user.username
-
-    def clean(self):
-        super().clean()
-
-    #     if not self.currency:
-    #         raise ValidationError("Currency is required.")
-
-    #     if not self.exchange_rate_used:
-    #         raise ValidationError("Exchange rate used must be specified.")
-
-    #     if not self.org_exchange_rate_ref and not self.workspace_exchange_rate_ref:
-    #         raise ValidationError("Either organization or workspace exchange rate reference must be set.")
-
-    #     super().clean()
 
     class Meta:
         verbose_name = "entry"
         verbose_name_plural = "entries"
-        ordering = ["-occurred_at", "-created_at"]
+        ordering = ["-occurred_at"]
         permissions = [
             (
                 EntryPermissions.CHANGE_OTHER_SUBMITTERS_ENTRY,

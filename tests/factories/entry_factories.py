@@ -3,19 +3,20 @@
 import uuid
 from decimal import Decimal
 from datetime import date
+from django.utils import timezone
 
 import factory
 from factory.django import DjangoModelFactory
-
-from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
+from apps.entries.constants import EntryStatus
+from tests.factories.organization_factories import OrganizationMemberFactory
+from tests.factories.team_factories import TeamMemberFactory
+from apps.entries.constants import EntryType
 from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
-    OrganizationMemberFactory,
     OrganizationFactory,
     OrganizationExchangeRateFactory,
 )
-from tests.factories.team_factories import TeamMemberFactory
 from tests.factories.workspace_factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
@@ -28,6 +29,7 @@ class EntryFactory(DjangoModelFactory):
 
     class Meta:
         model = Entry
+        skip_postgeneration_save = True
 
     entry_id = factory.LazyFunction(uuid.uuid4)
     entry_type = factory.Iterator([choice[0] for choice in EntryType.choices])
@@ -251,3 +253,53 @@ class EntryWithReviewFactory(EntryFactory):
             else:
                 self.status_note = f"Financial transaction {self.status} after review."
             self.save()
+
+
+class OrganizationExpenseEntryFactory(EntryFactory):
+    """Factory for creating organization-level expense entries."""
+
+    entry_type = EntryType.ORG_EXP
+    submitted_by_org_member = factory.SubFactory(OrganizationMemberFactory)
+    submitted_by_team_member = None
+    workspace = None
+    workspace_team = None
+    description = factory.Sequence(lambda n: f"Organization expense {n}")
+    org_exchange_rate_ref = factory.LazyAttribute(
+        lambda obj: obj.org_exchange_rate_ref or None
+    )
+
+
+class WorkspaceExpenseEntryFactory(EntryFactory):
+    """Factory for creating workspace-level expense entries."""
+
+    entry_type = EntryType.WORKSPACE_EXP
+    submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
+    submitted_by_org_member = None
+    description = factory.Sequence(lambda n: f"Workspace expense {n}")
+    workspace_exchange_rate_ref = factory.LazyAttribute(
+        lambda obj: obj.workspace_exchange_rate_ref or None
+    )
+
+
+# in tests/factories/entry_factories.py (or wherever your entry factories live)
+
+
+class ReviewedEntryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Entry
+
+    # You can choose either team member or org member
+    submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
+    organization = factory.LazyAttribute(
+        lambda o: o.submitted_by_team_member.organization_member.organization
+    )
+    workspace = None
+    workspace_team = None
+    entry_type = "INCOME"
+    amount = 100.00
+    description = "Reviewed entry"
+    status = EntryStatus.REVIEWED
+
+    last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
+    status_note = "Reviewed note"
+    status_last_updated_at = factory.LazyFunction(timezone.now)

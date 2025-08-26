@@ -54,6 +54,10 @@ from apps.core.permissions import OrganizationPermissions
 from apps.core.utils import permission_denied_view
 from apps.organizations.selectors import get_organization_by_id
 from apps.core.utils import can_manage_organization
+from apps.core.utils import check_if_member_is_owner
+from apps.organizations.utils import remove_permissions_from_member
+from apps.organizations.selectors import get_organization_member_by_id
+from apps.organizations.permissions import can_remove_org_member
 
 
 # Create your views here.
@@ -69,6 +73,9 @@ def dashboard_view(request, organization_id):
         members_count = get_organization_members_count(organization)
         workspaces_count = get_workspaces_count(organization)
         teams_count = get_teams_count(organization)
+        allowed_currencies = OrganizationExchangeRate.objects.filter(
+            organization=organization
+        ).distinct("currency")
         owner = organization.owner.user if organization.owner else None
         context = {
             "organization": organization,
@@ -76,6 +83,7 @@ def dashboard_view(request, organization_id):
             "workspaces_count": workspaces_count,
             "teams_count": teams_count,
             "owner": owner,
+            "allowed_currencies": allowed_currencies,
         }
         return render(request, "organizations/dashboard.html", context)
     except Exception:
@@ -113,7 +121,7 @@ def home_view(request):
         template = "organizations/home.html"
 
         return render(request, template, context)
-    except Exception:
+    except Exception as e:
         messages.error(request, "An error occurred while loading organizations")
         return render(request, "organizations/home.html", {"organizations": []})
 
@@ -133,13 +141,13 @@ def create_organization_view(request):
             if form.is_valid():
                 create_organization_with_owner(form=form, user=request.user)
                 organizations = get_user_organizations(request.user)
+                # for UI purposes
                 for organization in organizations:
                     organization.permissions = {
                         "can_manage_organization": can_manage_organization(
                             request.user, organization
                         ),
                     }
-                print(organizations)
                 paginator = Paginator(organizations, PAGINATION_SIZE_GRID)
                 page = request.GET.get("page", 1)
                 organizations = paginator.page(page)
@@ -177,7 +185,6 @@ def create_organization_view(request):
                 response = HttpResponse(f"{message_template} {form_template}")
                 return response
     except Exception as e:
-        print(f"Exception in create_organization_view: {e}")
         messages.error(
             request,
             "An error occurred while creating organization. Please try again later.",
@@ -225,7 +232,10 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        query = OrganizationMember.objects.filter(organization=self.organization)
+        # list down all members except the owner to prevent the owner from being deleted
+        query = OrganizationMember.objects.filter(
+            organization=self.organization
+        ).exclude(user=self.organization.owner.user)
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -304,7 +314,11 @@ def edit_organization_view(request, organization_id):
         if request.method == "POST":
             form = OrganizationForm(request.POST, instance=organization)
             if form.is_valid():
-                update_organization_from_form(form=form, organization=organization)
+                update_organization_from_form(
+                    form=form,
+                    organization=organization,
+                    user=request.user,
+                )
                 organization = get_object_or_404(Organization, pk=organization_id)
                 owner = organization.owner.user if organization.owner else None
                 messages.success(request, "Organization updated successfully!")
@@ -353,7 +367,6 @@ def edit_organization_view(request, organization_id):
             )
 
     except Exception as e:
-        print(e)
         messages.error(
             request,
             "An error occurred while updating organization. Please try again later.",
@@ -376,10 +389,12 @@ def delete_organization_view(request, organization_id):
             return HttpResponseClientRedirect("/403")
 
         if request.method == "POST":
-            # delete organization
             organization.delete()
             messages.success(request, "Organization deleted successfully.")
-            return redirect("/")
+            response = HttpResponse()
+            # Client-side redirect
+            response["HX-Redirect"] = "/"
+            return response
         else:
             return render(
                 request,
@@ -391,11 +406,14 @@ def delete_organization_view(request, organization_id):
             request,
             "An error occurred while deleting organization. Please try again later.",
         )
-        return render(
-            request,
-            "organizations/partials/delete_organization_form.html",
-            {"organization": organization},
+        context = {
+            "is_oob": True,
+        }
+        message_html = render_to_string(
+            "includes/message.html", context=context, request=request
         )
+
+        return HttpResponse(f"{message_html}")
 
 
 class OrganizationExchangeRateCreateView(
@@ -616,3 +634,35 @@ class OrganizationExchangerateDeleteView(
 
         response = HttpResponse(f"{message_html}{table_html}")
         return response
+
+
+def remove_organization_member_view(request, organization_id, member_id):
+    try:
+        organization = get_organization_by_id(organization_id)
+        member = get_organization_member_by_id(member_id)
+
+        # check if the user has the permission to remove the organization member
+        if not can_remove_org_member(request.user, organization):
+            return permission_denied_view(
+                request,
+                "You do not have permission to remove this organization member.",
+            )
+        # no one can remove the owner of the organization
+        if check_if_member_is_owner(member, organization):
+            messages.error(request, "You cannot remove the owner of the organization.")
+            return redirect("organization_member_list", organization_id=organization_id)
+
+        # remove all permissions from the member
+        remove_permissions_from_member(member, organization)
+
+        # after removing the permission of that user ,delete the member from the organization (should be last step,softdelete)
+        member.delete()
+
+        messages.success(request, "Organization member removed successfully.")
+        return redirect("organization_member_list", organization_id=organization_id)
+    except Exception:
+        messages.error(
+            request,
+            "An error occurred while removing organization member. Please try again later.",
+        )
+        return redirect("organization_member_list", organization_id=organization_id)

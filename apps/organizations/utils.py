@@ -1,3 +1,10 @@
+from apps.core.utils import (
+    revoke_workspace_admin_permission,
+    revoke_operations_reviewer_permission,
+    revoke_team_coordinator_permission,
+    revoke_workspace_team_member_permission,
+)
+
 """
 Utility functions for organization audit logging.
 """
@@ -17,11 +24,11 @@ def extract_organization_context(organization):
         return {}
 
     return {
-        "organization_id": str(organization.organization_id),
+        "organization_id": str(organization.pk),
         "organization_title": organization.title,
         "organization_status": getattr(organization, "status", None),
         "organization_description": getattr(organization, "description", None),
-        "owner_id": str(organization.owner.user.user_id)
+        "owner_id": str(organization.owner.user.pk)
         if organization.owner and organization.owner.user
         else None,
         "owner_email": organization.owner.user.email
@@ -45,9 +52,9 @@ def extract_organization_member_context(member):
 
     return {
         "member_id": str(member.id),
-        "organization_id": str(member.organization.organization_id),
+        "organization_id": str(member.organization.pk),
         "organization_title": member.organization.title,
-        "user_id": str(member.user.user_id),
+        "user_id": str(member.user.pk),
         "user_email": member.user.email,
         "member_status": getattr(member, "status", "active"),
         "is_active": getattr(member, "is_active", True),
@@ -69,15 +76,15 @@ def extract_organization_exchange_rate_context(exchange_rate):
         return {}
 
     return {
-        "exchange_rate_id": str(exchange_rate.id),
-        "organization_id": str(exchange_rate.organization.organization_id),
+        "exchange_rate_id": str(exchange_rate.pk),
+        "organization_id": str(exchange_rate.organization.pk),
         "organization_title": exchange_rate.organization.title,
         "currency_code": exchange_rate.currency.code,
         "rate": str(exchange_rate.rate),
         "effective_date": exchange_rate.effective_date.isoformat()
         if exchange_rate.effective_date
         else None,
-        "added_by_id": str(exchange_rate.added_by.user.user_id)
+        "added_by_id": str(exchange_rate.added_by.user.pk)
         if exchange_rate.added_by and exchange_rate.added_by.user
         else None,
         "added_by_email": exchange_rate.added_by.user.email
@@ -119,3 +126,38 @@ def extract_request_metadata():
         "session_key": None,
         "source": "service_call",
     }
+
+
+def remove_permissions_from_member(member, organization):
+    """
+    Removing permissions from member.
+    """
+    user_administered_workspaces = member.administered_workspaces.all()
+    if user_administered_workspaces.count() > 0:
+        # revoke workspace admin permission from every workspace that the user is admin of
+        for workspace in user_administered_workspaces:
+            revoke_workspace_admin_permission(member.user, workspace)
+            workspace.workspace_admin = None
+            workspace.save()
+
+    user_reviewed_workspaces = member.reviewed_workspaces.all()
+    if user_reviewed_workspaces.count() > 0:
+        # revoke operations reviewer permission from every workspace that the user is reviewer of
+        for workspace in user_reviewed_workspaces:
+            revoke_operations_reviewer_permission(member.user, workspace)
+            workspace.operations_reviewer = None
+            workspace.save()
+
+    user_coordinated_teams = member.coordinated_teams.all()
+    if user_coordinated_teams.count() > 0:
+        for team in user_coordinated_teams:
+            revoke_team_coordinator_permission(member.user, team)
+            team.team_coordinator = None
+            team.save()
+
+    user_joined_teams = member.team_memberships.all()
+    for team_membership in user_joined_teams:
+        for workspace_team in team_membership.team.joined_workspaces.all():
+            revoke_workspace_team_member_permission(member.user, workspace_team)
+            # if the user is in teams , remove the user from the team
+            team_membership.delete()

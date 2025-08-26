@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -11,7 +11,6 @@ from apps.entries.selectors import get_total_amount_of_entries
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
 from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
-from apps.remittance.permissions import RemittancePermissions
 from apps.workspaces.models import WorkspaceTeam
 
 
@@ -103,24 +102,24 @@ def update_remittance_based_on_entry_status_change(
     )
 
 
-def remittance_confirm_payment(*, remittance, user):
+def remittance_confirm_payment(*, remittance, user, organization_id):
     """
     Confirms a remittance payment.
     """
-    workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.REVIEW_REMITTANCE, workspace):
-        raise PermissionDenied("You do not have permission to confirm this remittance.")
+    # I think we should allow the user to decide whether to confirm the payment or not rather than denying form the system... i specifically added warning message in the template
+    # if remittance.paid_amount < remittance.due_amount:
+    #     raise RemittanceConfirmPaymentException(
+    #         "Cannot confirm payment: The due amount has not been fully paid."
+    #     )
 
-    if remittance.paid_amount < remittance.due_amount:
-        raise ValidationError(
-            "Cannot confirm payment: The due amount has not been fully paid."
+    # if the remittance is already confirmed, then we need to update the confirmed_by and confirmed_at fields which means we have to remove the confirmed_by field and set it to None
+    if remittance.confirmed_by:
+        organization_member = None
+    else:
+        organization_member = get_orgMember_by_user_id_and_organization_id(
+            user_id=user.pk,
+            organization_id=organization_id,
         )
-
-    # Get the OrganizationMember instance for the user
-    organization_member = get_orgMember_by_user_id_and_organization_id(
-        user_id=user.pk,
-        organization_id=remittance.workspace_team.workspace.organization.pk,
-    )
 
     updated_remittance = model_update(
         instance=remittance,
@@ -138,11 +137,6 @@ def remittance_record_payment(*, remittance, user, amount):
     """
     Records a payment against a remittance.
     """
-    workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE, workspace):
-        raise PermissionDenied(
-            "You do not have permission to record a payment for this remittance."
-        )
 
     if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(
@@ -227,10 +221,6 @@ def remittance_change_due_date(*, remittance, user, due_date):
     Updates the due date of a remittance by changing the workspace end date.
     """
     workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.CHANGE_REMITTANCE, workspace):
-        raise PermissionDenied(
-            "You do not have permission to change the due date for this remittance."
-        )
 
     if remittance.status in [RemittanceStatus.PAID, RemittanceStatus.CANCELED]:
         raise ValidationError(
@@ -257,9 +247,6 @@ def remittance_create(user, workspace_team, due_amount, description=None):
     Manually creates a new remittance record.
     """
     # For creation, we need to check against the workspace since remittance doesn't exist yet
-    workspace = workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.ADD_REMITTANCE, workspace):
-        raise PermissionDenied("You do not have permission to create a remittance.")
 
     if due_amount <= 0:
         raise ValidationError("Due amount must be positive.")
@@ -280,9 +267,10 @@ def remittance_cancel(*, remittance, user):
     """
     Cancels a remittance.
     """
-    workspace = remittance.workspace_team.workspace
-    if not user.has_perm(RemittancePermissions.DELETE_REMITTANCE, workspace):
-        raise PermissionDenied("You do not have permission to cancel this remittance.")
+    # we do not need this old permission implementation
+    # workspace = remittance.workspace_team.workspace
+    # if not user.has_perm(RemittancePermissions.DELETE_REMITTANCE, workspace):
+    #     raise PermissionDenied("You do not have permission to cancel this remittance.")
 
     if remittance.paid_amount > 0:
         raise ValidationError("Cannot cancel a remittance that has payments recorded.")

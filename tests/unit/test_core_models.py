@@ -5,6 +5,7 @@ Following the test plan: Core App (apps.core)
 - baseModel Tests
   - Test automatic timestamp fields (created_at, updated_at)
   - Test model inheritance
+  Notes => Modified some tests by THA and 100% covered.
 """
 
 import pytest
@@ -53,8 +54,14 @@ class TestBaseModelTimestamps(TransactionTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
         # Create table for test model
         with connection.schema_editor() as schema_editor:
+            # Delete the table if it exists
+            try:
+                schema_editor.delete_model(CoreTestModel)
+            except Exception:
+                pass
             schema_editor.create_model(CoreTestModel)
 
     @classmethod
@@ -77,7 +84,8 @@ class TestBaseModelTimestamps(TransactionTestCase):
         # Verify update behavior
         original_created = instance.created_at
 
-        time.sleep(0.01)
+        # PostgreSQL timestamp has microsecond precision, but small sleeps (like 0.01s) may not register a change consistently on some systems.
+        time.sleep(0.1)
 
         instance.name = "Updated"
         instance.save()

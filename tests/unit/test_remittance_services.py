@@ -8,6 +8,12 @@ from unittest.mock import patch
 from django.core.exceptions import PermissionDenied, ValidationError
 
 from apps.remittance import services
+from apps.remittance.exceptions import (
+    RemittanceCancelException,
+    RemittanceConfirmPaymentException,
+    RemittancePaymentAmountException,
+    RemittanceRecordPaymentException,
+)
 from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus
 from apps.entries.constants import EntryType, EntryStatus
@@ -65,7 +71,7 @@ class TestRemittanceConfirmPayment:
         partial_remittance = PartiallyPaidRemittanceFactory()
 
         with patch.object(self.user, "has_perm", return_value=True):
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(RemittanceConfirmPaymentException) as exc_info:
                 services.remittance_confirm_payment(
                     remittance=partial_remittance, user=self.user
                 )
@@ -122,7 +128,7 @@ class TestRemittanceRecordPayment:
         paid_remittance = PaidRemittanceFactory()
 
         with patch.object(self.user, "has_perm", return_value=True):
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(RemittanceRecordPaymentException) as exc_info:
                 services.remittance_record_payment(
                     remittance=paid_remittance,
                     user=self.user,
@@ -136,7 +142,7 @@ class TestRemittanceRecordPayment:
     def test_record_payment_exceeds_due_amount(self):
         """Test payment recording fails when exceeding due amount."""
         with patch.object(self.user, "has_perm", return_value=True):
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(RemittancePaymentAmountException) as exc_info:
                 services.remittance_record_payment(
                     remittance=self.remittance,
                     user=self.user,
@@ -337,7 +343,7 @@ class TestRemittanceCancel:
         remittance = PartiallyPaidRemittanceFactory()
 
         with patch.object(self.user, "has_perm", return_value=True):
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(RemittanceCancelException) as exc_info:
                 services.remittance_cancel(remittance=remittance, user=self.user)
 
         assert "Cannot cancel a remittance that has payments recorded" in str(

@@ -60,12 +60,6 @@ class Workspace(baseModel):
     )
     start_date = models.DateField()
     end_date = models.DateField()
-    expense = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0.00,
-        help_text="Collection of Teams Expense + Direct Expense from the Workspace Admin",
-    )
 
     class Meta:
         verbose_name = "workspace"
@@ -108,6 +102,14 @@ class Workspace(baseModel):
                 WorkspacePermissions.DELETE_WORKSPACE_CURRENCY,
                 WorkspacePermissions.DELETE_WORKSPACE_CURRENCY.label,
             ),
+            (
+                WorkspacePermissions.VIEW_WORKSPACE_CURRENCY,
+                WorkspacePermissions.VIEW_WORKSPACE_CURRENCY.label,
+            ),
+            (
+                WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES,
+                WorkspacePermissions.VIEW_TOTAL_WORKSPACE_TEAMS_ENTRIES.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(
@@ -129,10 +131,10 @@ class WorkspaceTeam(baseModel):
         primary_key=True, default=uuid.uuid4, editable=False
     )
     team = models.ForeignKey(
-        Team, on_delete=models.CASCADE, related_name="workspace_teams"
+        Team, on_delete=models.CASCADE, related_name="joined_workspaces"
     )
     workspace = models.ForeignKey(
-        Workspace, on_delete=models.CASCADE, related_name="workspace_teams"
+        Workspace, on_delete=models.CASCADE, related_name="joined_teams"
     )
     custom_remittance_rate = models.DecimalField(
         max_digits=5,  # 0.00 - 100.00

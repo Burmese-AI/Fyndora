@@ -1,0 +1,58 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<form 
+hx-post="{% url 'cancel_invitation' invitation.invitation_id %}"
+hx-swap="none"
+class="modal-box w-[32rem] max-w-[70vw] shadow-xl rounded-lg space-y-0"  
+hx-target="#modal-placeholder" 
+hx-swap="innerHTML"
+    > 
+    {% csrf_token %}
+   
+        
+        <div class="mb-8">
+            <div class="bg-base-100 border border-base-200 rounded-lg p-4">
+                <div class="flex items-start space-x-3">
+                    <svg class="h-6 w-6 text-red-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6m0-6l6 6"/>
+                    </svg>
+                    <div>
+                        <p class="text-gray-900 text-lg font-semibold mb-1">
+                            Are you <span class="text-red-700 font-bold">absolutely sure</span> you want to cancel this invitation
+                            {% if organization %}
+                                for <span class="font-bold text-gray-800">{{ organization.title }}</span>
+                            {% endif %}
+                            for user <span class="font-bold text-gray-800">{{ invitation.email }}</span>?
+                        </p>
+                        <p class="text-red-600 text-sm mt-1">
+                            This action is <span class="font-bold">permanent</span> and cannot be undone.
+                        </p>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm">
+                    This action cannot be undone. The invited user will no longer be able to join using this invitation.
+                </p>
+            </div>
+        </div>
+        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-8">
+            <button type="button"
+                class="inline-flex items-center justify-center px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 transition font-semibold shadow-sm"
+                onclick="this.closest('.modal').removeAttribute('open')">
+                <svg class="h-5 w-5 mr-2 -ml-1 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Cancel
+            </button>
+            <button type="submit"
+                class="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-red-600 text-white font-bold shadow hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 border border-red-700">
+                <svg class="h-5 w-5 mr-2 -ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                </svg>
+                Cancel Invitation
+            </button>
+        </div>
+ 
+</form>
+{% endblock %}

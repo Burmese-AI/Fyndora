@@ -17,7 +17,6 @@ from apps.entries.forms import (
     BaseUpdateEntryForm,
     CreateOrganizationExpenseEntryForm,
     CreateWorkspaceTeamEntryForm,
-    UpdateOrganizationExpenseEntryForm,
 )
 from apps.organizations.models import OrganizationExchangeRate
 from apps.teams.constants import TeamMemberRole

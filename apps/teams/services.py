@@ -7,9 +7,7 @@ from guardian.shortcuts import assign_perm
 from apps.workspaces.models import WorkspaceTeam
 
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.core.roles import get_permissions_for_role
 from apps.core.utils import model_update
-from apps.organizations.models import OrganizationMember
 from apps.teams.exceptions import (
     TeamCreationError,
     TeamMemberCreationError,
@@ -43,7 +41,6 @@ def create_team_from_form(form, organization, orgMember):
                 organization_member=team.team_coordinator,
                 role=TeamMemberRole.TEAM_COORDINATOR,
             )
-        print("team coordinator", team.team_coordinator)
 
         assign_team_permissions(team)
 
@@ -93,74 +90,74 @@ def create_team_from_form(form, organization, orgMember):
 User = get_user_model()
 
 
-@transaction.atomic
-def team_member_add(
-    *, added_by: User, org_member: OrganizationMember, team: Team, role: str
-) -> TeamMember:
-    """
-    Adds an organization member to a team with a specific role and assigns all the
-    necessary permissions for that role using Django groups.
-    """
-    try:
-        role = role.upper()
+# @transaction.atomic
+# def team_member_add(
+#     *, added_by: User, org_member: OrganizationMember, team: Team, role: str
+# ) -> TeamMember:
+#     """
+#     Adds an organization member to a team with a specific role and assigns all the
+#     necessary permissions for that role using Django groups.
+#     """
+#     try:
+#         role = role.upper()
 
-        team_member, _ = TeamMember.objects.update_or_create(
-            organization_member=org_member, team=team, defaults={"role": role}
-        )
+#         team_member, _ = TeamMember.objects.update_or_create(
+#             organization_member=org_member, team=team, defaults={"role": role}
+#         )
 
-        workspace = team.workspace
+#         workspace = team.workspace
 
-        group_name = f"{workspace.workspace_id}_{team.team_id}_{role}"
-        group, created = Group.objects.get_or_create(name=group_name)
+#         group_name = f"{workspace.workspace_id}_{team.team_id}_{role}"
+#         group, created = Group.objects.get_or_create(name=group_name)
 
-        if created:
-            permissions = get_permissions_for_role(role)
-            for perm in permissions:
-                assign_perm(perm, group, workspace)
+#         if created:
+#             permissions = get_permissions_for_role(role)
+#             for perm in permissions:
+#                 assign_perm(perm, group, workspace)
 
-        group.user_set.add(org_member.user)
+#         group.user_set.add(org_member.user)
 
-        # Audit logging: Log team member addition
-        try:
-            BusinessAuditLogger.log_team_member_action(
-                user=added_by,
-                team_member=team_member,
-                action="add",
-                request=None,
-                operation_type="team_member_addition",
-                role=role,
-                group_created=created,
-                group_name=group_name,
-                permissions_assigned=len(permissions) if created else 0,
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team member addition: {audit_error}",
-                exc_info=True,
-            )
+#         # Audit logging: Log team member addition
+#         try:
+#             BusinessAuditLogger.log_team_member_action(
+#                 user=added_by,
+#                 team_member=team_member,
+#                 action="add",
+#                 request=None,
+#                 operation_type="team_member_addition",
+#                 role=role,
+#                 group_created=created,
+#                 group_name=group_name,
+#                 permissions_assigned=len(permissions) if created else 0,
+#             )
+#         except Exception as audit_error:
+#             logger.error(
+#                 f"Audit logging failed for team member addition: {audit_error}",
+#                 exc_info=True,
+#             )
 
-        return team_member
-    except Exception as e:
-        # Audit logging: Log team member addition failure
-        try:
-            BusinessAuditLogger.log_operation_failure(
-                user=added_by,
-                operation_type="team_member_addition",
-                error=e,
-                request=None,
-                team_id=str(team.team_id),
-                team_title=team.title,
-                target_member_email=org_member.user.email,
-                attempted_role=role,
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team member addition failure: {audit_error}",
-                exc_info=True,
-            )
-        raise TeamMemberCreationError(
-            f"An error occurred while adding team member: {str(e)}"
-        )
+#         return team_member
+#     except Exception as e:
+#         # Audit logging: Log team member addition failure
+#         try:
+#             BusinessAuditLogger.log_operation_failure(
+#                 user=added_by,
+#                 operation_type="team_member_addition",
+#                 error=e,
+#                 request=None,
+#                 team_id=str(team.team_id),
+#                 team_title=team.title,
+#                 target_member_email=org_member.user.email,
+#                 attempted_role=role,
+#             )
+#         except Exception as audit_error:
+#             logger.error(
+#                 f"Audit logging failed for team member addition failure: {audit_error}",
+#                 exc_info=True,
+#             )
+#         raise TeamMemberCreationError(
+#             f"An error occurred while adding team member: {str(e)}"
+#         )
 
 
 def create_team_member_from_form(form, team, organization):

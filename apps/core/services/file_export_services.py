@@ -14,7 +14,7 @@ class CsvExporter(BaseFileExporter):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
-        
+
         for block in self.blocks:
             if block["type"] == "table":
                 writer.writerow([header for _, header in block["columns"]])
@@ -22,10 +22,12 @@ class CsvExporter(BaseFileExporter):
                     writer.writerow([row.get(key, "") for key, _ in block["columns"]])
                 if "footer" in block:
                     for footer_row in block["footer"]:
-                        writer.writerow([footer_row.get(key, "") for key, _ in block["columns"]])
+                        writer.writerow(
+                            [footer_row.get(key, "") for key, _ in block["columns"]]
+                        )
             elif block["type"] == "paragraph":
                 writer.writerow([block["text"]])
-        
+
         return response
 
 
@@ -38,30 +40,38 @@ class PdfExporter(BaseFileExporter):
 
         for block in self.blocks:
             if block["type"] == "table":
-                col_widths = self._calculate_col_widths(pdf, block["columns"], block["rows"], block.get("footer", []))
+                col_widths = self._calculate_col_widths(
+                    pdf, block["columns"], block["rows"], block.get("footer", [])
+                )
 
-                pdf.set_font("Arial", "B", 8)
+                pdf.set_font("Arial", "B", 5)
                 for (_, header), width in zip(block["columns"], col_widths):
                     pdf.cell(width, 8, str(header), border=1, align="C")
                 pdf.ln()
 
-                pdf.set_font("Arial", "", 8)
+                pdf.set_font("Arial", "", 5)
                 for row in block["rows"]:
                     for (key, _), width in zip(block["columns"], col_widths):
                         pdf.cell(width, 8, str(row.get(key, "")), border=1, align="C")
                     pdf.ln()
 
                 if "footer" in block:
-                    pdf.set_font("Arial", "B", 8)
+                    pdf.set_font("Arial", "B", 5)
                     for footer_row in block["footer"]:
                         for (key, _), width in zip(block["columns"], col_widths):
-                            pdf.cell(width, 8, str(footer_row.get(key, "")), border=1, align="C")
+                            pdf.cell(
+                                width,
+                                8,
+                                str(footer_row.get(key, "")),
+                                border=1,
+                                align="C",
+                            )
                         pdf.ln()
 
                 pdf.ln(5)
 
             elif block["type"] == "paragraph":
-                pdf.set_font("Arial", "", 10)
+                pdf.set_font("Arial", "", 5)
                 pdf.multi_cell(0, 8, block["text"])
                 pdf.ln(5)
 
@@ -71,7 +81,7 @@ class PdfExporter(BaseFileExporter):
         return response
 
     def _calculate_col_widths(self, pdf, columns, rows, footer_rows):
-        pdf.set_font("Arial", "", 8)
+        pdf.set_font("Arial", "", 5)
         col_widths = []
         all_rows = rows + footer_rows
         for key, header in columns:

@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "apps.organizations",
     "apps.accounts",
     "apps.core",
@@ -130,3 +131,5 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+SITE_ID = 1

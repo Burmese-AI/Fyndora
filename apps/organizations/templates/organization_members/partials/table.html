@@ -3,6 +3,7 @@
       <thead class="bg-lemonade-200 text-lemonade-900 text-sm uppercase font-semibold">
         <tr>
           <th>User</th>
+          <th>Email</th>
           <th>Status</th>
           <th class="text-center">Actions</th>
         </tr>
@@ -12,7 +13,7 @@
           {% include "organization_members/partials/row.html" %}
         {% empty %}
           <tr>
-            <td colspan="3" class="text-center py-4 text-lemonade-700">No members found.</td>
+            <td colspan="3" class="text-center py-4 text-lemonade-700">No members found except the owner. Please invite a member to the organization.</td>
           </tr>
         {% endfor %}
       </tbody>

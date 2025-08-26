@@ -1,8 +1,8 @@
 from apps.core.permissions import OrganizationPermissions
 
 
-def can_manage_organization(user, organization):
+def can_remove_org_member(user, organization):
     """
-    Returns True if the user has the permission to manage the organization.
+    Check if the user can remove the organization member.
     """
-    return user.has_perm(OrganizationPermissions.MANAGE_ORGANIZATION, organization)
+    return user.has_perm(OrganizationPermissions.REMOVE_ORG_MEMBER, organization)

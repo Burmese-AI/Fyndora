@@ -118,7 +118,7 @@ class TestWorkspaceTeamManagementWorkflows:
         WorkspaceTeamFactory(workspace=workspace, team=team3)
 
         # Verify relationships
-        workspace_teams = workspace.workspace_teams.all()
+        workspace_teams = workspace.joined_teams.all()
         assert workspace_teams.count() == 3
 
         team_titles = [wt.team.title for wt in workspace_teams]
@@ -127,9 +127,9 @@ class TestWorkspaceTeamManagementWorkflows:
         assert "Corporate Partnership Team" in team_titles
 
         # Verify reverse relationships
-        assert team1.workspace_teams.filter(workspace=workspace).exists()
-        assert team2.workspace_teams.filter(workspace=workspace).exists()
-        assert team3.workspace_teams.filter(workspace=workspace).exists()
+        assert team1.joined_teams.filter(workspace=workspace).exists()
+        assert team2.joined_teams.filter(workspace=workspace).exists()
+        assert team3.joined_teams.filter(workspace=workspace).exists()
 
     def test_team_multiple_workspaces_workflow(self):
         """Test that a team can be assigned to multiple workspaces."""
@@ -149,7 +149,7 @@ class TestWorkspaceTeamManagementWorkflows:
         assert wt2.team == team
 
         # Team should be in both workspaces
-        team_workspaces = team.workspace_teams.all()
+        team_workspaces = team.joined_teams.all()
         assert team_workspaces.count() == 2
         workspace_ids = [wt.workspace.workspace_id for wt in team_workspaces]
         assert workspace1.workspace_id in workspace_ids
@@ -176,13 +176,13 @@ class TestWorkspaceTeamManagementWorkflows:
         workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
 
         # Verify team is in workspace
-        assert workspace.workspace_teams.filter(team=team).exists()
+        assert workspace.joined_teams.filter(team=team).exists()
 
         # Remove team from workspace
         workspace_team.delete()
 
         # Verify team is no longer in workspace
-        assert not workspace.workspace_teams.filter(team=team).exists()
+        assert not workspace.joined_teams.filter(team=team).exists()
 
 
 @pytest.mark.integration
@@ -360,7 +360,7 @@ class TestWorkspaceQueryWorkflows:
         )  # Formerly TeamCoordinatorFactory
 
         # Get workspace teams with members
-        workspace_teams = workspace.workspace_teams.all().select_related("team")
+        workspace_teams = workspace.joined_teams.all().select_related("team")
 
         for wt in workspace_teams:
             # Access team members through team

@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from apps.core.permissions import EntryPermissions
@@ -33,6 +34,7 @@ from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
     can_update_workspace_team_entry,
+    can_update_other_submitters_entry,
 )
 from .base_views import (
     TeamLevelEntryView,
@@ -43,10 +45,7 @@ from .mixins import (
     WorkspaceLevelEntryFiltering,
     TeamLevelEntryFiltering,
 )
-from apps.entries.utils import (
-    can_update_other_submitters_entry,
-    can_update_workspace_team_entry,
-)
+from apps.entries.utils import can_view_total_workspace_teams_entries
 
 
 class WorkspaceEntryListView(
@@ -59,6 +58,13 @@ class WorkspaceEntryListView(
     context_object_name = CONTEXT_OBJECT_NAME
     table_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_level_entry_index.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_total_workspace_teams_entries(request.user, self.workspace):
+            return permission_denied_view(
+                request, "You do not have permission to view this workspace's entries."
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return get_entries(
@@ -134,7 +140,6 @@ class WorkspaceTeamEntryCreateView(
     table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
-    # Submitter can't create entries if this is uncommented
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_team_entry(request.user, self.workspace_team):
             return permission_denied_view(
@@ -292,6 +297,23 @@ class WorkspaceTeamEntryDeleteView(
             )
         return super().dispatch(request, *args, **kwargs)
 
+    # Overriding get_object for a tighter fetch!
+    # Entries can't be deleted once their status has been changed.
+    # The normal `get_object` just grabs it by PK. This means we *could* fetch
+    # an entry that exists but is ultimately undeletable due to rules.
+    # While not a fatal error (it just won't delete), it's a bit messy.
+    #
+    # we make sure we're *only* trying to delete entries that strictly match
+    # It's an indirect fix that just makes things cleaner.
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            Entry,
+            pk=self.kwargs["pk"],
+            workspace_team=self.workspace_team,
+            workspace=self.workspace,
+            organization=self.organization,
+        )
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -312,4 +334,3 @@ class WorkspaceTeamEntryDeleteView(
 
     def perform_service(self, form):
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
-

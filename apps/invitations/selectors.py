@@ -21,7 +21,9 @@ def get_organization_member_by_user_and_organization(
 
 def get_invitations_for_organization(organization_id: int):
     """Get all invitations for a specific organization"""
-    return Invitation.objects.filter(organization=organization_id)
+    return Invitation.objects.filter(organization=organization_id).order_by(
+        "-created_at"
+    )
 
 
 def get_invitation_by_token(
@@ -63,6 +65,14 @@ def is_invitation_valid(invitation: Invitation) -> Tuple[bool, str]:
 def invitation_exists(pk: str) -> bool:
     """Check if an invitation with the given pk exists."""
     return Invitation.objects.filter(pk=pk).exists()
+
+
+def get_invitation_by_id(pk: int) -> Invitation:
+    """Get invitation by id"""
+    try:
+        return Invitation.objects.get(pk=pk)
+    except Invitation.DoesNotExist:
+        raise Invitation.DoesNotExist("Invitation not found")
 
 
 User = get_user_model()

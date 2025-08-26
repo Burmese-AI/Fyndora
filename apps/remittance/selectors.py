@@ -35,10 +35,10 @@ def get_remittances_under_organization(
         )
 
         # Add remaining amount calculation
+        # to show overpaid amount in the table but not in -minus
         for remittance in remittances:
-            remittance.remaining_amount = remittance.due_amount - remittance.paid_amount
+            remittance.remaining_amount = remittance.remaining_amount()
 
         return remittances
     except Exception as e:
-        print(f"Error in get_remiitances_under_organization: {str(e)}")
         return None

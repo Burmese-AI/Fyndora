@@ -1,8 +1,6 @@
 import uuid
-from decimal import Decimal
 
 from django.db import models
-from django.core.validators import MinValueValidator
 from django.conf import settings
 
 from apps.core.models import baseModel, SoftDeleteModel
@@ -11,7 +9,7 @@ from apps.currencies.models import ExchangeRateBaseModel
 from apps.core.permissions import OrganizationPermissions
 
 
-class Organization(baseModel):
+class Organization(baseModel, SoftDeleteModel):
     organization_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, unique=True
     )
@@ -29,12 +27,6 @@ class Organization(baseModel):
         default=StatusChoices.ACTIVE,
     )
     description = models.TextField(blank=True, null=True)
-    expense = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        validators=[MinValueValidator(Decimal("0.00"))],
-    )
 
     class Meta:
         verbose_name = "organization"
@@ -49,7 +41,10 @@ class Organization(baseModel):
                 OrganizationPermissions.ADD_WORKSPACE,
                 OrganizationPermissions.ADD_WORKSPACE.label,
             ),
-            (OrganizationPermissions.ADD_TEAM, OrganizationPermissions.ADD_TEAM.label),
+            (
+                OrganizationPermissions.ADD_TEAM,
+                OrganizationPermissions.ADD_TEAM.label,
+            ),
             (
                 OrganizationPermissions.INVITE_ORG_MEMBER,
                 OrganizationPermissions.INVITE_ORG_MEMBER.label,
@@ -94,6 +89,14 @@ class Organization(baseModel):
                 OrganizationPermissions.VIEW_REPORT_PAGE,
                 OrganizationPermissions.VIEW_REPORT_PAGE.label,
             ),
+            (
+                OrganizationPermissions.REMOVE_ORG_MEMBER,
+                OrganizationPermissions.REMOVE_ORG_MEMBER.label,
+            ),
+            (
+                OrganizationPermissions.CONFIRM_REMITTANCE_PAYMENT,
+                OrganizationPermissions.CONFIRM_REMITTANCE_PAYMENT.label,
+            ),
         )
         constraints = [
             models.UniqueConstraint(
@@ -101,12 +104,15 @@ class Organization(baseModel):
                 name="unique_organization",
             )
         ]
+        indexes = [
+            models.Index(fields=["title"]),
+        ]
 
     def __str__(self):
         return self.title
 
 
-class OrganizationMember(baseModel):
+class OrganizationMember(baseModel, SoftDeleteModel):
     organization_member_id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
@@ -131,6 +137,7 @@ class OrganizationMember(baseModel):
             models.UniqueConstraint(
                 fields=["organization", "user"],
                 name="unique_organization_member",
+                condition=models.Q(deleted_at__isnull=True),
             )
         ]
         ordering = ["-created_at"]
@@ -159,3 +166,6 @@ class OrganizationExchangeRate(ExchangeRateBaseModel, SoftDeleteModel):
                 name="unique_organization_exchange_rate",
             )
         ]
+
+    def __str__(self) -> str:
+        return f"{self.organization} | {self.currency} | {self.rate} | {self.effective_date}"

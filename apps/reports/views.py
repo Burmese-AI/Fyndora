@@ -41,45 +41,42 @@ class OverviewFinanceReportView(
             )
         return super().dispatch(request, *args, **kwargs)
 
-    def _get_workspace_team_context(self, workspace_team: WorkspaceTeam):
-        team_income = get_total_amount_of_entries(
+    def _get_team_context(self, workspace_team: WorkspaceTeam):
+        income = get_total_amount_of_entries(
             entry_type=EntryType.INCOME,
             entry_status=EntryStatus.APPROVED,
             workspace_team=workspace_team,
         )
-
-        team_expense = get_total_amount_of_entries(
+        expense = get_total_amount_of_entries(
             entry_type=EntryType.DISBURSEMENT,
             entry_status=EntryStatus.APPROVED,
             workspace_team=workspace_team,
         )
-
-        net_income = team_income - team_expense
+        net_income = income - expense
         due_amount = workspace_team.remittance.due_amount or Decimal("0.00")
 
         return {
             "title": workspace_team.team.title,
-            "total_income": round(team_income, 2),
-            "total_expense": round(team_expense, 2),
+            "total_income": round(income, 2),
+            "total_expense": round(expense, 2),
             "net_income": round(net_income, 2),
             "remittance_rate": workspace_team.custom_remittance_rate,
-            "org_share": round(due_amount, 2),
+            "org_share": round(due_amount, 2),  # contribution to org
         }
 
     def _get_workspace_context(self, workspace: Workspace):
-        children_qs = workspace.workspace_teams.select_related("team").all()
-        context_children = []
-        # Totals for workspace
+        teams = workspace.joined_teams.select_related("team").all()
+        team_contexts = []
         total_income = Decimal("0.00")
         total_expense = Decimal("0.00")
         total_org_share = Decimal("0.00")
 
-        for ws_team in children_qs:
-            ws_team_context = self._get_workspace_team_context(ws_team)
-            context_children.append(ws_team_context)
-            total_income += ws_team_context["total_income"]
-            total_expense += ws_team_context["total_expense"]
-            total_org_share += ws_team_context["org_share"]
+        for team in teams:
+            team_ctx = self._get_team_context(team)
+            team_contexts.append(team_ctx)
+            total_income += team_ctx["total_income"]
+            total_expense += team_ctx["total_expense"]
+            total_org_share += team_ctx["org_share"]
 
         workspace_expenses = get_total_amount_of_entries(
             entry_type=EntryType.WORKSPACE_EXP,
@@ -87,95 +84,81 @@ class OverviewFinanceReportView(
             workspace=workspace,
         )
 
+        final_net_profit = total_org_share - workspace_expenses
+
         return {
             "title": workspace.title,
             "total_income": round(total_income, 2),
             "total_expense": round(total_expense, 2),
             "net_income": round(total_income - total_expense, 2),
-            "org_share": round(total_org_share, 2),
+            "org_share": round(total_org_share, 2),  # before workspace expenses
             "parent_lvl_total_expense": round(workspace_expenses, 2),
-            "final_net_profit": round(total_org_share - workspace_expenses, 2),
-            "context_children": context_children,
+            "final_net_profit": round(final_net_profit, 2),
+            "children": team_contexts,  # nested teams
         }
 
     def _get_organization_context(self, org: Organization):
-        children_qs = self.organization.workspaces.all()
-        context_children = []
-        # Totals for workspace
+        workspaces = org.workspaces.all()
+        workspace_contexts = []
         total_income = Decimal("0.00")
         total_expense = Decimal("0.00")
         total_org_share = Decimal("0.00")
-        for ws in children_qs:
-            ws_context = self._get_workspace_context(ws)
-            context_children.append(ws_context)
-            total_income += ws_context["total_income"]
-            total_expense += ws_context["total_expense"]
-            total_org_share += ws_context["final_net_profit"]
-            # Turn this parent context format into child context format
-            ws_context = {
-                "title": ws_context["title"],
-                "total_income": ws_context["total_income"],
-                "total_expense": ws_context["total_expense"],
-                "net_income": ws_context["net_income"],
-                "parent_lvl_total_expense": ws_context["parent_lvl_total_expense"],
-                "org_share": ws_context["final_net_profit"],
-            }
+
+        for ws in workspaces:
+            ws_ctx = self._get_workspace_context(ws)
+            workspace_contexts.append(ws_ctx)
+            total_income += ws_ctx["total_income"]
+            total_expense += ws_ctx["total_expense"]
+            total_org_share += ws_ctx["final_net_profit"]  # after workspace expenses
+
         org_expenses = get_total_amount_of_entries(
-            entry_type=EntryType.ORG_EXP, entry_status=EntryStatus.APPROVED, org=org
+            entry_type=EntryType.ORG_EXP,
+            entry_status=EntryStatus.APPROVED,
+            org=org,
         )
+        final_net_profit = total_org_share - org_expenses
+
         return {
             "title": org.title,
             "total_income": round(total_income, 2),
             "total_expense": round(total_expense, 2),
             "net_income": round(total_income - total_expense, 2),
-            "org_share": round(total_org_share, 2),
+            "org_share": round(total_org_share, 2),  # sum of workspace profits
             "parent_lvl_total_expense": round(org_expenses, 2),
-            "final_net_profit": round(total_org_share - org_expenses, 2),
-            "context_children": context_children,
+            "final_net_profit": round(final_net_profit, 2),
+            "children": workspace_contexts,
         }
 
     def get_context_data(self, **kwargs) -> dict[str, any]:
         workspace_filter = self.request.GET.get("workspace") or None
-
         base_context = super().get_context_data(**kwargs)
         base_context["view"] = "overview"
         base_context["workspace_filter"] = workspace_filter
 
-        context_parent = None
-        context_children = []
-
-        # workspace_filter exists, Workspace Lvl Report
         try:
             if workspace_filter:
                 workspace = Workspace.objects.get(
                     pk=workspace_filter, organization=self.organization
                 )
-                if not workspace:
-                    raise ValueError("Invalid workspace selected.")
-                context_parent = self._get_workspace_context(workspace)
-                context_children = context_parent.pop("context_children")
-                context_parent["parent_expense_label"] = "Workspace Expenses"
-
+                # workspace context uses workspace_* keys
+                org_data = self._get_workspace_context(workspace)
+                org_data["level"] = "workspace"
             else:
-                context_parent = self._get_organization_context(self.organization)
-                context_children = context_parent.pop("context_children")
-                context_parent["parent_expense_label"] = "Org Expenses"
+                # org context uses org_* keys
+                org_data = self._get_organization_context(self.organization)
+                org_data["level"] = "org"
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Error fetching report data: {e}")
+            org_data = None
 
-        base_context["context_parent"] = context_parent
-        base_context["context_children"] = context_children
-        print("=" * 100)
-        pprint(base_context)
-        print("=" * 100)
+        base_context["report_data"] = org_data
+        # pprint(base_context["report_data"])
         return base_context
 
-    def post(self, request, *args, **kwargs):
-        export_format = (
-            request.POST.get("format") or request.GET.get("format", "csv")
-        ).lower()
-        context = self.get_context_data(**kwargs)
 
+    def post(self, request, *args, **kwargs):
+        export_format = (request.POST.get("format") or request.GET.get("format", "csv")).lower()
+        context = self.get_context_data(**kwargs)
         if export_format == "csv":
             return export_overview_finance_report(context, CsvExporter)
         elif export_format == "pdf":
@@ -271,3 +254,37 @@ class EntryReportView(
         if self.request.htmx:
             return render(self.request, self.content_template_name, context)
         return super().render_to_response(context, **response_kwargs)
+
+
+# organization_report = {
+#     "title": org.title,
+#     "total_income": Decimal(...),
+#     "total_expense": Decimal(...),
+#     "net_income": Decimal(...),
+#     "org_share": Decimal(...),
+#     "parent_lvl_total_expense": Decimal(...),  # org-level expense
+#     "final_net_profit": Decimal(...),
+#     "children": [  # workspaces
+#         {
+#             "title": workspace.title,
+#             "total_income": Decimal(...),
+#             "total_expense": Decimal(...),
+#             "net_income": Decimal(...),
+#             "org_share": Decimal(...),  # sum of team org shares - workspace expenses
+#             "parent_lvl_total_expense": Decimal(...),  # workspace-level expenses
+#             "final_net_profit": Decimal(...),
+#             "children": [  # teams
+#                 {
+#                     "title": team.title,
+#                     "total_income": Decimal(...),
+#                     "total_expense": Decimal(...),
+#                     "net_income": Decimal(...),
+#                     "remittance_rate": team.custom_remittance_rate,
+#                     "org_share": Decimal(...),  # remittance due amount
+#                 },
+#                 # more teams
+#             ],
+#         },
+#         # more workspaces
+#     ],
+# }

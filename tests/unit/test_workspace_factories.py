@@ -104,11 +104,11 @@ class TestWorkspaceTeamFactories:
         workspace = WorkspaceWithTeamsFactory()
 
         assert isinstance(workspace, Workspace)
-        assert workspace.workspace_teams.count() == 2  # Default count
+        assert workspace.joined_teams.count() == 2  # Default count
 
         # Test with custom team count
         workspace_many_teams = WorkspaceWithTeamsFactory(teams=5)
-        assert workspace_many_teams.workspace_teams.count() == 5
+        assert workspace_many_teams.joined_teams.count() == 5
 
     def test_unique_constraint_respected(self):
         """Test that unique constraint is respected in factories."""

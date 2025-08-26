@@ -256,10 +256,16 @@ class OrganizationExpenseBulkDeleteView(
             annotate_attachment_count=True,
         )
 
-    def perform_action(self, entries, user):
-        return entries.delete()
+    def perform_action(self, request, entries):
+        valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
+        if not valid_ids:
+            return False, "No valid entries"
 
-    def validate_entry(self, entry, user):
+        qs_valid = entries.filter(pk__in=valid_ids)
+        qs_valid.delete()
+        return True, f"Deleted {qs_valid.count()} entries"
+
+    def validate_entry(self, entry):
         # True if
         # 1. Entry status pending
         # 2. Entry hasn't been reviewed
@@ -304,6 +310,15 @@ class OrganizationExpenseBulkUpdateView(
             annotate_attachment_count=True,
         )
         
+    def perform_action(self, request, entries):
+        valid_entries = [entry for entry in entries if self.validate_entry(entry)]
+        if not valid_entries:
+            return False, "No valid entries"
+        return Entry.objects.bulk_update(valid_entries, ["status", "status_note"]), f"Updated {len(valid_entries)} entries"
+
+    def validate_entry(self, entry):
+        return True
+
     def get_post_url(self) -> str:
         return reverse(
             "organization_expense_bulk_update",
@@ -318,4 +333,5 @@ class OrganizationExpenseBulkUpdateView(
         selected_ids = self.request.GET.getlist("entries")
         context["selected_entry_ids"] = selected_ids
         context["entry_count"] = len(selected_ids)
+        context["status_options"] = EntryStatus.choices
         return context

@@ -56,17 +56,11 @@ class BaseEntryBulkActionView(
         """
         raise NotImplementedError("Subclasses must implement get_base_queryset()")
 
-    def perform_action(self, entries, user):
+    def perform_action(self, request, entries) -> tuple[bool, str | None]:
         """
         Perform the actual action (update/delete).
         """
-        raise NotImplementedError("Subclasses must implement perform_action()")
-
-    def validate_entry(self, entry: Entry, user) -> bool:
-        """
-        Optional per-entry validation (e.g., status checks).
-        """
-        return True
+        return True, None
 
     def parse_entry_ids(self, request):
         """Parse entry IDs from request (form or JSON)"""
@@ -94,21 +88,13 @@ class BaseEntryBulkActionView(
             entries = base_qs.filter(pk__in=entry_ids)
 
             # Validate each entry
-            valid_entries = [
-                entry for entry in entries 
-                if self.validate_entry(entry, request.user)
-            ]
-
-            # After validation
-            if not valid_entries:
-                raise Exception("No valid entries")
-
-            self.perform_action(valid_entries, request.user)
-
-            messages.success(
-                self.request,
-                f"Performed the bulk action on {valid_entries.count()} entries successfully",
-            )
+            success, message = self.perform_action(request, entries)
+            
+            if not success:
+                messages.error(self.request, message)
+                return self._render_htmx_error_response()
+            
+            messages.success(self.request, message,)
 
             return self._render_htmx_success_response()
 

@@ -44,9 +44,6 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
         return Entry.objects.filter(organization=self.organization)
 
 
-# views/bulk_actions.py
-
-
 class BaseEntryBulkActionView(
     HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
 ):
@@ -56,21 +53,18 @@ class BaseEntryBulkActionView(
     def get_queryset(self):
         """
         Override this to return the correct filtered queryset.
-        Example: Entry.objects.filter(organization=self.org, workspace=self.ws)
         """
         raise NotImplementedError("Subclasses must implement get_base_queryset()")
 
     def perform_action(self, entries, user):
         """
         Perform the actual action (update/delete).
-        Must be implemented by subclass.
         """
         raise NotImplementedError("Subclasses must implement perform_action()")
 
     def validate_entry(self, entry: Entry, user) -> bool:
         """
         Optional per-entry validation (e.g., status checks).
-        Can be overridden.
         """
         return True
 
@@ -95,34 +89,25 @@ class BaseEntryBulkActionView(
 
             # Get base queryset
             base_qs = self.get_queryset()
+            
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
 
-            # List existing entry ids
-            existing_ids = set(entries.values_list("pk", flat=True))
-
-            # List missing or inaccessible entries
-            requested_set = set(entry_ids)
-            missing_ids = requested_set - existing_ids
-
             # Validate each entry
-            valid_entries = []
-            for entry in entries:
-                if self.validate_entry(entry, request.user):
-                    valid_entries.append(entry)
+            valid_entries = [
+                entry for entry in entries 
+                if self.validate_entry(entry, request.user)
+            ]
 
             # After validation
-            valid_ids = [entry.pk for entry in valid_entries]
-            if not valid_ids:
+            if not valid_entries:
                 raise Exception("No valid entries")
 
-            qs_valid_entries = base_qs.filter(pk__in=valid_ids)
-
-            self.perform_action(qs_valid_entries, request.user)
+            self.perform_action(valid_entries, request.user)
 
             messages.success(
                 self.request,
-                f"Performed the bulk action on {qs_valid_entries.count()} entries successfully",
+                f"Performed the bulk action on {valid_entries.count()} entries successfully",
             )
 
             return self._render_htmx_success_response()

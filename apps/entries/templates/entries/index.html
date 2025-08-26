@@ -41,6 +41,15 @@
             >
               Reject
             </a>
+            <a 
+              hx-get="{% url 'organization_expense_bulk_update' organization.pk %}"
+              hx-include=".bulk-checkbox:checked"
+              hx-target="#modal-placeholder"
+              hx-swap="innerHTML"
+              onclick="document.getElementById('bulk-menu').hidePopover()"
+            >
+              Update
+            </a>
           </li>
         </ul>
 

@@ -254,10 +254,6 @@ class OrganizationExpenseBulkDeleteView(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")]
-            if self.request.GET.get("status")
-            else [EntryStatus.PENDING],
-            search=self.request.GET.get("search"),
         )
 
     def perform_action(self, entries, user):
@@ -278,6 +274,39 @@ class OrganizationExpenseBulkDeleteView(
     def get_post_url(self) -> str:
         return reverse(
             "organization_expense_bulk_delete",
+            kwargs={"organization_id": self.organization.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        selected_ids = self.request.GET.getlist("entries")
+        context["selected_entry_ids"] = selected_ids
+        context["entry_count"] = len(selected_ids)
+        return context
+
+
+class OrganizationExpenseBulkUpdateView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
+    BaseGetModalView,
+    BaseEntryBulkActionView,
+):
+    table_template_name = "entries/partials/table.html"
+    modal_template_name = "entries/components/bulk_update_modal.html"
+
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+            annotate_attachment_count=True,
+        )
+        
+    def get_post_url(self) -> str:
+        return reverse(
+            "organization_expense_bulk_update",
             kwargs={"organization_id": self.organization.pk},
         )
 

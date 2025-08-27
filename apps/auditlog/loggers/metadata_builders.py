@@ -10,47 +10,51 @@ class UserActionMetadataBuilder:
 
     @staticmethod
     def build_user_action_metadata(
-        user: User, 
-        action_type: str, 
-        timestamp_key: Optional[str] = None
+        user: User, action_type: str, timestamp_key: Optional[str] = None
     ) -> Dict[str, Any]:
         """Build metadata for user actions (create/update/delete)."""
         metadata = {
             f"{action_type}_id": str(user.user_id),
             f"{action_type}_email": user.email,
         }
-        
+
         if timestamp_key:
             metadata[timestamp_key] = timezone.now().isoformat()
-        
+
         return metadata
 
     @staticmethod
     def build_crud_action_metadata(
-        user: User, 
-        action: str, 
+        user: User,
+        action: str,
         updated_fields: Optional[List[str]] = None,
         soft_delete: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """Build metadata for CRUD operations (create/update/delete)."""
         metadata = {}
-        
+
         if action == "create":
-            metadata.update(UserActionMetadataBuilder.build_user_action_metadata(
-                user, "creator", "creation_timestamp"
-            ))
+            metadata.update(
+                UserActionMetadataBuilder.build_user_action_metadata(
+                    user, "creator", "creation_timestamp"
+                )
+            )
         elif action == "update":
-            metadata.update(UserActionMetadataBuilder.build_user_action_metadata(
-                user, "updater", "update_timestamp"
-            ))
+            metadata.update(
+                UserActionMetadataBuilder.build_user_action_metadata(
+                    user, "updater", "update_timestamp"
+                )
+            )
             metadata["updated_fields"] = updated_fields or []
         elif action == "delete":
-            metadata.update(UserActionMetadataBuilder.build_user_action_metadata(
-                user, "deleter", "deletion_timestamp"
-            ))
+            metadata.update(
+                UserActionMetadataBuilder.build_user_action_metadata(
+                    user, "deleter", "deletion_timestamp"
+                )
+            )
             metadata["soft_delete"] = soft_delete
-        
+
         return metadata
 
 
@@ -59,26 +63,26 @@ class EntityMetadataBuilder:
 
     @staticmethod
     def build_entity_metadata(
-        entity: Any, 
-        id_field: Optional[str] = None, 
-        title_field: str = "title"
+        entity: Any, id_field: Optional[str] = None, title_field: str = "title"
     ) -> Dict[str, Any]:
         """Build metadata for entity objects."""
         if not entity:
             return {}
-        
+
         # Get primary key field name if not specified
         if id_field is None:
             id_field = entity._meta.pk.name
-        
+
         metadata = {
             f"{entity.__class__.__name__.lower()}_id": str(getattr(entity, id_field)),
         }
-        
+
         # Add title/name if exists
         if hasattr(entity, title_field):
-            metadata[f"{entity.__class__.__name__.lower()}_{title_field}"] = getattr(entity, title_field)
-        
+            metadata[f"{entity.__class__.__name__.lower()}_{title_field}"] = getattr(
+                entity, title_field
+            )
+
         return metadata
 
     @staticmethod
@@ -86,7 +90,7 @@ class EntityMetadataBuilder:
         """Build organization-specific metadata."""
         if not organization:
             return {}
-        
+
         return {
             "organization_id": str(organization.organization_id),
             "organization_title": organization.title,
@@ -99,9 +103,9 @@ class EntityMetadataBuilder:
         """Build workspace-specific metadata."""
         if not workspace:
             return {}
-        
+
         from .base_logger import BaseAuditLogger
-        
+
         return {
             "workspace_id": str(workspace.workspace_id),
             "workspace_title": workspace.title,
@@ -132,9 +136,9 @@ class EntityMetadataBuilder:
         """Build team-specific metadata."""
         if not team:
             return {}
-        
+
         from .base_logger import BaseAuditLogger
-        
+
         return {
             "team_id": str(team.team_id),
             "team_title": team.title,
@@ -164,14 +168,16 @@ class EntityMetadataBuilder:
         """Build entry-specific metadata."""
         if not entry:
             return {}
-        
+
         from .base_logger import BaseAuditLogger
-        
+
         return {
             "entry_id": str(entry.entry_id),
             "entry_description": getattr(entry, "description", ""),
             "entry_status": getattr(entry, "status", ""),
-            "entry_amount": str(entry.amount) if getattr(entry, "amount", None) else None,
+            "entry_amount": str(entry.amount)
+            if getattr(entry, "amount", None)
+            else None,
             "entry_currency": str(getattr(entry, "currency", "")),
             "entry_type": getattr(entry, "entry_type", ""),
             "workspace_id": BaseAuditLogger._safe_get_related_field(
@@ -200,47 +206,55 @@ class WorkflowMetadataBuilder:
 
     @staticmethod
     def build_workflow_metadata(
-        user: User, 
-        action: str, 
+        user: User,
+        action: str,
         workflow_stage: Optional[str] = None,
         notes: str = "",
         reason: str = "",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """Build workflow action metadata."""
         metadata = {"workflow_action": True}
-        
+
         # Add workflow stage information
         if workflow_stage:
-            metadata.update({
-                "workflow_stage": workflow_stage,
-                "stage_timestamp": timezone.now().isoformat(),
-            })
-        
+            metadata.update(
+                {
+                    "workflow_stage": workflow_stage,
+                    "stage_timestamp": timezone.now().isoformat(),
+                }
+            )
+
         # Add action-specific metadata
         if action in ["submit", "resubmit"]:
-            metadata.update({
-                "submitter_id": str(user.user_id),
-                "submitter_email": user.email,
-                "submission_timestamp": timezone.now().isoformat(),
-                "submission_notes": notes,
-            })
+            metadata.update(
+                {
+                    "submitter_id": str(user.user_id),
+                    "submitter_email": user.email,
+                    "submission_timestamp": timezone.now().isoformat(),
+                    "submission_notes": notes,
+                }
+            )
         elif action in ["approve", "reject", "return"]:
-            metadata.update({
-                "reviewer_id": str(user.user_id),
-                "reviewer_email": user.email,
-                "review_timestamp": timezone.now().isoformat(),
-                "review_notes": notes,
-                "review_decision": action,
-            })
+            metadata.update(
+                {
+                    "reviewer_id": str(user.user_id),
+                    "reviewer_email": user.email,
+                    "review_timestamp": timezone.now().isoformat(),
+                    "review_notes": notes,
+                    "review_decision": action,
+                }
+            )
         elif action == "withdraw":
-            metadata.update({
-                "withdrawer_id": str(user.user_id),
-                "withdrawer_email": user.email,
-                "withdrawal_timestamp": timezone.now().isoformat(),
-                "withdrawal_reason": reason,
-            })
-        
+            metadata.update(
+                {
+                    "withdrawer_id": str(user.user_id),
+                    "withdrawer_email": user.email,
+                    "withdrawal_timestamp": timezone.now().isoformat(),
+                    "withdrawal_reason": reason,
+                }
+            )
+
         return metadata
 
 
@@ -249,10 +263,7 @@ class FileMetadataBuilder:
 
     @staticmethod
     def build_file_metadata(
-        file_obj: Any, 
-        operation: str, 
-        file_category: str = "general",
-        **kwargs
+        file_obj: Any, operation: str, file_category: str = "general", **kwargs
     ) -> Dict[str, Any]:
         """Build file operation metadata."""
         metadata = {
@@ -262,16 +273,20 @@ class FileMetadataBuilder:
             "operation": operation,
             "file_category": file_category,
         }
-        
+
         # Add operation-specific metadata
         if operation == "upload":
-            metadata.update({
-                "upload_source": kwargs.get("source", "web_interface"),
-                "upload_purpose": kwargs.get("purpose", ""),
-            })
+            metadata.update(
+                {
+                    "upload_source": kwargs.get("source", "web_interface"),
+                    "upload_purpose": kwargs.get("purpose", ""),
+                }
+            )
         elif operation == "download":
-            metadata.update({
-                "download_reason": kwargs.get("reason", ""),
-            })
-        
+            metadata.update(
+                {
+                    "download_reason": kwargs.get("reason", ""),
+                }
+            )
+
         return metadata

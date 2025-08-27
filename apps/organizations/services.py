@@ -9,7 +9,6 @@ from guardian.shortcuts import assign_perm
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.roles import get_permissions_for_role
 from apps.core.utils import model_update
-from apps.currencies.models import Currency
 from apps.organizations.exceptions import (
     OrganizationCreationError,
     OrganizationUpdateError,
@@ -24,6 +23,7 @@ from .utils import (
     extract_request_metadata,
 )
 from apps.currencies.services import createCurrency
+
 logger = logging.getLogger(__name__)
 
 
@@ -333,8 +333,10 @@ def update_organization_exchange_rate(
                     error=err,
                     request=None,
                     organization_id=str(organization.organization_id),
-                    #org_exchange_rate.id is not a valid field and not exist in model ,i change it to organization_exchange_rate_id (THA)
-                    exchange_rate_id=str(org_exchange_rate.organization_exchange_rate_id),
+                    # org_exchange_rate.id is not a valid field and not exist in model ,i change it to organization_exchange_rate_id (THA)
+                    exchange_rate_id=str(
+                        org_exchange_rate.organization_exchange_rate_id
+                    ),
                     error_type=type(err).__name__,
                     **extract_request_metadata(),
                 )

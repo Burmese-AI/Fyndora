@@ -1,5 +1,4 @@
 from decimal import Decimal
-from pprint import pprint
 from typing import Any
 
 from django.shortcuts import render
@@ -22,6 +21,8 @@ from apps.entries.selectors import get_total_amount_of_entries
 from apps.core.services.file_export_services import CsvExporter, PdfExporter
 from .services import export_overview_finance_report
 from apps.reports.selectors import EntrySelectors, RemittanceSelectors
+
+from django.http import Http404
 
 
 class OverviewFinanceReportView(
@@ -155,9 +156,10 @@ class OverviewFinanceReportView(
         # pprint(base_context["report_data"])
         return base_context
 
-
     def post(self, request, *args, **kwargs):
-        export_format = (request.POST.get("format") or request.GET.get("format", "csv")).lower()
+        export_format = (
+            request.POST.get("format") or request.GET.get("format", "csv")
+        ).lower()
         context = self.get_context_data(**kwargs)
         if export_format == "csv":
             return export_overview_finance_report(context, CsvExporter)

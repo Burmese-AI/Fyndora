@@ -117,10 +117,10 @@ class TestGetUserOrganizations(TestCase):
         """Test that soft-deleted memberships are excluded."""
         org = OrganizationFactory()
         member = OrganizationMemberFactory(user=self.user, organization=org)
-        
+
         # Soft delete the membership
         member.delete()
-        
+
         organizations = get_user_organizations(self.user)
         self.assertEqual(organizations.count(), 0)
 
@@ -128,10 +128,10 @@ class TestGetUserOrganizations(TestCase):
         """Test that owner is properly selected related."""
         org = OrganizationFactory()
         OrganizationMemberFactory(user=self.user, organization=org)
-        
+
         organizations = get_user_organizations(self.user)
         org_result = organizations.first()
-        
+
         # Should not cause additional queries when accessing owner
         with self.assertNumQueries(0):
             org_result.owner
@@ -252,11 +252,11 @@ class TestGetOrganizationMembersCount(TestCase):
         """Test that soft-deleted members are excluded from count."""
         # Create active members
         OrganizationMemberFactory.create_batch(2, organization=self.organization)
-        
+
         # Create and soft delete a member
         member = OrganizationMemberFactory(organization=self.organization)
         member.delete()
-        
+
         count = get_organization_members_count(self.organization)
         self.assertEqual(count, 2)
 
@@ -546,13 +546,11 @@ class TestGetOrgMembers(TestCase):
         """Test getting members with user prefetched."""
         OrganizationMemberFactory(organization=self.organization)
 
-        members = get_org_members(
-            organization=self.organization, prefetch_user=True
-        )
+        members = get_org_members(organization=self.organization, prefetch_user=True)
 
         self.assertIsInstance(members, QuerySet)
         self.assertEqual(members.count(), 1)
-        
+
         # The prefetch should work, but we need to access the first member to trigger it
         first_member = members.first()
         # Now accessing user should not cause additional queries
@@ -571,26 +569,24 @@ class TestGetOrgExchangeRates(TestCase):
         """Test getting exchange rates for organization."""
         # Create exchange rates with different effective dates to avoid uniqueness constraint
         from datetime import date, timedelta
-        
+
         rate1 = OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=self.currency,
             rate="1.25",
-            effective_date=date.today()
+            effective_date=date.today(),
         )
         rate2 = OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=self.currency,
             rate="1.30",
-            effective_date=date.today() + timedelta(days=1)
+            effective_date=date.today() + timedelta(days=1),
         )
 
         # Create rate for different organization
         other_org = OrganizationFactory()
         OrganizationExchangeRateFactory(
-            organization=other_org, 
-            currency=self.currency,
-            effective_date=date.today()
+            organization=other_org, currency=self.currency, effective_date=date.today()
         )
 
         rates = get_org_exchange_rates(organization=self.organization)
@@ -610,22 +606,22 @@ class TestGetOrgExchangeRates(TestCase):
     def test_get_org_exchange_rates_with_soft_deleted_rates(self):
         """Test that soft-deleted rates are excluded."""
         from datetime import date, timedelta
-        
+
         # Create active rate
         active_rate = OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=self.currency,
-            effective_date=date.today()
+            effective_date=date.today(),
         )
-        
+
         # Create and soft delete a rate with different date
         deleted_rate = OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=self.currency,
-            effective_date=date.today() + timedelta(days=1)
+            effective_date=date.today() + timedelta(days=1),
         )
         deleted_rate.delete()
-        
+
         rates = get_org_exchange_rates(organization=self.organization)
         self.assertEqual(rates.count(), 1)
         self.assertIn(active_rate, rates)
@@ -634,27 +630,27 @@ class TestGetOrgExchangeRates(TestCase):
     def test_get_org_exchange_rates_multiple_currencies(self):
         """Test getting rates for multiple currencies."""
         from datetime import date, timedelta
-        
+
         # Create different currencies to avoid uniqueness constraints
         currency1 = CurrencyFactory(code="EUR")
         currency2 = CurrencyFactory(code="GBP")
-        
+
         OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=currency1,
             rate="0.85",
-            effective_date=date.today()
+            effective_date=date.today(),
         )
         OrganizationExchangeRateFactory(
             organization=self.organization,
             currency=currency2,
             rate="0.75",
-            effective_date=date.today() + timedelta(days=1)
+            effective_date=date.today() + timedelta(days=1),
         )
-        
+
         rates = get_org_exchange_rates(organization=self.organization)
         self.assertEqual(rates.count(), 2)
-        
+
         # Check that both currencies are present
         currency_codes = list(rates.values_list("currency__code", flat=True))
         self.assertIn("EUR", currency_codes)
@@ -779,9 +775,7 @@ class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
             )
 
         with self.assertRaises(ValidationError):
-            get_orgMember_by_user_id_and_organization_id(
-                self.user.user_id, None
-            )
+            get_orgMember_by_user_id_and_organization_id(self.user.user_id, None)
 
     def test_get_org_member_empty_string_ids(self):
         """Test getting organization member with empty string IDs."""
@@ -791,9 +785,7 @@ class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
             )
 
         with self.assertRaises(ValidationError):
-            get_orgMember_by_user_id_and_organization_id(
-                self.user.user_id, ""
-            )
+            get_orgMember_by_user_id_and_organization_id(self.user.user_id, "")
 
     def test_get_org_member_exception_handling(self):
         """Test exception handling in the function."""

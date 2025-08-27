@@ -81,7 +81,7 @@ class TestOrganizationForm(TestCase):
     def test_organization_form_duplicate_title_create_mode(self):
         """Test form validation for duplicate title in create mode."""
         # Create existing organization
-        existing_org = OrganizationFactory(title="Existing Organization")
+        OrganizationFactory(title="Existing Organization")
 
         form_data = {
             "title": "Existing Organization",
@@ -113,7 +113,7 @@ class TestOrganizationForm(TestCase):
     def test_organization_form_duplicate_title_different_org_edit_mode(self):
         """Test form validation for duplicate title when editing different organization."""
         # Create two organizations
-        org1 = OrganizationFactory(title="Organization One")
+        OrganizationFactory(title="Organization One")
         org2 = OrganizationFactory(title="Organization Two")
 
         form_data = {

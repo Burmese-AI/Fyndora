@@ -127,7 +127,9 @@ class OrganizationCreatedAuditFactory(AuditTrailFactory):
 
     action_type = AuditActionType.ORGANIZATION_CREATED
     target_entity_type = factory.LazyAttribute(
-        lambda obj: ContentType.objects.get(app_label="organizations", model="organization")
+        lambda obj: ContentType.objects.get(
+            app_label="organizations", model="organization"
+        )
     )
     metadata = factory.LazyAttribute(
         lambda obj: {

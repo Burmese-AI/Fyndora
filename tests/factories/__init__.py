@@ -36,9 +36,6 @@ from .entry_factories import (
     RemittanceEntryFactory,
     SmallAmountEntryFactory,
     TeamSubmittedEntryFactory,
-    OrganizationExpenseEntryFactory,
-    WorkspaceExpenseEntryFactory,
-    ReviewedEntryFactory,
 )
 from .organization_factories import (
     ArchivedOrganizationFactory,
@@ -71,7 +68,6 @@ from .workspace_factories import (
     WorkspaceWithAdminFactory,
     WorkspaceWithTeamsFactory,
     WorkspaceExchangeRateFactory,
-    ApprovedWorkspaceExchangeRateFactory,
 )
 from .invitation_factories import (
     InvitationFactory,

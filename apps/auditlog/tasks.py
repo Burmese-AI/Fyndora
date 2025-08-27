@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-@shared_task(bind=True, autoretry_for=(ConnectionError, TimeoutError), retry_kwargs={"max_retries": 2})
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 2},
+)
 def audit_create_async(
     self,
     user_id: Optional[str],
@@ -46,21 +50,26 @@ def audit_create_async(
         if target_entity:
             try:
                 # Handle both model instances and dictionaries
-                if hasattr(target_entity, '_meta'):  # It's a model instance
+                if hasattr(target_entity, "_meta"):  # It's a model instance
                     entity_instance = target_entity
                 else:  # It's a dictionary
                     model_path = target_entity["model"]
                     entity_pk = target_entity["pk"]
-                    
+
                     # Import the model class from the string path
                     from django.apps import apps
+
                     # model_path format: 'apps.workspaces.models.Team'
                     # Extract app_label and model_name
-                    path_parts = model_path.split('.')
-                    app_label = path_parts[1]  # 'workspaces' from 'apps.workspaces.models.Team'
-                    model_name = path_parts[-1]  # 'Team' from 'apps.workspaces.models.Team'
+                    path_parts = model_path.split(".")
+                    app_label = path_parts[
+                        1
+                    ]  # 'workspaces' from 'apps.workspaces.models.Team'
+                    model_name = path_parts[
+                        -1
+                    ]  # 'Team' from 'apps.workspaces.models.Team'
                     model_class = apps.get_model(app_label, model_name)
-                    
+
                     entity_instance = model_class.objects.get(pk=entity_pk)
             except (KeyError, ObjectDoesNotExist, LookupError, AttributeError) as e:
                 logger.warning(f"Target entity not found: {e}")
@@ -71,10 +80,11 @@ def audit_create_async(
         if workspace:
             try:
                 # Handle both model instances and dictionaries
-                if hasattr(workspace, '_meta'):  # It's a model instance
+                if hasattr(workspace, "_meta"):  # It's a model instance
                     workspace_instance = workspace
                 else:  # It's a dictionary
                     from apps.workspaces.models import Workspace
+
                     workspace_instance = Workspace.objects.get(pk=workspace["pk"])
             except (KeyError, ObjectDoesNotExist, AttributeError) as e:
                 logger.warning(f"Workspace not found: {e}")
@@ -101,7 +111,11 @@ def audit_create_async(
         return None
 
 
-@shared_task(bind=True, autoretry_for=(ConnectionError, TimeoutError), retry_kwargs={"max_retries": 2})
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 2},
+)
 def audit_create_security_event_async(
     self,
     user_id: Optional[str],
@@ -125,21 +139,26 @@ def audit_create_security_event_async(
         if target_entity:
             try:
                 # Handle both model instances and dictionaries
-                if hasattr(target_entity, '_meta'):  # It's a model instance
+                if hasattr(target_entity, "_meta"):  # It's a model instance
                     entity_instance = target_entity
                 else:  # It's a dictionary
                     model_path = target_entity["model"]
                     entity_pk = target_entity["pk"]
-                    
+
                     # Import the model class from the string path
                     from django.apps import apps
+
                     # model_path format: 'apps.workspaces.models.Team'
                     # Extract app_label and model_name
-                    path_parts = model_path.split('.')
-                    app_label = path_parts[1]  # 'workspaces' from 'apps.workspaces.models.Team'
-                    model_name = path_parts[-1]  # 'Team' from 'apps.workspaces.models.Team'
+                    path_parts = model_path.split(".")
+                    app_label = path_parts[
+                        1
+                    ]  # 'workspaces' from 'apps.workspaces.models.Team'
+                    model_name = path_parts[
+                        -1
+                    ]  # 'Team' from 'apps.workspaces.models.Team'
                     model_class = apps.get_model(app_label, model_name)
-                    
+
                     entity_instance = model_class.objects.get(pk=entity_pk)
             except (KeyError, ObjectDoesNotExist, LookupError, AttributeError) as e:
                 logger.warning(f"Target entity not found: {e}")
@@ -165,7 +184,11 @@ def audit_create_security_event_async(
         return None
 
 
-@shared_task(bind=True, autoretry_for=(ConnectionError, TimeoutError), retry_kwargs={"max_retries": 2})
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 2},
+)
 def audit_create_authentication_event_async(
     self,
     user_id: Optional[str],
@@ -202,7 +225,11 @@ def audit_create_authentication_event_async(
         return None
 
 
-@shared_task(bind=True, autoretry_for=(ConnectionError, TimeoutError), retry_kwargs={"max_retries": 2})
+@shared_task(
+    bind=True,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 2},
+)
 def audit_create_bulk_async(
     self, audit_entries: list[Dict[str, Any]]
 ) -> Dict[str, Any]:

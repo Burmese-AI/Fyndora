@@ -11,7 +11,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.test import TestCase
 
@@ -52,7 +51,7 @@ class TestOrganizationModel(TestCase):
             title="Test Organization",
             owner=member,
             status=StatusChoices.ACTIVE,
-            description="A test organization"
+            description="A test organization",
         )
 
         self.assertEqual(org.title, "Test Organization")
@@ -109,9 +108,7 @@ class TestOrganizationModel(TestCase):
 
         # Try to create another organization with same title and same owner - should fail
         with self.assertRaises(IntegrityError):
-            org2 = Organization.objects.create(
-                title="Unique Organization", owner=member
-            )
+            Organization.objects.create(title="Unique Organization", owner=member)
 
     @pytest.mark.django_db
     def test_organization_title_different_owners_allowed(self):
@@ -158,22 +155,24 @@ class TestOrganizationModel(TestCase):
 
         # Organization should still exist but marked as deleted
         self.assertIsNotNone(org.deleted_at)
-        
+
         # Should not appear in normal queryset
         self.assertFalse(Organization.objects.filter(organization_id=org_id).exists())
-        
+
         # Should appear in all objects (including deleted)
-        self.assertTrue(Organization.all_objects.filter(organization_id=org_id).exists())
+        self.assertTrue(
+            Organization.all_objects.filter(organization_id=org_id).exists()
+        )
 
     @pytest.mark.django_db
     def test_organization_meta_options(self):
         """Test organization meta options."""
         org = OrganizationFactory()
-        
+
         # Check verbose names
         self.assertEqual(org._meta.verbose_name, "organization")
         self.assertEqual(org._meta.verbose_name_plural, "organizations")
-        
+
         # Check ordering
         self.assertEqual(org._meta.ordering, ["-created_at"])
 
@@ -181,10 +180,10 @@ class TestOrganizationModel(TestCase):
     def test_organization_permissions_exist(self):
         """Test that organization permissions are properly defined."""
         org = OrganizationFactory()
-        
+
         # Check that permissions exist in meta
         self.assertGreater(len(org._meta.permissions), 0)
-        
+
         # Check specific permissions exist
         permission_codenames = [perm[0] for perm in org._meta.permissions]
         self.assertIn("manage_organization", permission_codenames)
@@ -210,13 +209,11 @@ class TestOrganizationMemberModel(TestCase):
         """Test creating organization member."""
         user = CustomUserFactory()
         organization = OrganizationFactory()
-        
+
         member = OrganizationMemberFactory(
-            organization=organization,
-            user=user,
-            is_active=True
+            organization=organization, user=user, is_active=True
         )
-        
+
         self.assertEqual(member.organization, organization)
         self.assertEqual(member.user, user)
         self.assertTrue(member.is_active)
@@ -295,12 +292,18 @@ class TestOrganizationMemberModel(TestCase):
 
         # Member should still exist but marked as deleted
         self.assertIsNotNone(member.deleted_at)
-        
+
         # Should not appear in normal queryset
-        self.assertFalse(OrganizationMember.objects.filter(organization_member_id=member_id).exists())
-        
+        self.assertFalse(
+            OrganizationMember.objects.filter(organization_member_id=member_id).exists()
+        )
+
         # Should appear in all objects (including deleted)
-        self.assertTrue(OrganizationMember.all_objects.filter(organization_member_id=member_id).exists())
+        self.assertTrue(
+            OrganizationMember.all_objects.filter(
+                organization_member_id=member_id
+            ).exists()
+        )
 
     @pytest.mark.django_db
     def test_organization_member_soft_delete_organization(self):
@@ -316,10 +319,10 @@ class TestOrganizationMemberModel(TestCase):
         self.assertTrue(
             OrganizationMember.objects.filter(organization_member_id=member_id).exists()
         )
-        
+
         # Organization should be soft deleted
         self.assertIsNotNone(organization.deleted_at)
-        
+
         # Member should still be active
         member.refresh_from_db()
         self.assertIsNone(member.deleted_at)
@@ -529,10 +532,10 @@ class TestOrganizationExchangeRateModel(TestCase):
                 organization_exchange_rate_id=exchange_rate_id
             ).exists()
         )
-        
+
         # Organization should be soft deleted
         self.assertIsNotNone(organization.deleted_at)
-        
+
         # Exchange rate should still be active
         exchange_rate.refresh_from_db()
         self.assertIsNone(exchange_rate.deleted_at)
@@ -579,7 +582,9 @@ class TestOrganizationExchangeRateModel(TestCase):
             added_by=member,
         )
 
-        expected_str = f"{organization} | {currency} | {Decimal('1.25')} | {date(2024, 1, 1)}"
+        expected_str = (
+            f"{organization} | {currency} | {Decimal('1.25')} | {date(2024, 1, 1)}"
+        )
         self.assertEqual(str(exchange_rate), expected_str)
 
     @pytest.mark.django_db
@@ -596,10 +601,12 @@ class TestOrganizationExchangeRateModel(TestCase):
             effective_date=date(2024, 1, 1),
             added_by=member,
         )
-        
+
         # Check verbose names
         self.assertEqual(exchange_rate._meta.verbose_name, "Organization Exchange Rate")
-        self.assertEqual(exchange_rate._meta.verbose_name_plural, "Organization Exchange Rates")
+        self.assertEqual(
+            exchange_rate._meta.verbose_name_plural, "Organization Exchange Rates"
+        )
 
     @pytest.mark.django_db
     def test_organization_exchange_rate_soft_delete_behavior(self):
@@ -615,7 +622,7 @@ class TestOrganizationExchangeRateModel(TestCase):
             effective_date=date(2024, 1, 1),
             added_by=member,
         )
-        
+
         exchange_rate_id = exchange_rate.organization_exchange_rate_id
 
         # Soft delete the exchange rate
@@ -623,9 +630,17 @@ class TestOrganizationExchangeRateModel(TestCase):
 
         # Exchange rate should still exist but marked as deleted
         self.assertIsNotNone(exchange_rate.deleted_at)
-        
+
         # Should not appear in normal queryset
-        self.assertFalse(OrganizationExchangeRate.objects.filter(organization_exchange_rate_id=exchange_rate_id).exists())
-        
+        self.assertFalse(
+            OrganizationExchangeRate.objects.filter(
+                organization_exchange_rate_id=exchange_rate_id
+            ).exists()
+        )
+
         # Should appear in all objects (including deleted)
-        self.assertTrue(OrganizationExchangeRate.all_objects.filter(organization_exchange_rate_id=exchange_rate_id).exists())
+        self.assertTrue(
+            OrganizationExchangeRate.all_objects.filter(
+                organization_exchange_rate_id=exchange_rate_id
+            ).exists()
+        )

@@ -12,7 +12,7 @@ from apps.currencies.selectors import get_org_defined_currencies
 class BaseWorkspaceTeamEntryFormMixin:
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # Validate if workspace team is still active
         if self.workspace_team.remittance.confirmed_by:
             raise forms.ValidationError(
@@ -275,7 +275,9 @@ class BaseUpdateEntryForm(BaseEntryForm):
         ]
 
 
-class UpdateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseUpdateEntryForm):
+class UpdateWorkspaceTeamEntryForm(
+    BaseWorkspaceTeamEntryFormMixin, BaseUpdateEntryForm
+):
     def clean(self):
         cleaned_data = super().clean()
 

@@ -30,6 +30,7 @@ from tests.factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
+from apps.entries.forms import UpdateOrganizationExpenseEntryForm
 
 
 @pytest.mark.unit

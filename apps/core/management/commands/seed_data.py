@@ -135,10 +135,9 @@ class Command(BaseCommand):
             workspace_teams = self.create_workspace_teams(
                 workspaces=workspaces, teams=teams
             )
-            
+
             # Create exchange rates
             self.create_exchange_rates(organizations, workspaces)
-
 
             # Create entries
             self.create_entries(
@@ -147,7 +146,6 @@ class Command(BaseCommand):
                 entries_per_workspace=options["entries_per_workspace"],
             )
 
-            
             # Resolve any role conflicts and ensure proper role separation
             self.resolve_role_conflicts(organizations, workspaces, teams)
 
@@ -236,93 +234,125 @@ class Command(BaseCommand):
                 initial_entries_count = Entry.all_objects.count()
                 Entry.all_objects.all().hard_delete()
                 final_entries_count = Entry.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_entries_count} entries. Remaining (active): {final_entries_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_entries_count} entries. Remaining (active): {final_entries_count}"
+                )
 
                 # 2. Clear Workspace Teams (NOT SoftDeleteModel - based on your WorkspaceTeam model)
                 initial_ws_teams_count = WorkspaceTeam.objects.count()
                 WorkspaceTeam.objects.all().delete()
                 final_ws_teams_count = WorkspaceTeam.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_ws_teams_count} workspace teams. Remaining: {final_ws_teams_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_ws_teams_count} workspace teams. Remaining: {final_ws_teams_count}"
+                )
 
                 # 3. Clear Workspace Exchange Rates (SoftDeleteModel)
                 initial_ws_rates_count = WorkspaceExchangeRate.all_objects.count()
                 WorkspaceExchangeRate.all_objects.all().hard_delete()
                 final_ws_rates_count = WorkspaceExchangeRate.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_ws_rates_count} workspace exchange rates. Remaining (active): {final_ws_rates_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_ws_rates_count} workspace exchange rates. Remaining (active): {final_ws_rates_count}"
+                )
 
                 # 4. Clear Organization Exchange Rates (SoftDeleteModel)
                 initial_org_rates_count = OrganizationExchangeRate.all_objects.count()
                 OrganizationExchangeRate.all_objects.all().hard_delete()
                 final_org_rates_count = OrganizationExchangeRate.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_org_rates_count} organization exchange rates. Remaining (active): {final_org_rates_count}")
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_org_rates_count} organization exchange rates. Remaining (active): {final_org_rates_count}"
+                )
 
                 # --- Debugging check right before the failing delete ---
                 problem_workspaces = Workspace.objects.filter(
-                    workspace_exchange_rates__isnull=False # Query for currently active WorkspaceExchangeRates
+                    workspace_exchange_rates__isnull=False  # Query for currently active WorkspaceExchangeRates
                 ).distinct()
 
                 if problem_workspaces.exists():
-                    self.stdout.write(self.style.ERROR(
-                        f"  ❗ ALERT: {problem_workspaces.count()} Workspaces still have linked WorkspaceExchangeRates BEFORE deletion!"
-                    ))
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"  ❗ ALERT: {problem_workspaces.count()} Workspaces still have linked WorkspaceExchangeRates BEFORE deletion!"
+                        )
+                    )
                     for ws in problem_workspaces[:5]:
-                        self.stdout.write(self.style.ERROR(f"    - Workspace: {ws.title} ({ws.pk})"))
+                        self.stdout.write(
+                            self.style.ERROR(f"    - Workspace: {ws.title} ({ws.pk})")
+                        )
                         # Show linked active rates
                         linked_rates = ws.workspace_exchange_rates.all()
-                        self.stdout.write(self.style.ERROR(f"      Linked active rates count: {linked_rates.count()}"))
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"      Linked active rates count: {linked_rates.count()}"
+                            )
+                        )
                         for rate in linked_rates[:5]:
-                            self.stdout.write(self.style.ERROR(f"        - Rate: {rate.pk} for {rate.currency.code} (deleted_at: {rate.deleted_at})"))
-                    raise Exception("Workspaces still have linked active exchange rates after clearing them!")
-
+                            self.stdout.write(
+                                self.style.ERROR(
+                                    f"        - Rate: {rate.pk} for {rate.currency.code} (deleted_at: {rate.deleted_at})"
+                                )
+                            )
+                    raise Exception(
+                        "Workspaces still have linked active exchange rates after clearing them!"
+                    )
 
                 # 5. Clear Workspaces (NOT SoftDeleteModel - based on your Workspace model)
                 initial_workspaces_count = Workspace.objects.count()
                 Workspace.objects.all().delete()
                 final_workspaces_count = Workspace.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_workspaces_count} workspaces. Remaining: {final_workspaces_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_workspaces_count} workspaces. Remaining: {final_workspaces_count}"
+                )
 
                 # 6. Clear Team Members (SoftDeleteModel)
                 initial_team_members_count = TeamMember.all_objects.count()
                 TeamMember.all_objects.all().hard_delete()
                 final_team_members_count = TeamMember.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_team_members_count} team members. Remaining (active): {final_team_members_count}")
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_team_members_count} team members. Remaining (active): {final_team_members_count}"
+                )
 
                 # 7. Clear Teams (NOT SoftDeleteModel - based on your Team model snippet from previous posts)
                 initial_teams_count = Team.objects.count()
                 Team.objects.all().delete()
                 final_teams_count = Team.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_teams_count} teams. Remaining: {final_teams_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_teams_count} teams. Remaining: {final_teams_count}"
+                )
 
                 # 8. Clear Organization Members (SoftDeleteModel)
                 initial_org_members_count = OrganizationMember.all_objects.count()
                 OrganizationMember.all_objects.all().hard_delete()
                 final_org_members_count = OrganizationMember.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_org_members_count} organization members. Remaining (active): {final_org_members_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_org_members_count} organization members. Remaining (active): {final_org_members_count}"
+                )
 
                 # 9. Clear Organizations (SoftDeleteModel - from your initial Organization model definition)
                 initial_orgs_count = Organization.all_objects.count()
                 Organization.all_objects.all().hard_delete()
                 final_orgs_count = Organization.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_orgs_count} organizations. Remaining (active): {final_orgs_count}")
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_orgs_count} organizations. Remaining (active): {final_orgs_count}"
+                )
 
                 # 10. Clear regular users (CustomUser does not inherit SoftDeleteModel)
-                initial_users_count = CustomUser.objects.filter(is_superuser=False).count()
+                initial_users_count = CustomUser.objects.filter(
+                    is_superuser=False
+                ).count()
                 CustomUser.objects.filter(is_superuser=False).delete()
-                final_users_count = CustomUser.objects.filter(is_superuser=False).count()
-                self.stdout.write(f"    ✅ Cleared {initial_users_count} regular users. Remaining: {final_users_count}")
+                final_users_count = CustomUser.objects.filter(
+                    is_superuser=False
+                ).count()
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_users_count} regular users. Remaining: {final_users_count}"
+                )
 
                 # 11. Clear Currencies (SoftDeleteModel)
                 initial_currencies_count = Currency.all_objects.count()
                 Currency.all_objects.all().hard_delete()
                 final_currencies_count = Currency.objects.count()
-                self.stdout.write(f"    ✅ Cleared {initial_currencies_count} currencies. Remaining (active): {final_currencies_count}")
-
+                self.stdout.write(
+                    f"    ✅ Cleared {initial_currencies_count} currencies. Remaining (active): {final_currencies_count}"
+                )
 
                 self.stdout.write("  🎉 Database cleared successfully!")
 
@@ -330,11 +360,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"❌ Error clearing database: {str(e)}"))
             # Reconnect the signal immediately if an error occurred during deletion within the atomic block
             post_delete.connect(revert_remittance_on_entry_delete, sender=Entry)
-            raise # Re-raise the exception after handling
+            raise  # Re-raise the exception after handling
         finally:
             # Reconnect the signal always, regardless of success or failure
             post_delete.connect(revert_remittance_on_entry_delete, sender=Entry)
-    
+
     def create_currencies(self):
         """Create common currencies."""
         try:
@@ -896,7 +926,7 @@ class Command(BaseCommand):
                 # Generate realistic amounts for workspace expenses
                 amount = Decimal(random.randint(1000, 25000)) / 100
                 currency = random.choice(currencies)
-                exchange_rate = Decimal(random.randint(80, 120)) / 100
+                # exchange_rate = Decimal(random.randint(80, 120)) / 100
 
                 # Generate realistic dates
                 occurred_at = workspace.start_date + timedelta(
@@ -904,7 +934,7 @@ class Command(BaseCommand):
                         0, (workspace.end_date - workspace.start_date).days
                     )
                 )
-                
+
                 exchange_rate_val, ws_ref, org_ref = self.get_appropriate_exchange_rate(
                     organization=workspace.organization,
                     workspace=workspace,
@@ -912,7 +942,7 @@ class Command(BaseCommand):
                     entry_date=occurred_at,
                     is_workspace_entry=True,
                 )
-                
+
                 if exchange_rate_val is None:
                     continue
 
@@ -938,7 +968,7 @@ class Command(BaseCommand):
                     occurred_at=occurred_at,
                     currency=currency,
                     exchange_rate_used=exchange_rate_val,
-                    org_exchange_rate_ref=org_ref,       # Link the reference
+                    org_exchange_rate_ref=org_ref,  # Link the reference
                     workspace_exchange_rate_ref=ws_ref,  # Should be None here
                     submitted_by_org_member=workspace_admin,  # ONLY workspace admin
                     submitted_by_team_member=None,
@@ -965,7 +995,7 @@ class Command(BaseCommand):
                 # Generate realistic amounts for organization expenses
                 amount = Decimal(random.randint(5000, 100000)) / 100
                 currency = random.choice(currencies)
-                exchange_rate = Decimal(random.randint(80, 120)) / 100
+                # exchange_rate = Decimal(random.randint(80, 120)) / 100
 
                 # Generate realistic dates
                 occurred_at = workspace.start_date + timedelta(
@@ -973,15 +1003,15 @@ class Command(BaseCommand):
                         0, (workspace.end_date - workspace.start_date).days
                     )
                 )
-                
+
                 exchange_rate_val, ws_ref, org_ref = self.get_appropriate_exchange_rate(
                     organization=workspace.organization,
                     workspace=None,
                     currency=currency,
                     entry_date=occurred_at,
-                    is_workspace_entry=False, # Indicate it's a workspace entry
+                    is_workspace_entry=False,  # Indicate it's a workspace entry
                 )
-                
+
                 if exchange_rate_val is None:
                     continue
 
@@ -1006,8 +1036,8 @@ class Command(BaseCommand):
                     amount=amount,
                     occurred_at=occurred_at,
                     currency=currency,
-                    exchange_rate_used=exchange_rate_val, # Use the found rate
-                    org_exchange_rate_ref=org_ref,       # Link the reference
+                    exchange_rate_used=exchange_rate_val,  # Use the found rate
+                    org_exchange_rate_ref=org_ref,  # Link the reference
                     workspace_exchange_rate_ref=ws_ref,  # Link the reference
                     submitted_by_org_member=org_owner,  # ONLY organization owner
                     submitted_by_team_member=None,
@@ -1041,13 +1071,13 @@ class Command(BaseCommand):
                 workspace_team = random.choice(ws_teams)
                 # Ensure the workspace_team actually belongs to the current workspace
                 if workspace_team.workspace != workspace:
-                    continue # Should not happen if ws_teams is filtered correctly
+                    continue  # Should not happen if ws_teams is filtered correctly
 
                 if entry_type == EntryType.INCOME:
                     amount = Decimal(random.randint(1000, 50000)) / 100
                 elif entry_type == EntryType.DISBURSEMENT:
                     amount = Decimal(random.randint(500, 10000)) / 100
-                else: # EntryType.REMITTANCE
+                else:  # EntryType.REMITTANCE
                     amount = Decimal(random.randint(100, 5000)) / 100
 
                 currency = random.choice(currencies)
@@ -1067,10 +1097,10 @@ class Command(BaseCommand):
                     workspace=workspace,
                     currency=currency,
                     entry_date=occurred_at,
-                    is_workspace_entry=True, # Indicate it's a workspace entry
+                    is_workspace_entry=True,  # Indicate it's a workspace entry
                 )
                 # --- END NEW LOGIC ---
-                
+
                 if exchange_rate_val is None:
                     continue
 
@@ -1093,13 +1123,13 @@ class Command(BaseCommand):
 
                         submitted_by_team_member = submitter
                     else:
-                        continue # Skip entry if no team members
+                        continue  # Skip entry if no team members
                 else:
                     org_members = list(workspace.organization.members.all())
                     admin_members_ids = {
                         workspace.workspace_admin.pk,
                         workspace.operations_reviewer.pk,
-                        workspace.organization.owner.pk # Org owner usually shouldn't submit regular entries
+                        workspace.organization.owner.pk,  # Org owner usually shouldn't submit regular entries
                     }
                     available_submitters = [
                         m for m in org_members if m.pk not in admin_members_ids
@@ -1107,10 +1137,10 @@ class Command(BaseCommand):
 
                     if available_submitters:
                         submitter = random.choice(available_submitters)
-                    elif org_members: # Fallback if no specific role-less members
+                    elif org_members:  # Fallback if no specific role-less members
                         submitter = random.choice(org_members)
                     else:
-                        continue # Skip entry if no org members
+                        continue  # Skip entry if no org members
 
                     submitted_by_org_member = submitter
 
@@ -1143,8 +1173,8 @@ class Command(BaseCommand):
                     amount=amount,
                     occurred_at=occurred_at,
                     currency=currency,
-                    exchange_rate_used=exchange_rate_val, # Use the found rate
-                    org_exchange_rate_ref=org_ref,       # Link the reference
+                    exchange_rate_used=exchange_rate_val,  # Use the found rate
+                    org_exchange_rate_ref=org_ref,  # Link the reference
                     workspace_exchange_rate_ref=ws_ref,  # Link the reference
                     submitted_by_org_member=submitted_by_org_member,
                     submitted_by_team_member=submitted_by_team_member,
@@ -1159,7 +1189,7 @@ class Command(BaseCommand):
                 self.style.ERROR(f"Error creating team-based entries: {str(e)}")
             )
             raise
-    
+
     def create_exchange_rates(self, organizations, workspaces):
         """Create exchange rates for organizations and workspaces."""
         try:
@@ -1294,10 +1324,10 @@ class Command(BaseCommand):
     def get_appropriate_exchange_rate(
         self,
         organization,
-        workspace, # This parameter is correctly used now
+        workspace,  # This parameter is correctly used now
         currency,
         entry_date,
-        is_workspace_entry=False, # Controls whether to look for workspace rates
+        is_workspace_entry=False,  # Controls whether to look for workspace rates
     ):
         """
         Finds the most appropriate exchange rate for a given context and date.
@@ -1310,11 +1340,11 @@ class Command(BaseCommand):
                 WorkspaceExchangeRate.objects.filter(
                     workspace=workspace,
                     currency=currency,
-                    effective_date__lte=entry_date, # Rates effective ON or BEFORE the entry date
+                    effective_date__lte=entry_date,  # Rates effective ON or BEFORE the entry date
                     deleted_at__isnull=True,
-                    is_approved=True, # Only use approved rates
+                    is_approved=True,  # Only use approved rates
                 )
-                .order_by("-effective_date") # Get the latest rate
+                .order_by("-effective_date")  # Get the latest rate
                 .first()
             )
             if ws_rate_obj:
@@ -1326,10 +1356,10 @@ class Command(BaseCommand):
             OrganizationExchangeRate.objects.filter(
                 organization=organization,
                 currency=currency,
-                effective_date__lte=entry_date, # Rates effective ON or BEFORE the entry date
+                effective_date__lte=entry_date,  # Rates effective ON or BEFORE the entry date
                 deleted_at__isnull=True,
             )
-            .order_by("-effective_date") # Get the latest rate
+            .order_by("-effective_date")  # Get the latest rate
             .first()
         )
         if org_rate_obj:
@@ -1344,4 +1374,4 @@ class Command(BaseCommand):
                 f" Entry will be skipped."
             )
         )
-        return None, None, None # Signal that no rate was found
+        return None, None, None  # Signal that no rate was found

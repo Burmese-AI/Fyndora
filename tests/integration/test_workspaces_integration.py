@@ -135,7 +135,7 @@ class TestWorkspaceIntegration(TestCase):
         self.assertEqual(workspace_team1.custom_remittance_rate, 0.20)
 
         # Add second team
-        workspace_team2 = add_team_to_workspace(
+        add_team_to_workspace(
             workspace_id=workspace.workspace_id,
             team_id=team2.team_id,
             custom_remittance_rate=None,
@@ -164,7 +164,7 @@ class TestWorkspaceIntegration(TestCase):
     def test_workspace_exchange_rate_workflow(self):
         """Test complete workspace exchange rate workflow."""
         workspace = WorkspaceFactory(organization=self.organization)
-        currency = Currency.objects.create(code="EUR", name="Euro")
+        Currency.objects.create(code="EUR", name="Euro")
         approver = OrganizationMemberFactory(organization=self.organization)
 
         # Create exchange rate
@@ -345,9 +345,9 @@ class TestWorkspaceIntegration(TestCase):
     def test_workspace_with_multiple_exchange_rates(self):
         """Test workspace with multiple exchange rates."""
         workspace = WorkspaceFactory(organization=self.organization)
-        usd_currency = Currency.objects.create(code="USD", name="US Dollar")
-        eur_currency = Currency.objects.create(code="EUR", name="Euro")
-        gbp_currency = Currency.objects.create(code="GBP", name="British Pound")
+        Currency.objects.create(code="USD", name="US Dollar")
+        Currency.objects.create(code="EUR", name="Euro")
+        Currency.objects.create(code="GBP", name="British Pound")
 
         # Create multiple exchange rates
         create_workspace_exchange_rate(
@@ -394,7 +394,7 @@ class TestWorkspaceIntegration(TestCase):
         """Test workspace deletion and related object cleanup."""
         workspace = WorkspaceFactory(organization=self.organization)
         team = TeamFactory(organization=self.organization)
-        currency = Currency.objects.create(code="CAD", name="Canadian Dollar")
+        Currency.objects.create(code="CAD", name="Canadian Dollar")
 
         # Create related objects
         workspace_team = add_team_to_workspace(

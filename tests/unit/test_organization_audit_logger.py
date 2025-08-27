@@ -89,13 +89,17 @@ class TestOrganizationAuditLogger(TestCase):
 
         # Verify calls
         mock_org_metadata.assert_called_once_with(self.mock_organization)
-        mock_crud_metadata.assert_called_once_with(self.mock_user, "create", updated_fields=[], soft_delete=False)
+        mock_crud_metadata.assert_called_once_with(
+            self.mock_user, "create", updated_fields=[], soft_delete=False
+        )
         mock_finalize_audit.assert_called_once()
 
         # Verify audit log creation arguments
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.ORGANIZATION_CREATED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.ORGANIZATION_CREATED
+        )  # action_type
         # call_args[2] is metadata dict
         self.assertEqual(call_args[3], self.mock_organization)  # target_entity
 
@@ -130,12 +134,17 @@ class TestOrganizationAuditLogger(TestCase):
 
         # Verify calls
         mock_crud_metadata.assert_called_once_with(
-            self.mock_user, "update", updated_fields=["title", "description"], soft_delete=False
+            self.mock_user,
+            "update",
+            updated_fields=["title", "description"],
+            soft_delete=False,
         )
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
-        self.assertEqual(call_args[1], AuditActionType.ORGANIZATION_UPDATED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.ORGANIZATION_UPDATED
+        )  # action_type
 
     @patch(
         "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
@@ -173,7 +182,9 @@ class TestOrganizationAuditLogger(TestCase):
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
-        self.assertEqual(call_args[1], AuditActionType.ORGANIZATION_DELETED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.ORGANIZATION_DELETED
+        )  # action_type
 
     @patch(
         "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
@@ -204,13 +215,18 @@ class TestOrganizationAuditLogger(TestCase):
         # Verify calls
         mock_org_metadata.assert_called_once_with(self.mock_organization)
         mock_crud_metadata.assert_called_once_with(
-            self.mock_user, "create", updated_fields=[], soft_delete=False, organization=self.mock_organization
+            self.mock_user,
+            "create",
+            updated_fields=[],
+            soft_delete=False,
+            organization=self.mock_organization,
         )
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
         self.assertEqual(
-            call_args[1], AuditActionType.ORGANIZATION_EXCHANGE_RATE_CREATED  # action_type
+            call_args[1],
+            AuditActionType.ORGANIZATION_EXCHANGE_RATE_CREATED,  # action_type
         )
 
         # Verify exchange rate metadata is included
@@ -253,13 +269,22 @@ class TestOrganizationAuditLogger(TestCase):
 
         # Verify calls
         mock_org_metadata.assert_called_once_with(self.mock_exchange_rate.organization)
-        mock_crud_metadata.assert_called_once_with(self.mock_user, "update", updated_fields=["rate"], soft_delete=False, organization=self.mock_organization, old_rate=0.80, new_rate=0.85)
+        mock_crud_metadata.assert_called_once_with(
+            self.mock_user,
+            "update",
+            updated_fields=["rate"],
+            soft_delete=False,
+            organization=self.mock_organization,
+            old_rate=0.80,
+            new_rate=0.85,
+        )
         mock_finalize_audit.assert_called_once()
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
         self.assertEqual(
-            call_args[1], AuditActionType.ORGANIZATION_EXCHANGE_RATE_UPDATED  # action_type
+            call_args[1],
+            AuditActionType.ORGANIZATION_EXCHANGE_RATE_UPDATED,  # action_type
         )
 
         # Verify rate change metadata is included
@@ -295,13 +320,20 @@ class TestOrganizationAuditLogger(TestCase):
 
         # Verify calls
         mock_org_metadata.assert_called_once_with(self.mock_exchange_rate.organization)
-        mock_crud_metadata.assert_called_once_with(self.mock_user, "delete", updated_fields=[], soft_delete=False, organization=self.mock_organization)
+        mock_crud_metadata.assert_called_once_with(
+            self.mock_user,
+            "delete",
+            updated_fields=[],
+            soft_delete=False,
+            organization=self.mock_organization,
+        )
         mock_finalize_audit.assert_called_once()
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]  # positional arguments
         self.assertEqual(
-            call_args[1], AuditActionType.ORGANIZATION_EXCHANGE_RATE_DELETED  # action_type
+            call_args[1],
+            AuditActionType.ORGANIZATION_EXCHANGE_RATE_DELETED,  # action_type
         )
 
     @patch("apps.auditlog.loggers.base_logger.logger")
@@ -351,7 +383,9 @@ class TestOrganizationAuditLogger(TestCase):
                     )
 
         # Verify validation method was called
-        mock_validate_request_and_user.assert_called_once_with(self.mock_request, self.mock_user)
+        mock_validate_request_and_user.assert_called_once_with(
+            self.mock_request, self.mock_user
+        )
 
     @patch(
         "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
@@ -405,6 +439,7 @@ class TestOrganizationAuditLogger(TestCase):
                 mock_crud_meta.return_value = {"creator_id": "test-user-123"}
                 # Test with exchange rate that has additional attributes
                 from datetime import datetime
+
                 self.mock_exchange_rate.effective_date = datetime(2024, 1, 1)
                 self.mock_exchange_rate.created_by = "admin-user"
 
@@ -420,7 +455,9 @@ class TestOrganizationAuditLogger(TestCase):
                 call_args = mock_finalize_audit.call_args[0]  # positional arguments
                 metadata = call_args[2]  # metadata is the 3rd positional argument
                 self.assertEqual(metadata["exchange_rate_id"], "rate-123")
-                self.assertEqual(metadata["rate"], "0.85")  # rate is converted to string
+                self.assertEqual(
+                    metadata["rate"], "0.85"
+                )  # rate is converted to string
                 self.assertEqual(metadata["effective_date"], "2024-01-01T00:00:00")
                 # Note: currency_code comes from exchange_rate.currency.code which would be a Mock
 

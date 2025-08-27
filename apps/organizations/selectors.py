@@ -25,9 +25,13 @@ def get_organization_by_id(organization_id):
     Returns the organization by its ID.
     """
     try:
+        if not organization_id:
+            raise ValidationError("Organization ID is required")
         return Organization.objects.get(organization_id=organization_id)
     except Organization.DoesNotExist:
         return None
+    except Exception:
+        raise ValidationError("Invalid organization ID")
 
 
 def get_organization_members_count(organization):
@@ -69,8 +73,9 @@ def get_teams_count(organization):
     """
     try:
         # Get distinct teams through workspace_teams relationship
+        # Team -> WorkspaceTeam -> Workspace -> Organization
         count = (
-            Team.objects.filter(workspace_teams__workspace__organization=organization)
+            Team.objects.filter(joined_workspaces__workspace__organization=organization)
             .distinct()
             .count()
         )

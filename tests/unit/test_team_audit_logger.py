@@ -68,13 +68,13 @@ class TestTeamAuditLogger(TestCase):
         """Test that get_logger_name returns correct name."""
         self.assertEqual(self.logger.get_logger_name(), "team_logger")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata"
     )
-    def test_log_team_action_create(
-        self, mock_team_metadata, mock_finalize_audit
-    ):
+    def test_log_team_action_create(self, mock_team_metadata, mock_finalize_audit):
         """Test log_team_action for create action."""
         # Setup mocks
         mock_team_metadata.return_value = {
@@ -82,7 +82,6 @@ class TestTeamAuditLogger(TestCase):
             "team_name": "Test Team",
             "team_type": "translation",
         }
-
 
         # Call method
         self.logger.log_team_action(
@@ -104,7 +103,9 @@ class TestTeamAuditLogger(TestCase):
         self.assertEqual(call_args[3], self.mock_team)  # target_entity
         # workspace is call_args[4]
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata"
     )
@@ -132,15 +133,15 @@ class TestTeamAuditLogger(TestCase):
         )
 
         # Verify calls
-        mock_team_metadata.assert_called_once_with(
-            self.mock_team
-        )
+        mock_team_metadata.assert_called_once_with(self.mock_team)
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[1], AuditActionType.TEAM_UPDATED)
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata"
     )
@@ -173,10 +174,10 @@ class TestTeamAuditLogger(TestCase):
         metadata = call_args[2]
         self.assertEqual(metadata["reason"], "Team restructuring")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
-    def test_log_team_member_action_add(
-        self, mock_finalize_audit
-    ):
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
+    def test_log_team_member_action_add(self, mock_finalize_audit):
         """Test log_team_member_action for add action."""
         # Call method
         self.logger.log_team_member_action(
@@ -191,7 +192,7 @@ class TestTeamAuditLogger(TestCase):
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[1], AuditActionType.TEAM_MEMBER_ADDED)
-        
+
         # Verify metadata contains expected team member fields
         metadata = call_args[2]
         self.assertIn("team_id", metadata)
@@ -204,10 +205,10 @@ class TestTeamAuditLogger(TestCase):
         metadata = call_args[2]
         self.assertEqual(metadata["assigned_role"], "member")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
-    def test_log_team_member_action_remove(
-        self, mock_finalize_audit
-    ):
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
+    def test_log_team_member_action_remove(self, mock_finalize_audit):
         """Test log_team_member_action for remove action."""
         # Call method
         self.logger.log_team_member_action(
@@ -229,10 +230,10 @@ class TestTeamAuditLogger(TestCase):
         self.assertIn("member_id", metadata)
         self.assertEqual(metadata["reason"], "Performance issues")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
-    def test_log_team_member_action_role_change(
-        self, mock_finalize_audit
-    ):
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
+    def test_log_team_member_action_role_change(self, mock_finalize_audit):
         """Test log_team_member_action for role_change action."""
         # Call method
         self.logger.log_team_member_action(
@@ -247,9 +248,7 @@ class TestTeamAuditLogger(TestCase):
 
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
-        self.assertEqual(
-            call_args[1], AuditActionType.TEAM_MEMBER_ROLE_CHANGED
-        )
+        self.assertEqual(call_args[1], AuditActionType.TEAM_MEMBER_ROLE_CHANGED)
 
         # Verify role change metadata
         metadata = call_args[2]
@@ -285,7 +284,9 @@ class TestTeamAuditLogger(TestCase):
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     def test_validation_methods_called(self, mock_finalize_audit):
         """Test that audit logging completes successfully."""
         # The validation is handled by the @safe_audit_log decorator
@@ -302,7 +303,9 @@ class TestTeamAuditLogger(TestCase):
         # Verify audit log was created
         mock_finalize_audit.assert_called_once()
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     def test_metadata_combination(self, mock_finalize_audit):
         """Test that metadata from different builders is properly combined."""
         with patch(
@@ -336,7 +339,9 @@ class TestTeamAuditLogger(TestCase):
                 self.assertEqual(metadata["creator_id"], "test-user-123")
                 self.assertEqual(metadata["creation_timestamp"], "2024-01-01T00:00:00Z")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     def test_team_member_metadata_combination(self, mock_finalize_audit):
         """Test metadata combination in team member actions."""
         self.logger.log_team_member_action(
@@ -356,18 +361,24 @@ class TestTeamAuditLogger(TestCase):
         self.assertIn("assigned_role", metadata)
         self.assertEqual(metadata["assigned_role"], "translator")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
-    @patch("apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
+    @patch(
+        "apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata"
+    )
     @patch(
         "apps.auditlog.loggers.team_logger.UserActionMetadataBuilder.build_crud_action_metadata"
     )
-    def test_optional_parameters_handling(self, mock_crud_metadata, mock_team_metadata, mock_finalize_audit):
+    def test_optional_parameters_handling(
+        self, mock_crud_metadata, mock_team_metadata, mock_finalize_audit
+    ):
         """Test handling of optional parameters in team actions."""
         # Setup mock
         mock_team_metadata.return_value = {"team_id": "team-123"}
         mock_crud_metadata.return_value = {"action_metadata": "update_data"}
         mock_crud_metadata.return_value = {"action_metadata": "update_data"}
-        
+
         # Test with optional parameters
         self.logger.log_team_action(
             request=self.mock_request,
@@ -387,7 +398,9 @@ class TestTeamAuditLogger(TestCase):
         self.assertEqual(metadata["new_values"], {"name": "New Team Name"})
         self.assertEqual(metadata["reason"], "Rebranding")
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
     def test_team_member_action_with_additional_metadata(self, mock_finalize_audit):
         """Test team member action with additional metadata."""
         # Test with additional metadata
@@ -409,17 +422,23 @@ class TestTeamAuditLogger(TestCase):
         self.assertEqual(metadata["start_date"], "2024-01-01")
         self.assertEqual(metadata["hourly_rate"], 25.00)
 
-    @patch("apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit")
-    @patch("apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata")
+    @patch(
+        "apps.auditlog.loggers.team_logger.TeamAuditLogger._finalize_and_create_audit"
+    )
+    @patch(
+        "apps.auditlog.loggers.team_logger.EntityMetadataBuilder.build_team_metadata"
+    )
     @patch(
         "apps.auditlog.loggers.team_logger.UserActionMetadataBuilder.build_crud_action_metadata"
     )
-    def test_team_action_with_team_settings(self, mock_crud_metadata, mock_team_metadata, mock_finalize_audit):
+    def test_team_action_with_team_settings(
+        self, mock_crud_metadata, mock_team_metadata, mock_finalize_audit
+    ):
         """Test team action with team settings metadata."""
         # Setup mock
         mock_team_metadata.return_value = {"team_id": "team-123"}
         mock_crud_metadata.return_value = {"action_metadata": "update_data"}
-        
+
         # Test with team settings
         self.logger.log_team_action(
             request=self.mock_request,

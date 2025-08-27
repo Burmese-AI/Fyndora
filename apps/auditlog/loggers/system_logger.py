@@ -74,13 +74,13 @@ class SystemAuditLogger(BaseAuditLogger):
 
         # Add target user metadata
         # Handle both User and OrganizationMember objects
-        if hasattr(target_user, 'user'):  # OrganizationMember
+        if hasattr(target_user, "user"):  # OrganizationMember
             target_user_id = str(target_user.user.user_id)
             target_user_email = target_user.user.email
         else:  # User
             target_user_id = str(target_user.user_id)
             target_user_email = target_user.email
-            
+
         metadata.update(
             {
                 "target_user_id": target_user_id,

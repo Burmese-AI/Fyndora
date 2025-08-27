@@ -119,7 +119,7 @@ def audit_create_security_event(
     """
     Service to create security-related audit log entries.
     """
-    
+
     enhanced_metadata = make_json_serializable(metadata or {})
     enhanced_metadata.update(
         {

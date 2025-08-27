@@ -593,9 +593,7 @@ def get_expired_logs_queryset(
 
     # Critical actions
     critical_actions = [
-        action
-        for action in AuditActionType.values
-        if is_critical_action(action)
+        action for action in AuditActionType.values if is_critical_action(action)
     ]
 
     if override_days is not None:
@@ -620,7 +618,11 @@ def get_expired_logs_queryset(
         return AuditTrail.objects.filter(
             action_type=action_type, timestamp__lt=critical_cutoff
         )
-    elif action_type and action_type not in auth_actions and action_type not in critical_actions:
+    elif (
+        action_type
+        and action_type not in auth_actions
+        and action_type not in critical_actions
+    ):
         # Only default logs of specific type
         default_cutoff = now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS)
         return AuditTrail.objects.filter(
@@ -633,12 +635,18 @@ def get_expired_logs_queryset(
         default_cutoff = now - timedelta(days=AuditConfig.DEFAULT_RETENTION_DAYS)
 
         expired_auth = Q(action_type__in=auth_actions, timestamp__lt=auth_cutoff)
-        expired_critical = Q(action_type__in=critical_actions, timestamp__lt=critical_cutoff)
-        expired_default = Q(timestamp__lt=default_cutoff) & ~Q(
-            action_type__in=auth_actions
-        ) & ~Q(action_type__in=critical_actions)
+        expired_critical = Q(
+            action_type__in=critical_actions, timestamp__lt=critical_cutoff
+        )
+        expired_default = (
+            Q(timestamp__lt=default_cutoff)
+            & ~Q(action_type__in=auth_actions)
+            & ~Q(action_type__in=critical_actions)
+        )
 
-        return AuditTrail.objects.filter(expired_auth | expired_critical | expired_default)
+        return AuditTrail.objects.filter(
+            expired_auth | expired_critical | expired_default
+        )
 
 
 def get_retention_statistics_by_action_type() -> Dict[str, Dict[str, int]]:

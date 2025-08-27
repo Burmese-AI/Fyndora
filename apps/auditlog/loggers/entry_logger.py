@@ -75,7 +75,7 @@ class EntryAuditLogger(BaseAuditLogger):
         workflow_kwargs = kwargs.copy()
         notes = workflow_kwargs.pop("notes", "")
         reason = workflow_kwargs.pop("reason", "")
-        
+
         metadata.update(
             WorkflowMetadataBuilder.build_workflow_metadata(
                 user,

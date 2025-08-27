@@ -51,14 +51,14 @@ class TestSystemAuditLogger(TestCase):
         """Test that logger returns correct supported actions."""
         expected_actions = {
             "permission_grant",
-            "permission_revoke", 
+            "permission_revoke",
             "permission_change",
-            "bulk_operation", 
+            "bulk_operation",
             "data_export",
             "file_upload",
             "file_download",
             "file_delete",
-            "operation_failure"
+            "operation_failure",
         }
         self.assertEqual(set(self.logger.get_supported_actions()), expected_actions)
 
@@ -66,7 +66,9 @@ class TestSystemAuditLogger(TestCase):
         """Test that logger returns correct name."""
         self.assertEqual(self.logger.get_logger_name(), "system_logger")
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_permission_change_granted(self, mock_finalize_audit):
         """Test log_permission_change for permission granted."""
         # Call method
@@ -84,7 +86,9 @@ class TestSystemAuditLogger(TestCase):
         # Verify audit log creation arguments (positional: user, action_type, metadata, target_entity, workspace)
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.PERMISSION_GRANTED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.PERMISSION_GRANTED
+        )  # action_type
         self.assertEqual(call_args[3], self.mock_target_user)  # target_entity
 
         # Verify metadata contains permission details
@@ -93,10 +97,11 @@ class TestSystemAuditLogger(TestCase):
         self.assertEqual(metadata["target_user_email"], "target@example.com")
         self.assertEqual(metadata["permission_type"], "read")
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_permission_change_revoked(self, mock_finalize_audit):
         """Test log_permission_change for permission revoked."""
-
 
         # Call method
         self.logger.log_permission_change(
@@ -118,10 +123,11 @@ class TestSystemAuditLogger(TestCase):
         metadata = call_args[2]
         self.assertEqual(metadata["revoke_reason"], "Security policy update")
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_permission_change_changed(self, mock_finalize_audit):
         """Test log_permission_change for permission changed."""
-
 
         # Call method
         self.logger.log_permission_change(
@@ -145,10 +151,11 @@ class TestSystemAuditLogger(TestCase):
         self.assertEqual(metadata["previous_permissions"], ["member"])
         self.assertEqual(metadata["new_permissions"], ["admin"])
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_data_export(self, mock_finalize_audit):
         """Test log_data_export method."""
-
 
         # Call method
         self.logger.log_data_export(
@@ -178,10 +185,11 @@ class TestSystemAuditLogger(TestCase):
         self.assertEqual(metadata["record_count"], 1500)
         self.assertEqual(metadata["file_size"], 2048)
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_bulk_operation(self, mock_finalize_audit):
         """Test log_bulk_operation method."""
-
 
         # Call method
         affected_entities = [Mock(pk=i) for i in range(1, 251)]
@@ -217,13 +225,13 @@ class TestSystemAuditLogger(TestCase):
         )
         self.assertEqual(metadata["changes"], {"status": "submitted"})
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.metadata_builders.FileMetadataBuilder.build_file_metadata"
     )
-    def test_log_file_operation_upload(
-        self, mock_file_metadata, mock_finalize_audit
-    ):
+    def test_log_file_operation_upload(self, mock_file_metadata, mock_finalize_audit):
         """Test log_file_operation for file upload."""
         # Setup mocks
         mock_file_metadata.return_value = {
@@ -245,7 +253,12 @@ class TestSystemAuditLogger(TestCase):
 
         # Verify calls
         mock_file_metadata.assert_called_once_with(
-            self.mock_file, "upload", self.mock_user, file_category="document", target_entity="entry", target_id="entry-123"
+            self.mock_file,
+            "upload",
+            self.mock_user,
+            file_category="document",
+            target_entity="entry",
+            target_id="entry-123",
         )
         mock_finalize_audit.assert_called_once()
 
@@ -258,13 +271,13 @@ class TestSystemAuditLogger(TestCase):
         self.assertEqual(metadata["target_entity"], "entry")
         self.assertEqual(metadata["target_id"], "entry-123")
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.metadata_builders.FileMetadataBuilder.build_file_metadata"
     )
-    def test_log_file_operation_download(
-        self, mock_file_metadata, mock_finalize_audit
-    ):
+    def test_log_file_operation_download(self, mock_file_metadata, mock_finalize_audit):
         """Test log_file_operation for file download."""
         # Setup mocks
         mock_file_metadata.return_value = {"file_name": "test_file.pdf"}
@@ -279,20 +292,22 @@ class TestSystemAuditLogger(TestCase):
         )
 
         # Verify calls
-        mock_file_metadata.assert_called_once_with(self.mock_file, "download", self.mock_user, file_category="attachment")
+        mock_file_metadata.assert_called_once_with(
+            self.mock_file, "download", self.mock_user, file_category="attachment"
+        )
         mock_finalize_audit.assert_called_once()
-        
+
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[1], AuditActionType.FILE_DOWNLOADED)
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     @patch(
         "apps.auditlog.loggers.metadata_builders.FileMetadataBuilder.build_file_metadata"
     )
-    def test_log_file_operation_delete(
-        self, mock_file_metadata, mock_finalize_audit
-    ):
+    def test_log_file_operation_delete(self, mock_file_metadata, mock_finalize_audit):
         """Test log_file_operation for file delete."""
         # Setup mocks
         mock_file_metadata.return_value = {"file_name": "test_file.pdf"}
@@ -308,9 +323,15 @@ class TestSystemAuditLogger(TestCase):
         )
 
         # Verify calls
-        mock_file_metadata.assert_called_once_with(self.mock_file, "delete", self.mock_user, file_category="temporary", reason="Cleanup expired files")
+        mock_file_metadata.assert_called_once_with(
+            self.mock_file,
+            "delete",
+            self.mock_user,
+            file_category="temporary",
+            reason="Cleanup expired files",
+        )
         mock_finalize_audit.assert_called_once()
-        
+
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[1], AuditActionType.FILE_DELETED)
@@ -319,10 +340,11 @@ class TestSystemAuditLogger(TestCase):
         metadata = call_args[2]
         self.assertEqual(metadata["reason"], "Cleanup expired files")
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_log_operation_failure(self, mock_finalize_audit):
         """Test log_operation_failure method."""
-
 
         # Call method
         self.logger.log_operation_failure(
@@ -334,10 +356,10 @@ class TestSystemAuditLogger(TestCase):
                 "error_code": "INVALID_FORMAT",
                 "error_type": "validation_error",
                 "affected_component": "data_importer",
-                "severity": "high"
+                "severity": "high",
             },
             affected_entity="entries",
-            entity_id="import-batch-456"
+            entity_id="import-batch-456",
         )
 
         # Verify calls
@@ -361,7 +383,9 @@ class TestSystemAuditLogger(TestCase):
 
     def test_log_permission_change_invalid_action(self):
         """Test log_permission_change with invalid action logs warning and returns early."""
-        with self.assertLogs('apps.auditlog.loggers.system_logger', level='WARNING') as log:
+        with self.assertLogs(
+            "apps.auditlog.loggers.system_logger", level="WARNING"
+        ) as log:
             self.logger.log_permission_change(
                 request=self.mock_request,
                 user=self.mock_user,
@@ -376,7 +400,9 @@ class TestSystemAuditLogger(TestCase):
 
     def test_log_file_operation_invalid_operation(self):
         """Test log_file_operation with invalid operation logs warning and returns early."""
-        with self.assertLogs('apps.auditlog.loggers.system_logger', level='WARNING') as log:
+        with self.assertLogs(
+            "apps.auditlog.loggers.system_logger", level="WARNING"
+        ) as log:
             self.logger.log_file_operation(
                 request=self.mock_request,
                 user=self.mock_user,
@@ -386,24 +412,28 @@ class TestSystemAuditLogger(TestCase):
 
         self.assertIn("Unknown file operation action: invalid_operation", log.output[0])
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._validate_request_and_user")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._validate_request_and_user"
+    )
     def test_validation_methods_called(self, mock_validate):
         """Test that validation method is called during logging."""
         with patch(
             "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
         ):
             self.logger.log_permission_change(
-                 request=self.mock_request,
-                 user=self.mock_user,
-                 target_user=self.mock_target_user,
-                 permission_type="read",
-                 action="grant",
-             )
+                request=self.mock_request,
+                user=self.mock_user,
+                target_user=self.mock_target_user,
+                permission_type="read",
+                action="grant",
+            )
 
         # Verify validation method was called
         mock_validate.assert_called_once_with(self.mock_request, self.mock_user)
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_metadata_combination_complex(self, mock_finalize_audit):
         """Test complex metadata combination in bulk operation."""
         affected_entities = [Mock(pk=i) for i in range(1, 101)]
@@ -432,7 +462,9 @@ class TestSystemAuditLogger(TestCase):
         )
         self.assertEqual(metadata["affected_count"], 100)
 
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger._finalize_and_create_audit"
+    )
     def test_optional_parameters_handling(self, mock_finalize_audit):
         """Test handling of optional parameters in various methods."""
         # Test minimal parameters for data export

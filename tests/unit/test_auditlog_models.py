@@ -469,7 +469,6 @@ class TestAuditTrailEdgeCases(TestCase):
     def test_audit_trail_concurrent_creation(self):
         """Test concurrent audit trail creation doesn't cause conflicts."""
         import threading
-        import time
         from django.db import transaction
 
         entry = EntryFactory()

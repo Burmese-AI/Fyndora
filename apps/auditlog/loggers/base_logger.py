@@ -119,7 +119,7 @@ class BaseAuditLogger(ABC):
         """Finalize metadata and create audit log entry."""
         # Prepare user_id
         if user:
-            if hasattr(user, 'user'):
+            if hasattr(user, "user"):
                 # OrganizationMember object
                 user_id = str(user.user.user_id)
             else:

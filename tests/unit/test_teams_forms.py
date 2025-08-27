@@ -122,7 +122,7 @@ class TeamFormTest(TestCase):
     def test_team_form_edit_duplicate_title(self):
         """Test editing team with title that exists in another team."""
         existing_team1 = TeamFactory(organization=self.organization, title="Team One")
-        existing_team2 = TeamFactory(organization=self.organization, title="Team Two")
+        TeamFactory(organization=self.organization, title="Team Two")
 
         form_data = {
             "title": "Team Two",  # Trying to change to existing title

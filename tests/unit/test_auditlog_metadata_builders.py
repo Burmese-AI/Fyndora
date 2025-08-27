@@ -784,7 +784,9 @@ class TestMetadataBuildersEdgeCases(TestCase):
 
     def test_file_metadata_with_none_file(self):
         """Test FileMetadataBuilder with None file object."""
-        result = FileMetadataBuilder.build_file_metadata(file_obj=None, operation="upload")
+        result = FileMetadataBuilder.build_file_metadata(
+            file_obj=None, operation="upload"
+        )
         expected = {
             "file_name": "unknown",
             "file_size": 0,
@@ -792,7 +794,7 @@ class TestMetadataBuildersEdgeCases(TestCase):
             "operation": "upload",
             "file_category": "general",
             "upload_source": "web_interface",
-            "upload_purpose": ""
+            "upload_purpose": "",
         }
         self.assertEqual(result, expected)
 
@@ -802,7 +804,7 @@ class TestMetadataBuildersEdgeCases(TestCase):
         mock_entity.__class__.__name__ = "TestEntity"
         # Remove _meta attribute to trigger AttributeError
         del mock_entity._meta
-        
+
         with self.assertRaises(AttributeError):
             EntityMetadataBuilder.build_entity_metadata(mock_entity)
 

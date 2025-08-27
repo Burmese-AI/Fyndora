@@ -192,13 +192,11 @@ class TestEntryAuditLogger(TestCase):
         self.assertEqual(call_args[1], AuditActionType.ENTRY_REJECTED)
 
     @patch.object(EntryAuditLogger, "_handle_action_with_mapping")
-    def test_log_entry_workflow_action_flag_unsupported(
-        self, mock_handle_action
-    ):
+    def test_log_entry_workflow_action_flag_unsupported(self, mock_handle_action):
         """Test log_entry_workflow_action for unsupported flag action."""
         # Mock the method to return None (indicating unsupported action)
         mock_handle_action.return_value = None
-        
+
         # Call method with unsupported action
         result = self.logger.log_entry_workflow_action(
             request=self.mock_request,
@@ -213,13 +211,11 @@ class TestEntryAuditLogger(TestCase):
         mock_handle_action.assert_called_once()
 
     @patch.object(EntryAuditLogger, "_handle_action_with_mapping")
-    def test_log_entry_workflow_action_unflag_unsupported(
-        self, mock_handle_action
-    ):
+    def test_log_entry_workflow_action_unflag_unsupported(self, mock_handle_action):
         """Test log_entry_workflow_action for unsupported unflag action."""
         # Mock the method to return None (indicating unsupported action)
         mock_handle_action.return_value = None
-        
+
         # Call method with unsupported action
         result = self.logger.log_entry_workflow_action(
             request=self.mock_request,
@@ -236,9 +232,7 @@ class TestEntryAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.entry_logger.EntityMetadataBuilder.build_entry_metadata"
     )
-    def test_log_entry_action_update(
-        self, mock_entry_metadata, mock_finalize_audit
-    ):
+    def test_log_entry_action_update(self, mock_entry_metadata, mock_finalize_audit):
         """Test log_entry_action for update action."""
         # Setup mocks
         mock_entry_metadata.return_value = {"entry_id": "entry-123"}
@@ -263,9 +257,7 @@ class TestEntryAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.entry_logger.EntityMetadataBuilder.build_entry_metadata"
     )
-    def test_log_entry_action_delete(
-        self, mock_entry_metadata, mock_finalize_audit
-    ):
+    def test_log_entry_action_delete(self, mock_entry_metadata, mock_finalize_audit):
         """Test log_entry_action for delete action."""
         # Setup mocks
         mock_entry_metadata.return_value = {"entry_id": "entry-123"}
@@ -302,7 +294,9 @@ class TestEntryAuditLogger(TestCase):
         # Verify audit log creation
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.ENTRY_STATUS_CHANGED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.ENTRY_STATUS_CHANGED
+        )  # action_type
 
         # Verify metadata contains status change information
         metadata = call_args[2]  # metadata is the third positional argument
@@ -315,7 +309,7 @@ class TestEntryAuditLogger(TestCase):
         """Test log_entry_workflow_action with invalid action logs warning and returns None."""
         # Mock the method to return None (indicating unsupported action)
         mock_handle_action.return_value = None
-        
+
         result = self.logger.log_entry_workflow_action(
             request=self.mock_request,
             user=self.mock_user,
@@ -331,7 +325,7 @@ class TestEntryAuditLogger(TestCase):
         """Test log_entry_action with invalid action logs warning and returns None."""
         # Mock the method to return None (indicating unsupported action)
         mock_handle_action.return_value = None
-        
+
         result = self.logger.log_entry_action(
             request=self.mock_request,
             user=self.mock_user,

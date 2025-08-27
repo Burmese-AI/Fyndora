@@ -115,9 +115,9 @@ class TestEntryModel:
     def test_entry_ordering(self):
         """Test default ordering by occurred_at and created_at descending."""
         # Create entries with different timestamps
-        entry1 = EntryFactory()
-        entry2 = EntryFactory()
-        entry3 = EntryFactory()
+        EntryFactory()
+        EntryFactory()
+        EntryFactory()
 
         entries = Entry.objects.all()
         # Should be ordered by occurred_at descending, then created_at descending
@@ -204,7 +204,7 @@ class TestEntryProperties:
 
     def test_converted_amount_with_different_currency(self):
         """Test converted_amount with currency conversion."""
-        usd = Currency.objects.create(code="USD", name="US Dollar")
+        Currency.objects.create(code="USD", name="US Dollar")
         eur = Currency.objects.create(code="EUR", name="Euro")
 
         workspace = WorkspaceFactory()
@@ -219,7 +219,7 @@ class TestEntryProperties:
 
     def test_converted_amount_with_zero_exchange_rate(self):
         """Test converted_amount handles zero exchange rate."""
-        usd = Currency.objects.create(code="USD", name="US Dollar")
+        Currency.objects.create(code="USD", name="US Dollar")
         eur = Currency.objects.create(code="EUR", name="Euro")
 
         workspace = WorkspaceFactory()
@@ -234,7 +234,7 @@ class TestEntryProperties:
 
     def test_converted_amount_precision(self):
         """Test converted_amount maintains proper decimal precision."""
-        usd = Currency.objects.create(code="USD", name="US Dollar")
+        Currency.objects.create(code="USD", name="US Dollar")
         eur = Currency.objects.create(code="EUR", name="Euro")
 
         workspace = WorkspaceFactory()
@@ -251,7 +251,7 @@ class TestEntryProperties:
 
     def test_converted_amount_with_none_exchange_rate(self):
         """Test converted_amount handles None exchange rate."""
-        usd = Currency.objects.create(code="USD", name="US Dollar")
+        Currency.objects.create(code="USD", name="US Dollar")
         eur = Currency.objects.create(code="EUR", name="Euro")
 
         workspace = WorkspaceFactory()

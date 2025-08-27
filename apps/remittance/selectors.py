@@ -40,5 +40,5 @@ def get_remittances_under_organization(
             remittance.remaining_amount = remittance.remaining_amount()
 
         return remittances
-    except Exception as e:
+    except Exception:
         return None

@@ -124,9 +124,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_action_update(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_action_update(self, mock_finalize_audit):
         """Test log_workspace_action for update action."""
         # Call method
         self.logger.log_workspace_action(
@@ -152,9 +150,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_action_delete(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_action_delete(self, mock_finalize_audit):
         """Test log_workspace_action for delete action."""
         # Call method
         self.logger.log_workspace_action(
@@ -195,7 +191,9 @@ class TestWorkspaceAuditLogger(TestCase):
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.WORKSPACE_ARCHIVED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.WORKSPACE_ARCHIVED
+        )  # action_type
 
         # Verify reason is included in metadata
         metadata = call_args[2]  # metadata is the 3rd positional argument
@@ -225,7 +223,9 @@ class TestWorkspaceAuditLogger(TestCase):
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.WORKSPACE_ACTIVATED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.WORKSPACE_ACTIVATED
+        )  # action_type
 
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
@@ -233,7 +233,9 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.EntityMetadataBuilder.build_workspace_metadata"
     )
-    def test_log_workspace_action_close(self, mock_workspace_metadata, mock_finalize_audit):
+    def test_log_workspace_action_close(
+        self, mock_workspace_metadata, mock_finalize_audit
+    ):
         """Test log_workspace_action for close action."""
         # Setup mocks
         mock_workspace_metadata.return_value = {"workspace_id": "workspace-123"}
@@ -282,7 +284,9 @@ class TestWorkspaceAuditLogger(TestCase):
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.WORKSPACE_STATUS_CHANGED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.WORKSPACE_STATUS_CHANGED
+        )  # action_type
 
         # Verify status change metadata
         metadata = call_args[2]  # metadata is the 3rd positional argument
@@ -292,9 +296,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_team_action_add(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_team_action_add(self, mock_finalize_audit):
         """Test log_workspace_team_action for add action."""
         # Call method
         self.logger.log_workspace_team_action(
@@ -309,7 +311,9 @@ class TestWorkspaceAuditLogger(TestCase):
         # Verify audit log creation arguments
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.WORKSPACE_TEAM_ADDED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.WORKSPACE_TEAM_ADDED
+        )  # action_type
 
         # Verify team role metadata
         metadata = call_args[2]  # metadata is the 3rd positional argument
@@ -318,9 +322,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_team_action_remove(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_team_action_remove(self, mock_finalize_audit):
         """Test log_workspace_team_action for remove action."""
         # Call method
         self.logger.log_workspace_team_action(
@@ -335,7 +337,9 @@ class TestWorkspaceAuditLogger(TestCase):
         # Verify audit log creation with correct action type
         call_args = mock_finalize_audit.call_args[0]
         self.assertEqual(call_args[0], self.mock_user)  # user
-        self.assertEqual(call_args[1], AuditActionType.WORKSPACE_TEAM_REMOVED)  # action_type
+        self.assertEqual(
+            call_args[1], AuditActionType.WORKSPACE_TEAM_REMOVED
+        )  # action_type
 
         # Verify reason is included in metadata
         metadata = call_args[2]  # metadata is the 3rd positional argument
@@ -375,9 +379,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_exchange_rate_action_create(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_exchange_rate_action_create(self, mock_finalize_audit):
         """Test log_workspace_exchange_rate_action for create action."""
         # Call method
         self.logger.log_workspace_exchange_rate_action(
@@ -405,9 +407,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_exchange_rate_action_update(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_exchange_rate_action_update(self, mock_finalize_audit):
         """Test log_workspace_exchange_rate_action for update action."""
         # Call method
         self.logger.log_workspace_exchange_rate_action(
@@ -436,9 +436,7 @@ class TestWorkspaceAuditLogger(TestCase):
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"
     )
-    def test_log_workspace_exchange_rate_action_delete(
-        self, mock_finalize_audit
-    ):
+    def test_log_workspace_exchange_rate_action_delete(self, mock_finalize_audit):
         """Test log_workspace_exchange_rate_action for delete action."""
         # Call method
         self.logger.log_workspace_exchange_rate_action(
@@ -479,7 +477,9 @@ class TestWorkspaceAuditLogger(TestCase):
             team=self.mock_team,
         )
 
-        mock_logger.warning.assert_called_once_with("Unknown workspace team action: invalid_action")
+        mock_logger.warning.assert_called_once_with(
+            "Unknown workspace team action: invalid_action"
+        )
 
     @patch("apps.auditlog.loggers.workspace_logger.logger")
     def test_log_workspace_exchange_rate_action_invalid_action(self, mock_logger):
@@ -492,7 +492,9 @@ class TestWorkspaceAuditLogger(TestCase):
             exchange_rate=self.mock_exchange_rate,
         )
 
-        mock_logger.warning.assert_called_once_with("Unknown workspace exchange rate action: invalid_action")
+        mock_logger.warning.assert_called_once_with(
+            "Unknown workspace exchange rate action: invalid_action"
+        )
 
     @patch(
         "apps.auditlog.loggers.workspace_logger.WorkspaceAuditLogger._finalize_and_create_audit"

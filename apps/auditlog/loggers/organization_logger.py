@@ -70,8 +70,10 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(organization, 'workspace', None)
-        self._finalize_and_create_audit(user, action_type, metadata, organization, workspace)
+        workspace = getattr(organization, "workspace", None)
+        self._finalize_and_create_audit(
+            user, action_type, metadata, organization, workspace
+        )
 
     @safe_audit_log
     def log_organization_exchange_rate_action(
@@ -101,9 +103,11 @@ class OrganizationAuditLogger(BaseAuditLogger):
         metadata["operation_type"] = f"organization_exchange_rate_{action}"
 
         # Add organization-specific metadata
-        organization = getattr(exchange_rate, 'organization', None)
+        organization = getattr(exchange_rate, "organization", None)
         if organization:
-            metadata.update(EntityMetadataBuilder.build_organization_metadata(organization))
+            metadata.update(
+                EntityMetadataBuilder.build_organization_metadata(organization)
+            )
 
         # Add exchange rate-specific metadata
         if exchange_rate:
@@ -138,5 +142,7 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(exchange_rate, 'workspace', None)
-        self._finalize_and_create_audit(user, action_type, metadata, exchange_rate, workspace)
+        workspace = getattr(exchange_rate, "workspace", None)
+        self._finalize_and_create_audit(
+            user, action_type, metadata, exchange_rate, workspace
+        )

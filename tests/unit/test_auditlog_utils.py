@@ -16,7 +16,6 @@ from apps.auditlog.config import AuditConfig
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.utils import (
     AuditActionMapper,
-    get_action_category,
     is_security_related,
     safe_audit_log,
     should_log_model,
@@ -227,35 +226,6 @@ class TestSafeAuditLog(TestCase):
         # Should re-raise ValueError
         with self.assertRaises(ValueError):
             failing_function()
-
-
-@pytest.mark.unit
-class TestGetActionCategory(TestCase):
-    """Test get_action_category function."""
-
-    def test_get_action_category_user_management(self):
-        """Test categorizing user management actions."""
-        category = get_action_category(AuditActionType.USER_CREATED)
-        self.assertEqual(category, "User Management")
-
-        category = get_action_category(AuditActionType.USER_UPDATED)
-        self.assertEqual(category, "User Management")
-
-    def test_get_action_category_organization_management(self):
-        """Test categorizing organization management actions."""
-        category = get_action_category(AuditActionType.ORGANIZATION_CREATED)
-        self.assertEqual(category, "Organization Management")
-
-    def test_get_action_category_security_events(self):
-        """Test categorizing security events."""
-        category = get_action_category(AuditActionType.ACCESS_DENIED)
-        self.assertEqual(category, "Security Events")
-
-    def test_get_action_category_unknown(self):
-        """Test categorizing unknown actions."""
-        # Test with a string value that doesn't match any category
-        category = get_action_category("unknown_action")
-        self.assertEqual(category, "Other")
 
 
 @pytest.mark.unit

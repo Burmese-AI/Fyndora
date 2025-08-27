@@ -134,7 +134,7 @@ class TestGetUserOrganizations(TestCase):
         
         # Should not cause additional queries when accessing owner
         with self.assertNumQueries(0):
-            owner = org_result.owner
+            org_result.owner
 
 
 class TestGetOrganizationById(TestCase):
@@ -289,9 +289,9 @@ class TestGetWorkspacesCount(TestCase):
     def test_get_workspaces_count_with_soft_deleted_workspaces(self):
         """Test counting workspaces excludes soft-deleted ones."""
         # Create active workspaces
-        workspace1 = WorkspaceFactory(organization=self.organization)
+        WorkspaceFactory(organization=self.organization)
+        WorkspaceFactory(organization=self.organization)
         workspace2 = WorkspaceFactory(organization=self.organization)
-        workspace3 = WorkspaceFactory(organization=self.organization)
 
         # Soft delete one workspace
         workspace2.delete()
@@ -422,7 +422,7 @@ class TestGetUserOrgMembership(TestCase):
 
     def test_get_user_org_membership_inactive(self):
         """Test getting inactive membership."""
-        membership = InactiveOrganizationMemberFactory(
+        InactiveOrganizationMemberFactory(
             user=self.user, organization=self.organization
         )
 
@@ -462,7 +462,7 @@ class TestGetUserOrgMembership(TestCase):
         self.assertEqual(result, membership)
         # Should not cause additional queries when accessing user
         with self.assertNumQueries(0):
-            user = result.user
+            result.user
 
 
 class TestGetOrgMembers(TestCase):
@@ -534,7 +534,7 @@ class TestGetOrgMembers(TestCase):
     def test_get_org_members_with_user_details(self):
         """Test that members include user details."""
         user = CustomUserFactory(email="test@example.com")
-        member = OrganizationMemberFactory(user=user, organization=self.organization)
+        OrganizationMemberFactory(user=user, organization=self.organization)
 
         members = get_org_members(organization=self.organization)
 
@@ -557,7 +557,7 @@ class TestGetOrgMembers(TestCase):
         first_member = members.first()
         # Now accessing user should not cause additional queries
         with self.assertNumQueries(0):
-            user = first_member.user
+            first_member.user
 
 
 class TestGetOrgExchangeRates(TestCase):
@@ -710,7 +710,7 @@ class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
 
     def test_get_org_member_inactive_membership(self):
         """Test getting inactive organization member."""
-        member = InactiveOrganizationMemberFactory(
+        InactiveOrganizationMemberFactory(
             user=self.user, organization=self.organization
         )
 

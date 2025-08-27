@@ -1,87 +1,89 @@
-<form 
-  hx-get="{{ filter_url }}"
-  hx-target="{{ filter_target|default:'#content-container' }}" 
-  hx-trigger="change delay:200ms, keyup delay:400ms"
-  hx-swap="innerHTML"
-  hx-push-url="true"
-  class="w-full grid grid-cols-1 sm:grid-cols-5 gap-3 p-3 bg-base-100 rounded-lg shadow-sm border border-base-200 items-end"
->
-
-  {% if status_options or type_options or team_options or workspace_options %}
-
-    {% if status_options %}
+<div class="flex flex-wrap gap-3 p-3 bg-base-100 rounded-lg shadow-sm border border-base-200 items-end">
+  <form 
+    hx-get="{{ filter_url }}"
+    hx-target="{{ filter_target|default:'#content-container' }}" 
+    hx-trigger="change delay:200ms, keyup delay:400ms"
+    hx-swap="innerHTML"
+    hx-push-url="true"
+    class="w-full grid grid-cols-1 sm:grid-cols-6 gap-3 items-end"
+  >
+  
+    {% if status_options or type_options or team_options or workspace_options %}
+  
+      {% if status_options %}
+        <div class="flex flex-col w-full">
+          <label class="label-text font-semibold text-base-content mb-1">Status</label>
+          <select name="status" class="select select-sm select-bordered w-full bg-base-100">
+            {% for status in status_options %}
+              <option value="{{ status }}"
+                {% if status == filter_status_value %}selected{% elif status == default_status_option %}selected{% endif %}
+              >
+                {{ status }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+  
+      {% if type_options %}
+        <div class="flex flex-col w-full">
+          <label class="label-text font-semibold text-base-content mb-1">Type</label>
+          <select name="type" class="select select-sm select-bordered w-full bg-base-100">
+            <option value="">All Types</option>
+            {% for type in type_options %}
+              <option value="{{ type }}"
+                {% if type == filter_type_value %}selected{% endif %}
+              >
+                {{ type }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+  
+      {% if team_options %}
+        <div class="flex flex-col w-full">
+          <label class="label-text font-semibold text-base-content mb-1">Team</label>
+          <select name="team" class="select select-sm select-bordered w-full bg-base-100">
+            <option value="">All teams</option>
+            {% for team in team_options %}
+              <option value="{{ team.pk }}"
+                {% if team.pk == filter_team_value %}selected{% endif %}
+              >
+                {{ team.team.title }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+  
+      <!-- SEARCH BOX -->
       <div class="flex flex-col w-full">
-        <label class="label-text font-semibold text-base-content mb-1">Status</label>
-        <select name="status" class="select select-sm select-bordered w-full bg-base-100">
-          {% for status in status_options %}
-            <option value="{{ status }}"
-              {% if status == filter_status_value %}selected{% elif status == default_status_option %}selected{% endif %}
-            >
-              {{ status }}
-            </option>
-          {% endfor %}
-        </select>
+        <label class="label-text font-semibold text-base-content mb-1">Search</label>
+        <label class="input input-bordered outline-1 input-sm flex items-center gap-2 w-full bg-base-100 border-base-200">
+          <svg class="h-4 w-4 text-base-content/60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input
+            type="search"
+            name="search"
+            class="grow placeholder:text-base-content/60 bg-transparent focus:outline-none"
+            placeholder="{{ placeholder|default:'Search entries...' }}"
+            value="{{ filter_search_value|default:'' }}"
+          />
+        </label>
       </div>
-    {% endif %}
-
-    {% if type_options %}
-      <div class="flex flex-col w-full">
-        <label class="label-text font-semibold text-base-content mb-1">Type</label>
-        <select name="type" class="select select-sm select-bordered w-full bg-base-100">
-          <option value="">All Types</option>
-          {% for type in type_options %}
-            <option value="{{ type }}"
-              {% if type == filter_type_value %}selected{% endif %}
-            >
-              {{ type }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    {% endif %}
-
-    {% if team_options %}
-      <div class="flex flex-col w-full">
-        <label class="label-text font-semibold text-base-content mb-1">Team</label>
-        <select name="team" class="select select-sm select-bordered w-full bg-base-100">
-          <option value="">All teams</option>
-          {% for team in team_options %}
-            <option value="{{ team.pk }}"
-              {% if team.pk == filter_team_value %}selected{% endif %}
-            >
-              {{ team.team.title }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    {% endif %}
-
-    <!-- SEARCH BOX -->
-    <div class="flex flex-col w-full">
-      <label class="label-text font-semibold text-base-content mb-1">Search</label>
-      <label class="input input-bordered outline-1 input-sm flex items-center gap-2 w-full bg-base-100 border-base-200">
-        <svg class="h-4 w-4 text-base-content/60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.3-4.3"></path>
-          </g>
-        </svg>
-        <input
-          type="search"
-          name="search"
-          class="grow placeholder:text-base-content/60 bg-transparent focus:outline-none"
-          placeholder="{{ placeholder|default:'Search entries...' }}"
-          value="{{ filter_search_value|default:'' }}"
-        />
-      </label>
-    </div>
-
-    <!-- CLEAR BUTTON -->
-    <div class="flex w-full sm:w-auto">
+  
+      <!-- CLEAR BUTTON -->
       <a href="{{ request.path }}" class="btn btn-sm bg-red-200 text-red-600 hover:bg-red-300 w-full sm:w-auto">Clear all</a>
-    </div>
-
-  {% else %}
-    <p class="text-sm text-base-content/70 italic col-span-full">No filters available.</p>
-  {% endif %}
-</form>
+  
+      
+      {% else %}
+      <p class="text-sm text-base-content/70 italic col-span-full">No filters available.</p>
+      {% endif %}
+    </form>
+  {% include "entries/components/bulk_select_dropdown.html" %}
+</div>

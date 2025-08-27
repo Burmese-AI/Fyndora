@@ -20,6 +20,7 @@ from apps.organizations.selectors import (
     get_user_org_membership,
     get_user_organizations,
     get_workspaces_count,
+    get_org_exchange_rates,
 )
 from tests.factories import (
     CustomUserFactory,
@@ -29,6 +30,8 @@ from tests.factories import (
     TeamFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
+    OrganizationExchangeRateFactory,
+    CurrencyFactory,
 )
 
 User = get_user_model()
@@ -110,6 +113,29 @@ class TestGetUserOrganizations(TestCase):
         org_titles = list(organizations.values_list("title", flat=True))
         self.assertEqual(len(org_titles), 3)
 
+    def test_get_user_organizations_with_soft_deleted_memberships(self):
+        """Test that soft-deleted memberships are excluded."""
+        org = OrganizationFactory()
+        member = OrganizationMemberFactory(user=self.user, organization=org)
+        
+        # Soft delete the membership
+        member.delete()
+        
+        organizations = get_user_organizations(self.user)
+        self.assertEqual(organizations.count(), 0)
+
+    def test_get_user_organizations_select_related_owner(self):
+        """Test that owner is properly selected related."""
+        org = OrganizationFactory()
+        OrganizationMemberFactory(user=self.user, organization=org)
+        
+        organizations = get_user_organizations(self.user)
+        org_result = organizations.first()
+        
+        # Should not cause additional queries when accessing owner
+        with self.assertNumQueries(0):
+            owner = org_result.owner
+
 
 class TestGetOrganizationById(TestCase):
     """Test get_organization_by_id selector."""
@@ -145,11 +171,9 @@ class TestGetOrganizationById(TestCase):
 
     def test_get_organization_by_id_invalid_type(self):
         """Test getting organization with invalid ID type."""
-
+        # The function should raise ValidationError for invalid UUIDs
         with self.assertRaises(ValidationError):
-            # Use an actually invalid type like a string
-            invalid_id = "not-a-uuid"
-            get_organization_by_id(invalid_id)
+            get_organization_by_id("not-a-uuid")
 
     def test_get_organization_by_id_zero(self):
         """Test getting organization with ID zero."""
@@ -158,6 +182,12 @@ class TestGetOrganizationById(TestCase):
             uuid.UUID("00000000-0000-0000-0000-000000000000")
         )
         self.assertIsNone(result)
+
+    def test_get_organization_by_id_none(self):
+        """Test getting organization with None ID."""
+        # The function should raise ValidationError for None
+        with self.assertRaises(ValidationError):
+            get_organization_by_id(None)
 
 
 class TestGetOrganizationMembersCount(TestCase):
@@ -217,6 +247,18 @@ class TestGetOrganizationMembersCount(TestCase):
 
         self.assertEqual(count_org1, 3)
         self.assertEqual(count_org2, 5)
+
+    def test_get_organization_members_count_with_soft_deleted_members(self):
+        """Test that soft-deleted members are excluded from count."""
+        # Create active members
+        OrganizationMemberFactory.create_batch(2, organization=self.organization)
+        
+        # Create and soft delete a member
+        member = OrganizationMemberFactory(organization=self.organization)
+        member.delete()
+        
+        count = get_organization_members_count(self.organization)
+        self.assertEqual(count, 2)
 
 
 class TestGetWorkspacesCount(TestCase):
@@ -311,12 +353,12 @@ class TestGetTeamsCount(TestCase):
         team1 = TeamFactory()
         team2 = TeamFactory()
         WorkspaceTeamFactory(workspace=self.workspace, team=team1)
-        WorkspaceTeamFactory(workspace=self.workspace, team=team2)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
 
         # Create teams for second workspace
         team3 = TeamFactory()
         team4 = TeamFactory()
-        WorkspaceTeamFactory(workspace=workspace2, team=team3)
+        WorkspaceTeamFactory(workspace=self.workspace, team=team3)
         WorkspaceTeamFactory(workspace=workspace2, team=team4)
 
         count = get_teams_count(self.organization)
@@ -407,6 +449,21 @@ class TestGetUserOrgMembership(TestCase):
 
         self.assertIsNone(result)
 
+    def test_get_user_org_membership_with_prefetch_user(self):
+        """Test getting membership with user prefetched."""
+        membership = OrganizationMemberFactory(
+            user=self.user, organization=self.organization
+        )
+
+        result = get_user_org_membership(
+            self.user, self.organization, prefetch_user=True
+        )
+
+        self.assertEqual(result, membership)
+        # Should not cause additional queries when accessing user
+        with self.assertNumQueries(0):
+            user = result.user
+
 
 class TestGetOrgMembers(TestCase):
     """Test get_org_members selector."""
@@ -484,6 +541,129 @@ class TestGetOrgMembers(TestCase):
         self.assertEqual(members.count(), 1)
         retrieved_member = members.first()
         self.assertEqual(retrieved_member.user.email, "test@example.com")
+
+    def test_get_org_members_with_prefetch_user(self):
+        """Test getting members with user prefetched."""
+        OrganizationMemberFactory(organization=self.organization)
+
+        members = get_org_members(
+            organization=self.organization, prefetch_user=True
+        )
+
+        self.assertIsInstance(members, QuerySet)
+        self.assertEqual(members.count(), 1)
+        
+        # The prefetch should work, but we need to access the first member to trigger it
+        first_member = members.first()
+        # Now accessing user should not cause additional queries
+        with self.assertNumQueries(0):
+            user = first_member.user
+
+
+class TestGetOrgExchangeRates(TestCase):
+    """Test get_org_exchange_rates selector."""
+
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.currency = CurrencyFactory()
+
+    def test_get_org_exchange_rates_with_rates(self):
+        """Test getting exchange rates for organization."""
+        # Create exchange rates with different effective dates to avoid uniqueness constraint
+        from datetime import date, timedelta
+        
+        rate1 = OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=self.currency,
+            rate="1.25",
+            effective_date=date.today()
+        )
+        rate2 = OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=self.currency,
+            rate="1.30",
+            effective_date=date.today() + timedelta(days=1)
+        )
+
+        # Create rate for different organization
+        other_org = OrganizationFactory()
+        OrganizationExchangeRateFactory(
+            organization=other_org, 
+            currency=self.currency,
+            effective_date=date.today()
+        )
+
+        rates = get_org_exchange_rates(organization=self.organization)
+
+        self.assertIsInstance(rates, QuerySet)
+        self.assertEqual(rates.count(), 2)
+        self.assertIn(rate1, rates)
+        self.assertIn(rate2, rates)
+
+    def test_get_org_exchange_rates_no_rates(self):
+        """Test getting exchange rates for organization with no rates."""
+        rates = get_org_exchange_rates(organization=self.organization)
+
+        self.assertIsInstance(rates, QuerySet)
+        self.assertEqual(rates.count(), 0)
+
+    def test_get_org_exchange_rates_with_soft_deleted_rates(self):
+        """Test that soft-deleted rates are excluded."""
+        from datetime import date, timedelta
+        
+        # Create active rate
+        active_rate = OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=self.currency,
+            effective_date=date.today()
+        )
+        
+        # Create and soft delete a rate with different date
+        deleted_rate = OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=self.currency,
+            effective_date=date.today() + timedelta(days=1)
+        )
+        deleted_rate.delete()
+        
+        rates = get_org_exchange_rates(organization=self.organization)
+        self.assertEqual(rates.count(), 1)
+        self.assertIn(active_rate, rates)
+        self.assertNotIn(deleted_rate, rates)
+
+    def test_get_org_exchange_rates_multiple_currencies(self):
+        """Test getting rates for multiple currencies."""
+        from datetime import date, timedelta
+        
+        # Create different currencies to avoid uniqueness constraints
+        currency1 = CurrencyFactory(code="EUR")
+        currency2 = CurrencyFactory(code="GBP")
+        
+        OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=currency1,
+            rate="0.85",
+            effective_date=date.today()
+        )
+        OrganizationExchangeRateFactory(
+            organization=self.organization,
+            currency=currency2,
+            rate="0.75",
+            effective_date=date.today() + timedelta(days=1)
+        )
+        
+        rates = get_org_exchange_rates(organization=self.organization)
+        self.assertEqual(rates.count(), 2)
+        
+        # Check that both currencies are present
+        currency_codes = list(rates.values_list("currency__code", flat=True))
+        self.assertIn("EUR", currency_codes)
+        self.assertIn("GBP", currency_codes)
+
+    def test_get_org_exchange_rates_organization_parameter_required(self):
+        """Test that organization parameter is required."""
+        with self.assertRaises(TypeError):
+            get_org_exchange_rates()
 
 
 class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
@@ -590,3 +770,35 @@ class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
             get_orgMember_by_user_id_and_organization_id(
                 -1, self.organization.organization_id
             )
+
+    def test_get_org_member_none_ids(self):
+        """Test getting organization member with None IDs."""
+        with self.assertRaises(ValidationError):
+            get_orgMember_by_user_id_and_organization_id(
+                None, self.organization.organization_id
+            )
+
+        with self.assertRaises(ValidationError):
+            get_orgMember_by_user_id_and_organization_id(
+                self.user.user_id, None
+            )
+
+    def test_get_org_member_empty_string_ids(self):
+        """Test getting organization member with empty string IDs."""
+        with self.assertRaises(ValidationError):
+            get_orgMember_by_user_id_and_organization_id(
+                "", self.organization.organization_id
+            )
+
+        with self.assertRaises(ValidationError):
+            get_orgMember_by_user_id_and_organization_id(
+                self.user.user_id, ""
+            )
+
+    def test_get_org_member_exception_handling(self):
+        """Test exception handling in the function."""
+        # This should handle exceptions gracefully and return None
+        result = get_orgMember_by_user_id_and_organization_id(
+            self.user.user_id, self.organization.organization_id
+        )
+        self.assertIsNone(result)

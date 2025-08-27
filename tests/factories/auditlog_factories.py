@@ -56,7 +56,7 @@ class EntryCreatedAuditFactory(AuditTrailFactory):
             "entry_type": "income",
             "amount": "1000.00",
             "submitter": obj.user.username if obj.user else "Unknown",
-            "workspace": str(uuid.uuid4()),
+            "workspace_id": str(obj.target_entity.workspace.pk) if obj.target_entity and hasattr(obj.target_entity, 'workspace') else str(uuid.uuid4()),
         }
     )
 

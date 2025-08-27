@@ -51,7 +51,8 @@ def extract_organization_member_context(member):
         return {}
 
     return {
-        "member_id": str(member.id),
+        #changed member.id to member.pk because we defined primary key for member (THA)
+        "member_id": str(member.pk),
         "organization_id": str(member.organization.pk),
         "organization_title": member.organization.title,
         "user_id": str(member.user.pk),

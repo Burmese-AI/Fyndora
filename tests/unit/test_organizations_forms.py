@@ -226,7 +226,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
     def test_exchange_rate_create_form_valid_data(self):
         """Test create form with valid data."""
         form_data = {
-            "currency": self.currency.currency_id,
+            "currency_code": "USD",
             "rate": "1.25",
             "effective_date": "2024-01-01",
             "note": "Test exchange rate",
@@ -234,7 +234,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
         form = OrganizationExchangeRateCreateForm(data=form_data)
 
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.cleaned_data["currency"], self.currency)
+        self.assertEqual(form.cleaned_data["currency_code"], "USD")
         self.assertEqual(form.cleaned_data["rate"], Decimal("1.25"))
         self.assertEqual(form.cleaned_data["effective_date"], date(2024, 1, 1))
         self.assertEqual(form.cleaned_data["note"], "Test exchange rate")
@@ -247,7 +247,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
         form = OrganizationExchangeRateCreateForm(data=form_data)
 
         self.assertFalse(form.is_valid())
-        self.assertIn("currency", form.errors)
+        self.assertIn("currency_code", form.errors)
         self.assertIn("rate", form.errors)
         self.assertIn("effective_date", form.errors)
 
@@ -255,7 +255,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
         """Test create form with invalid rate values."""
         # Test negative rate
         form_data = {
-            "currency": self.currency.currency_id,
+            "currency_code": "USD",
             "rate": "-1.25",
             "effective_date": "2024-01-01",
             "note": "Test exchange rate",
@@ -268,7 +268,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
     def test_exchange_rate_create_form_invalid_date_format(self):
         """Test create form with invalid date format."""
         form_data = {
-            "currency": self.currency.currency_id,
+            "currency_code": "USD",
             "rate": "1.25",
             "effective_date": "invalid-date",
             "note": "Test exchange rate",
@@ -281,7 +281,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
     def test_exchange_rate_create_form_save_with_organization(self):
         """Test create form save method with organization context."""
         form_data = {
-            "currency": self.currency.currency_id,
+            "currency_code": "USD",
             "rate": "1.25",
             "effective_date": "2024-01-01",
             "note": "Test exchange rate",
@@ -294,6 +294,7 @@ class TestOrganizationExchangeRateCreateForm(TestCase):
         exchange_rate = form.save(commit=False)
         exchange_rate.organization = self.organization
         exchange_rate.added_by = self.member
+        exchange_rate.currency = self.currency  # Set the currency instance manually
         exchange_rate.save()
 
         self.assertIsInstance(exchange_rate, OrganizationExchangeRate)
@@ -328,7 +329,6 @@ class TestOrganizationExchangeRateUpdateForm(TestCase):
     def test_exchange_rate_update_form_valid_data(self):
         """Test update form with valid data."""
         form_data = {
-            "rate": "1.35",
             "note": "Updated exchange rate",
         }
         form = OrganizationExchangeRateUpdateForm(
@@ -336,7 +336,6 @@ class TestOrganizationExchangeRateUpdateForm(TestCase):
         )
 
         self.assertTrue(form.is_valid())
-        self.assertEqual(form.cleaned_data["rate"], Decimal("1.35"))
         self.assertEqual(form.cleaned_data["note"], "Updated exchange rate")
 
     def test_exchange_rate_update_form_initialization_with_instance(self):
@@ -344,13 +343,11 @@ class TestOrganizationExchangeRateUpdateForm(TestCase):
         form = OrganizationExchangeRateUpdateForm(instance=self.exchange_rate)
 
         # Check initial values
-        self.assertEqual(form.initial["rate"], Decimal("1.25"))
         self.assertEqual(form.initial["note"], "Original note")
 
     def test_exchange_rate_update_form_save_updates_instance(self):
         """Test update form save method updates existing instance."""
         form_data = {
-            "rate": "1.45",
             "note": "Final updated note",
         }
         form = OrganizationExchangeRateUpdateForm(
@@ -364,23 +361,20 @@ class TestOrganizationExchangeRateUpdateForm(TestCase):
             updated_rate.organization_exchange_rate_id,
             self.exchange_rate.organization_exchange_rate_id,
         )
-        self.assertEqual(updated_rate.rate, Decimal("1.45"))
         self.assertEqual(updated_rate.note, "Final updated note")
 
         # Verify database was updated
         self.exchange_rate.refresh_from_db()
-        self.assertEqual(self.exchange_rate.rate, Decimal("1.45"))
         self.assertEqual(self.exchange_rate.note, "Final updated note")
 
-    def test_exchange_rate_update_form_invalid_rate(self):
-        """Test update form with invalid rate."""
+    def test_exchange_rate_update_form_invalid_note(self):
+        """Test update form with invalid note."""
         form_data = {
-            "rate": "-2.50",
-            "note": "Updated note",
+            "note": "x" * 300,  # Note longer than 255 characters
         }
         form = OrganizationExchangeRateUpdateForm(
             data=form_data, instance=self.exchange_rate
         )
 
         self.assertFalse(form.is_valid())
-        self.assertIn("rate", form.errors)
+        self.assertIn("note", form.errors)

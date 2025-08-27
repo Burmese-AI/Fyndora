@@ -23,7 +23,7 @@ from .utils import (
     extract_organization_member_context,
     extract_request_metadata,
 )
-
+from apps.currencies.services import createCurrency
 logger = logging.getLogger(__name__)
 
 
@@ -199,7 +199,7 @@ def create_organization_exchange_rate(
     Creates an exchange rate for an organization.
     """
     try:
-        currency, _ = Currency.objects.get_or_create(code=currency_code)
+        currency = createCurrency(currency_code)
         exchange_rate = OrganizationExchangeRate.objects.create(
             organization=organization,
             currency=currency,

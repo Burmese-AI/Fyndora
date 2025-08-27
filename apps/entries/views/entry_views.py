@@ -8,7 +8,7 @@ from guardian.shortcuts import assign_perm
 from apps.core.permissions import EntryPermissions
 
 from apps.core.utils import permission_denied_view
-from apps.core.views.base_views import BaseGetModalFormView
+from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
 from apps.core.views.crud_base_views import (
     BaseCreateView,
     BaseDeleteView,
@@ -38,6 +38,8 @@ from ..utils import (
 )
 from .base_views import (
     TeamLevelEntryView,
+    BaseEntryBulkDeleteView,
+    BaseEntryBulkUpdateView,
 )
 from .mixins import (
     EntryFormMixin,
@@ -335,3 +337,52 @@ class WorkspaceTeamEntryDeleteView(
     def perform_service(self, form):
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
 
+
+class WorkspaceEntryBulkDeleteView(
+    WorkspaceRequiredMixin,
+    TeamLevelEntryView,
+    WorkspaceLevelEntryFiltering,
+    BaseGetModalView,
+    BaseEntryBulkDeleteView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            statuses=[EntryStatus.PENDING]
+        )
+        
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.REVIEWED]
+        )
+
+    def validate_entry(self, entry):
+        # Valid if status is pending and has never been modified
+        return (
+            entry.status == EntryStatus.PENDING
+            and not entry.status_last_updated_at
+            and not entry.last_status_modified_by
+        )
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_entry_bulk_delete",
+            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""

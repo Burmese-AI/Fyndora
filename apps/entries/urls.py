@@ -17,6 +17,7 @@ from .views.workspace_expense_views import (
 )
 from .views.entry_views import (
     WorkspaceEntryListView,
+    WorkspaceEntryBulkDeleteView,
     WorkspaceTeamEntryListView,
     WorkspaceTeamEntryCreateView,
     WorkspaceTeamEntryUpdateView,
@@ -89,6 +90,11 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/entries",
         WorkspaceEntryListView.as_view(),
         name="workspace_entry_list",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/entries",
+        WorkspaceEntryBulkDeleteView.as_view(),
+        name="workspace_entry_bulk_delete"
     ),
     path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",

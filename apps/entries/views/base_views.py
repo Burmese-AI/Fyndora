@@ -115,7 +115,7 @@ class BaseEntryBulkActionView(
             
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
-
+            
             # Validate each entry
             success, message = self.perform_action(request, entries)
             
@@ -159,6 +159,7 @@ class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
     def perform_action(self, request, entries):
         valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
         if not valid_ids:
+            print(f"No valid id => {valid_ids}")
             return False, "No valid entries to delete"
 
         qs_valid = entries.filter(pk__in=valid_ids)

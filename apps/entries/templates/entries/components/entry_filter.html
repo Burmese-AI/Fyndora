@@ -16,12 +16,17 @@
           <select name="status" class="select select-sm select-bordered w-full bg-base-100">
             {% for status in status_options %}
               <option value="{{ status }}"
-                {% if status == filter_status_value %}selected{% elif status == default_status_option %}selected{% endif %}
+                {% if filter_status_value %}
+                  {% if status == filter_status_value %}selected{% endif %}
+                {% else %}
+                  {% if status == default_status_option %}selected{% endif %}
+                {% endif %}
               >
                 {{ status }}
               </option>
             {% endfor %}
           </select>
+
         </div>
       {% endif %}
   

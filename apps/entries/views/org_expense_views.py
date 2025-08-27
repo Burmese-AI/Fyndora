@@ -243,6 +243,7 @@ class OrganizationExpenseBulkDeleteView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
     BaseGetModalView,
+    StatusFilteringMixin,
     BaseEntryBulkActionView,
 ):
     table_template_name = "entries/partials/table.html"
@@ -251,27 +252,26 @@ class OrganizationExpenseBulkDeleteView(
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
-            entry_types=[EntryType.ORG_EXP],
+            entry_types=[EntryType.ORG_EXP],  
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")]
-            if self.request.GET.get("status")
-            else [EntryStatus.PENDING],
-            search=self.request.GET.get("search"),
+            statuses=[EntryStatus.PENDING]          
         )
 
     def perform_action(self, request, entries):
         valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
         if not valid_ids:
-            return False, "No valid entries"
+            return False, "No valid entries to delete"
 
         qs_valid = entries.filter(pk__in=valid_ids)
+        # Get the count *before* performing the delete operation
+        deleted_count = qs_valid.count()
         qs_valid.delete()
-        return True, f"Deleted {qs_valid.count()} entries"
+        return True, f"Deleted {deleted_count} entry/entries"
 
     def validate_entry(self, entry):
         # True if
         # 1. Entry status pending
-        # 2. Entry hasn't been reviewed
+        # 2. Entry status hasn't been modified once
         if (
             entry.status == EntryStatus.PENDING
             and not entry.status_last_updated_at
@@ -294,6 +294,9 @@ class OrganizationExpenseBulkDeleteView(
         selected_ids = self.request.GET.getlist("entries")
         context["selected_entry_ids"] = selected_ids
         context["entry_count"] = len(selected_ids)
+        if self.request.htmx:
+            context["filter_status_value"] = None
+            context["filter_search_value"] = None
         return context
 
 
@@ -301,6 +304,7 @@ class OrganizationExpenseBulkUpdateView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
     BaseGetModalView,
+    StatusFilteringMixin,
     BaseEntryBulkActionView,
 ):
     table_template_name = "entries/partials/table.html"

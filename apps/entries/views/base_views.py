@@ -101,8 +101,7 @@ class BaseEntryBulkActionView(
                 messages.error(self.request, message)
                 return self._render_htmx_error_response()
             
-            messages.success(self.request, message,)
-
+            messages.success(self.request, message)
             return self._render_htmx_success_response()
 
         except Exception as e:

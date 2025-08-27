@@ -235,6 +235,15 @@ def update_entry_status(
         else "team_member",
     )
 
+def bulk_update_entry_status(
+    *, entries: list[Entry], request=None
+):
+    Entry.objects.bulk_update(
+        entries,
+        ["status", "status_note", "last_status_modified_by", "status_last_updated_at"],
+    )
+    return entries
+
 
 def delete_entry(*, entry: Entry, user=None, request=None):
     """

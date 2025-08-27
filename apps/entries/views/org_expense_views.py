@@ -28,7 +28,7 @@ from ..forms import (
 )
 from ..models import Entry
 from ..selectors import get_entries
-from ..services import create_entry_with_attachments, delete_entry
+from ..services import create_entry_with_attachments, delete_entry, bulk_update_entry_status
 from ..utils import (
     can_add_org_expense,
     can_delete_org_expense,
@@ -338,7 +338,7 @@ class OrganizationExpenseBulkUpdateView(
                 valid_entries.append(entry)        
         if not valid_entries:
             return False, "No valid entries"
-        Entry.objects.bulk_update(valid_entries, ["status", "status_note", "last_status_modified_by", "status_last_updated_at"])
+        bulk_update_entry_status(entries=valid_entries, request=request)
         return True, f"Updated {len(valid_entries)} entries"
 
     def validate_entry(self, entry):

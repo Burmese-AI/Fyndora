@@ -41,7 +41,7 @@ from ..utils import (
 )
 from apps.core.utils import permission_denied_view
 from apps.entries.utils import can_view_workspace_level_entries
-
+from ..services import bulk_update_entry_status
 
 class WorkspaceExpenseListView(
     WorkspaceRequiredMixin,
@@ -355,7 +355,7 @@ class WorkspaceExpenseBulkUpdateView(
                 valid_entries.append(entry)        
         if not valid_entries:
             return False, "No valid entries"
-        Entry.objects.bulk_update(valid_entries, ["status", "status_note", "last_status_modified_by", "status_last_updated_at"])
+        bulk_update_entry_status(entries=valid_entries, request=request)
         return True, f"Updated {len(valid_entries)} entries"
 
     def validate_entry(self, entry):

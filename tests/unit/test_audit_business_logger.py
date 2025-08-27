@@ -17,7 +17,6 @@ from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
 
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.auditlog.constants import AuditActionType
 from tests.factories import (
     CustomUserFactory,
     EntryFactory,
@@ -216,7 +215,12 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
 
         # Verify the entry logger method was called
         mock_log_entry_action.assert_called_once_with(
-            self.user, self.entry, "approve", None, notes="Service approval", level="automatic"
+            self.user,
+            self.entry,
+            "approve",
+            None,
+            notes="Service approval",
+            level="automatic",
         )
 
     @pytest.mark.django_db
@@ -232,9 +236,7 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
 
         # Should log warning and return early
         mock_logger.warning.assert_called_once()
-        self.assertIn(
-            "Unknown action", mock_logger.warning.call_args[0][0]
-        )
+        self.assertIn("Unknown action", mock_logger.warning.call_args[0][0])
 
 
 @pytest.mark.unit
@@ -247,7 +249,9 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         self.target_user = CustomUserFactory()
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change"
+    )
     def test_log_permission_change_grant(self, mock_log_permission_change):
         """Test logging permission grant."""
         request = self.factory.post(
@@ -273,7 +277,9 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change")
+    @patch(
+        "apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change"
+    )
     def test_log_permission_change_revoke(self, mock_log_permission_change):
         """Test logging permission revoke."""
         request = self.factory.post("/permissions/revoke/", {"reason": "Role change"})
@@ -361,7 +367,13 @@ class TestBusinessAuditLoggerDataExport(TestCase):
 
         # Verify the system logger method was called
         mock_log_data_export.assert_called_once_with(
-            self.user, "audit_logs", None, filters=filters, result_count=50, format="csv", reason="compliance_audit"
+            self.user,
+            "audit_logs",
+            None,
+            filters=filters,
+            result_count=50,
+            format="csv",
+            reason="compliance_audit",
         )
 
 
@@ -433,7 +445,11 @@ class TestBusinessAuditLoggerBulkOperations(TestCase):
 
         # Verify the system logger method was called
         mock_log_bulk_operation.assert_called_once_with(
-            self.user, "scheduled_cleanup", entries, None, cleanup_reason="expired_entries"
+            self.user,
+            "scheduled_cleanup",
+            entries,
+            None,
+            cleanup_reason="expired_entries",
         )
 
 

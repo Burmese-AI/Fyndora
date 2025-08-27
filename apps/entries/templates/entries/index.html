@@ -98,7 +98,7 @@
       {% endif %}
     </section>
 
-  {% url 'organization_expense' organization.pk as filter_url %}
+  {% url 'organization_expenses' organization.pk as filter_url %}
   {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
 
 </div>

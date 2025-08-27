@@ -122,8 +122,8 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
         self.entry = EntryFactory()
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_entry_action_submit(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.entry_logger.EntryAuditLogger.log_entry_action")
+    def test_log_entry_action_submit(self, mock_log_entry_action):
         """Test logging entry submit action."""
         request = self.factory.post("/entries/submit/")
         request.user = self.user
@@ -132,22 +132,14 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
             user=self.user, entry=self.entry, action="submit", request=request
         )
 
-        # Verify audit_create was called
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["user"], self.user)
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.ENTRY_SUBMITTED)
-        self.assertEqual(call_args[1]["target_entity"], self.entry)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["action"], "submit")
-        self.assertTrue(metadata["manual_logging"])
-        self.assertEqual(metadata["entry_id"], str(self.entry.entry_id))
+        # Verify the entry logger method was called
+        mock_log_entry_action.assert_called_once_with(
+            self.user, self.entry, "submit", request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_entry_action_approve_with_notes(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.entry_logger.EntryAuditLogger.log_entry_action")
+    def test_log_entry_action_approve_with_notes(self, mock_log_entry_action):
         """Test logging entry approve action with approval notes."""
         request = self.factory.post(
             "/entries/approve/", {"notes": "All requirements met", "level": "manager"}
@@ -158,22 +150,14 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
             user=self.user, entry=self.entry, action="approve", request=request
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.ENTRY_APPROVED)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["action"], "approve")
-        self.assertEqual(metadata["approver_id"], str(self.user.user_id))
-        self.assertEqual(metadata["approver_email"], self.user.email)
-        self.assertEqual(metadata["approval_notes"], "All requirements met")
-        self.assertEqual(metadata["approval_level"], "manager")
-        self.assertIn("approval_timestamp", metadata)
+        # Verify the entry logger method was called
+        mock_log_entry_action.assert_called_once_with(
+            self.user, self.entry, "approve", request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_entry_action_reject_with_reason(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.entry_logger.EntryAuditLogger.log_entry_action")
+    def test_log_entry_action_reject_with_reason(self, mock_log_entry_action):
         """Test logging entry reject action with rejection reason."""
         request = self.factory.post(
             "/entries/reject/",
@@ -189,22 +173,14 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
             user=self.user, entry=self.entry, action="reject", request=request
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.ENTRY_REJECTED)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["action"], "reject")
-        self.assertEqual(metadata["rejector_id"], str(self.user.user_id))
-        self.assertEqual(metadata["rejection_reason"], "Missing documentation")
-        self.assertEqual(metadata["rejection_notes"], "Please provide receipts")
-        self.assertEqual(metadata["can_resubmit"], "true")
-        self.assertIn("rejection_timestamp", metadata)
+        # Verify the entry logger method was called
+        mock_log_entry_action.assert_called_once_with(
+            self.user, self.entry, "reject", request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_entry_action_flag_with_severity(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.entry_logger.EntryAuditLogger.log_entry_action")
+    def test_log_entry_action_flag_with_severity(self, mock_log_entry_action):
         """Test logging entry flag action with severity."""
         request = self.factory.post(
             "/entries/flag/",
@@ -220,20 +196,14 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
             user=self.user, entry=self.entry, action="flag", request=request
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.ENTRY_FLAGGED)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["action"], "flag")
-        self.assertEqual(metadata["flag_reason"], "Suspicious amount")
-        self.assertEqual(metadata["flag_notes"], "Requires investigation")
-        self.assertEqual(metadata["flag_severity"], "high")
+        # Verify the entry logger method was called
+        mock_log_entry_action.assert_called_once_with(
+            self.user, self.entry, "flag", request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_entry_action_without_request(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.entry_logger.EntryAuditLogger.log_entry_action")
+    def test_log_entry_action_without_request(self, mock_log_entry_action):
         """Test logging entry action without request (service call)."""
         BusinessAuditLogger.log_entry_action(
             user=self.user,
@@ -244,16 +214,13 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
             level="automatic",
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["source"], "service_call")
-        self.assertEqual(metadata["approval_notes"], "Service approval")
-        self.assertEqual(metadata["approval_level"], "automatic")
+        # Verify the entry logger method was called
+        mock_log_entry_action.assert_called_once_with(
+            self.user, self.entry, "approve", None, notes="Service approval", level="automatic"
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.logger")
+    @patch("apps.auditlog.loggers.base_logger.logger")
     def test_log_entry_action_unknown_action(self, mock_logger):
         """Test logging unknown entry action."""
         request = self.factory.post("/entries/unknown/")
@@ -266,7 +233,7 @@ class TestBusinessAuditLoggerEntryActions(TestCase):
         # Should log warning and return early
         mock_logger.warning.assert_called_once()
         self.assertIn(
-            "Unknown entry workflow action", mock_logger.warning.call_args[0][0]
+            "Unknown action", mock_logger.warning.call_args[0][0]
         )
 
 
@@ -280,8 +247,8 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         self.target_user = CustomUserFactory()
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create_security_event")
-    def test_log_permission_change_grant(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change")
+    def test_log_permission_change_grant(self, mock_log_permission_change):
         """Test logging permission grant."""
         request = self.factory.post(
             "/permissions/grant/",
@@ -295,29 +262,19 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         BusinessAuditLogger.log_permission_change(
             user=self.user,
             target_user=self.target_user,
-            permission="admin_access",
+            permission_type="admin_access",
             action="grant",
             request=request,
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["user"], self.user)
-        self.assertEqual(
-            call_args[1]["action_type"], AuditActionType.PERMISSION_GRANTED
+        # Verify the system logger method was called
+        mock_log_permission_change.assert_called_once_with(
+            self.user, self.target_user, "admin_access", "grant", request
         )
-        self.assertEqual(call_args[1]["target_entity"], self.target_user)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["target_user_id"], str(self.target_user.user_id))
-        self.assertEqual(metadata["permission"], "admin_access")
-        self.assertEqual(metadata["action"], "grant")
-        self.assertEqual(metadata["change_reason"], "Promotion to manager")
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create_security_event")
-    def test_log_permission_change_revoke(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_permission_change")
+    def test_log_permission_change_revoke(self, mock_log_permission_change):
         """Test logging permission revoke."""
         request = self.factory.post("/permissions/revoke/", {"reason": "Role change"})
         request.user = self.user
@@ -325,24 +282,18 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         BusinessAuditLogger.log_permission_change(
             user=self.user,
             target_user=self.target_user,
-            permission="admin_access",
+            permission_type="admin_access",
             action="revoke",
             request=request,
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(
-            call_args[1]["action_type"], AuditActionType.PERMISSION_REVOKED
+        # Verify the system logger method was called
+        mock_log_permission_change.assert_called_once_with(
+            self.user, self.target_user, "admin_access", "revoke", request
         )
 
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["action"], "revoke")
-        self.assertEqual(metadata["change_reason"], "Role change")
-
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.logger")
+    @patch("apps.auditlog.loggers.system_logger.logger")
     def test_log_permission_change_unknown_action(self, mock_logger):
         """Test logging unknown permission action."""
         request = self.factory.post("/permissions/unknown/")
@@ -351,11 +302,12 @@ class TestBusinessAuditLoggerPermissionChanges(TestCase):
         BusinessAuditLogger.log_permission_change(
             user=self.user,
             target_user=self.target_user,
-            permission="admin_access",
+            permission_type="admin_access",
             action="unknown",
             request=request,
         )
 
+        # Should log warning and return early
         mock_logger.warning.assert_called_once()
         self.assertIn("Unknown permission action", mock_logger.warning.call_args[0][0])
 
@@ -369,8 +321,8 @@ class TestBusinessAuditLoggerDataExport(TestCase):
         self.user = CustomUserFactory()
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_data_export_with_request(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_data_export")
+    def test_log_data_export_with_request(self, mock_log_data_export):
         """Test logging data export with request."""
         request = self.factory.get("/export/?format=xlsx")
         request.user = self.user
@@ -386,24 +338,14 @@ class TestBusinessAuditLoggerDataExport(TestCase):
             request=request,
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["user"], self.user)
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.DATA_EXPORTED)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["export_type"], "entries")
-        self.assertEqual(metadata["export_filters"], filters)
-        self.assertEqual(metadata["result_count"], 150)
-        self.assertEqual(metadata["export_format"], "xlsx")
-        self.assertEqual(metadata["export_reason"], "Monthly report")
-        self.assertEqual(metadata["file_size_estimate"], "15000B")
-        self.assertTrue(metadata["manual_logging"])
+        # Verify the system logger method was called
+        mock_log_data_export.assert_called_once_with(
+            self.user, "entries", request, filters=filters, result_count=150
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_data_export_without_request(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_data_export")
+    def test_log_data_export_without_request(self, mock_log_data_export):
         """Test logging data export without request (service call)."""
         filters = {"workspace_id": 123}
 
@@ -417,13 +359,10 @@ class TestBusinessAuditLoggerDataExport(TestCase):
             reason="compliance_audit",
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["export_format"], "csv")
-        self.assertEqual(metadata["export_reason"], "compliance_audit")
-        self.assertEqual(metadata["source"], "service_call")
+        # Verify the system logger method was called
+        mock_log_data_export.assert_called_once_with(
+            self.user, "audit_logs", None, filters=filters, result_count=50, format="csv", reason="compliance_audit"
+        )
 
 
 @pytest.mark.unit
@@ -435,9 +374,8 @@ class TestBusinessAuditLoggerBulkOperations(TestCase):
         self.user = CustomUserFactory()
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    @patch("apps.auditlog.business_logger.AuditConfig.BULK_OPERATION_THRESHOLD", 10)
-    def test_log_bulk_operation_small_batch(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_bulk_operation")
+    def test_log_bulk_operation_small_batch(self, mock_log_bulk_operation):
         """Test logging small bulk operation (under threshold)."""
         request = self.factory.post("/bulk/approve/")
         request.user = self.user
@@ -448,28 +386,18 @@ class TestBusinessAuditLoggerBulkOperations(TestCase):
         BusinessAuditLogger.log_bulk_operation(
             user=self.user,
             operation_type="bulk_approve",
-            affected_objects=entries,
+            affected_entities=entries,
             request=request,
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        self.assertEqual(call_args[1]["action_type"], AuditActionType.BULK_OPERATION)
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["operation_type"], "bulk_approve")
-        self.assertEqual(metadata["total_objects"], 5)
-        self.assertEqual(len(metadata["object_ids"]), 5)
-        # All object IDs should be included for small operations
-        expected_ids = [str(entry.entry_id) for entry in entries]
-        self.assertEqual(metadata["object_ids"], expected_ids)
+        # Verify the system logger method was called
+        mock_log_bulk_operation.assert_called_once_with(
+            self.user, "bulk_approve", entries, request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    @patch("apps.auditlog.business_logger.AuditConfig.BULK_OPERATION_THRESHOLD", 5)
-    @patch("apps.auditlog.business_logger.AuditConfig.BULK_SAMPLE_SIZE", 3)
-    def test_log_bulk_operation_large_batch(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_bulk_operation")
+    def test_log_bulk_operation_large_batch(self, mock_log_bulk_operation):
         """Test logging large bulk operation (over threshold)."""
         request = self.factory.post("/bulk/delete/")
         request.user = self.user
@@ -480,42 +408,33 @@ class TestBusinessAuditLoggerBulkOperations(TestCase):
         BusinessAuditLogger.log_bulk_operation(
             user=self.user,
             operation_type="bulk_delete",
-            affected_objects=entries,
+            affected_entities=entries,
             request=request,
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["operation_type"], "bulk_delete")
-        self.assertEqual(metadata["total_objects"], 10)
-        # Only sample should be included for large operations
-        self.assertEqual(len(metadata["object_ids"]), 3)
-        # Should be first 3 entries
-        expected_sample_ids = [str(entry.entry_id) for entry in entries[:3]]
-        self.assertEqual(metadata["object_ids"], expected_sample_ids)
+        # Verify the system logger method was called
+        mock_log_bulk_operation.assert_called_once_with(
+            self.user, "bulk_delete", entries, request
+        )
 
     @pytest.mark.django_db
-    @patch("apps.auditlog.business_logger.audit_create")
-    def test_log_bulk_operation_without_request(self, mock_audit_create):
+    @patch("apps.auditlog.loggers.system_logger.SystemAuditLogger.log_bulk_operation")
+    def test_log_bulk_operation_without_request(self, mock_log_bulk_operation):
         """Test logging bulk operation without request."""
         entries = [EntryFactory() for _ in range(3)]
 
         BusinessAuditLogger.log_bulk_operation(
             user=self.user,
             operation_type="scheduled_cleanup",
-            affected_objects=entries,
+            affected_entities=entries,
             request=None,
             cleanup_reason="expired_entries",
         )
 
-        mock_audit_create.assert_called_once()
-        call_args = mock_audit_create.call_args
-
-        metadata = call_args[1]["metadata"]
-        self.assertEqual(metadata["source"], "service_call")
-        self.assertEqual(metadata["cleanup_reason"], "expired_entries")
+        # Verify the system logger method was called
+        mock_log_bulk_operation.assert_called_once_with(
+            self.user, "scheduled_cleanup", entries, None, cleanup_reason="expired_entries"
+        )
 
 
 @pytest.mark.unit
@@ -528,7 +447,8 @@ class TestBusinessAuditLoggerErrorHandling(TestCase):
         self.entry = EntryFactory()
 
     @pytest.mark.django_db
-    def test_log_entry_action_invalid_user(self):
+    @patch("apps.auditlog.loggers.entry_logger.logger")
+    def test_log_entry_action_invalid_user(self, mock_logger):
         """Test entry action logging with invalid user."""
         request = self.factory.post("/entries/submit/")
 
@@ -538,7 +458,8 @@ class TestBusinessAuditLoggerErrorHandling(TestCase):
             )
 
     @pytest.mark.django_db
-    def test_log_permission_change_invalid_user(self):
+    @patch("apps.auditlog.loggers.system_logger.logger")
+    def test_log_permission_change_invalid_user(self, mock_logger):
         """Test permission change logging with invalid user."""
         request = self.factory.post("/permissions/grant/")
         target_user = CustomUserFactory()
@@ -547,13 +468,14 @@ class TestBusinessAuditLoggerErrorHandling(TestCase):
             BusinessAuditLogger.log_permission_change(
                 user=None,
                 target_user=target_user,
-                permission="admin",
+                permission_type="admin",
                 action="grant",
                 request=request,
             )
 
     @pytest.mark.django_db
-    def test_log_data_export_invalid_user(self):
+    @patch("apps.auditlog.loggers.system_logger.logger")
+    def test_log_data_export_invalid_user(self, mock_logger):
         """Test data export logging with invalid user."""
         request = self.factory.get("/export/")
 

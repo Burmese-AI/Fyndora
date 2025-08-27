@@ -58,6 +58,5 @@
     </button>
   </div>
 
-  {% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
-  {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
+  {% include "entries/layouts/base_entry_content_layout.html" %}
 {% endblock %}

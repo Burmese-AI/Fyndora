@@ -32,7 +32,6 @@
         </tr>
       </thead>
   
-  
       <tbody>
         {% for entry in entries %}
           {% include "entries/partials/row.html" with entry=entry %}
@@ -51,61 +50,93 @@
     {% endif %}
   </div>
 
+  {# This script will be re-executed every time #entries_table is swapped #}
+  <script>
+    // These functions need to be accessible globally or defined in a way
+    // that they can be called by `onclick` attributes.
+    // If you always swap the whole `entries_table`, defining them here works fine.
+
+    function updateBulkActions() {
+      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox'); // Scope to #entries_table
+      const checked = document.querySelectorAll('#entries_table .bulk-checkbox:checked');
+      const button = document.getElementById('bulk-select-button'); // This is OUTSIDE the #entries_table
+      const countSpan = document.getElementById('selected-count'); // This is OUTSIDE the #entries_table
+      const selectAll = document.getElementById('select-all'); // This checkbox is INSIDE the #entries_table
+
+      const count = checked.length;
+
+      // Update button visibility and text (the button and count span are persistent)
+      if (button) { // defensive check in case the button isn't immediately available
+        if (count > 0) {
+          button.classList.remove('hidden');
+          if (countSpan) countSpan.textContent = count;
+        } else {
+          button.classList.add('hidden');
+          if (countSpan) countSpan.textContent = '0'; // Explicitly reset count
+        }
+      }
+
+      // Update "Select All" checkbox (this checkbox is swapped with the table)
+      if (selectAll) { // defensive check
+        if (count === 0) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        } else if (count > 0 && count === checkboxes.length) {
+          selectAll.checked = true;
+          selectAll.indeterminate = false;
+        } else {
+          selectAll.checked = false;
+          selectAll.indeterminate = true;
+        }
+      }
+    }
+  
+    function toggleSelectAll(source) {
+      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox');
+      const isChecked = source.checked;
+      checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+      });
+      updateBulkActions();
+    }
+  
+    function clearSelection() {
+      document.querySelectorAll('#entries_table .bulk-checkbox:checked').forEach(cb => {
+        cb.checked = false;
+      });
+      updateBulkActions();
+    }
+
+    // --- Initialization logic to run every time this script is loaded (i.e., after a swap) ---
+    (function() { // Wrap in an IIFE to avoid polluting global scope unnecessarily
+      // Clear any previous selection that might have persisted due to the button state
+      // This directly addresses your "reset the bulk select button" idea.
+      // We explicitly make sure the button goes away if the new table is empty.
+      const button = document.getElementById('bulk-select-button');
+      if (button) {
+        button.classList.add('hidden');
+        const countSpan = document.getElementById('selected-count');
+        if (countSpan) countSpan.textContent = '0';
+      }
+
+      const selectAll = document.getElementById('select-all');
+      if (selectAll) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+      }
+
+      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox');
+      checkboxes.forEach(cb => {
+        // IMPORTANT: Remove any existing change listeners BEFORE adding new ones
+        // This prevents duplicate event handlers if the script runs multiple times
+        // without the original elements being completely destroyed.
+        cb.removeEventListener('change', updateBulkActions);
+        cb.addEventListener('change', updateBulkActions);
+      });
+      // After re-attaching listeners, update the state based on the new (initially unchecked) checkboxes
+      updateBulkActions();
+    })(); // Execute the IIFE immediately
+
+  </script>
+
 </div>
-
-
-<script>
-  function updateBulkActions() {
-    const checkboxes = document.querySelectorAll('.bulk-checkbox');
-    const checked = document.querySelectorAll('.bulk-checkbox:checked');
-    const button = document.getElementById('bulk-select-button');
-    const countSpan = document.getElementById('selected-count');
-    const selectAll = document.getElementById('select-all');
-
-    const count = checked.length;
-
-    // Update button visibility and text
-    if (count > 0) {
-      button.classList.remove('hidden');
-      document.getElementById('selected-count').textContent = count;
-    } else {
-      button.classList.add('hidden');
-    }
-
-    // Update "Select All" checkbox
-    if (count === 0) {
-      selectAll.checked = false;
-      selectAll.indeterminate = false;
-    } else if (count === checkboxes.length) {
-      selectAll.checked = true;
-      selectAll.indeterminate = false;
-    } else {
-      selectAll.checked = false;
-      selectAll.indeterminate = true;
-    }
-  }
-
-  function toggleSelectAll(source) {
-    const checkboxes = document.querySelectorAll('.bulk-checkbox');
-    const isChecked = source.checked;
-    checkboxes.forEach(cb => {
-      cb.checked = isChecked;
-    });
-    updateBulkActions();
-  }
-
-  function clearSelection() {
-    document.querySelectorAll('.bulk-checkbox:checked').forEach(cb => {
-      cb.checked = false;
-    });
-    updateBulkActions();
-  }
-
-  // Init
-  document.addEventListener('DOMContentLoaded', () => {
-    const checkboxes = document.querySelectorAll('.bulk-checkbox');
-    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkActions));
-    updateBulkActions();
-  });
-
-</script>

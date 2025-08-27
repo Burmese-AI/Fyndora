@@ -28,7 +28,12 @@ from ..forms import (
 )
 from ..models import Entry
 from ..selectors import get_entries
-from ..services import create_entry_with_attachments, delete_entry, bulk_update_entry_status
+from ..services import (
+    create_entry_with_attachments, 
+    delete_entry, 
+    bulk_update_entry_status,
+    bulk_delete_entries
+)
 from ..utils import (
     can_add_org_expense,
     can_delete_org_expense,
@@ -265,7 +270,11 @@ class OrganizationExpenseBulkDeleteView(
         qs_valid = entries.filter(pk__in=valid_ids)
         # Get the count *before* performing the delete operation
         deleted_count = qs_valid.count()
-        qs_valid.delete()
+        bulk_delete_entries(
+            entries=qs_valid,
+            user=self.request.user,
+            request=self.request
+        )
         return True, f"Deleted {deleted_count} entry/entries"
 
     def validate_entry(self, entry):

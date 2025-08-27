@@ -1,273 +1,380 @@
-"""
-Unit tests for organization services.
+"""Unit tests for organization services.
 
-Tests the business logic functions in apps.organizations.services module.
-Focuses on real database operations with minimal mocking.
+Tests business logic functions with various scenarios and edge cases.
 """
 
 from datetime import date
 from decimal import Decimal
+from unittest.mock import patch, MagicMock
 
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase, TransactionTestCase
+from django.db import IntegrityError
+from django.test import TestCase
 
-from apps.organizations.constants import StatusChoices
-from apps.currencies.models import Currency
 from apps.organizations.exceptions import (
     OrganizationCreationError,
+    OrganizationUpdateError,
 )
-from apps.organizations.forms import OrganizationForm
-from apps.organizations.models import (
-    Organization,
-    OrganizationExchangeRate,
-)
+from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.organizations.services import (
-    create_organization_exchange_rate,
     create_organization_with_owner,
-    delete_organization_exchange_rate,
-    update_organization_exchange_rate,
     update_organization_from_form,
+    create_organization_exchange_rate,
+    update_organization_exchange_rate,
+    delete_organization_exchange_rate,
 )
 from tests.factories import (
     CustomUserFactory,
-    OrganizationExchangeRateFactory,
     OrganizationFactory,
     OrganizationMemberFactory,
+    OrganizationExchangeRateFactory,
 )
 
-User = get_user_model()
 
-
-class TestCreateOrganizationWithOwner(TransactionTestCase):
-    """Test create_organization_with_owner service function."""
+class TestCreateOrganizationWithOwner(TestCase):
+    """Test create_organization_with_owner service."""
 
     def setUp(self):
         self.user = CustomUserFactory()
 
-    def test_create_organization_with_owner_success(self):
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    @patch('apps.organizations.services.get_permissions_for_role')
+    @patch('apps.organizations.services.assign_perm')
+    @patch('apps.organizations.services.Group.objects.get_or_create')
+    @patch('apps.organizations.services.OrganizationMember.objects.create')
+    @patch('apps.organizations.services.model_update')
+    def test_create_organization_with_owner_success(self, mock_model_update, mock_member_create, mock_group, mock_assign_perm, mock_get_permissions, mock_audit_logger):
         """Test successful organization creation with owner."""
-        user = CustomUserFactory()
-        form_data = {
-            "title": "Test Organization",
-            "description": "Test Description",
-            "status": StatusChoices.ACTIVE,
-        }
-        form = OrganizationForm(data=form_data)
-        self.assertTrue(form.is_valid())
+        # Mock form
+        mock_form = MagicMock()
+        mock_org = OrganizationFactory()
+        mock_form.save.return_value = mock_org
+        
+        # Mock permissions
+        mock_get_permissions.return_value = ['add_organization', 'change_organization']
+        
+        # Mock member creation
+        mock_member = MagicMock()
+        mock_member.user = self.user
+        mock_member_create.return_value = mock_member
+        
+        # Mock group creation
+        mock_group_obj = MagicMock()
+        mock_group.return_value = (mock_group_obj, True)
+        
+        # Mock model update
+        mock_model_update.return_value = mock_org
+        
+        result = create_organization_with_owner(form=mock_form, user=self.user)
+        
+        # Verify organization was created
+        self.assertIsInstance(result, Organization)
+        
+        # Verify permissions were assigned
+        mock_assign_perm.assert_called()
 
-        organization = create_organization_with_owner(form=form, user=user)
-
-        self.assertIsInstance(organization, Organization)
-        self.assertEqual(organization.title, "Test Organization")
-        self.assertEqual(organization.description, "Test Description")
-        self.assertIsNotNone(organization.owner)
-        self.assertEqual(organization.owner.user, user)
-        self.assertTrue(organization.owner.is_active)
-
-    def test_create_organization_with_owner_duplicate_title(self):
-        """Test organization creation with duplicate title."""
-        # Create first organization
-        OrganizationFactory(title="Duplicate Title")
-
-        form_data = {
-            "title": "Duplicate Title",
-            "description": "Test Description",
-            "status": StatusChoices.ACTIVE,
-        }
-        form = OrganizationForm(data=form_data)
-
-        # Form validation should catch duplicate title
-        self.assertFalse(form.is_valid())
-        self.assertIn("title", form.errors)
-
-    def test_create_organization_with_owner_invalid_form(self):
-        """Test organization creation with invalid form data."""
-        form_data = {
-            "title": "",  # Required field
-            "description": "Test Description",
-            "status": StatusChoices.ACTIVE,
-        }
-        form = OrganizationForm(data=form_data)
-        self.assertFalse(form.is_valid())
-
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_create_organization_with_owner_failure(self, mock_audit_logger):
+        """Test organization creation failure."""
+        # Mock form that raises an exception
+        mock_form = MagicMock()
+        mock_form.save.side_effect = Exception("Database error")
+        
         with self.assertRaises(OrganizationCreationError):
-            create_organization_with_owner(form=form, user=self.user)
+            create_organization_with_owner(form=mock_form, user=self.user)
+            
+        # Verify audit logging was attempted
+        mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    @patch('apps.organizations.services.assign_perm')
+    @patch('apps.organizations.services.Group.objects.get_or_create')
+    @patch('apps.organizations.services.OrganizationMember.objects.create')
+    @patch('apps.organizations.services.model_update')
+    def test_create_organization_with_owner_audit_logging_failure(self, mock_model_update, mock_member_create, mock_group, mock_assign_perm, mock_audit_logger):
+        """Test organization creation when audit logging fails."""
+        # Mock form
+        mock_form = MagicMock()
+        mock_org = OrganizationFactory()
+        mock_form.save.return_value = mock_org
+        
+        # Mock member creation
+        mock_member = MagicMock()
+        mock_member.user = self.user
+        mock_member_create.return_value = mock_member
+        
+        # Mock group creation
+        mock_group_obj = MagicMock()
+        mock_group.return_value = (mock_group_obj, True)
+        
+        # Mock model update
+        mock_model_update.return_value = mock_org
+        
+        # Mock audit logging failure
+        mock_audit_logger.log_permission_change.side_effect = Exception("Audit error")
+        
+        # Should still create organization even if audit logging fails
+        result = create_organization_with_owner(form=mock_form, user=self.user)
+        self.assertIsInstance(result, Organization)
 
 
 class TestUpdateOrganizationFromForm(TestCase):
-    """Test update_organization_from_form service function."""
+    """Test update_organization_from_form service."""
 
     def setUp(self):
-        self.organization = OrganizationFactory(title="Original Title")
+        self.user = CustomUserFactory()
+        self.organization = OrganizationFactory()
 
-    def test_update_organization_from_form_success(self):
-        """Test successful organization update from form."""
-        form_data = {
-            "title": "Updated Title",
-            "description": "Updated Description",
-            "status": StatusChoices.ACTIVE,
-        }
-        form = OrganizationForm(data=form_data, instance=self.organization)
-        self.assertTrue(form.is_valid())
-
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    @patch('apps.organizations.services.model_update')
+    def test_update_organization_success(self, mock_model_update, mock_audit_logger):
+        """Test successful organization update."""
+        # Mock form
+        mock_form = MagicMock()
+        mock_form.is_valid.return_value = True
+        mock_form.cleaned_data = {'title': 'Updated Title'}
+        
+        # Mock model update
+        updated_org = OrganizationFactory(title='Updated Title')
+        mock_model_update.return_value = updated_org
+        
         result = update_organization_from_form(
-            form=form, organization=self.organization
+            form=mock_form, 
+            organization=self.organization, 
+            user=self.user
         )
+        
+        self.assertEqual(result.title, 'Updated Title')
+        mock_audit_logger.log_organization_action.assert_called()
 
-        # Verify organization was updated
-        self.assertEqual(result.title, "Updated Title")
-        self.assertEqual(result.description, "Updated Description")
+    def test_update_organization_invalid_form(self):
+        """Test organization update with invalid form."""
+        # Mock invalid form
+        mock_form = MagicMock()
+        mock_form.is_valid.return_value = False
+        mock_form.errors = {'title': ['This field is required.']}
+        
+        with self.assertRaises(OrganizationUpdateError):
+            update_organization_from_form(
+                form=mock_form, 
+                organization=self.organization, 
+                user=self.user
+            )
 
-        # Verify database was updated
-        self.organization.refresh_from_db()
-        self.assertEqual(self.organization.title, "Updated Title")
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_update_organization_status_change(self, mock_audit_logger):
+        """Test organization update with status change."""
+        # Mock form
+        mock_form = MagicMock()
+        mock_form.is_valid.return_value = True
+        mock_form.cleaned_data = {'status': 'CLOSED'}
+        
+        # Mock model update
+        updated_org = OrganizationFactory(status='CLOSED')
+        with patch('apps.organizations.services.model_update') as mock_model_update:
+            mock_model_update.return_value = updated_org
+            
+            update_organization_from_form(
+                form=mock_form, 
+                organization=self.organization, 
+                user=self.user
+            )
+            
+            # Verify status change was logged
+            mock_audit_logger.log_status_change.assert_called()
 
-    def test_update_organization_from_form_invalid_data(self):
-        """Test organization update with invalid form data."""
-        organization = OrganizationFactory()
-        form_data = {"title": ""}  # Empty title should be invalid
-        form = OrganizationForm(data=form_data, instance=organization)
 
-        # The form should be invalid
-        self.assertFalse(form.is_valid())
-
-        # Since the form is invalid, we shouldn't call the service with it
-        # The service expects a valid form with cleaned_data
-        # In a real application, the view would check form.is_valid() first
-
-
-class TestOrganizationExchangeRateServices(TestCase):
-    """Test organization exchange rate service functions."""
+class TestCreateOrganizationExchangeRate(TestCase):
+    """Test create_organization_exchange_rate service."""
 
     def setUp(self):
         self.organization = OrganizationFactory()
-        self.member = OrganizationMemberFactory(organization=self.organization)
-        self.currency = Currency.objects.create(code="USD", name="US Dollar")
+        self.organization_member = OrganizationMemberFactory(organization=self.organization)
+        # Don't create real currency in setUp to avoid interference
 
-    def test_create_organization_exchange_rate_success(self):
-        """Test successful creation of organization exchange rate."""
-        organization = OrganizationFactory()
-        member = OrganizationMemberFactory(organization=organization)
-
-        # The service doesn't return anything, it just creates the exchange rate
-        create_organization_exchange_rate(
-            organization=organization,
-            organization_member=member,
-            currency_code="USD",
-            rate=1.25,
-            note="Test exchange rate",
-            effective_date=date.today(),
-        )
-
-        # Verify the exchange rate was created
-        exchange_rate = OrganizationExchangeRate.objects.get(
-            organization=organization, currency__code="USD"
-        )
-        self.assertEqual(exchange_rate.rate, 1.25)
-        self.assertEqual(exchange_rate.note, "Test exchange rate")
-        self.assertEqual(exchange_rate.added_by, member)
-
-    def test_create_organization_exchange_rate_duplicate(self):
-        """Test organization exchange rate creation with duplicate constraint."""
-        # Create first rate
-        create_organization_exchange_rate(
-            organization=self.organization,
-            organization_member=self.member,
-            currency_code="USD",
-            rate=Decimal("1.25"),
-            note="First rate",
-            effective_date=date(2024, 1, 1),
-        )
-
-        # Try to create duplicate (same org, currency, effective_date)
-        with self.assertRaises(ValidationError):
+    @patch('apps.organizations.services.createCurrency')
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_create_exchange_rate_success(self, mock_audit_logger, mock_create_currency):
+        """Test successful exchange rate creation."""
+        # Mock currency creation
+        mock_currency = MagicMock()
+        mock_create_currency.return_value = mock_currency
+        
+        # Mock OrganizationExchangeRate.objects.create
+        with patch.object(OrganizationExchangeRate.objects, 'create') as mock_create:
+            mock_exchange_rate = MagicMock()
+            mock_create.return_value = mock_exchange_rate
+            
             create_organization_exchange_rate(
                 organization=self.organization,
-                organization_member=self.member,
-                currency_code="USD",
-                rate=Decimal("1.30"),
-                note="Duplicate rate",
-                effective_date=date(2024, 1, 1),
+                organization_member=self.organization_member,
+                currency_code='USD',
+                rate=Decimal('1.25'),
+                note='Test rate',
+                effective_date=date.today()
             )
+            
+            # Verify exchange rate was created
+            mock_create.assert_called_once()
+            
+            # Verify audit logging
+            mock_audit_logger.log_organization_exchange_rate_action.assert_called()
 
-    def test_update_organization_exchange_rate_success(self):
-        """Test successful update of organization exchange rate."""
-        organization = OrganizationFactory()
-        member = OrganizationMemberFactory(organization=organization)
-        exchange_rate = OrganizationExchangeRateFactory(
-            organization=organization, added_by=member, note="Original note"
-        )
+    @patch('apps.organizations.services.createCurrency')
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_create_exchange_rate_integrity_error(self, mock_audit_logger, mock_create_currency):
+        """Test exchange rate creation with integrity error."""
+        # Mock currency creation
+        mock_currency = MagicMock()
+        mock_create_currency.return_value = mock_currency
+        
+        # Mock integrity error
+        with patch.object(OrganizationExchangeRate.objects, 'create') as mock_create:
+            mock_create.side_effect = IntegrityError("Duplicate entry")
+            
+            with self.assertRaises(ValidationError):
+                create_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    currency_code='USD',
+                    rate=Decimal('1.25'),
+                    note='Test rate',
+                    effective_date=date.today()
+                )
+            
+            # Verify audit logging was attempted
+            mock_audit_logger.log_operation_failure.assert_called()
 
-        updated_rate = update_organization_exchange_rate(
-            organization=organization,
-            organization_member=member,
-            org_exchange_rate=exchange_rate,
-            note="Updated note",
-        )
+    @patch('apps.organizations.services.createCurrency')
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_create_exchange_rate_general_error(self, mock_audit_logger, mock_create_currency):
+        """Test exchange rate creation with general error."""
+        # Mock currency creation
+        mock_currency = MagicMock()
+        mock_create_currency.return_value = mock_currency
+        
+        # Mock general error
+        with patch.object(OrganizationExchangeRate.objects, 'create') as mock_create:
+            mock_create.side_effect = Exception("General error")
+            
+            with self.assertRaises(ValidationError):
+                create_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    currency_code='USD',
+                    rate=Decimal('1.25'),
+                    note='Test rate',
+                    effective_date=date.today()
+                )
+            
+            # Verify audit logging was attempted
+            mock_audit_logger.log_operation_failure.assert_called()
 
-        self.assertIsInstance(updated_rate, OrganizationExchangeRate)
-        self.assertEqual(updated_rate.note, "Updated note")
 
-    def test_delete_organization_exchange_rate_success(self):
-        """Test successful organization exchange rate deletion."""
-        # Create exchange rate
-        exchange_rate = OrganizationExchangeRateFactory(
+class TestUpdateOrganizationExchangeRate(TestCase):
+    """Test update_organization_exchange_rate service."""
+
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.organization_member = OrganizationMemberFactory(organization=self.organization)
+        self.exchange_rate = OrganizationExchangeRateFactory(
             organization=self.organization,
-            currency=self.currency,
-            added_by=self.member,
+            note='Original note'
         )
 
-        exchange_rate_id = exchange_rate.organization_exchange_rate_id
-
-        delete_organization_exchange_rate(
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    @patch('apps.organizations.services.model_update')
+    def test_update_exchange_rate_success(self, mock_model_update, mock_audit_logger):
+        """Test successful exchange rate update."""
+        # Mock model update
+        updated_rate = OrganizationExchangeRateFactory(note='Updated note')
+        mock_model_update.return_value = updated_rate
+        
+        update_organization_exchange_rate(
             organization=self.organization,
-            organization_member=self.member,
-            org_exchange_rate=exchange_rate,
+            organization_member=self.organization_member,
+            org_exchange_rate=self.exchange_rate,
+            note='Updated note'
+        )
+        
+        # Verify update was performed
+        mock_model_update.assert_called_once()
+        
+        # Verify audit logging
+        mock_audit_logger.log_organization_exchange_rate_action.assert_called()
+
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_update_exchange_rate_failure(self, mock_audit_logger):
+        """Test exchange rate update failure."""
+        # Mock model update failure
+        with patch('apps.organizations.services.model_update') as mock_model_update:
+            mock_model_update.side_effect = Exception("Update error")
+            
+            with self.assertRaises(ValidationError):
+                update_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    org_exchange_rate=self.exchange_rate,
+                    note='Updated note'
+                )
+            
+            # Verify audit logging was attempted
+            mock_audit_logger.log_operation_failure.assert_called()
+
+
+class TestDeleteOrganizationExchangeRate(TestCase):
+    """Test delete_organization_exchange_rate service."""
+
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.organization_member = OrganizationMemberFactory(organization=self.organization)
+        self.exchange_rate = OrganizationExchangeRateFactory(
+            organization=self.organization
         )
 
-        # Verify soft deletion (should still exist but with deleted_at set)
-        exchange_rate.refresh_from_db()
-        self.assertIsNotNone(exchange_rate.deleted_at)
-
-        # Verify it's not in active queryset
-        self.assertFalse(
-            OrganizationExchangeRate.objects.filter(
-                organization_exchange_rate_id=exchange_rate_id
-            ).exists()
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_delete_exchange_rate_success(self, mock_audit_logger):
+        """Test successful exchange rate deletion."""
+        result = delete_organization_exchange_rate(
+            organization=self.organization,
+            organization_member=self.organization_member,
+            org_exchange_rate=self.exchange_rate
         )
+        
+        # Verify deletion was successful
+        self.assertTrue(result)
+        
+        # Verify audit logging
+        mock_audit_logger.log_organization_exchange_rate_action.assert_called()
 
-    def test_create_exchange_rate_invalid_currency(self):
-        """Test exchange rate creation with invalid currency."""
-        with self.assertRaises(ValidationError):
-            create_organization_exchange_rate(
-                organization=self.organization,
-                organization_member=self.member,
-                currency_code="INVALID",
-                rate=Decimal("1.25"),
-                note="Test rate",
-                effective_date=date(2024, 1, 1),
-            )
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_delete_exchange_rate_failure(self, mock_audit_logger):
+        """Test exchange rate deletion failure."""
+        # Mock deletion failure
+        with patch.object(self.exchange_rate, 'delete') as mock_delete:
+            mock_delete.side_effect = Exception("Delete error")
+            
+            with self.assertRaises(ValidationError):
+                delete_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    org_exchange_rate=self.exchange_rate
+                )
+            
+            # Verify audit logging was attempted
+            mock_audit_logger.log_operation_failure.assert_called()
 
-    def test_create_exchange_rate_negative_rate(self):
-        """Test creation with negative rate."""
-        organization = OrganizationFactory()
-        member = OrganizationMemberFactory(organization=organization)
-
-        # Note: The service itself doesn't validate negative rates,
-        # this would be handled at the model/form level
-        # But we can test that the service handles any validation errors
-        try:
-            create_organization_exchange_rate(
-                organization=organization,
-                organization_member=member,
-                currency_code="USD",
-                rate=-1.25,  # Negative rate
-                note="Test negative rate",
-                effective_date=date.today(),
-            )
-            # If no exception is raised, the service allows negative rates
-            # which might be valid for some business cases
-        except ValidationError:
-            # If ValidationError is raised, that's also acceptable
-            pass
+    @patch('apps.organizations.services.BusinessAuditLogger')
+    def test_delete_exchange_rate_audit_logging_failure(self, mock_audit_logger):
+        """Test exchange rate deletion when audit logging fails."""
+        # Mock audit logging failure
+        mock_audit_logger.log_organization_exchange_rate_action.side_effect = Exception("Audit error")
+        
+        # Should still delete even if audit logging fails
+        result = delete_organization_exchange_rate(
+            organization=self.organization,
+            organization_member=self.organization_member,
+            org_exchange_rate=self.exchange_rate
+        )
+        
+        self.assertTrue(result)

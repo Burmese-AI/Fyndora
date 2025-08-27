@@ -333,7 +333,8 @@ def update_organization_exchange_rate(
                     error=err,
                     request=None,
                     organization_id=str(organization.organization_id),
-                    exchange_rate_id=str(org_exchange_rate.id),
+                    #org_exchange_rate.id is not a valid field and not exist in model ,i change it to organization_exchange_rate_id (THA)
+                    exchange_rate_id=str(org_exchange_rate.organization_exchange_rate_id),
                     error_type=type(err).__name__,
                     **extract_request_metadata(),
                 )

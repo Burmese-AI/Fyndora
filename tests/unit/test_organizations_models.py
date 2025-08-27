@@ -346,7 +346,7 @@ class TestOrganizationMemberModel(TestCase):
         member = OrganizationMemberFactory(user=user)
         member_id = member.organization_member_id
 
-        # Delete user
+        # Delete user (hard delete)
         user.delete()
 
         # Member should be deleted (cascade)

@@ -89,6 +89,9 @@ from .remittance_factories import (
     SmallAmountRemittanceFactory,
     RemittanceWithNotesFactory,
 )
+from .currency_factories import (
+    CurrencyFactory,
+)
 
 __all__ = [
     # User factories
@@ -164,4 +167,6 @@ __all__ = [
     "LargeAmountRemittanceFactory",
     "SmallAmountRemittanceFactory",
     "RemittanceWithNotesFactory",
+    # Currency factories
+    "CurrencyFactory",
 ]

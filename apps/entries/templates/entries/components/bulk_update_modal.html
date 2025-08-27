@@ -30,27 +30,13 @@
       <input type="hidden" name="entries" value="{{ entry_id }}" />
     {% endfor %}
 
-
-    {% comment %} "status": forms.Select(
-        attrs={
-            "class": "select select-bordered w-full",
-            "placeholder": "Select status",
-            "choices": EntryStatus.choices,
-        }
-    ),
-    "status_note": forms.Textarea(
-        attrs={
-            "class": "textarea textarea-bordered w-full",
-            "placeholder": "Leave notes for the status update",
-        }
-    ), {% endcomment %}
     <!-- Status Selector -->
     <div class="form-control">
         <label class="label">
             <span class="label-text">Status</span>
         </label>
         <select name="status" class="select select-bordered w-full">
-            {% for status, label in status_options %}
+            {% for status, label in modal_status_options %}
                 <option value="{{ status }}">{{ label }}</option>
             {% endfor %}
         </select>

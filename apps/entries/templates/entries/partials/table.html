@@ -1,51 +1,58 @@
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="table" class="overflow-x-auto w-full">
+<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="entries_table">
 
-  <table class="table w-full">
-    <thead>
-      <tr>
-        <th>
-          <label>
-            <input
-              type="checkbox"
-              id="select-all"
-              class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary/25"
-              onclick="toggleSelectAll(this)"
-            />
-          </label>
-        </th>
-        <th>Submitted By</th>
-        <th>Description</th>
-        <th class="text-center">Status</th>
-        <th class="text-center">Type</th>
-        <th>Amount</th>
-        <th>Currency</th>
-        <th>Exchange Rate</th>
-        <th>Converted Amount</th>
-        <th>Occurred On</th>
-        <th>Last Reviewed By</th>
-        <th class="text-center">Created At</th>
-        <th class="text-center">Actions</th>
-      </tr>
-    </thead>
+  {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
 
-
-    <tbody>
-      {% for entry in entries %}
-        {% include "entries/partials/row.html" with entry=entry %}
-      {% empty %}
+  <div id="table" class="mt-4 overflow-x-auto w-full">
+  
+    <table class="table w-full">
+      <thead>
         <tr>
-          <td colspan="8" class="text-center p-4 text-sm text-neutral">
-            No Expense Entries found
-          </td>
+          <th>
+            <label>
+              <input
+                type="checkbox"
+                id="select-all"
+                class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary/25"
+                onclick="toggleSelectAll(this)"
+              />
+            </label>
+          </th>
+          <th>Submitted By</th>
+          <th>Description</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Type</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Exchange Rate</th>
+          <th>Converted Amount</th>
+          <th>Occurred On</th>
+          <th>Last Reviewed By</th>
+          <th class="text-center">Created At</th>
+          <th class="text-center">Actions</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+  
+  
+      <tbody>
+        {% for entry in entries %}
+          {% include "entries/partials/row.html" with entry=entry %}
+        {% empty %}
+          <tr>
+            <td colspan="8" class="text-center p-4 text-sm text-neutral">
+              No Expense Entries found
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+    {% if is_paginated %}
+      {% include "components/pagination.html" with request=request %}
+    {% endif %}
+  </div>
 
-  {% if is_paginated %}
-    {% include "components/pagination.html" with request=request %}
-  {% endif %}
 </div>
+
 
 <script>
   function updateBulkActions() {

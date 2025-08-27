@@ -15,7 +15,8 @@
         <select name="status" class="select select-sm select-bordered w-full bg-base-100">
           {% for status in status_options %}
             <option value="{{ status }}"
-                    {% if status == default_status_option %}selected{% endif %}>
+              {% if status == filter_status_value %}selected{% elif status == default_status_option %}selected{% endif %}
+            >
               {{ status }}
             </option>
           {% endfor %}
@@ -29,7 +30,11 @@
         <select name="type" class="select select-sm select-bordered w-full bg-base-100">
           <option value="">All Types</option>
           {% for type in type_options %}
-            <option value="{{ type }}">{{ type }}</option>
+            <option value="{{ type }}"
+              {% if type == filter_type_value %}selected{% endif %}
+            >
+              {{ type }}
+            </option>
           {% endfor %}
         </select>
       </div>
@@ -41,7 +46,11 @@
         <select name="team" class="select select-sm select-bordered w-full bg-base-100">
           <option value="">All teams</option>
           {% for team in team_options %}
-            <option value="{{ team.pk }}">{{ team.team.title }}</option>
+            <option value="{{ team.pk }}"
+              {% if team.pk == filter_team_value %}selected{% endif %}
+            >
+              {{ team.team.title }}
+            </option>
           {% endfor %}
         </select>
       </div>
@@ -62,7 +71,7 @@
           name="search"
           class="grow placeholder:text-base-content/60 bg-transparent focus:outline-none"
           placeholder="{{ placeholder|default:'Search entries...' }}"
-          value="{{ request.GET.search }}"
+          value="{{ filter_search_value|default:'' }}"
         />
       </label>
     </div>

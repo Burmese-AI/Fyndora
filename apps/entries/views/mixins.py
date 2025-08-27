@@ -79,6 +79,11 @@ class StatusFilteringMixin:
             EntryStatus.REJECTED,
         ]
         context["default_status_option"] = EntryStatus.PENDING
+        print(self.request.GET)
+        context["filter_status_value"] = self.request.GET.get("status") or None
+        context["filter_search_value"] = self.request.GET.get("search") or None
+        print(f"filter status value: {context['filter_status_value']}")
+        print(f"filter search value: {context['filter_search_value']}")
         return context
 
 
@@ -95,6 +100,7 @@ class TeamLevelEntryFiltering(StatusFilteringMixin):
             EntryStatus.REVIEWED,
             EntryStatus.REJECTED,
         ]
+        context["filter_type_value"] = self.request.GET.get("type")
         return context
 
 
@@ -118,4 +124,5 @@ class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
             EntryStatus.APPROVED,
         ]
         context["default_status_option"] = EntryStatus.REVIEWED
+        context["filter_team_value"] = self.request.GET.get("team")
         return context

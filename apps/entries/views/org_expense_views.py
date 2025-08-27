@@ -79,9 +79,7 @@ class OrganizationExpenseListView(
                 self.request.user, self.organization
             ),
         }
-        if not self.request.htmx:
-            pass
-            # context["stats"] = get_org_expense_stats(self.organization)
+
         return context
 
 
@@ -308,15 +306,18 @@ class OrganizationExpenseBulkUpdateView(
     table_template_name = "entries/partials/table.html"
     modal_template_name = "entries/components/bulk_update_modal.html"
 
-    def get_queryset(self):
+    def get_queryset(self):            
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+        )
+        
+    def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")]
-            if self.request.GET.get("status")
-            else [EntryStatus.PENDING],
-            search=self.request.GET.get("search"),
+            statuses=[EntryStatus.PENDING]
         )
         
     def perform_action(self, request, entries):
@@ -353,5 +354,9 @@ class OrganizationExpenseBulkUpdateView(
         selected_ids = self.request.GET.getlist("entries")
         context["selected_entry_ids"] = selected_ids
         context["entry_count"] = len(selected_ids)
-        context["status_options"] = EntryStatus.choices
+        context["modal_status_options"] = EntryStatus.choices
+        if self.request.htmx:
+            context["filter_status_value"] = None
+            context["filter_search_value"] = None
+            
         return context

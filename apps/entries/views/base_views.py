@@ -11,6 +11,7 @@ from .mixins import (
     EntryRequiredMixin,
     EntryUrlIdentifierMixin,
 )
+from apps.entries.selectors import get_entries
 from apps.entries.constants import EntryType
 from apps.core.views.crud_base_views import BaseDetailView
 from apps.core.views.mixins import (
@@ -55,6 +56,12 @@ class BaseEntryBulkActionView(
         Override this to return the correct filtered queryset.
         """
         raise NotImplementedError("Subclasses must implement get_base_queryset()")
+    
+    def get_response_queryset(self):
+        """
+        Override this to return the correct queryset for the response.
+        """
+        return self.get_queryset()
 
     def perform_action(self, request, entries) -> tuple[bool, str | None]:
         """
@@ -107,7 +114,7 @@ class BaseEntryBulkActionView(
 
         from apps.core.utils import get_paginated_context
 
-        queryset = self.get_queryset()
+        queryset = self.get_response_queryset()
         table_context = get_paginated_context(
             queryset=queryset,
             context=base_context,

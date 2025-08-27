@@ -18,6 +18,11 @@
     
     <div class="flex flex-wrap gap-1">
 
+      {% url "organization_expense_bulk_delete" organization.pk as bulk_delete_url %}
+      {% url "organization_expense_bulk_update" organization.pk as bulk_update_url %}
+
+      {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %}
+
       <button 
         class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
         hx-target="#modal-placeholder"

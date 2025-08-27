@@ -2,6 +2,19 @@
 
 {% block secondary_content %}
 
+  <section class="flex justify-between items-center mb-6">
+    <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
+      Entries of All Teams
+    </h2>
+
+    
+    {% comment %} {% url "workspace_expense_bulk_delete" organization.pk workspace.pk as bulk_delete_url %}
+    {% url "workspace_expense_bulk_update" organization.pk workspace.pk as bulk_update_url %}
+    
+    {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %} {% endcomment %}
+
+  </section>
+
   {% include "entries/layouts/base_entry_content_layout.html" %}
 
 {% endblock %} 

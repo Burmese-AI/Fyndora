@@ -14,22 +14,22 @@
     popover id="bulk-menu" style="position-anchor:--bulk-anchor">
     <li>
         <a 
-        hx-get="{% url 'organization_expense_bulk_delete' organization.pk %}"
-        hx-include=".bulk-checkbox:checked"
-        hx-target="#modal-placeholder"
-        hx-swap="innerHTML"
-        onclick="document.getElementById('bulk-menu').hidePopover()"
+            hx-get="{{ bulk_update_url }}"
+            hx-include=".bulk-checkbox:checked"
+            hx-target="#modal-placeholder"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('bulk-menu').hidePopover()"
         >
-        Reject
+            Update
         </a>
         <a 
-        hx-get="{% url 'organization_expense_bulk_update' organization.pk %}"
-        hx-include=".bulk-checkbox:checked"
-        hx-target="#modal-placeholder"
-        hx-swap="innerHTML"
-        onclick="document.getElementById('bulk-menu').hidePopover()"
+            hx-get="{{ bulk_delete_url }}"
+            hx-include=".bulk-checkbox:checked"
+            hx-target="#modal-placeholder"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('bulk-menu').hidePopover()"
         >
-        Update
+            Delete
         </a>
     </li>
 </ul>

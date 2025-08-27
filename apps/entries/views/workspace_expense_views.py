@@ -2,9 +2,10 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
+from django.utils import timezone
 from ..selectors import get_entries
 
-from apps.core.views.base_views import BaseGetModalFormView
+from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from apps.core.views.mixins import (
     WorkspaceRequiredMixin,
@@ -27,6 +28,7 @@ from apps.core.views.crud_base_views import (
     BaseListView,
     BaseUpdateView,
 )
+from apps.entries.views.base_views import BaseEntryBulkActionView
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
@@ -251,3 +253,131 @@ class WorkspaceExpenseDeleteView(
         from ..services import delete_entry
 
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+
+class WorkspaceExpenseBulkDeleteView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
+    BaseGetModalView,
+    StatusFilteringMixin,
+    BaseEntryBulkActionView,
+):
+    table_template_name = "entries/partials/table.html"
+    modal_template_name = "components/delete_confirmation_modal.html"
+
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],  
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING]          
+        )
+
+    def perform_action(self, request, entries):
+        valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
+        if not valid_ids:
+            return False, "No valid entries to delete"
+
+        qs_valid = entries.filter(pk__in=valid_ids)
+        # Get the count *before* performing the delete operation
+        deleted_count = qs_valid.count()
+        qs_valid.delete()
+        return True, f"Deleted {deleted_count} entry/entries"
+
+    def validate_entry(self, entry):
+        # True if
+        # 1. Entry status pending
+        # 2. Entry status hasn't been modified once
+        if (
+            entry.status == EntryStatus.PENDING
+            and not entry.status_last_updated_at
+            and not entry.last_status_modified_by
+        ):
+            return True
+        return False
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_expense_bulk_delete",
+            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        selected_ids = self.request.GET.getlist("entries")
+        context["selected_entry_ids"] = selected_ids
+        context["entry_count"] = len(selected_ids)
+        if self.request.htmx:
+            context["filter_status_value"] = None
+            context["filter_search_value"] = None
+        return context
+
+class WorkspaceExpenseBulkUpdateView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
+    BaseGetModalView,
+    StatusFilteringMixin,
+    BaseEntryBulkActionView,
+):
+    table_template_name = "entries/partials/table.html"
+    modal_template_name = "entries/components/bulk_update_modal.html"
+
+    def get_queryset(self):            
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],
+        )
+        
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING]
+        )
+        
+    def perform_action(self, request, entries):
+        status = request.POST.get("status")
+        status_note = request.POST.get("status_note")
+        valid_entries = []
+        
+        for entry in entries:
+            if self.validate_entry(entry):
+                entry.status = status
+                entry.last_status_modified_by = self.org_member
+                entry.status_note = status_note
+                entry.status_last_updated_at = timezone.now()
+                valid_entries.append(entry)        
+        if not valid_entries:
+            return False, "No valid entries"
+        Entry.objects.bulk_update(valid_entries, ["status", "status_note", "last_status_modified_by", "status_last_updated_at"])
+        return True, f"Updated {len(valid_entries)} entries"
+
+    def validate_entry(self, entry):
+        return True
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_expense_bulk_update",
+            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        selected_ids = self.request.GET.getlist("entries")
+        context["selected_entry_ids"] = selected_ids
+        context["entry_count"] = len(selected_ids)
+        context["modal_status_options"] = EntryStatus.choices
+        if self.request.htmx:
+            context["filter_status_value"] = None
+            context["filter_search_value"] = None
+            
+        return context

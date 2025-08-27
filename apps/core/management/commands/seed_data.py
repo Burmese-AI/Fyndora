@@ -1368,7 +1368,7 @@ class Command(BaseCommand):
 
         # If neither type of rate is found, signal failure
         # No default rate, as per your requirement to not create entries without a rate.
-        #I would like to comment this .. as this is creating too much warngin in console
+        # I would like to comment this .. as this is creating too much warngin in console
         # self.stdout.write(
         #     self.style.WARNING(
         #         f"  ⚠️  No suitable exchange rate found for {currency.code} on {entry_date} "

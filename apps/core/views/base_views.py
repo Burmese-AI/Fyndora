@@ -17,7 +17,7 @@ class BaseGetModalView:
         - get_modal_title()
     """
 
-    modal_template_name = None
+    # modal_template_name = None
 
     def get_post_url(self) -> str:
         raise NotImplementedError("You must implement get_post_url() in the subclass")

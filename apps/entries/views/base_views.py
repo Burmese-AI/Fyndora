@@ -1,12 +1,14 @@
 import json
+from typing import Any
 
 from django.http import HttpResponse
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from ..models import Entry
-from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME
+from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME, EntryStatus
 from .mixins import (
     EntryRequiredMixin,
     EntryUrlIdentifierMixin,
@@ -19,7 +21,7 @@ from apps.core.views.mixins import (
     HtmxOobResponseMixin,
     HtmxInvalidResponseMixin,
 )
-
+from apps.entries.services import bulk_delete_entries, bulk_update_entry_status
 
 class OrganizationLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):
@@ -48,7 +50,7 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
 class BaseEntryBulkActionView(
     HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
 ):
-    table_template_name = None
+    table_template_name = "entries/partials/table.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
     def get_queryset(self):
@@ -68,6 +70,26 @@ class BaseEntryBulkActionView(
         Perform the actual action (update/delete).
         """
         return True, None
+    
+    def validate_entry(self, entry) -> bool:
+        """Per-entry validation"""
+        return True
+
+    def get_additional_context(self) -> dict:
+        """Hook to inject extra context (like status options)."""
+        return {}
+    
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        selected_ids = self.request.GET.getlist("entries")
+        context["selected_entry_ids"] = selected_ids
+        context["entry_count"] = len(selected_ids)
+        if self.request.htmx:
+            context["filter_status_value"] = None
+            context["filter_search_value"] = None
+            context["filter_type_value"] = None
+            context["filter_team_value"] = None
+        return context
 
     def parse_entry_ids(self, request):
         """Parse entry IDs from request (form or JSON)"""
@@ -130,3 +152,47 @@ class BaseEntryBulkActionView(
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response
+
+class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
+    modal_template_name = "components/delete_confirmation_modal.html"
+
+    def perform_action(self, request, entries):
+        valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
+        if not valid_ids:
+            return False, "No valid entries to delete"
+
+        qs_valid = entries.filter(pk__in=valid_ids)
+        deleted_count = qs_valid.count()
+        bulk_delete_entries(
+            entries=qs_valid,
+            user=self.request.user,
+            request=self.request,
+        )
+        return True, f"Deleted {deleted_count} entry/entries"
+    
+class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
+    modal_template_name = "entries/components/bulk_update_modal.html"
+
+    def perform_action(self, request, entries):
+        status = request.POST.get("status")
+        status_note = request.POST.get("status_note")
+        valid_entries = []
+
+        for entry in entries:
+            if self.validate_entry(entry):
+                entry.status = status
+                entry.last_status_modified_by = self.org_member
+                entry.status_note = status_note
+                entry.status_last_updated_at = timezone.now()
+                valid_entries.append(entry)
+
+        if not valid_entries:
+            return False, "No valid entries"
+        bulk_update_entry_status(entries=valid_entries, request=request)
+        return True, f"Updated {len(valid_entries)} entries"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context["modal_status_options"] = EntryStatus.choices
+        return context
+

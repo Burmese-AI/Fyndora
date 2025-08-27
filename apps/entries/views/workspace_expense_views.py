@@ -28,7 +28,7 @@ from apps.core.views.crud_base_views import (
     BaseListView,
     BaseUpdateView,
 )
-from apps.entries.views.base_views import BaseEntryBulkActionView
+from apps.entries.views.base_views import BaseEntryBulkDeleteView, BaseEntryBulkUpdateView
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
@@ -257,48 +257,26 @@ class WorkspaceExpenseDeleteView(
 class WorkspaceExpenseBulkDeleteView(
     WorkspaceRequiredMixin,
     WorkspaceLevelEntryView,
-    BaseGetModalView,
     StatusFilteringMixin,
-    BaseEntryBulkActionView,
+    BaseGetModalView,
+    BaseEntryBulkDeleteView,
 ):
-    table_template_name = "entries/partials/table.html"
-    modal_template_name = "components/delete_confirmation_modal.html"
-
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
             workspace=self.workspace,
-            entry_types=[EntryType.WORKSPACE_EXP],  
+            entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.PENDING]          
+            statuses=[EntryStatus.PENDING]
         )
-
-    def perform_action(self, request, entries):
-        valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
-        if not valid_ids:
-            return False, "No valid entries to delete"
-
-        qs_valid = entries.filter(pk__in=valid_ids)
-        # Get the count *before* performing the delete operation
-        deleted_count = qs_valid.count()
-        bulk_delete_entries(
-            entries=qs_valid,
-            user=self.request.user,
-            request=self.request
-        )
-        return True, f"Deleted {deleted_count} entry/entries"
 
     def validate_entry(self, entry):
-        # True if
-        # 1. Entry status pending
-        # 2. Entry status hasn't been modified once
-        if (
+        # Valid if status is pending and has never been modified
+        return (
             entry.status == EntryStatus.PENDING
             and not entry.status_last_updated_at
             and not entry.last_status_modified_by
-        ):
-            return True
-        return False
+        )
 
     def get_post_url(self) -> str:
         return reverse(
@@ -309,33 +287,21 @@ class WorkspaceExpenseBulkDeleteView(
     def get_modal_title(self) -> str:
         return ""
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        selected_ids = self.request.GET.getlist("entries")
-        context["selected_entry_ids"] = selected_ids
-        context["entry_count"] = len(selected_ids)
-        if self.request.htmx:
-            context["filter_status_value"] = None
-            context["filter_search_value"] = None
-        return context
 
 class WorkspaceExpenseBulkUpdateView(
     WorkspaceRequiredMixin,
     WorkspaceLevelEntryView,
     BaseGetModalView,
     StatusFilteringMixin,
-    BaseEntryBulkActionView,
+    BaseEntryBulkUpdateView,
 ):
-    table_template_name = "entries/partials/table.html"
-    modal_template_name = "entries/components/bulk_update_modal.html"
-
-    def get_queryset(self):            
+    def get_queryset(self):
         return get_entries(
             organization=self.organization,
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -344,26 +310,9 @@ class WorkspaceExpenseBulkUpdateView(
             annotate_attachment_count=True,
             statuses=[EntryStatus.PENDING]
         )
-        
-    def perform_action(self, request, entries):
-        status = request.POST.get("status")
-        status_note = request.POST.get("status_note")
-        valid_entries = []
-        
-        for entry in entries:
-            if self.validate_entry(entry):
-                entry.status = status
-                entry.last_status_modified_by = self.org_member
-                entry.status_note = status_note
-                entry.status_last_updated_at = timezone.now()
-                valid_entries.append(entry)        
-        if not valid_entries:
-            return False, "No valid entries"
-        bulk_update_entry_status(entries=valid_entries, request=request)
-        return True, f"Updated {len(valid_entries)} entries"
 
     def validate_entry(self, entry):
-        return True
+        return True  # can be tightened later if needed
 
     def get_post_url(self) -> str:
         return reverse(
@@ -373,15 +322,3 @@ class WorkspaceExpenseBulkUpdateView(
 
     def get_modal_title(self) -> str:
         return ""
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        selected_ids = self.request.GET.getlist("entries")
-        context["selected_entry_ids"] = selected_ids
-        context["entry_count"] = len(selected_ids)
-        context["modal_status_options"] = EntryStatus.choices
-        if self.request.htmx:
-            context["filter_status_value"] = None
-            context["filter_search_value"] = None
-            
-        return context

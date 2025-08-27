@@ -70,6 +70,8 @@ from .workspace_factories import (
     WorkspaceTeamFactory,
     WorkspaceWithAdminFactory,
     WorkspaceWithTeamsFactory,
+    WorkspaceExchangeRateFactory,
+    ApprovedWorkspaceExchangeRateFactory,
 )
 from .invitation_factories import (
     InvitationFactory,
@@ -169,4 +171,6 @@ __all__ = [
     "RemittanceWithNotesFactory",
     # Currency factories
     "CurrencyFactory",
+    "WorkspaceExchangeRateFactory",
+    "OrganizationExchangeRateFactory",
 ]

@@ -8,10 +8,8 @@ Tests the selector functions for currency operations including:
 
 from datetime import date, datetime
 from decimal import Decimal
-from unittest.mock import patch
 
 from django.test import TestCase
-from django.utils import timezone
 from datetime import timezone as dt_timezone
 
 from apps.currencies.models import Currency
@@ -20,8 +18,6 @@ from apps.currencies.selectors import (
     get_org_defined_currencies,
     get_closest_exchanged_rate,
 )
-from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.workspaces.models import Workspace, WorkspaceExchangeRate
 from tests.factories import (
     CurrencyFactory,
     OrganizationFactory,
@@ -209,7 +205,7 @@ class TestGetClosestExchangedRate(TestCase):
     def test_get_closest_exchanged_rate_workspace_not_approved(self):
         """Test that unapproved workspace rates are ignored."""
         # Create unapproved workspace rate
-        unapproved_rate = WorkspaceExchangeRateFactory(
+        WorkspaceExchangeRateFactory(
             workspace=self.workspace,
             currency=self.currency,
             rate=Decimal("1.25"),

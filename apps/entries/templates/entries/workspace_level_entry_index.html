@@ -8,8 +8,8 @@
     </h2>
 
     
-    {% url "workspace_expense_bulk_delete" organization.pk workspace.pk as bulk_delete_url %}
-    {% url "workspace_expense_bulk_update" organization.pk workspace.pk as bulk_update_url %}
+    {% url "workspace_entry_bulk_delete" organization.pk workspace.pk as bulk_delete_url %}
+    {% url "workspace_entry_bulk_update" organization.pk workspace.pk as bulk_update_url %}
     
     {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %}
 

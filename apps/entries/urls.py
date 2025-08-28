@@ -92,7 +92,7 @@ urlpatterns = [
         name="workspace_entry_list",
     ),
     path(
-        "workspaces/<uuid:workspace_id>/entries",
+        "workspaces/<uuid:workspace_id>/entries/bulk-delete/",
         WorkspaceEntryBulkDeleteView.as_view(),
         name="workspace_entry_bulk_delete"
     ),

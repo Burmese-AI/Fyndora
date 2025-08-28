@@ -148,7 +148,6 @@ class BaseEntryBulkActionView(
         message_html = render_to_string(
             "includes/message.html", context=base_context, request=self.request
         )
-
         response = HttpResponse(f"{message_html}{table_html}")
         response["HX-trigger"] = "success"
         return response

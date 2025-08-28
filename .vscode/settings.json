@@ -1,4 +1,11 @@
 {
     "python.analysis.autoImportCompletions": true,
-    "nuxt.isNuxtApp": false
+    "nuxt.isNuxtApp": false,
+    "files.autoSave": "onFocusChange",
+    "editor.cursorBlinking": "blink",
+    "files.autoGuessEncoding": true,
+    "files.defaultLanguage": "python",
+    "python.autoComplete.extraPaths": [
+        
+    ]
 }

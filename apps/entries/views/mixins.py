@@ -81,8 +81,6 @@ class StatusFilteringMixin:
         context["default_status_option"] = EntryStatus.PENDING
         context["filter_status_value"] = self.request.GET.get("status") or None
         context["filter_search_value"] = self.request.GET.get("search") or None
-        print(f"filter status value: {context['filter_status_value']}")
-        print(f"filter search value: {context['filter_search_value']}")
         return context
 
 

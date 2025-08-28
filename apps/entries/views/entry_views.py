@@ -345,6 +345,7 @@ class WorkspaceEntryBulkDeleteView(
     BaseGetModalView,
     BaseEntryBulkDeleteView,
 ):
+    
     def get_queryset(self):
         return get_entries(
             organization=self.organization,

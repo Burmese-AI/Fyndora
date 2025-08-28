@@ -10,6 +10,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 
+from apps.workspaces.models import WorkspaceTeam
+
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME, EntryStatus
 from .mixins import (
@@ -127,6 +129,7 @@ class BaseEntryBulkActionView(
             return self._render_htmx_success_response()
 
         except Exception as e:
+            traceback.print_exc()
             messages.error(self.request, str(e))
             return self._render_htmx_error_response()
 
@@ -156,24 +159,54 @@ class BaseEntryBulkActionView(
         """Optional Post Action"""
         pass
 
+
 class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
     modal_template_name = "components/delete_confirmation_modal.html"
 
     def perform_action(self, request, entries):
-        valid_ids = [entry.pk for entry in entries if self.validate_entry(entry)]
-        if not valid_ids:
-            print(f"No valid id => {valid_ids}")
+        is_expense_entry = False
+        valid_entries = []
+        affected_workspace_teams: set[WorkspaceTeam] = set()
+
+        for entry in entries:
+            if self.validate_entry(entry):
+                valid_entries.append(entry)
+                affected_workspace_teams.add(entry.workspace_team)
+
+            # Check if entries are of Org/Workspace Expense
+            if not is_expense_entry and entry.entry_type in [EntryType.ORG_EXP, EntryType.WORKSPACE_EXP]:
+                is_expense_entry = True
+
+        if not valid_entries:
             return False, "No valid entries to delete"
 
-        qs_valid = entries.filter(pk__in=valid_ids)
-        deleted_count = qs_valid.count()
-        bulk_delete_entries(
-            entries=qs_valid,
-            user=self.request.user,
-            request=self.request,
-        )
+        deleted_count = len(valid_entries)
+        with transaction.atomic():
+            # Convert list into queryset
+            valid_entries = entries.filter(pk__in=[entry.pk for entry in valid_entries])
+            bulk_delete_entries(
+                entries=valid_entries,
+                user=self.request.user,
+                request=self.request,
+            )
+            
+            #Note: Since only unmodified entries with Pending status are allowed to be deleted, 
+            # Post action might not be required (will be invalid)
+            if not is_expense_entry and affected_workspace_teams:
+                self.perform_post_action(affected_workspace_teams)
+
         return True, f"Deleted {deleted_count} entry/entries"
-    
+
+    def perform_post_action(self, workspace_teams: set[WorkspaceTeam]):
+        for team in workspace_teams:
+            remittance = team.remittance
+            # After delete, both due/paid amounts might change
+            remittance.due_amount = calculate_due_amount(workspace_team=team)
+            remittance.paid_amount = calculate_paid_amount(workspace_team=team)
+            update_remittance(remittance=remittance)
+
+
+
 class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
     modal_template_name = "entries/components/bulk_update_modal.html"
 

@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.contrib import messages
 from django.views.generic import TemplateView
@@ -65,7 +66,7 @@ class BaseEntryBulkActionView(
         """
         return self.get_queryset()
 
-    def perform_action(self, request, entries) -> tuple[bool, str | None]:
+    def perform_action(self, request, entries: QuerySet[Entry]) -> tuple[bool, str | None]:
         """
         Perform the actual action (update/delete).
         """
@@ -173,6 +174,9 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
         self.new_status = request.POST.get("status")
         self.status_note = request.POST.get("status_note")
         valid_entries = []
+        
+        #Filter out entries whose statuses are the same as the new one
+        entries = entries.exclude(status=self.new_status)
 
         for entry in entries:
             if self.validate_entry(entry):

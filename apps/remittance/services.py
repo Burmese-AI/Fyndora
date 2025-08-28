@@ -13,6 +13,59 @@ from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
 from apps.workspaces.models import WorkspaceTeam
 
+def calculate_due_amount(*, workspace_team: WorkspaceTeam):
+    """
+    Calculate the due amount for a workspace team.
+    """
+    remittance = workspace_team.remittance
+    # Process due amount
+    due_amount = process_due_amount(workspace_team, remittance)
+    # 1. Sum all APPROVED INCOME entries for this team
+    income_total = get_total_amount_of_entries(
+        entry_type=EntryType.INCOME,
+        entry_status=EntryStatus.APPROVED,
+        workspace_team=workspace_team,
+    )
+    # 2. Sum all APPROVED DISBURSEMENT entries for this team
+    disbursement_total = get_total_amount_of_entries(
+        entry_type=EntryType.DISBURSEMENT,
+        entry_status=EntryStatus.APPROVED,
+        workspace_team=workspace_team,
+    )
+    # 3. Calculate final total: income - disbursements
+    final_total = Decimal(income_total) - Decimal(disbursement_total)
+    # 4. Get remittance rate from team
+    team_lvl_remittance_rate = workspace_team.custom_remittance_rate
+    remittance_rate = team_lvl_remittance_rate if team_lvl_remittance_rate else workspace_team.workspace.remittance_rate
+    # 5. Apply rate to get due amount
+    due_amount = 0 if final_total <= 0 else final_total * (remittance_rate * Decimal("0.01"))
+    
+    return due_amount
+
+def calculate_paid_amount(*, workspace_team: WorkspaceTeam):
+    return get_total_amount_of_entries(
+        entry_type=EntryType.REMITTANCE,
+        entry_status=EntryStatus.APPROVED,
+        workspace_team=workspace_team,
+    )
+
+
+def update_remittance(*, remittance: Remittance):
+    remittance.update_status()
+    remittance.check_if_overdue()
+    remittance.check_if_overpaid()
+    print(f"remittance due amount: {remittance.due_amount} | paid_amount {remittance.paid_amount}\n\n")
+    # Save the updated fields to the database
+    remittance.save(
+        update_fields=[
+            "due_amount",
+            "paid_amount",
+            "status",
+            "paid_within_deadlines",
+            "is_overpaid",
+        ]
+    )
+
 
 def handle_remittance_update(*, updated_entry: Entry, update_due_amount: bool):
     workspace_team = updated_entry.workspace_team

@@ -71,13 +71,9 @@ class BaseEntryBulkActionView(
         """
         return True, None
     
-    def validate_entry(self, entry) -> bool:
+    def validate_entry(self, entry: Entry) -> bool:
         """Per-entry validation"""
         return True
-
-    def get_additional_context(self) -> dict:
-        """Hook to inject extra context (like status options)."""
-        return {}
     
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -174,15 +170,15 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
     modal_template_name = "entries/components/bulk_update_modal.html"
 
     def perform_action(self, request, entries):
-        status = request.POST.get("status")
-        status_note = request.POST.get("status_note")
+        self.new_status = request.POST.get("status")
+        self.status_note = request.POST.get("status_note")
         valid_entries = []
 
         for entry in entries:
             if self.validate_entry(entry):
-                entry.status = status
+                entry.status = self.new_status
                 entry.last_status_modified_by = self.org_member
-                entry.status_note = status_note
+                entry.status_note = self.status_note
                 entry.status_last_updated_at = timezone.now()
                 valid_entries.append(entry)
 

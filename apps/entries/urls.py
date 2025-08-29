@@ -97,12 +97,12 @@ urlpatterns = [
     path(
         "workspaces/<uuid:workspace_id>/entries/bulk-delete/",
         WorkspaceEntryBulkDeleteView.as_view(),
-        name="workspace_entry_bulk_delete"
+        name="workspace_entry_bulk_delete",
     ),
     path(
         "workspaces/<uuid:workspace_id>/entries/bulk-update/",
         WorkspaceEntryBulkUpdateView.as_view(),
-        name="workspace_entry_bulk_update"
+        name="workspace_entry_bulk_update",
     ),
     path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
@@ -127,12 +127,12 @@ urlpatterns = [
     path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-delete/",
         WorkspaceTeamEntryBulkDeleteView.as_view(),
-        name="workspace_team_entry_bulk_delete"
+        name="workspace_team_entry_bulk_delete",
     ),
     path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-update/",
         WorkspaceTeamEntryBulkUpdateView.as_view(),
-        name="workspace_team_entry_bulk_update"
+        name="workspace_team_entry_bulk_update",
     ),
 ]
 

@@ -13,6 +13,7 @@ from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
 from apps.workspaces.models import WorkspaceTeam
 
+
 def calculate_due_amount(*, workspace_team: WorkspaceTeam):
     """
     Calculate the due amount for a workspace team.
@@ -36,11 +37,18 @@ def calculate_due_amount(*, workspace_team: WorkspaceTeam):
     final_total = Decimal(income_total) - Decimal(disbursement_total)
     # 4. Get remittance rate from team
     team_lvl_remittance_rate = workspace_team.custom_remittance_rate
-    remittance_rate = team_lvl_remittance_rate if team_lvl_remittance_rate else workspace_team.workspace.remittance_rate
+    remittance_rate = (
+        team_lvl_remittance_rate
+        if team_lvl_remittance_rate
+        else workspace_team.workspace.remittance_rate
+    )
     # 5. Apply rate to get due amount
-    due_amount = 0 if final_total <= 0 else final_total * (remittance_rate * Decimal("0.01"))
-    
+    due_amount = (
+        0 if final_total <= 0 else final_total * (remittance_rate * Decimal("0.01"))
+    )
+
     return due_amount
+
 
 def calculate_paid_amount(*, workspace_team: WorkspaceTeam):
     return get_total_amount_of_entries(
@@ -54,7 +62,9 @@ def update_remittance(*, remittance: Remittance):
     remittance.update_status()
     remittance.check_if_overdue()
     remittance.check_if_overpaid()
-    print(f"remittance due amount: {remittance.due_amount} | paid_amount {remittance.paid_amount}\n\n")
+    print(
+        f"remittance due amount: {remittance.due_amount} | paid_amount {remittance.paid_amount}\n\n"
+    )
     # Save the updated fields to the database
     remittance.save(
         update_fields=[

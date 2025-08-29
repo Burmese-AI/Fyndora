@@ -18,7 +18,6 @@ from .mixins import (
     EntryRequiredMixin,
     EntryUrlIdentifierMixin,
 )
-from apps.entries.selectors import get_entries
 from apps.entries.constants import EntryType
 from apps.core.views.crud_base_views import BaseDetailView
 from apps.core.views.mixins import (
@@ -27,7 +26,12 @@ from apps.core.views.mixins import (
     HtmxInvalidResponseMixin,
 )
 from apps.entries.services import bulk_delete_entries, bulk_update_entry_status
-from apps.remittance.services import calculate_due_amount, calculate_paid_amount, update_remittance
+from apps.remittance.services import (
+    calculate_due_amount,
+    calculate_paid_amount,
+    update_remittance,
+)
+
 
 class OrganizationLevelEntryView(EntryUrlIdentifierMixin):
     def get_entry_type(self):
@@ -64,23 +68,25 @@ class BaseEntryBulkActionView(
         Override this to return the correct filtered queryset.
         """
         raise NotImplementedError("Subclasses must implement get_base_queryset()")
-    
+
     def get_response_queryset(self):
         """
         Override this to return the correct queryset for the response.
         """
         return self.get_queryset()
 
-    def perform_action(self, request, entries: QuerySet[Entry]) -> tuple[bool, str | None]:
+    def perform_action(
+        self, request, entries: QuerySet[Entry]
+    ) -> tuple[bool, str | None]:
         """
         Perform the actual action (update/delete).
         """
         return True, None
-    
+
     def validate_entry(self, entry: Entry) -> bool:
         """Per-entry validation"""
         return True
-    
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         selected_ids = self.request.GET.getlist("entries")
@@ -114,17 +120,17 @@ class BaseEntryBulkActionView(
 
             # Get base queryset
             base_qs = self.get_queryset()
-            
+
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
-            
+
             # Validate each entry
             success, message = self.perform_action(request, entries)
-            
+
             if not success:
                 messages.error(self.request, message)
                 return self._render_htmx_error_response()
-            
+
             messages.success(self.request, message)
             return self._render_htmx_success_response()
 
@@ -174,7 +180,10 @@ class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
                 affected_workspace_teams.add(entry.workspace_team)
 
             # Check if entries are of Org/Workspace Expense
-            if not is_expense_entry and entry.entry_type in [EntryType.ORG_EXP, EntryType.WORKSPACE_EXP]:
+            if not is_expense_entry and entry.entry_type in [
+                EntryType.ORG_EXP,
+                EntryType.WORKSPACE_EXP,
+            ]:
                 is_expense_entry = True
 
         if not valid_entries:
@@ -189,8 +198,8 @@ class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
                 user=self.request.user,
                 request=self.request,
             )
-            
-            #Note: Since only unmodified entries with Pending status are allowed to be deleted, 
+
+            # Note: Since only unmodified entries with Pending status are allowed to be deleted,
             # Post action might not be required (will be invalid)
             if not is_expense_entry and affected_workspace_teams:
                 self.perform_post_action(affected_workspace_teams)
@@ -206,7 +215,6 @@ class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
             update_remittance(remittance=remittance)
 
 
-
 class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
     modal_template_name = "entries/components/bulk_update_modal.html"
 
@@ -215,58 +223,72 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
         self.status_note = request.POST.get("status_note")
         valid_entries = []
         is_expense_entry = False
-        
-        #Filter out entries whose statuses are the same as the new one
+
+        # Filter out entries whose statuses are the same as the new one
         entries = entries.exclude(status=self.new_status)
         with transaction.atomic():
             for entry in entries:
-                #Check if entries are of Org/Workspace Expense
-                if not is_expense_entry and entry.entry_type in [EntryType.ORG_EXP, EntryType.WORKSPACE_EXP]:
-                    #Set True to confirm for running post action method 
+                # Check if entries are of Org/Workspace Expense
+                if not is_expense_entry and entry.entry_type in [
+                    EntryType.ORG_EXP,
+                    EntryType.WORKSPACE_EXP,
+                ]:
+                    # Set True to confirm for running post action method
                     is_expense_entry = True
-                #Append the entry to the list if valid along with new values
+                # Append the entry to the list if valid along with new values
                 if self.validate_entry(entry):
                     entry.status = self.new_status
                     entry.last_status_modified_by = self.org_member
                     entry.status_note = self.status_note
                     entry.status_last_updated_at = timezone.now()
                     valid_entries.append(entry)
-            #Return False for no valid entries
+            # Return False for no valid entries
             if not valid_entries:
                 return False, "No valid entries"
-            #Bulk Update
+            # Bulk Update
             bulk_update_entry_status(entries=valid_entries, request=request)
-            #If no expense entry is included, perform post action to update remittance
+            # If no expense entry is included, perform post action to update remittance
             if not is_expense_entry:
-                self.perform_post_action(entries=valid_entries, new_status=self.new_status)
+                self.perform_post_action(
+                    entries=valid_entries, new_status=self.new_status
+                )
         return True, f"Updated {len(valid_entries)} entries"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["modal_status_options"] = EntryStatus.choices
         return context
-    
+
     def perform_post_action(self, entries: QuerySet[Entry], new_status):
         entries_by_team = {}
-        #Group Entries by Workspace Team ID
+        # Group Entries by Workspace Team ID
         for entry in entries:
             workspace_team_id = entry.workspace_team.pk
             if workspace_team_id not in entries_by_team:
                 entries_by_team[workspace_team_id] = {
-                    'entries': [],
-                    'is_due_amount_update_required': True, #Note: Updating to/from Approved status can affect due amount
-                    'is_paid_amount_update_required': False
+                    "entries": [],
+                    "is_due_amount_update_required": True,  # Note: Updating to/from Approved status can affect due amount
+                    "is_paid_amount_update_required": False,
                 }
-            entries_by_team[workspace_team_id]['entries'].append(entry)        
-            #Check entry type if paid amount update is required
-            if not entries_by_team[workspace_team_id]['is_paid_amount_update_required'] and entry.entry_type == EntryType.REMITTANCE:
-                entries_by_team[workspace_team_id]['is_paid_amount_update_required'] = True
-        
+            entries_by_team[workspace_team_id]["entries"].append(entry)
+            # Check entry type if paid amount update is required
+            if (
+                not entries_by_team[workspace_team_id]["is_paid_amount_update_required"]
+                and entry.entry_type == EntryType.REMITTANCE
+            ):
+                entries_by_team[workspace_team_id]["is_paid_amount_update_required"] = (
+                    True
+                )
+
         for workspace_team_id, dict_val in entries_by_team.items():
-            workspace_team = dict_val['entries'][0].workspace_team
+            workspace_team = dict_val["entries"][0].workspace_team
             remittance = workspace_team.remittance
-            if dict_val['is_due_amount_update_required']:
-                remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
-            if dict_val['is_paid_amount_update_required']:
-                remittance.paid_amount = calculate_paid_amount(workspace_team=workspace_team)
+            if dict_val["is_due_amount_update_required"]:
+                remittance.due_amount = calculate_due_amount(
+                    workspace_team=workspace_team
+                )
+            if dict_val["is_paid_amount_update_required"]:
+                remittance.paid_amount = calculate_paid_amount(
+                    workspace_team=workspace_team
+                )
             update_remittance(remittance=remittance)

@@ -53,6 +53,7 @@ from apps.workspaces.selectors import (
     get_workspace_team_member_by_workspace_team_and_org_member,
 )
 
+
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
     TeamLevelEntryView,
@@ -348,7 +349,6 @@ class WorkspaceEntryBulkDeleteView(
     BaseGetModalView,
     BaseEntryBulkDeleteView,
 ):
-    
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -358,9 +358,9 @@ class WorkspaceEntryBulkDeleteView(
                 EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
             ],
-            statuses=[EntryStatus.PENDING]
+            statuses=[EntryStatus.PENDING],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -371,7 +371,7 @@ class WorkspaceEntryBulkDeleteView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.REVIEWED]
+            statuses=[EntryStatus.REVIEWED],
         )
 
     def validate_entry(self, entry):
@@ -385,7 +385,10 @@ class WorkspaceEntryBulkDeleteView(
     def get_post_url(self) -> str:
         return reverse(
             "workspace_entry_bulk_delete",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
         )
 
     def get_modal_title(self) -> str:
@@ -409,7 +412,7 @@ class WorkspaceEntryBulkUpdateView(
                 EntryType.REMITTANCE,
             ],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -420,17 +423,20 @@ class WorkspaceEntryBulkUpdateView(
                 EntryType.REMITTANCE,
             ],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.REVIEWED]
+            statuses=[EntryStatus.REVIEWED],
         )
 
     def validate_entry(self, entry):
         try:
             workspace_team = entry.workspace_team
-            workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(
-                workspace_team=workspace_team, 
-                org_member=self.org_member
+            workspace_team_member = (
+                get_workspace_team_member_by_workspace_team_and_org_member(
+                    workspace_team=workspace_team, org_member=self.org_member
+                )
             )
-            workspace_team_role = workspace_team_member.role if workspace_team_member else None
+            workspace_team_role = (
+                workspace_team_member.role if workspace_team_member else None
+            )
             validator = TeamEntryValidator(
                 organization=self.organization,
                 workspace=self.workspace,
@@ -439,17 +445,21 @@ class WorkspaceEntryBulkUpdateView(
                 is_org_admin=self.is_org_admin,
                 is_workspace_admin=self.is_workspace_admin,
                 is_operation_reviewer=self.is_operation_reviewer,
-                is_team_coordinator=entry.workspace_team.team.team_coordinator == self.org_member,
+                is_team_coordinator=entry.workspace_team.team.team_coordinator
+                == self.org_member,
             )
             validator.validate_entry_update(entry, self.new_status)
-        except Exception as e:
+        except Exception:
             return False
         return True
 
     def get_post_url(self) -> str:
         return reverse(
             "workspace_entry_bulk_update",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
         )
 
     def get_modal_title(self) -> str:
@@ -463,7 +473,6 @@ class WorkspaceTeamEntryBulkDeleteView(
     BaseGetModalView,
     BaseEntryBulkDeleteView,
 ):
-    
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -474,9 +483,9 @@ class WorkspaceTeamEntryBulkDeleteView(
                 EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
             ],
-            statuses=[EntryStatus.PENDING]
+            statuses=[EntryStatus.PENDING],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -502,7 +511,11 @@ class WorkspaceTeamEntryBulkDeleteView(
     def get_post_url(self) -> str:
         return reverse(
             "workspace_team_entry_bulk_delete",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "workspace_team_id": self.workspace_team.pk,
+            },
         )
 
     def get_modal_title(self) -> str:
@@ -525,9 +538,9 @@ class WorkspaceTeamEntryBulkUpdateView(
                 EntryType.INCOME,
                 EntryType.DISBURSEMENT,
                 EntryType.REMITTANCE,
-            ]
+            ],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -545,32 +558,36 @@ class WorkspaceTeamEntryBulkUpdateView(
     def validate_entry(self, entry):
         try:
             validator = TeamEntryValidator(
-            organization=self.organization,
-            workspace=self.workspace,
-            workspace_team=self.workspace_team,
-            workspace_team_role=self.workspace_team_role,
-            is_org_admin=self.is_org_admin,
-            is_workspace_admin=self.is_workspace_admin,
-            is_operation_reviewer=self.is_operation_reviewer,
-            is_team_coordinator=self.is_team_coordinator,
-        )
+                organization=self.organization,
+                workspace=self.workspace,
+                workspace_team=self.workspace_team,
+                workspace_team_role=self.workspace_team_role,
+                is_org_admin=self.is_org_admin,
+                is_workspace_admin=self.is_workspace_admin,
+                is_operation_reviewer=self.is_operation_reviewer,
+                is_team_coordinator=self.is_team_coordinator,
+            )
             validator.validate_entry_update(entry, self.new_status)
-        except Exception as e:
+        except Exception:
             return False
         return True
 
     def get_post_url(self) -> str:
         return reverse(
             "workspace_team_entry_bulk_update",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "workspace_team_id": self.workspace_team.pk,
+            },
         )
-        
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        #At Team level, Approved status shouldn't be accessed
+        # At Team level, Approved status shouldn't be accessed
         context["modal_status_options"] = [
-            (value, label) 
-            for value, label in EntryStatus.choices 
+            (value, label)
+            for value, label in EntryStatus.choices
             if value != EntryStatus.APPROVED
         ]
         return context

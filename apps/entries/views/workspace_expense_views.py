@@ -2,7 +2,6 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
-from django.utils import timezone
 from ..selectors import get_entries
 
 from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
@@ -28,7 +27,10 @@ from apps.core.views.crud_base_views import (
     BaseListView,
     BaseUpdateView,
 )
-from apps.entries.views.base_views import BaseEntryBulkDeleteView, BaseEntryBulkUpdateView
+from apps.entries.views.base_views import (
+    BaseEntryBulkDeleteView,
+    BaseEntryBulkUpdateView,
+)
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
@@ -41,7 +43,7 @@ from ..utils import (
 )
 from apps.core.utils import permission_denied_view
 from apps.entries.utils import can_view_workspace_level_entries
-from ..services import bulk_update_entry_status, bulk_delete_entries
+
 
 class WorkspaceExpenseListView(
     WorkspaceRequiredMixin,
@@ -268,7 +270,7 @@ class WorkspaceExpenseBulkDeleteView(
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.PENDING]
+            statuses=[EntryStatus.PENDING],
         )
 
     def validate_entry(self, entry):
@@ -282,7 +284,10 @@ class WorkspaceExpenseBulkDeleteView(
     def get_post_url(self) -> str:
         return reverse(
             "workspace_expense_bulk_delete",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
         )
 
     def get_modal_title(self) -> str:
@@ -309,7 +314,7 @@ class WorkspaceExpenseBulkUpdateView(
             workspace=self.workspace,
             entry_types=[EntryType.WORKSPACE_EXP],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.PENDING]
+            statuses=[EntryStatus.PENDING],
         )
 
     def validate_entry(self, entry):
@@ -318,7 +323,10 @@ class WorkspaceExpenseBulkUpdateView(
     def get_post_url(self) -> str:
         return reverse(
             "workspace_expense_bulk_update",
-            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
         )
 
     def get_modal_title(self) -> str:

@@ -3,7 +3,6 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
-from django.utils import timezone
 
 from apps.core.utils import permission_denied_view
 from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
@@ -28,12 +27,7 @@ from ..forms import (
 )
 from ..models import Entry
 from ..selectors import get_entries
-from ..services import (
-    create_entry_with_attachments, 
-    delete_entry, 
-    bulk_update_entry_status,
-    bulk_delete_entries
-)
+from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
     can_add_org_expense,
     can_delete_org_expense,
@@ -42,9 +36,8 @@ from ..utils import (
 )
 from .base_views import (
     OrganizationLevelEntryView,
-    BaseEntryBulkActionView,
     BaseEntryBulkDeleteView,
-    BaseEntryBulkUpdateView
+    BaseEntryBulkUpdateView,
 )
 from .mixins import EntryFormMixin, EntryRequiredMixin, StatusFilteringMixin
 
@@ -253,13 +246,12 @@ class OrganizationExpenseBulkDeleteView(
     BaseGetModalView,
     BaseEntryBulkDeleteView,
 ):
-
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
-            entry_types=[EntryType.ORG_EXP],  
+            entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.PENDING]          
+            statuses=[EntryStatus.PENDING],
         )
 
     def validate_entry(self, entry):
@@ -287,20 +279,20 @@ class OrganizationExpenseBulkUpdateView(
     StatusFilteringMixin,
     BaseEntryBulkUpdateView,
 ):
-    def get_queryset(self):            
+    def get_queryset(self):
         return get_entries(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
         )
-        
+
     def get_response_queryset(self):
         return get_entries(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[EntryStatus.PENDING]
+            statuses=[EntryStatus.PENDING],
         )
-        
+
     def validate_entry(self, entry):
         return True  # can be tightened later if needed
 

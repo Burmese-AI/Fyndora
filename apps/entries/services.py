@@ -236,9 +236,7 @@ def update_entry_status(
     )
 
 
-def bulk_update_entry_status(
-    *, entries: list[Entry], request=None
-):
+def bulk_update_entry_status(*, entries: list[Entry], request=None):
     Entry.objects.bulk_update(
         entries,
         ["status", "status_note", "last_status_modified_by", "status_last_updated_at"],
@@ -277,9 +275,10 @@ def delete_entry(*, entry: Entry, user=None, request=None):
 
 
 def bulk_delete_entries(*, entries: list[Entry], user=None, request=None):
-    #Bulk Delete
+    # Bulk Delete
     entries.delete()
     return entries
+
 
 def entry_create(
     *,

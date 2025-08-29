@@ -7,33 +7,7 @@ from apps.teams.constants import TeamMemberRole
 from datetime import date
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_org_defined_currencies
-
-
-class BaseWorkspaceTeamEntryFormMixin:
-    def clean(self):
-        cleaned_data = super().clean()
-        
-        # Validate if workspace team is still active
-        if self.workspace_team.remittance.confirmed_by:
-            raise forms.ValidationError(
-                "Remittance for this workspace team is already confirmed. Please contact the administrator to enable the submission of entries."
-            )
-
-        # Validate occurred at
-        occurred_at = cleaned_data.get("occurred_at")
-        today = date.today()
-
-        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "The occurred date must be within the workspace period."
-            )
-
-        if not (self.workspace.start_date <= today <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "Entries can only be submitted during the workspace period."
-            )
-
-        return cleaned_data
+from .validators import TeamEntryValidator
 
 
 class BaseEntryForm(forms.ModelForm):
@@ -131,7 +105,7 @@ class CreateOrganizationExpenseEntryForm(BaseEntryForm):
         return cleaned_data
 
 
-class CreateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseEntryForm):
+class CreateWorkspaceTeamEntryForm(BaseEntryForm):
     class Meta(BaseEntryForm.Meta):
         fields = BaseEntryForm.Meta.fields + ["entry_type"]
         widgets = {
@@ -147,40 +121,26 @@ class CreateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseEntryFor
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["entry_type"].choices = self.get_allowed_entry_types()
+        self.validator = TeamEntryValidator(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            workspace_team_role=self.workspace_team_role,
+            is_org_admin=self.is_org_admin,
+            is_workspace_admin=self.is_workspace_admin,
+            is_operation_reviewer=self.is_operation_reviewer,
+            is_team_coordinator=self.is_team_coordinator,
+        )
 
     def clean(self):
         cleaned_data = super().clean()
 
         occurred_at = cleaned_data.get("occurred_at")
-        today = date.today()
-
-        if not (self.workspace.start_date <= occurred_at <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "The occurred date must be within the workspace period."
-            )
-
-        if not (self.workspace.start_date <= today <= self.workspace.end_date):
-            raise forms.ValidationError(
-                "Entries can only be submitted during the workspace period."
-            )
-
-        # Role-based validation
-        if cleaned_data["entry_type"] in [
-            EntryType.INCOME,
-            EntryType.DISBURSEMENT,
-        ] and not (
-            self.is_org_admin or self.workspace_team_role == TeamMemberRole.SUBMITTER
-        ):
-            raise forms.ValidationError(
-                "Only Admin and Submitters are authorized for this action."
-            )
-
-        if cleaned_data["entry_type"] == EntryType.REMITTANCE and not (
-            self.is_team_coordinator or self.is_org_admin
-        ):
-            raise forms.ValidationError(
-                "Only Admin and Team Coordinator are authorized for this action."
-            )
+        entry_type = cleaned_data.get("entry_type")
+        try:
+            self.validator.validate_entry_create(entry_type, occurred_at)
+        except Exception as e:
+            raise forms.ValidationError(e)
 
         return cleaned_data
 
@@ -275,27 +235,34 @@ class BaseUpdateEntryForm(BaseEntryForm):
         ]
 
 
-class UpdateWorkspaceTeamEntryForm(BaseWorkspaceTeamEntryFormMixin, BaseUpdateEntryForm):
+class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.validator = TeamEntryValidator(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            workspace_team_role=self.workspace_team_role,
+            is_org_admin=self.is_org_admin,
+            is_workspace_admin=self.is_workspace_admin,
+            is_operation_reviewer=self.is_operation_reviewer,
+            is_team_coordinator=self.is_team_coordinator,
+        )
+        
     def clean(self):
         cleaned_data = super().clean()
 
         new_status = cleaned_data.get("status")
-        # if new status is 'Approved', user must be OR, OA
-        if new_status is EntryStatus.APPROVED:
-            if not (self.is_org_admin or self.is_operation_reviewer):
-                raise forms.ValidationError(
-                    "Only Admin and Operation Review can approve entries."
-                )
-        # for other statuses, user can be OA, OR, TC, WA
-        else:
-            if not (
-                self.is_org_admin
-                or self.is_operation_reviewer
-                or self.is_team_coordinator
-                or self.is_workspace_admin
-            ):
-                raise forms.ValidationError(
-                    "You are not allowed to update entry status."
-                )
+        occurred_at = cleaned_data.get("occurred_at")
+        
+        try:
+            self.validator.validate_entry_update(
+                entry=self.instance,
+                new_status=new_status,
+                occurred_at=occurred_at,
+            )
+        except Exception as e:
+            raise forms.ValidationError(e)
 
         return cleaned_data

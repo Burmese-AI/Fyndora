@@ -2,401 +2,439 @@
 Unit tests for Team permissions.
 """
 
-from unittest.mock import Mock, patch
-
-from django.contrib.auth import get_user_model
+from unittest.mock import patch
+from django.test import TestCase, RequestFactory
 from django.contrib.auth.models import Group
-from django.test import TestCase
 
 from apps.teams.permissions import (
     assign_team_permissions,
-    check_add_team_member_permission,
+    remove_team_permissions,
+    update_team_coordinator_group,
     check_add_team_permission,
     check_change_team_permission,
     check_delete_team_permission,
+    check_add_team_member_permission,
     check_view_team_permission,
-    remove_team_permissions,
-    update_team_coordinator_group,
+)
+from apps.core.permissions import (
+    TeamPermissions,
+    OrganizationPermissions,
 )
 from tests.factories.organization_factories import (
-    OrganizationFactory,
+    OrganizationWithOwnerFactory,
     OrganizationMemberFactory,
 )
 from tests.factories.team_factories import TeamFactory
 from tests.factories.user_factories import CustomUserFactory
 
-User = get_user_model()
-
 
 class TeamPermissionsTest(TestCase):
-    """Test team permission functions."""
+    """Test cases for Team permissions."""
 
     def setUp(self):
         """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
         self.user = CustomUserFactory()
-        self.organization = OrganizationFactory()
-        self.org_member = OrganizationMemberFactory(
-            organization=self.organization, user=self.user
-        )
-        self.team = TeamFactory(
-            organization=self.organization, team_coordinator=self.org_member
-        )
+        self.request_factory = RequestFactory()
 
+    @patch("apps.teams.permissions.get_permissions_for_role")
     @patch("apps.teams.permissions.assign_perm")
-    @patch("apps.teams.permissions.Group.objects.get_or_create")
     def test_assign_team_permissions_success(
-        self, mock_get_or_create, mock_assign_perm
+        self, mock_assign_perm, mock_get_permissions
     ):
-        """Test successful team permission assignment."""
-        # Mock group creation
-        mock_group = Mock()
-        mock_get_or_create.return_value = (mock_group, True)
-
-        # Call the function
-        assign_team_permissions(self.team, self.org_member)
-
-        # Verify group was created with correct name
-        expected_group_name = f"team_{self.team.team_id}_coordinators"
-        mock_get_or_create.assert_called_once_with(name=expected_group_name)
-
-        # Verify user was added to group
-        mock_group.user_set.add.assert_called_once_with(self.org_member.user)
-
-        # Verify permissions were assigned
-        expected_permissions = [
-            "change_team",
-            "delete_team",
-            "add_teammember",
-            "change_teammember",
-            "delete_teammember",
+        """Test successful team permissions assignment."""
+        # Mock permissions for team coordinator role
+        mock_permissions = [
+            OrganizationPermissions.MANAGE_ORGANIZATION,
+            TeamPermissions.ADD_TEAM_MEMBER,
+            TeamPermissions.VIEW_TEAM,
         ]
+        mock_get_permissions.return_value = mock_permissions
 
-        self.assertEqual(mock_assign_perm.call_count, len(expected_permissions))
+        # Set team coordinator
+        self.team.team_coordinator = self.org_member
+        self.team.save()
 
-        # Check each permission call
-        for i, perm in enumerate(expected_permissions):
-            call_args = mock_assign_perm.call_args_list[i]
-            self.assertEqual(call_args[0], (perm, mock_group, self.team))
-
-    @patch("apps.teams.permissions.assign_perm")
-    @patch("apps.teams.permissions.Group.objects.get_or_create")
-    def test_assign_team_permissions_no_coordinator(
-        self, mock_get_or_create, mock_assign_perm
-    ):
-        """Test team permission assignment with no coordinator."""
-        # Mock group creation
-        mock_group = Mock()
-        mock_get_or_create.return_value = (mock_group, True)
-
-        # Call the function with None coordinator
-        assign_team_permissions(self.team, None)
+        assign_team_permissions(self.team)
 
         # Verify group was created
-        mock_get_or_create.assert_called_once()
-
-        # Verify no user was added to group
-        mock_group.user_set.add.assert_not_called()
-
-        # Verify permissions were still assigned
-        self.assertGreater(mock_assign_perm.call_count, 0)
-
-    @patch("apps.teams.permissions.remove_perm")
-    @patch("apps.teams.permissions.Group.objects.filter")
-    def test_remove_team_permissions_success(self, mock_filter, mock_remove_perm):
-        """Test successful team permission removal."""
-        # Mock group query
-        mock_group = Mock()
-        mock_filter.return_value.first.return_value = mock_group
-
-        # Call the function
-        remove_team_permissions(self.team)
-
-        # Verify group was queried correctly
-        expected_group_name = f"team_{self.team.team_id}_coordinators"
-        mock_filter.assert_called_once_with(name=expected_group_name)
-
-        # Verify permissions were removed
-        expected_permissions = [
-            "change_team",
-            "delete_team",
-            "add_teammember",
-            "change_teammember",
-            "delete_teammember",
-        ]
-
-        self.assertEqual(mock_remove_perm.call_count, len(expected_permissions))
-
-        # Verify group was deleted
-        mock_group.delete.assert_called_once()
-
-    @patch("apps.teams.permissions.Group.objects.filter")
-    def test_remove_team_permissions_no_group(self, mock_filter):
-        """Test team permission removal when group doesn't exist."""
-        # Mock group query returning None
-        mock_filter.return_value.first.return_value = None
-
-        # Call the function - should not raise exception
-        remove_team_permissions(self.team)
-
-        # Verify group was queried
-        mock_filter.assert_called_once()
-
-    @patch("apps.teams.permissions.Group.objects.filter")
-    def test_update_team_coordinator_group_success(self, mock_filter):
-        """Test successful team coordinator group update."""
-        # Mock existing group
-        mock_group = Mock()
-        mock_filter.return_value.first.return_value = mock_group
-
-        new_coordinator = OrganizationMemberFactory(organization=self.organization)
-
-        # Call the function
-        update_team_coordinator_group(self.team, new_coordinator)
-
-        # Verify group was queried
-        expected_group_name = f"team_{self.team.team_id}_coordinators"
-        mock_filter.assert_called_once_with(name=expected_group_name)
-
-        # Verify users were cleared and new coordinator added
-        mock_group.user_set.clear.assert_called_once()
-        mock_group.user_set.add.assert_called_once_with(new_coordinator.user)
-
-    @patch("apps.teams.permissions.Group.objects.filter")
-    def test_update_team_coordinator_group_no_coordinator(self, mock_filter):
-        """Test team coordinator group update with no coordinator."""
-        # Mock existing group
-        mock_group = Mock()
-        mock_filter.return_value.first.return_value = mock_group
-
-        # Call the function with None coordinator
-        update_team_coordinator_group(self.team, None)
-
-        # Verify group was queried
-        mock_filter.assert_called_once()
-
-        # Verify users were cleared but none added
-        mock_group.user_set.clear.assert_called_once()
-        mock_group.user_set.add.assert_not_called()
-
-    @patch("apps.teams.permissions.Group.objects.filter")
-    def test_update_team_coordinator_group_no_group(self, mock_filter):
-        """Test team coordinator group update when group doesn't exist."""
-        # Mock group query returning None
-        mock_filter.return_value.first.return_value = None
-
-        new_coordinator = OrganizationMemberFactory(organization=self.organization)
-
-        # Call the function - should not raise exception
-        update_team_coordinator_group(self.team, new_coordinator)
-
-        # Verify group was queried
-        mock_filter.assert_called_once()
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_add_team_permission_has_permission(self, mock_get_user_perms):
-        """Test check_add_team_permission when user has permission."""
-        # Mock user permissions
-        mock_get_user_perms.return_value = ["add_team"]
-
-        result = check_add_team_permission(self.user, self.organization)
-
-        self.assertTrue(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.organization)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_add_team_permission_no_permission(self, mock_get_user_perms):
-        """Test check_add_team_permission when user lacks permission."""
-        # Mock user permissions without add_team
-        mock_get_user_perms.return_value = ["view_team"]
-
-        result = check_add_team_permission(self.user, self.organization)
-
-        self.assertFalse(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.organization)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_change_team_permission_has_permission(self, mock_get_user_perms):
-        """Test check_change_team_permission when user has permission."""
-        # Mock user permissions
-        mock_get_user_perms.return_value = ["change_team"]
-
-        result = check_change_team_permission(self.user, self.team)
-
-        self.assertTrue(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_change_team_permission_no_permission(self, mock_get_user_perms):
-        """Test check_change_team_permission when user lacks permission."""
-        # Mock user permissions without change_team
-        mock_get_user_perms.return_value = ["view_team"]
-
-        result = check_change_team_permission(self.user, self.team)
-
-        self.assertFalse(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_delete_team_permission_has_permission(self, mock_get_user_perms):
-        """Test check_delete_team_permission when user has permission."""
-        # Mock user permissions
-        mock_get_user_perms.return_value = ["delete_team"]
-
-        result = check_delete_team_permission(self.user, self.team)
-
-        self.assertTrue(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_delete_team_permission_no_permission(self, mock_get_user_perms):
-        """Test check_delete_team_permission when user lacks permission."""
-        # Mock user permissions without delete_team
-        mock_get_user_perms.return_value = ["view_team"]
-
-        result = check_delete_team_permission(self.user, self.team)
-
-        self.assertFalse(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_add_team_member_permission_has_permission(self, mock_get_user_perms):
-        """Test check_add_team_member_permission when user has permission."""
-        # Mock user permissions
-        mock_get_user_perms.return_value = ["add_teammember"]
-
-        result = check_add_team_member_permission(self.user, self.team)
-
-        self.assertTrue(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_add_team_member_permission_no_permission(self, mock_get_user_perms):
-        """Test check_add_team_member_permission when user lacks permission."""
-        # Mock user permissions without add_teammember
-        mock_get_user_perms.return_value = ["view_team"]
-
-        result = check_add_team_member_permission(self.user, self.team)
-
-        self.assertFalse(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_view_team_permission_has_permission(self, mock_get_user_perms):
-        """Test check_view_team_permission when user has permission."""
-        # Mock user permissions
-        mock_get_user_perms.return_value = ["view_team"]
-
-        result = check_view_team_permission(self.user, self.team)
-
-        self.assertTrue(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    @patch("apps.teams.permissions.get_user_perms")
-    def test_check_view_team_permission_no_permission(self, mock_get_user_perms):
-        """Test check_view_team_permission when user lacks permission."""
-        # Mock user permissions without view_team
-        mock_get_user_perms.return_value = []
-
-        result = check_view_team_permission(self.user, self.team)
-
-        self.assertFalse(result)
-        mock_get_user_perms.assert_called_once_with(self.user, self.team)
-
-    def test_permission_functions_with_none_inputs(self):
-        """Test permission functions handle None inputs gracefully."""
-        # These should not raise exceptions
-        assign_team_permissions(None, None)
-        remove_team_permissions(None)
-        update_team_coordinator_group(None, None)
-
-        # These should return False for None inputs
-        self.assertFalse(check_add_team_permission(None, None))
-        self.assertFalse(check_change_team_permission(None, None))
-        self.assertFalse(check_delete_team_permission(None, None))
-        self.assertFalse(check_add_team_member_permission(None, None))
-        self.assertFalse(check_view_team_permission(None, None))
-
-
-class TeamPermissionsIntegrationTest(TestCase):
-    """Integration tests for team permissions with real objects."""
-
-    def setUp(self):
-        """Set up test data."""
-        self.user = CustomUserFactory()
-        self.organization = OrganizationFactory()
-        self.org_member = OrganizationMemberFactory(
-            organization=self.organization, user=self.user
-        )
-        self.team = TeamFactory(
-            organization=self.organization, team_coordinator=self.org_member
-        )
-
-    def test_assign_and_remove_permissions_integration(self):
-        """Test assigning and removing permissions with real objects."""
-        # Assign permissions
-        assign_team_permissions(self.team, self.org_member)
-
-        # Verify group was created
-        group_name = f"team_{self.team.team_id}_coordinators"
+        group_name = f"Team Coordinator - {self.team.team_id}"
         group = Group.objects.filter(name=group_name).first()
         self.assertIsNotNone(group)
 
-        # Verify user is in group
-        self.assertIn(self.user, group.user_set.all())
+        # Verify permissions were assigned
+        mock_assign_perm.assert_called()
+
+        # Verify team coordinator was added to group
+        self.assertIn(self.org_member.user, group.user_set.all())
+
+        # Verify organization owner was added to group
+        if self.organization.owner:
+            self.assertIn(self.organization.owner.user, group.user_set.all())
+
+    @patch("apps.teams.permissions.get_permissions_for_role")
+    @patch("apps.teams.permissions.assign_perm")
+    def test_assign_team_permissions_without_coordinator(
+        self, mock_assign_perm, mock_get_permissions
+    ):
+        """Test team permissions assignment without coordinator."""
+        # Mock permissions for team coordinator role
+        mock_permissions = [
+            OrganizationPermissions.MANAGE_ORGANIZATION,
+            TeamPermissions.ADD_TEAM_MEMBER,
+        ]
+        mock_get_permissions.return_value = mock_permissions
+
+        # No team coordinator
+        self.team.team_coordinator = None
+        self.team.save()
+
+        assign_team_permissions(self.team)
+
+        # Verify group was created
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.filter(name=group_name).first()
+        self.assertIsNotNone(group)
+
+        # Verify permissions were assigned
+        mock_assign_perm.assert_called()
+
+        # Verify only organization owner was added to group
+        if self.organization.owner:
+            self.assertIn(self.organization.owner.user, group.user_set.all())
+
+    @patch("apps.teams.permissions.get_permissions_for_role")
+    @patch("apps.teams.permissions.assign_perm")
+    def test_assign_team_permissions_exception_handling(
+        self, mock_assign_perm, mock_get_permissions
+    ):
+        """Test team permissions assignment exception handling."""
+        # Mock permissions for team coordinator role
+        mock_permissions = [TeamPermissions.ADD_TEAM_MEMBER]
+        mock_get_permissions.return_value = mock_permissions
+
+        # Mock assign_perm to raise an exception
+        mock_assign_perm.side_effect = Exception("Permission assignment failed")
+
+        with self.assertRaises(Exception):
+            assign_team_permissions(self.team)
+
+    def test_remove_team_permissions_success(self):
+        """Test successful team permissions removal."""
+        # Create a group first
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        Group.objects.create(name=group_name)
+
+        remove_team_permissions(self.team)
+
+        # Verify group was deleted
+        self.assertFalse(Group.objects.filter(name=group_name).exists())
+
+    def test_remove_team_permissions_group_not_found(self):
+        """Test team permissions removal when group doesn't exist."""
+        # No group exists
+        remove_team_permissions(self.team)
+
+        # Should not raise an exception
+        self.assertTrue(True)
+
+    @patch("apps.teams.permissions.remove_perm")
+    def test_update_team_coordinator_group_same_coordinator(self, mock_remove_perm):
+        """Test updating team coordinator group when coordinator doesn't change."""
+        # Same coordinator
+        previous_coordinator = self.org_member
+        new_coordinator = self.org_member
+
+        update_team_coordinator_group(self.team, previous_coordinator, new_coordinator)
+
+        # Should return early without doing anything
+        mock_remove_perm.assert_not_called()
+
+    @patch("apps.teams.permissions.remove_perm")
+    def test_update_team_coordinator_group_remove_previous(self, mock_remove_perm):
+        """Test updating team coordinator group when removing previous coordinator."""
+        # Create a group first
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(self.org_member.user)
+
+        previous_coordinator = self.org_member
+        new_coordinator = None
+
+        update_team_coordinator_group(self.team, previous_coordinator, new_coordinator)
+
+        # Verify previous coordinator was removed from group
+        self.assertNotIn(self.org_member.user, group.user_set.all())
+
+    @patch("apps.teams.permissions.remove_perm")
+    def test_update_team_coordinator_group_add_new(self, mock_remove_perm):
+        """Test updating team coordinator group when adding new coordinator."""
+        # Create a group first
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.create(name=group_name)
+
+        previous_coordinator = None
+        new_coordinator = self.org_member
+
+        update_team_coordinator_group(self.team, previous_coordinator, new_coordinator)
+
+        # Verify new coordinator was added to group
+        self.assertIn(self.org_member.user, group.user_set.all())
+
+    @patch("apps.teams.permissions.remove_perm")
+    def test_update_team_coordinator_group_replace_coordinator(self, mock_remove_perm):
+        """Test updating team coordinator group when replacing coordinator."""
+        # Create a group first
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(self.org_member.user)
+
+        # Create a new coordinator
+        new_coordinator = OrganizationMemberFactory(organization=self.organization)
+        group.user_set.add(new_coordinator.user)
+
+        previous_coordinator = self.org_member
+
+        update_team_coordinator_group(self.team, previous_coordinator, new_coordinator)
+
+        # Verify previous coordinator was removed
+        self.assertNotIn(self.org_member.user, group.user_set.all())
+        # Verify new coordinator remains
+        self.assertIn(new_coordinator.user, group.user_set.all())
+
+    @patch("apps.teams.permissions.remove_perm")
+    def test_update_team_coordinator_group_exception_handling(self, mock_remove_perm):
+        """Test updating team coordinator group exception handling."""
+        # Mock remove_perm to raise an exception
+        mock_remove_perm.side_effect = Exception("Permission removal failed")
+
+        previous_coordinator = self.org_member
+        new_coordinator = None
+
+        with self.assertRaises(Exception):
+            update_team_coordinator_group(
+                self.team, previous_coordinator, new_coordinator
+            )
+
+
+class TeamPermissionChecksTest(TestCase):
+    """Test cases for Team permission check functions."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        self.user = CustomUserFactory()
+        self.request_factory = RequestFactory()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_add_team_permission_success(self, mock_permission_denied):
+        """Test successful add team permission check."""
+        # Mock user has permission
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            result = check_add_team_permission(request, self.organization)
+
+            # Should return None (no permission denied)
+            self.assertIsNone(result)
+            mock_permission_denied.assert_not_called()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_add_team_permission_denied(self, mock_permission_denied):
+        """Test add team permission check when denied."""
+        # Mock user doesn't have permission
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            mock_permission_denied.return_value = "Permission Denied"
+
+            result = check_add_team_permission(request, self.organization)
+
+            # Should call permission_denied_view
+            mock_permission_denied.assert_called_once()
+            self.assertEqual(result, "Permission Denied")
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_change_team_permission_success(self, mock_permission_denied):
+        """Test successful change team permission check."""
+        # Mock user has permission
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            result = check_change_team_permission(request, self.team)
+
+            # Should return None (no permission denied)
+            self.assertIsNone(result)
+            mock_permission_denied.assert_not_called()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_change_team_permission_denied(self, mock_permission_denied):
+        """Test change team permission check when denied."""
+        # Mock user doesn't have permission
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            mock_permission_denied.return_value = "Permission Denied"
+
+            result = check_change_team_permission(request, self.team)
+
+            # Should call permission_denied_view
+            mock_permission_denied.assert_called_once()
+            self.assertEqual(result, "Permission Denied")
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_delete_team_permission_success(self, mock_permission_denied):
+        """Test successful delete team permission check."""
+        # Mock user has permission
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            result = check_delete_team_permission(request, self.team)
+
+            # Should return None (no permission denied)
+            self.assertIsNone(result)
+            mock_permission_denied.assert_not_called()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_delete_team_permission_denied(self, mock_permission_denied):
+        """Test delete team permission check when denied."""
+        # Mock user doesn't have permission
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            mock_permission_denied.return_value = "Permission Denied"
+
+            result = check_delete_team_permission(request, self.team)
+
+            # Should call permission_denied_view
+            mock_permission_denied.assert_called_once()
+            self.assertEqual(result, "Permission Denied")
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_add_team_member_permission_success(self, mock_permission_denied):
+        """Test successful add team member permission check."""
+        # Mock user has permission
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            result = check_add_team_member_permission(request, self.team)
+
+            # Should return None (no permission denied)
+            self.assertIsNone(result)
+            mock_permission_denied.assert_not_called()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_add_team_member_permission_denied(self, mock_permission_denied):
+        """Test add team member permission check when denied."""
+        # Mock user doesn't have permission
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            mock_permission_denied.return_value = "Permission Denied"
+
+            result = check_add_team_member_permission(request, self.team)
+
+            # Should call permission_denied_view
+            mock_permission_denied.assert_called_once()
+            self.assertEqual(result, "Permission Denied")
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_view_team_permission_success(self, mock_permission_denied):
+        """Test successful view team permission check."""
+        # Mock user has permission
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            result = check_view_team_permission(request, self.team)
+
+            # Should return None (no permission denied)
+            self.assertIsNone(result)
+            mock_permission_denied.assert_not_called()
+
+    @patch("apps.teams.permissions.permission_denied_view")
+    def test_check_view_team_permission_denied(self, mock_permission_denied):
+        """Test view team permission check when denied."""
+        # Mock user doesn't have permission
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
+            request.user = self.user
+
+            mock_permission_denied.return_value = "Permission Denied"
+
+            result = check_view_team_permission(request, self.team)
+
+            # Should call permission_denied_view
+            mock_permission_denied.assert_called_once()
+            self.assertEqual(result, "Permission Denied")
+
+
+class TeamPermissionsIntegrationTest(TestCase):
+    """Integration tests for Team permissions."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+
+    def test_full_permission_lifecycle(self):
+        """Test complete permission lifecycle for a team."""
+        # Assign permissions
+        assign_team_permissions(self.team)
+
+        # Verify group was created
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.filter(name=group_name).first()
+        self.assertIsNotNone(group)
+
+        # Verify organization owner was added
+        if self.organization.owner:
+            self.assertIn(self.organization.owner.user, group.user_set.all())
 
         # Remove permissions
         remove_team_permissions(self.team)
 
         # Verify group was deleted
-        group = Group.objects.filter(name=group_name).first()
-        self.assertIsNone(group)
+        self.assertFalse(Group.objects.filter(name=group_name).exists())
 
-    def test_update_coordinator_group_integration(self):
-        """Test updating coordinator group with real objects."""
-        # First assign permissions
-        assign_team_permissions(self.team, self.org_member)
-
-        group_name = f"team_{self.team.team_id}_coordinators"
-        group = Group.objects.get(name=group_name)
-
-        # Verify initial coordinator is in group
-        self.assertIn(self.user, group.user_set.all())
-
-        # Create new coordinator
-        new_user = CustomUserFactory()
-        new_coordinator = OrganizationMemberFactory(
-            organization=self.organization, user=new_user
-        )
-
-        # Update coordinator
-        update_team_coordinator_group(self.team, new_coordinator)
-
-        # Refresh group
-        group.refresh_from_db()
-
-        # Verify old coordinator is removed and new one is added
-        self.assertNotIn(self.user, group.user_set.all())
-        self.assertIn(new_user, group.user_set.all())
-
-    def test_permission_checks_integration(self):
-        """Test permission checks with real objects and permissions."""
-        # Initially user should not have permissions
-        self.assertFalse(check_change_team_permission(self.user, self.team))
-        self.assertFalse(check_delete_team_permission(self.user, self.team))
-        self.assertFalse(check_add_team_member_permission(self.user, self.team))
+    def test_coordinator_permission_workflow(self):
+        """Test coordinator permission workflow."""
+        # Create initial coordinator
+        initial_coordinator = self.org_member
+        self.team.team_coordinator = initial_coordinator
+        self.team.save()
 
         # Assign permissions
-        assign_team_permissions(self.team, self.org_member)
+        assign_team_permissions(self.team)
 
-        # Now user should have permissions
-        self.assertTrue(check_change_team_permission(self.user, self.team))
-        self.assertTrue(check_delete_team_permission(self.user, self.team))
-        self.assertTrue(check_add_team_member_permission(self.user, self.team))
+        # Verify initial coordinator is in group
+        group_name = f"Team Coordinator - {self.team.team_id}"
+        group = Group.objects.filter(name=group_name).first()
+        self.assertIn(initial_coordinator.user, group.user_set.all())
 
-        # Remove permissions
+        # Create new coordinator
+        new_coordinator = OrganizationMemberFactory(organization=self.organization)
+
+        # Update coordinator group
+        update_team_coordinator_group(self.team, initial_coordinator, new_coordinator)
+
+        # Verify old coordinator was removed
+        self.assertNotIn(initial_coordinator.user, group.user_set.all())
+        # Verify new coordinator was added
+        self.assertIn(new_coordinator.user, group.user_set.all())
+
+        # Clean up
         remove_team_permissions(self.team)
-
-        # User should no longer have permissions
-        self.assertFalse(check_change_team_permission(self.user, self.team))
-        self.assertFalse(check_delete_team_permission(self.user, self.team))
-        self.assertFalse(check_add_team_member_permission(self.user, self.team))

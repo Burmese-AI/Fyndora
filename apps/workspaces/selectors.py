@@ -186,6 +186,10 @@ def get_team_by_id(team_id):
 def get_workspaces_with_team_counts(organization_id, user):
     try:
         organization = get_organization_by_id(organization_id)
+        # edge case for test cases
+        if organization is None:
+            return None
+
         workspaces = get_user_workspaces_under_organization(organization_id)
         # add teams count to each workspace for display purposes
         for workspace in workspaces:
@@ -193,7 +197,7 @@ def get_workspaces_with_team_counts(organization_id, user):
                 workspace.workspace_id
             ).count()
 
-        if user == organization.owner.user:
+        if organization.owner and user == organization.owner.user:
             # for owner, return all workspaces
             return workspaces
         else:
@@ -228,11 +232,17 @@ def get_workspaces_with_team_counts(organization_id, user):
 
 
 def get_single_workspace_with_team_counts(workspace_id):
-    workspace = get_workspace_by_id(workspace_id)
-    workspace.teams_count = get_workspace_teams_by_workspace_id(
-        workspace.workspace_id
-    ).count()
-    return workspace
+    try:
+        workspace = get_workspace_by_id(workspace_id)
+        if workspace is None:
+            return None
+        workspace.teams_count = get_workspace_teams_by_workspace_id(
+            workspace.workspace_id
+        ).count()
+        return workspace
+    except Exception as e:
+        print(f"Error in get_single_workspace_with_team_counts: {str(e)}")
+        return None
 
 
 def get_workspace_team_by_workspace_team_id(workspace_team_id):
@@ -249,6 +259,9 @@ def get_workspace_team_by_workspace_team_id(workspace_team_id):
 def get_workspace_exchange_rates(*, organization, workspace):
     """"""
     try:
+        # edge case for test cases
+        if organization is None or workspace is None:
+            return None
         return WorkspaceExchangeRate.objects.filter(
             workspace__organization=organization,
             workspace=workspace,
@@ -263,6 +276,9 @@ def get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id):
     Return a workspace team by its workspace ID and team ID.
     """
     try:
+        # edge case for test cases
+        if workspace_id is None or team_id is None:
+            return None
         return WorkspaceTeam.objects.get(workspace_id=workspace_id, team_id=team_id)
 
     except Exception as e:

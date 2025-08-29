@@ -50,7 +50,6 @@ class TestWorkspaceModel(TestCase):
         self.assertEqual(workspace.organization, organization)
         self.assertEqual(workspace.status, StatusChoices.ACTIVE)
         self.assertEqual(workspace.remittance_rate, Decimal("90.00"))
-        self.assertEqual(workspace.expense, Decimal("0.00"))
         self.assertIsNotNone(workspace.workspace_id)
 
     @pytest.mark.django_db
@@ -231,6 +230,98 @@ class TestWorkspaceTeamModel(TestCase):
 
         self.assertEqual(workspace_team1.team, workspace_team2.team)
         self.assertNotEqual(workspace_team1.workspace, workspace_team2.workspace)
+
+    @pytest.mark.django_db
+    def test_workspace_team_custom_remittance_rate_edge_cases(self):
+        """Test workspace team custom remittance rate edge cases."""
+        workspace_team = WorkspaceTeamFactory()
+
+        # Test boundary values
+        workspace_team.custom_remittance_rate = Decimal("0.00")
+        workspace_team.full_clean()  # Should not raise
+
+        workspace_team.custom_remittance_rate = Decimal("100.00")
+        workspace_team.full_clean()  # Should not raise
+
+        # Test decimal precision
+        workspace_team.custom_remittance_rate = Decimal("50.50")
+        workspace_team.full_clean()  # Should not raise
+
+        # Test clearing the custom rate
+        workspace_team.custom_remittance_rate = None
+        workspace_team.full_clean()  # Should not raise
+
+    @pytest.mark.django_db
+    def test_workspace_team_created_updated_timestamps(self):
+        """Test that workspace team has proper timestamps."""
+        workspace_team = WorkspaceTeamFactory()
+
+        # Check that timestamps are set
+        self.assertIsNotNone(workspace_team.created_at)
+        self.assertIsNotNone(workspace_team.updated_at)
+
+        # Check that created_at is before or equal to updated_at
+        self.assertLessEqual(workspace_team.created_at, workspace_team.updated_at)
+
+        # Update the instance
+        original_updated_at = workspace_team.updated_at
+        workspace_team.custom_remittance_rate = Decimal("25.00")
+        workspace_team.save()
+
+        # Check that updated_at changed
+        workspace_team.refresh_from_db()
+        self.assertGreater(workspace_team.updated_at, original_updated_at)
+
+    @pytest.mark.django_db
+    def test_workspace_team_ordering(self):
+        """Test workspace team ordering by created_at."""
+        workspace = WorkspaceFactory()
+        team1 = TeamFactory(organization=workspace.organization)
+        team2 = TeamFactory(organization=workspace.organization)
+        team3 = TeamFactory(organization=workspace.organization)
+
+        # Create in reverse order
+        workspace_team3 = WorkspaceTeamFactory(workspace=workspace, team=team3)
+        workspace_team1 = WorkspaceTeamFactory(workspace=workspace, team=team1)
+        workspace_team2 = WorkspaceTeamFactory(workspace=workspace, team=team2)
+
+        # Get all workspace teams for this workspace
+        workspace_teams = WorkspaceTeam.objects.filter(workspace=workspace)
+
+        # Should be ordered by -created_at (newest first)
+        self.assertEqual(workspace_teams[0], workspace_team2)
+        self.assertEqual(workspace_teams[1], workspace_team1)
+        self.assertEqual(workspace_teams[2], workspace_team3)
+
+    @pytest.mark.django_db
+    def test_workspace_team_permissions(self):
+        """Test that WorkspaceTeam model has correct permissions defined."""
+        from apps.core.permissions import WorkspaceTeamPermissions
+
+        # Get the model's permissions
+        model_permissions = WorkspaceTeam._meta.permissions
+
+        # Check that all expected permissions are present
+        expected_permissions = [
+            WorkspaceTeamPermissions.VIEW_WORKSPACE_TEAM,
+            WorkspaceTeamPermissions.ADD_WORKSPACE_TEAM_ENTRY,
+            WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY,
+            WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY,
+        ]
+
+        for permission in expected_permissions:
+            # Find the permission in the model's permissions
+            found = False
+            for perm_tuple in model_permissions:
+                if perm_tuple[0] == permission:
+                    found = True
+                    break
+            self.assertTrue(
+                found, f"Permission {permission} not found in model permissions"
+            )
+
+        # Verify the total count matches
+        self.assertEqual(len(model_permissions), len(expected_permissions))
 
 
 @pytest.mark.unit

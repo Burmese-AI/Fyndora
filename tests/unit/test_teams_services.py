@@ -1,324 +1,477 @@
-# """
-# Unit tests for Team services.
-# """
-
-# from unittest.mock import Mock, patch
-
-# from django.contrib.auth import get_user_model
-# from django.contrib.auth.models import Group
-# from django.test import TestCase
-
-# from apps.teams.constants import TeamMemberRole
-# from apps.teams.exceptions import (
-#     TeamCreationError,
-#     TeamMemberCreationError,
-#     TeamMemberDeletionError,
-#     TeamMemberUpdateError,
-#     TeamUpdateError,
-# )
-# from apps.teams.models import TeamMember
-# from apps.teams.services import (
-#     create_team_from_form,
-#     create_team_member_from_form,
-#     remove_team_member,
-#     team_member_add,
-#     update_team_from_form,
-#     update_team_member_role,
-# )
-# from tests.factories.organization_factories import (
-#     OrganizationFactory,
-#     OrganizationMemberFactory,
-# )
-# from tests.factories.team_factories import TeamFactory, TeamMemberFactory
-
-# User = get_user_model()
-
-
-# class CreateTeamFromFormTest(TestCase):
-#     """Test cases for create_team_from_form service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.org_member = OrganizationMemberFactory(organization=self.organization)
-
-#     @patch("apps.teams.services.assign_team_permissions")
-#     def test_create_team_from_form_success(self, mock_assign_permissions):
-#         """Test successful team creation from form."""
-#         # Create a mock form
-#         mock_form = Mock()
-#         mock_team = TeamFactory.build(
-#             organization=self.organization, created_by=self.org_member
-#         )
-#         mock_form.save.return_value = mock_team
-
-#         result = create_team_from_form(mock_form, self.organization, self.org_member)
-
-#         # Verify form.save was called with commit=False
-#         mock_form.save.assert_called_once_with(commit=False)
-
-#         # Verify team attributes were set correctly
-#         self.assertEqual(result.organization, self.organization)
-#         self.assertEqual(result.created_by, self.org_member)
-
-#         # Verify permissions were assigned
-#         mock_assign_permissions.assert_called_once_with(result)
-
-#     @patch("apps.teams.services.assign_team_permissions")
-#     def test_create_team_from_form_exception(self, mock_assign_permissions):
-#         """Test team creation failure handling."""
-#         mock_form = Mock()
-#         mock_form.save.side_effect = Exception("Database error")
-
-#         with self.assertRaises(TeamCreationError) as context:
-#             create_team_from_form(mock_form, self.organization, self.org_member)
-
-#         self.assertIn("An error occurred while creating team", str(context.exception))
-#         mock_assign_permissions.assert_not_called()
-
-
-# class TeamMemberAddTest(TestCase):
-#     """Test cases for team_member_add service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.team = TeamFactory(organization=self.organization)
-#         self.org_member = OrganizationMemberFactory(organization=self.organization)
-#         self.user = self.org_member.user
-
-#     @patch("apps.teams.services.audit_create")
-#     @patch("apps.teams.services.get_permissions_for_role")
-#     @patch("guardian.shortcuts.assign_perm")
-#     def test_team_member_add_success(
-#         self, mock_assign_perm, mock_get_permissions, mock_audit
-#     ):
-#         """Test successful team member addition."""
-#         mock_get_permissions.return_value = ["view_team", "add_entry"]
-
-#         result = team_member_add(
-#             added_by=self.user,
-#             org_member=self.org_member,
-#             team=self.team,
-#             role="submitter",
-#         )
-
-#         # Verify team member was created
-#         self.assertIsInstance(result, TeamMember)
-#         self.assertEqual(result.organization_member, self.org_member)
-#         self.assertEqual(result.team, self.team)
-#         self.assertEqual(result.role, "SUBMITTER")
-
-#         # Verify group was created and user added
-#         expected_group_name = (
-#             f"{self.team.workspace.workspace_id}_{self.team.team_id}_SUBMITTER"
-#         )
-#         group = Group.objects.get(name=expected_group_name)
-#         self.assertIn(self.user, group.user_set.all())
-
-#         # Verify permissions were assigned
-#         mock_get_permissions.assert_called_once_with("SUBMITTER")
-#         self.assertEqual(mock_assign_perm.call_count, 2)
-
-#         # Verify audit log was created
-#         mock_audit.assert_called_once()
-
-#     def test_team_member_add_exception(self):
-#         """Test team member addition failure handling."""
-#         # Create invalid scenario by passing None team
-#         with self.assertRaises(TeamMemberCreationError) as context:
-#             team_member_add(
-#                 added_by=self.user,
-#                 org_member=self.org_member,
-#                 team=None,
-#                 role="submitter",
-#             )
-
-#         self.assertIn(
-#             "An error occurred while adding team member", str(context.exception)
-#         )
-
-#     @patch("apps.teams.services.audit_create")
-#     @patch("apps.teams.services.get_permissions_for_role")
-#     def test_team_member_add_update_existing(self, mock_get_permissions, mock_audit):
-#         """Test updating existing team member role."""
-#         # Create existing team member
-#         existing_member = TeamMemberFactory(
-#             organization_member=self.org_member,
-#             team=self.team,
-#             role=TeamMemberRole.SUBMITTER,
-#         )
-
-#         mock_get_permissions.return_value = ["view_team", "audit_entry"]
-
-#         result = team_member_add(
-#             added_by=self.user,
-#             org_member=self.org_member,
-#             team=self.team,
-#             role="auditor",
-#         )
-
-#         # Verify the existing member was updated
-#         self.assertEqual(result.team_member_id, existing_member.team_member_id)
-#         self.assertEqual(result.role, "AUDITOR")
-
-
-# class CreateTeamMemberFromFormTest(TestCase):
-#     """Test cases for create_team_member_from_form service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.team = TeamFactory(organization=self.organization)
-
-#     def test_create_team_member_from_form_success(self):
-#         """Test successful team member creation from form."""
-#         mock_form = Mock()
-#         mock_team_member = TeamMemberFactory.build(team=self.team)
-#         mock_form.save.return_value = mock_team_member
-
-#         result = create_team_member_from_form(mock_form, self.team, self.organization)
-
-#         # Verify form.save was called with commit=False
-#         mock_form.save.assert_called_once_with(commit=False)
-
-#         # Verify team member attributes were set correctly
-#         self.assertEqual(result.team, self.team)
-#         self.assertEqual(result.organization, self.organization)
-
-#     def test_create_team_member_from_form_exception(self):
-#         """Test team member creation failure handling."""
-#         mock_form = Mock()
-#         mock_form.save.side_effect = Exception("Database error")
-
-#         with self.assertRaises(TeamMemberCreationError) as context:
-#             create_team_member_from_form(mock_form, self.team, self.organization)
-
-#         self.assertIn(
-#             "An error occurred while creating team member", str(context.exception)
-#         )
-
-
-# class UpdateTeamMemberRoleTest(TestCase):
-#     """Test cases for update_team_member_role service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.team = TeamFactory(organization=self.organization)
-#         self.team_member = TeamMemberFactory(
-#             team=self.team, role=TeamMemberRole.SUBMITTER
-#         )
-
-#     @patch("apps.teams.services.model_update")
-#     def test_update_team_member_role_success(self, mock_model_update):
-#         """Test successful team member role update."""
-#         mock_form = Mock()
-#         mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
-#         mock_model_update.return_value = self.team_member
-
-#         result = update_team_member_role(form=mock_form, team_member=self.team_member)
-
-#         # Verify model_update was called correctly
-#         mock_model_update.assert_called_once_with(
-#             self.team_member, {"role": TeamMemberRole.AUDITOR}
-#         )
-#         self.assertEqual(result, self.team_member)
-
-#     @patch("apps.teams.services.model_update")
-#     def test_update_team_member_role_exception(self, mock_model_update):
-#         """Test team member role update failure handling."""
-#         mock_form = Mock()
-#         mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
-#         mock_model_update.side_effect = Exception("Update failed")
-
-#         with self.assertRaises(TeamMemberUpdateError) as context:
-#             update_team_member_role(form=mock_form, team_member=self.team_member)
-
-#         self.assertIn("Failed to update team member", str(context.exception))
-
-
-# class UpdateTeamFromFormTest(TestCase):
-#     """Test cases for update_team_from_form service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.team = TeamFactory(organization=self.organization)
-#         self.old_coordinator = OrganizationMemberFactory(organization=self.organization)
-#         self.new_coordinator = OrganizationMemberFactory(organization=self.organization)
-
-#     @patch("apps.teams.services.update_team_coordinator_group")
-#     @patch("apps.teams.services.model_update")
-#     def test_update_team_from_form_success(
-#         self, mock_model_update, mock_update_coordinator
-#     ):
-#         """Test successful team update from form."""
-#         mock_form = Mock()
-#         mock_form.cleaned_data = {
-#             "title": "Updated Team",
-#             "team_coordinator": self.new_coordinator,
-#         }
-#         mock_model_update.return_value = self.team
-
-#         result = update_team_from_form(
-#             mock_form, self.team, self.organization, self.old_coordinator
-#         )
-
-#         # Verify model_update was called correctly
-#         mock_model_update.assert_called_once_with(self.team, mock_form.cleaned_data)
-
-#         # Verify coordinator group was updated
-#         mock_update_coordinator.assert_called_once_with(
-#             self.team, self.old_coordinator, self.new_coordinator
-#         )
-
-#         self.assertEqual(result, self.team)
-
-#     @patch("apps.teams.services.update_team_coordinator_group")
-#     @patch("apps.teams.services.model_update")
-#     def test_update_team_from_form_exception(
-#         self, mock_model_update, mock_update_coordinator
-#     ):
-#         """Test team update failure handling."""
-#         mock_form = Mock()
-#         mock_form.cleaned_data = {"title": "Updated Team"}
-#         mock_model_update.side_effect = Exception("Update failed")
-
-#         with self.assertRaises(TeamUpdateError) as context:
-#             update_team_from_form(
-#                 mock_form, self.team, self.organization, self.old_coordinator
-#             )
-
-#         self.assertIn("Failed to update team", str(context.exception))
-
-
-# class RemoveTeamMemberTest(TestCase):
-#     """Test cases for remove_team_member service."""
-
-#     def setUp(self):
-#         """Set up test data."""
-#         self.organization = OrganizationFactory()
-#         self.team = TeamFactory(organization=self.organization)
-#         self.team_member = TeamMemberFactory(team=self.team)
-
-#     def test_remove_team_member_success(self):
-#         """Test successful team member removal."""
-#         team_member_id = self.team_member.team_member_id
-
-#         remove_team_member(self.team_member)
-
-#         # Verify team member was deleted
-#         with self.assertRaises(TeamMember.DoesNotExist):
-#             TeamMember.objects.get(team_member_id=team_member_id)
-
-#     def test_remove_team_member_exception(self):
-#         """Test team member removal failure handling."""
-#         # Mock the delete method to raise an exception
-#         with patch.object(
-#             self.team_member, "delete", side_effect=Exception("Delete failed")
-#         ):
-#             with self.assertRaises(TeamMemberDeletionError) as context:
-#                 remove_team_member(self.team_member)
-
-#             self.assertIn("Failed to remove team member", str(context.exception))
+"""
+Unit tests for Team services.
+"""
+
+from unittest.mock import patch, MagicMock
+from django.test import TestCase
+
+from apps.teams.services import (
+    create_team_from_form,
+    create_team_member_from_form,
+    update_team_member_role,
+    update_team_from_form,
+    remove_team_member,
+)
+from apps.teams.models import Team, TeamMember
+from apps.teams.constants import TeamMemberRole
+from apps.teams.exceptions import (
+    TeamCreationError,
+    TeamMemberCreationError,
+    TeamMemberUpdateError,
+    TeamUpdateError,
+    TeamMemberDeletionError,
+)
+from tests.factories.organization_factories import (
+    OrganizationWithOwnerFactory,
+    OrganizationMemberFactory,
+)
+from tests.factories.team_factories import TeamFactory, TeamMemberFactory
+
+
+class TeamServicesTest(TestCase):
+    """Test cases for Team services."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        self.team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.assign_team_permissions")
+    def test_create_team_from_form_success(
+        self, mock_assign_permissions, mock_audit_log
+    ):
+        """Test successful team creation from form."""
+        # Create a mock form
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {
+            "title": "Test Team",
+            "description": "Test Description",
+            "team_coordinator": self.org_member,
+        }
+        mock_form.save.return_value = self.team
+
+        # Mock the form save to return our team
+        with patch.object(Team, "save"):
+            team = create_team_from_form(mock_form, self.organization, self.org_member)
+
+        # Verify the team was created with correct attributes
+        self.assertEqual(team.organization, self.organization)
+        self.assertEqual(team.created_by, self.org_member)
+
+        # Verify permissions were assigned
+        mock_assign_permissions.assert_called_once_with(team)
+
+        # Verify audit logging was called
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.assign_team_permissions")
+    def test_create_team_from_form_without_coordinator(
+        self, mock_assign_permissions, mock_audit_log
+    ):
+        """Test team creation without coordinator."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {
+            "title": "Test Team",
+            "description": "Test Description",
+            "team_coordinator": None,
+        }
+        mock_form.save.return_value = self.team
+
+        with patch.object(Team, "save"):
+            team = create_team_from_form(mock_form, self.organization, self.org_member)
+
+        self.assertEqual(team.organization, self.organization)
+        self.assertEqual(team.created_by, self.org_member)
+        mock_assign_permissions.assert_called_once_with(team)
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure")
+    def test_create_team_from_form_failure(self, mock_audit_log):
+        """Test team creation failure handling."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"title": "Test Team"}
+        mock_form.save.side_effect = Exception("Database error")
+
+        with self.assertRaises(TeamCreationError):
+            create_team_from_form(mock_form, self.organization, self.org_member)
+
+        # Verify failure was logged
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    def test_create_team_member_from_form_success(self, mock_audit_log):
+        """Test successful team member creation from form."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {
+            "organization_member": self.org_member,
+            "role": TeamMemberRole.SUBMITTER,
+        }
+        mock_form.save.return_value = self.team_member
+
+        with patch.object(TeamMember, "save"):
+            team_member = create_team_member_from_form(
+                mock_form, self.team, self.organization
+            )
+
+        self.assertEqual(team_member.team, self.team)
+        self.assertEqual(team_member.organization, self.organization)
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure")
+    def test_create_team_member_from_form_failure(self, mock_audit_log):
+        """Test team member creation failure handling."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"organization_member": self.org_member}
+        mock_form.save.side_effect = Exception("Database error")
+
+        with self.assertRaises(TeamMemberCreationError):
+            create_team_member_from_form(mock_form, self.team, self.organization)
+
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    @patch("apps.teams.services.update_team_coordinator_group")
+    @patch("apps.teams.services.model_update")
+    def test_update_team_member_role_success(
+        self, mock_model_update, mock_update_group, mock_audit_log
+    ):
+        """Test successful team member role update."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
+
+        mock_model_update.return_value = self.team_member
+
+        team_member = update_team_member_role(
+            form=mock_form,
+            team_member=self.team_member,
+            previous_role=TeamMemberRole.SUBMITTER,
+            team=self.team,
+        )
+
+        self.assertEqual(team_member, self.team_member)
+        mock_model_update.assert_called_once()
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    @patch("apps.teams.services.update_team_coordinator_group")
+    @patch("apps.teams.services.model_update")
+    def test_update_team_member_role_from_coordinator(
+        self, mock_model_update, mock_update_group, mock_audit_log
+    ):
+        """Test updating role from team coordinator."""
+        # Set up team member as coordinator
+        self.team_member.role = TeamMemberRole.TEAM_COORDINATOR
+        self.team.team_coordinator = self.org_member
+        self.team.save()
+
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
+
+        mock_model_update.return_value = self.team_member
+
+        with patch.object(Team, "save"):
+            update_team_member_role(
+                form=mock_form,
+                team_member=self.team_member,
+                previous_role=TeamMemberRole.TEAM_COORDINATOR,
+                team=self.team,
+            )
+
+        # Verify coordinator was cleared
+        self.assertIsNone(self.team.team_coordinator)
+        mock_update_group.assert_called_once()
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure")
+    def test_update_team_member_role_failure(self, mock_audit_log):
+        """Test team member role update failure handling."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
+
+        with patch(
+            "apps.teams.services.model_update", side_effect=Exception("Update error")
+        ):
+            with self.assertRaises(TeamMemberUpdateError):
+                update_team_member_role(
+                    form=mock_form,
+                    team_member=self.team_member,
+                    previous_role=TeamMemberRole.SUBMITTER,
+                    team=self.team,
+                )
+
+        mock_audit_log.assert_called_once()
+
+
+class TeamUpdateServiceTest(TestCase):
+    """Test cases for team update service."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        # Ensure team has created_by set
+        self.team.created_by = self.org_member
+        self.team.save()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.model_update")
+    def test_update_team_from_form_no_coordinator_change(
+        self, mock_model_update, mock_audit_log
+    ):
+        """Test team update when coordinator doesn't change."""
+        previous_coordinator = self.org_member
+        self.team.team_coordinator = previous_coordinator
+        self.team.save()
+
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"title": "Updated Team"}
+
+        mock_model_update.return_value = self.team
+
+        team = update_team_from_form(
+            mock_form, self.team, self.organization, previous_coordinator
+        )
+
+        self.assertEqual(team, self.team)
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.model_update")
+    def test_update_team_from_form_simple_update(
+        self, mock_model_update, mock_audit_log
+    ):
+        """Test simple team update without coordinator changes."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"title": "Updated Team"}
+
+        mock_model_update.return_value = self.team
+
+        team = update_team_from_form(mock_form, self.team, self.organization, None)
+
+        self.assertEqual(team, self.team)
+        mock_audit_log.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure")
+    def test_update_team_from_form_failure(self, mock_audit_log):
+        """Test team update failure handling."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"title": "Updated Team"}
+
+        with patch(
+            "apps.teams.services.model_update", side_effect=Exception("Update error")
+        ):
+            with self.assertRaises(TeamUpdateError):
+                update_team_from_form(mock_form, self.team, self.organization, None)
+
+        mock_audit_log.assert_called_once()
+
+
+class TeamMemberRemovalServiceTest(TestCase):
+    """Test cases for team member removal service."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        self.team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    @patch("apps.teams.services.update_team_coordinator_group")
+    def test_remove_team_member_success(self, mock_update_group, mock_audit_log):
+        """Test successful team member removal."""
+        with patch.object(TeamMember, "delete"):
+            with patch.object(Team, "save"):
+                remove_team_member(self.team_member, self.team)
+
+        # Verify audit logging was called
+        mock_audit_log.assert_called()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    @patch("apps.teams.services.update_team_coordinator_group")
+    def test_remove_team_member_coordinator(self, mock_update_group, mock_audit_log):
+        """Test removing team coordinator."""
+        # Set up team member as coordinator
+        self.team_member.role = TeamMemberRole.TEAM_COORDINATOR
+        self.team.team_coordinator = self.org_member
+        self.team.save()
+
+        with patch.object(TeamMember, "delete"):
+            with patch.object(Team, "save"):
+                remove_team_member(self.team_member, self.team)
+
+        # Verify coordinator was cleared
+        mock_update_group.assert_called_once()
+        mock_audit_log.assert_called()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure")
+    def test_remove_team_member_failure(self, mock_audit_log):
+        """Test team member removal failure handling."""
+        with patch.object(TeamMember, "delete", side_effect=Exception("Delete error")):
+            with self.assertRaises(TeamMemberDeletionError):
+                remove_team_member(self.team_member, self.team)
+
+        mock_audit_log.assert_called_once()
+
+
+class TeamServicesIntegrationTest(TestCase):
+    """Integration tests for Team services."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+        # Ensure team has created_by set
+        self.team.created_by = self.org_member
+        self.team.save()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.assign_team_permissions")
+    def test_full_team_lifecycle(self, mock_assign_permissions, mock_audit_log):
+        """Test complete team lifecycle with services."""
+        # Create team
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {
+            "title": "Test Team",
+            "description": "Test Description",
+            "team_coordinator": self.org_member,
+        }
+        mock_form.save.return_value = self.team
+
+        with patch.object(Team, "save"):
+            team = create_team_from_form(mock_form, self.organization, self.org_member)
+
+        self.assertEqual(team.organization, self.organization)
+        self.assertEqual(team.created_by, self.org_member)
+        mock_assign_permissions.assert_called_once()
+
+        # Update team - use a simple update without coordinator changes
+        mock_update_form = MagicMock()
+        mock_update_form.cleaned_data = {"title": "Updated Team"}
+
+        with patch("apps.teams.services.model_update", return_value=team):
+            updated_team = update_team_from_form(
+                mock_update_form,
+                team,
+                self.organization,
+                None,  # No previous coordinator
+            )
+
+        self.assertEqual(updated_team, team)
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    def test_team_member_lifecycle(self, mock_audit_log):
+        """Test complete team member lifecycle with services."""
+        # Create a team member for testing
+        team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+        # Create team member
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {
+            "organization_member": self.org_member,
+            "role": TeamMemberRole.SUBMITTER,
+        }
+        mock_form.save.return_value = team_member
+
+        with patch.object(TeamMember, "save"):
+            created_member = create_team_member_from_form(
+                mock_form, self.team, self.organization
+            )
+
+        self.assertEqual(created_member.team, self.team)
+        self.assertEqual(created_member.organization, self.organization)
+
+        # Update role
+        mock_role_form = MagicMock()
+        mock_role_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
+
+        with patch("apps.teams.services.model_update", return_value=team_member):
+            updated_member = update_team_member_role(
+                form=mock_role_form,
+                team_member=team_member,
+                previous_role=TeamMemberRole.SUBMITTER,
+                team=self.team,
+            )
+
+        self.assertEqual(updated_member, team_member)
+
+        mock_audit_log.assert_called()
+
+
+class TeamServicesEdgeCasesTest(TestCase):
+    """Test edge cases for Team services."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_action")
+    @patch("apps.teams.services.assign_team_permissions")
+    def test_create_team_with_empty_form_data(
+        self, mock_assign_permissions, mock_audit_log
+    ):
+        """Test team creation with minimal form data."""
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"title": "Minimal Team"}
+        mock_form.save.return_value = self.team
+
+        with patch.object(Team, "save"):
+            team = create_team_from_form(mock_form, self.organization, self.org_member)
+
+        self.assertEqual(team.organization, self.organization)
+        self.assertEqual(team.created_by, self.org_member)
+        mock_assign_permissions.assert_called_once()
+
+    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
+    def test_create_team_member_with_minimal_data(self, mock_audit_log):
+        """Test team member creation with minimal data."""
+        # Create a team member for testing
+        team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"organization_member": self.org_member}
+        mock_form.save.return_value = team_member
+
+        with patch.object(TeamMember, "save"):
+            created_member = create_team_member_from_form(
+                mock_form, self.team, self.organization
+            )
+
+        self.assertEqual(created_member.team, self.team)
+        self.assertEqual(created_member.organization, self.organization)
+
+    def test_update_team_member_role_same_role(self):
+        """Test updating team member role to the same role."""
+        # Create a team member for testing
+        team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+        mock_form = MagicMock()
+        mock_form.cleaned_data = {"role": TeamMemberRole.SUBMITTER}
+
+        with patch("apps.teams.services.model_update", return_value=team_member):
+            updated_member = update_team_member_role(
+                form=mock_form,
+                team_member=team_member,
+                previous_role=TeamMemberRole.SUBMITTER,
+                team=self.team,
+            )
+
+        self.assertEqual(updated_member, team_member)

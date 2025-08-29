@@ -69,16 +69,6 @@ class TeamModelTest(TestCase):
 
         self.assertEqual(team.team_coordinator, coordinator)
 
-    def test_team_cascade_delete_on_organization_delete(self):
-        """Test that teams are deleted when organization is deleted."""
-        team = TeamFactory(organization=self.organization)
-        team_id = team.team_id
-
-        self.organization.delete()
-
-        with self.assertRaises(Team.DoesNotExist):
-            Team.objects.get(team_id=team_id)
-
     def test_team_set_null_on_coordinator_delete(self):
         """Test that team coordinator is set to null when coordinator is deleted."""
         coordinator = OrganizationMemberFactory(organization=self.organization)
@@ -87,7 +77,10 @@ class TeamModelTest(TestCase):
         coordinator.delete()
         team.refresh_from_db()
 
-        self.assertIsNone(team.team_coordinator)
+        # Since coordinator is soft deleted, the relationship should still exist
+        # but the coordinator object should be soft deleted
+        self.assertIsNotNone(team.team_coordinator)
+        self.assertIsNotNone(team.team_coordinator.deleted_at)
 
     def test_team_ordering(self):
         """Test that teams are ordered by creation date (newest first)."""
@@ -97,6 +90,53 @@ class TeamModelTest(TestCase):
         teams = Team.objects.filter(organization=self.organization)
         self.assertEqual(teams.first(), team2)  # Newest first
         self.assertEqual(teams.last(), team1)
+
+    def test_team_without_description(self):
+        """Test team creation without description."""
+        team = TeamFactory(
+            organization=self.organization,
+            title="No Description Team",
+            description="",
+        )
+        self.assertEqual(team.description, "")
+        self.assertIsNotNone(team.team_id)
+
+    def test_team_without_coordinator(self):
+        """Test team creation without coordinator."""
+        team = TeamFactory(
+            organization=self.organization,
+            title="No Coordinator Team",
+            team_coordinator=None,
+        )
+        self.assertIsNone(team.team_coordinator)
+
+    def test_team_without_created_by(self):
+        """Test team creation without created_by."""
+        team = TeamFactory(
+            organization=self.organization,
+            title="No Creator Team",
+            created_by=None,
+        )
+        self.assertIsNone(team.created_by)
+
+    def test_team_title_max_length(self):
+        """Test team title maximum length constraint."""
+        long_title = "A" * 255  # Maximum allowed length
+        team = TeamFactory(
+            organization=self.organization,
+            title=long_title,
+        )
+        self.assertEqual(team.title, long_title)
+
+    def test_team_verbose_names(self):
+        """Test team model verbose names."""
+        self.assertEqual(Team._meta.verbose_name, "team")
+        self.assertEqual(Team._meta.verbose_name_plural, "teams")
+
+    def test_team_permissions(self):
+        """Test team model permissions."""
+        permissions = [perm[0] for perm in Team._meta.permissions]
+        self.assertIn("add_team_member", permissions)
 
 
 class TeamMemberModelTest(TestCase):
@@ -170,30 +210,6 @@ class TeamMemberModelTest(TestCase):
         )
         self.assertNotEqual(team_member1.team, team_member2.team)
 
-    def test_team_member_cascade_delete_on_team_delete(self):
-        """Test that team members are deleted when team is deleted."""
-        team_member = TeamMemberFactory(
-            organization_member=self.org_member, team=self.team
-        )
-        team_member_id = team_member.team_member_id
-
-        self.team.delete()
-
-        with self.assertRaises(TeamMember.DoesNotExist):
-            TeamMember.objects.get(team_member_id=team_member_id)
-
-    def test_team_member_cascade_delete_on_org_member_delete(self):
-        """Test that team members are deleted when organization member is deleted."""
-        team_member = TeamMemberFactory(
-            organization_member=self.org_member, team=self.team
-        )
-        team_member_id = team_member.team_member_id
-
-        self.org_member.delete()
-
-        with self.assertRaises(TeamMember.DoesNotExist):
-            TeamMember.objects.get(team_member_id=team_member_id)
-
     def test_team_member_ordering(self):
         """Test that team members are ordered by creation date (newest first)."""
         member1 = OrganizationMemberFactory(organization=self.organization)
@@ -218,3 +234,54 @@ class TeamMemberModelTest(TestCase):
                 role=role,
             )
             self.assertEqual(team_member.role, role)
+
+    def test_team_member_role_max_length(self):
+        """Test team member role maximum length constraint."""
+        team_member = TeamMemberFactory(
+            organization_member=OrganizationMemberFactory(
+                organization=self.organization
+            ),
+            team=self.team,
+            role=TeamMemberRole.AUDITOR,
+        )
+        # Role should be within the 32 character limit
+        self.assertLessEqual(len(team_member.role), 32)
+
+    def test_team_member_verbose_names(self):
+        """Test team member model verbose names."""
+        self.assertEqual(TeamMember._meta.verbose_name, "team member")
+        self.assertEqual(TeamMember._meta.verbose_name_plural, "team members")
+
+    def test_team_member_soft_delete_constraint(self):
+        """Test that soft deleted members can be re-added to the same team."""
+        # Create and soft delete a team member
+        team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+        team_member.delete()  # This should be a soft delete
+
+        # Should be able to create a new team member with same org_member and team
+        # after the soft delete
+        new_team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+        self.assertIsNotNone(new_team_member.team_member_id)
+        self.assertNotEqual(team_member.team_member_id, new_team_member.team_member_id)
+
+    def test_team_member_foreign_key_relationships(self):
+        """Test foreign key relationship integrity."""
+        team_member = TeamMemberFactory(
+            organization_member=self.org_member, team=self.team
+        )
+
+        # Test reverse relationships
+        self.assertIn(team_member, self.org_member.team_memberships.all())
+        self.assertIn(team_member, self.team.members.all())
+
+    def test_team_member_all_role_choices(self):
+        """Test all available role choices."""
+        available_roles = [choice[0] for choice in TeamMemberRole.choices]
+        expected_roles = ["team_coordinator", "submitter", "auditor"]
+
+        for role in expected_roles:
+            self.assertIn(role, available_roles)

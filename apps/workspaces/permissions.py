@@ -284,13 +284,17 @@ def assign_workspace_team_permissions(
     workspace_admins_group_name = (
         f"Workspace Admins - {workspace_team.workspace.workspace_id}"
     )
-    workspace_admins_group = Group.objects.get(name=workspace_admins_group_name)
+    workspace_admins_group, _ = Group.objects.get_or_create(
+        name=workspace_admins_group_name
+    )
 
     # to give some edit workspace team entry permission to operations reviewer
     operations_reviewer_group_name = (
         f"Operations Reviewer - {workspace_team.workspace.workspace_id}"
     )
-    operations_reviewer_group = Group.objects.get(name=operations_reviewer_group_name)
+    operations_reviewer_group, _ = Group.objects.get_or_create(
+        name=operations_reviewer_group_name
+    )
 
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     assigned_permissions = []
@@ -313,12 +317,13 @@ def assign_workspace_team_permissions(
 
     # give view workspace teams under workspace permission to team coordinator
     # for this not used group
-    if team.team_coordinator:
+    team_obj = team or workspace_team.team
+    if team_obj.team_coordinator:
         try:
             assign_perm(
                 WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
-                team.team_coordinator.user,
-                workspace,
+                team_obj.team_coordinator.user,
+                workspace or workspace_team.workspace,
             )
         except Exception as e:
             logger.error(
@@ -419,7 +424,7 @@ def remove_workspace_team_permissions(workspace_team, request_user=None):
                             workspace_id=str(workspace_team.workspace.workspace_id),
                             workspace_title=workspace_team.workspace.title,
                             team_id=str(workspace_team.team.team_id),
-                            team_name=workspace_team.team.name,
+                            team_name=workspace_team.team.title,
                             workspace_team_id=str(workspace_team.workspace_team_id),
                             organization_id=str(
                                 workspace_team.workspace.organization.organization_id

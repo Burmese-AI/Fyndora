@@ -69,8 +69,8 @@ from .mixins.workspace_exchange_rate.required_mixins import (
 )
 from apps.core.utils import can_manage_organization
 from apps.remittance.services import (
-    process_due_amount,
-    update_remittance_based_on_entry_status_change,
+    calculate_due_amount,
+    update_remittance,
 )
 from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
@@ -232,13 +232,10 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         # Update Remittance Due Amount of Each Team's Remittance
                         for workspace_team in workspace_teams:
                             remittance = workspace_team.remittance
-                            new_due_amount = process_due_amount(
-                                workspace_team, remittance
+                            remittance.new_due_amount = calculate_due_amount(
+                                workspace_team=workspace_team
                             )
-                            print(f"New Due Amount: {new_due_amount}")
-                            update_remittance_based_on_entry_status_change(
-                                remittance=remittance, due_amount=new_due_amount
-                            )
+                            update_remittance(remittance=remittance)
 
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
@@ -533,12 +530,10 @@ def change_workspace_team_remittance_rate_view(
                     )
                     # Updating due amount of remittance
                     remittance = workspace_team.remittance
-                    new_due_amount = process_due_amount(workspace_team, remittance)
-                    print(f"New Due Amount: {new_due_amount}")
-                    update_remittance_based_on_entry_status_change(
-                        remittance=remittance,
-                        due_amount=new_due_amount,
+                    remittance.due_amount = calculate_due_amount(
+                        workspace_team=workspace_team
                     )
+                    update_remittance(remittance=remittance)
                 messages.success(request, "Remittance rate updated successfully.")
                 workspace_team = get_workspace_team_by_workspace_team_id(
                     workspace_team_id

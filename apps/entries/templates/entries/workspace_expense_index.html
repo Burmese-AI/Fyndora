@@ -8,24 +8,32 @@
             <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
                 Workspace Expense Entries
             </h2>
-            {% if permissions.can_add_workspace_expense %}
-            <button 
-                class="btn btn-neutral"
-                hx-get="{% url 'workspace_expense_create' organization_id=organization.pk workspace_id=workspace.pk %}"
-                hx-target="#modal-placeholder"
-                hx-swap="innerHTML"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
-                </svg>
+
+            
+            <div>
+                {% url "workspace_expense_bulk_delete" organization.pk workspace.pk as bulk_delete_url %}
+                {% url "workspace_expense_bulk_update" organization.pk workspace.pk as bulk_update_url %}
                 
-                <span class="hidden sm:inline">Add Expense Entry</span>
-            </button>
-            {% endif %}
+                {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %}
+
+                {% if permissions.can_add_workspace_expense %}
+                <button 
+                    class="btn btn-neutral"
+                    hx-get="{% url 'workspace_expense_create' organization_id=organization.pk workspace_id=workspace.pk %}"
+                    hx-target="#modal-placeholder"
+                    hx-swap="innerHTML"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+                    </svg>
+                    
+                    <span class="hidden sm:inline">Add Expense Entry</span>
+                </button>
+                {% endif %}
+            </div>
         </section>
 
-        {% url 'workspace_expense_list' organization.pk workspace.pk as filter_url %}
-        {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
+        {% include "entries/layouts/base_entry_content_layout.html" %}
 
     </div>
 {% endblock %}

@@ -1,0 +1,74 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div 
+  {% if is_oob %}hx-swap-oob="true"{% endif %}
+  id="modal_content_template"
+  class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6 space-y-6"
+>
+
+  <h2 class="text-xl font-semibold text-base-content">
+    Update {{ entry_count }} Entry{{ entry_count|pluralize }}?
+  </h2>
+
+  <p class="text-sm text-base-content/80">
+    Are you sure you want to delete the selected {{ entry_count }} expense entry{{ entry_count|pluralize }}? This action cannot be undone.
+  </p>
+
+  <!-- Hidden Form with IDs -->
+  <form
+    hx-post="{{ post_url }}"
+    hx-swap="none"
+    hx-on::after-request="if (event.detail.successful) { this.reset(); }"
+    @click.outside="open = false"
+    class="space-y-4"
+  >
+    {% csrf_token %}
+
+    <!-- 👉 Hidden inputs for each selected entry -->
+    {% for entry_id in selected_entry_ids %}
+      <input type="hidden" name="entries" value="{{ entry_id }}" />
+    {% endfor %}
+
+    <!-- Status Selector -->
+    <div class="form-control">
+        <label class="label">
+            <span class="label-text">Status</span>
+        </label>
+        <select name="status" class="select select-bordered w-full">
+            {% for status, label in modal_status_options %}
+                <option value="{{ status }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- Status Note -->
+    <div class="form-control">
+        <label class="label">
+            <span class="label-text">Status Note</span>
+        </label>
+        <textarea name="status_note" class="textarea textarea-bordered w-full" placeholder="Leave notes for the status update"></textarea>
+    </div>
+
+    <!-- Buttons -->
+        <div class="flex justify-end gap-3 pt-2">
+            <button 
+            type="button"
+            class="btn btn-ghost btn-sm"
+            onclick="this.closest('.modal').removeAttribute('open')"
+            >
+            Cancel
+            </button>
+    
+            <button 
+            type="submit"
+            class="btn bg-red-800 text-white btn-sm"
+            >
+            Update
+            </button>
+        </div>
+    </form>
+
+
+</div>
+{% endblock modal_content %}

@@ -36,7 +36,8 @@ from ..utils import (
 )
 from .base_views import (
     OrganizationLevelEntryView,
-    BaseEntryBulkActionView,
+    BaseEntryBulkDeleteView,
+    BaseEntryBulkUpdateView,
 )
 from .mixins import EntryFormMixin, EntryRequiredMixin, StatusFilteringMixin
 
@@ -78,9 +79,7 @@ class OrganizationExpenseListView(
                 self.request.user, self.organization
             ),
         }
-        if not self.request.htmx:
-            pass
-            # context["stats"] = get_org_expense_stats(self.organization)
+
         return context
 
 
@@ -243,37 +242,25 @@ class OrganizationExpenseDeleteView(
 class OrganizationExpenseBulkDeleteView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
+    StatusFilteringMixin,
     BaseGetModalView,
-    BaseEntryBulkActionView,
+    BaseEntryBulkDeleteView,
 ):
-    table_template_name = "entries/partials/table.html"
-    modal_template_name = "components/delete_confirmation_modal.html"
-
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
             entry_types=[EntryType.ORG_EXP],
             annotate_attachment_count=True,
-            statuses=[self.request.GET.get("status")]
-            if self.request.GET.get("status")
-            else [EntryStatus.PENDING],
-            search=self.request.GET.get("search"),
+            statuses=[EntryStatus.PENDING],
         )
 
-    def perform_action(self, entries, user):
-        return entries.delete()
-
-    def validate_entry(self, entry, user):
-        # True if
-        # 1. Entry status pending
-        # 2. Entry hasn't been reviewed
-        if (
+    def validate_entry(self, entry):
+        # Valid if status is pending and has never been modified
+        return (
             entry.status == EntryStatus.PENDING
             and not entry.status_last_updated_at
             and not entry.last_status_modified_by
-        ):
-            return True
-        return False
+        )
 
     def get_post_url(self) -> str:
         return reverse(
@@ -284,9 +271,36 @@ class OrganizationExpenseBulkDeleteView(
     def get_modal_title(self) -> str:
         return ""
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        selected_ids = self.request.GET.getlist("entries")
-        context["selected_entry_ids"] = selected_ids
-        context["entry_count"] = len(selected_ids)
-        return context
+
+class OrganizationExpenseBulkUpdateView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
+    BaseGetModalView,
+    StatusFilteringMixin,
+    BaseEntryBulkUpdateView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+        )
+
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        return True  # can be tightened later if needed
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "organization_expense_bulk_update",
+            kwargs={"organization_id": self.organization.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""

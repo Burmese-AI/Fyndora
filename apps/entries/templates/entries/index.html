@@ -6,91 +6,69 @@
 
 {% block content %}
   <!-- Expense Entries -->
-  <div class="py-6 px-4 mt-6">
+<div class="py-6 px-4 mt-6">
 
-    <!-- Title Section -->
-    <section class="flex flex-col items-center gap-4 xl:flex-row xl:justify-between xl:items-center mb-6">
-      <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
-          Organization Expense Entries
-      </h2>
-      {% if permissions.can_add_org_expense %}
+  <!-- Title Section -->
+  <section class="flex flex-col items-center gap-4 xl:flex-row xl:justify-between xl:items-center mb-6">
+    <h2 class="font-bold text-lg sm:text-xl md:text-2xl leading-tight">
+        Organization Expense Entries
+    </h2>
+    {% if permissions.can_add_org_expense %}
+    
+    
+    <div class="flex flex-wrap gap-1">
+
+      {% url "organization_expense_bulk_delete" organization.pk as bulk_delete_url %}
+      {% url "organization_expense_bulk_update" organization.pk as bulk_update_url %}
+
+      {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %}
+
+      <button 
+        class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+          <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
+          
+        <span class="hidden sm:inline">Import</span>
+      </button>
+
+
+      <button 
+        class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+          <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
       
-      
-      <div class="flex flex-wrap gap-1">
+        <span class="hidden sm:inline">Export</span>
+      </button>
 
-        <button 
-          id="bulk-select-button"
-          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md hidden"
-          popovertarget="bulk-menu"
-          style="anchor-name: --bulk-anchor;"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-            <path fill-rule="evenodd" d="M10.53 3.47a.75.75 0 0 0-1.06 0L6.22 6.72a.75.75 0 0 0 1.06 1.06L10 5.06l2.72 2.72a.75.75 0 1 0 1.06-1.06l-3.25-3.25Zm-4.31 9.81 3.25 3.25a.75.75 0 0 0 1.06 0l3.25-3.25a.75.75 0 1 0-1.06-1.06L10 14.94l-2.72-2.72a.75.75 0 0 0-1.06 1.06Z" clip-rule="evenodd" />
-          </svg>
-          <span id="bulk-select-text">Selected <span id="selected-count">0</span> entries</span>
-        </button>
-        <ul class="dropdown menu w-52 rounded-box bg-base-100 shadow-sm"
-          popover id="bulk-menu" style="position-anchor:--bulk-anchor">
-          <li>
-            <a 
-              hx-get="{% url 'organization_expense_bulk_delete' organization.pk %}"
-              hx-include=".bulk-checkbox:checked"
-              hx-target="#modal-placeholder"
-              hx-swap="innerHTML"
-              onclick="document.getElementById('bulk-menu').hidePopover()"
-            >
-              Reject
-            </a>
-          </li>
-        </ul>
+      <button 
+        class="btn btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
+        hx-get="{% url 'organization_expense_create' organization_id=organization.pk %}"
+        hx-target="#modal-placeholder"
+        hx-swap="innerHTML"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 0 0-1.5 0v2.5h-2.5a.75.75 0 0 0 0 1.5h2.5v2.5a.75.75 0 0 0 1.5 0v-2.5h2.5a.75.75 0 0 0 0-1.5h-2.5v-2.5Z" clip-rule="evenodd" />
+        </svg>
+          
+        <span class="">Add an expense entry</span>
+      </button>
 
-        <button 
-          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
-          hx-target="#modal-placeholder"
-          hx-swap="innerHTML"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-            <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
-            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
-          </svg>
-            
-          <span class="hidden sm:inline">Import</span>
-        </button>
+    </div>
+    
+    {% endif %}
+  </section>
 
-
-        <button 
-          class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
-          hx-target="#modal-placeholder"
-          hx-swap="innerHTML"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-            <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
-            <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
-          </svg>
-        
-          <span class="hidden sm:inline">Export</span>
-        </button>
-
-        <button 
-          class="btn btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
-          hx-get="{% url 'organization_expense_create' organization_id=organization.pk %}"
-          hx-target="#modal-placeholder"
-          hx-swap="innerHTML"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 0 0-1.5 0v2.5h-2.5a.75.75 0 0 0 0 1.5h2.5v2.5a.75.75 0 0 0 1.5 0v-2.5h2.5a.75.75 0 0 0 0-1.5h-2.5v-2.5Z" clip-rule="evenodd" />
-          </svg>
-            
-          <span class="">Add an expense entry</span>
-        </button>
-
-      </div>
-      
-      {% endif %}
-    </section>
-
-  {% url 'organization_expense' organization.pk as filter_url %}
-  {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
+  {% include "entries/layouts/base_entry_content_layout.html" %}
 
 </div>
 {% endblock %}

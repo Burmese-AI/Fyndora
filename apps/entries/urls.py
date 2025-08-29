@@ -5,28 +5,30 @@ from .views.org_expense_views import (
     OrganizationExpenseUpdateView,
     OrganizationExpenseDeleteView,
     OrganizationExpenseBulkDeleteView,
+    OrganizationExpenseBulkUpdateView,
 )
 from .views.workspace_expense_views import (
     WorkspaceExpenseListView,
     WorkspaceExpenseCreateView,
     WorkspaceExpenseUpdateView,
     WorkspaceExpenseDeleteView,
+    WorkspaceExpenseBulkDeleteView,
+    WorkspaceExpenseBulkUpdateView,
 )
 from .views.entry_views import (
     WorkspaceEntryListView,
+    WorkspaceEntryBulkDeleteView,
+    WorkspaceEntryBulkUpdateView,
     WorkspaceTeamEntryListView,
     WorkspaceTeamEntryCreateView,
     WorkspaceTeamEntryUpdateView,
     WorkspaceTeamEntryDeleteView,
+    WorkspaceTeamEntryBulkDeleteView,
+    WorkspaceTeamEntryBulkUpdateView,
 )
 from .views.base_views import EntryDetailView
 
 urlpatterns = [
-    path(
-        "expenses/bulk-delete/",
-        OrganizationExpenseBulkDeleteView.as_view(),
-        name="organization_expense_bulk_delete",
-    ),
     path(
         "expenses/",
         OrganizationExpenseListView.as_view(),
@@ -46,6 +48,16 @@ urlpatterns = [
         "expenses/<uuid:pk>/delete",
         OrganizationExpenseDeleteView.as_view(),
         name="organization_expense_delete",
+    ),
+    path(
+        "expenses/bulk-delete/",
+        OrganizationExpenseBulkDeleteView.as_view(),
+        name="organization_expense_bulk_delete",
+    ),
+    path(
+        "expenses/bulk-update/",
+        OrganizationExpenseBulkUpdateView.as_view(),
+        name="organization_expense_bulk_update",
     ),
     path(
         "workspaces/<uuid:workspace_id>/expenses",
@@ -68,9 +80,29 @@ urlpatterns = [
         name="workspace_expense_delete",
     ),
     path(
+        "workspaces/<uuid:workspace_id>/expenses/bulk-delete/",
+        WorkspaceExpenseBulkDeleteView.as_view(),
+        name="workspace_expense_bulk_delete",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/bulk-update/",
+        WorkspaceExpenseBulkUpdateView.as_view(),
+        name="workspace_expense_bulk_update",
+    ),
+    path(
         "workspaces/<uuid:workspace_id>/entries",
         WorkspaceEntryListView.as_view(),
         name="workspace_entry_list",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/entries/bulk-delete/",
+        WorkspaceEntryBulkDeleteView.as_view(),
+        name="workspace_entry_bulk_delete",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/entries/bulk-update/",
+        WorkspaceEntryBulkUpdateView.as_view(),
+        name="workspace_entry_bulk_update",
     ),
     path(
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries",
@@ -91,6 +123,16 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/<uuid:pk>/delete",
         WorkspaceTeamEntryDeleteView.as_view(),
         name="workspace_team_entry_delete",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-delete/",
+        WorkspaceTeamEntryBulkDeleteView.as_view(),
+        name="workspace_team_entry_bulk_delete",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-update/",
+        WorkspaceTeamEntryBulkUpdateView.as_view(),
+        name="workspace_team_entry_bulk_update",
     ),
 ]
 

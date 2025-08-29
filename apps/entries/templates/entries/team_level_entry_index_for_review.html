@@ -18,6 +18,11 @@
 {% block content %}
 
   <div class="flex justify-end items-center my-2 gap-2">
+    {% url "workspace_team_entry_bulk_delete" organization.pk workspace.pk workspace_team.pk as bulk_delete_url %}
+    {% url "workspace_team_entry_bulk_update" organization.pk workspace.pk workspace_team.pk as bulk_update_url %}
+    
+    {% include "entries/components/bulk_select_dropdown.html" with bulk_delete_url=bulk_delete_url bulk_update_url=bulk_update_url %}
+
     <button 
       class="btn btn-outline btn-neutral btn-sm 2xl:btn-md transition duration-300 hover:scale-95"
       hx-target="#modal-placeholder"
@@ -58,6 +63,5 @@
     </button>
   </div>
 
-  {% url 'workspace_team_entry_list' organization.pk workspace.pk workspace_team.pk as filter_url %}
-  {% include "entries/layouts/base_entry_content_layout.html" with filter_url=filter_url %}
+  {% include "entries/layouts/base_entry_content_layout.html" %}
 {% endblock %}

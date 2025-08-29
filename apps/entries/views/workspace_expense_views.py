@@ -4,7 +4,7 @@ from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
 from ..selectors import get_entries
 
-from apps.core.views.base_views import BaseGetModalFormView
+from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from apps.core.views.mixins import (
     WorkspaceRequiredMixin,
@@ -26,6 +26,10 @@ from apps.core.views.crud_base_views import (
     BaseDeleteView,
     BaseListView,
     BaseUpdateView,
+)
+from apps.entries.views.base_views import (
+    BaseEntryBulkDeleteView,
+    BaseEntryBulkUpdateView,
 )
 from ..models import Entry
 from apps.core.views.service_layer_mixins import (
@@ -251,3 +255,79 @@ class WorkspaceExpenseDeleteView(
         from ..services import delete_entry
 
         delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+
+
+class WorkspaceExpenseBulkDeleteView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
+    StatusFilteringMixin,
+    BaseGetModalView,
+    BaseEntryBulkDeleteView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        # Valid if status is pending and has never been modified
+        return (
+            entry.status == EntryStatus.PENDING
+            and not entry.status_last_updated_at
+            and not entry.last_status_modified_by
+        )
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_expense_bulk_delete",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+
+class WorkspaceExpenseBulkUpdateView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
+    BaseGetModalView,
+    StatusFilteringMixin,
+    BaseEntryBulkUpdateView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],
+        )
+
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            entry_types=[EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        return True  # can be tightened later if needed
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_expense_bulk_update",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
+        )
+
+    def get_modal_title(self) -> str:
+        return ""

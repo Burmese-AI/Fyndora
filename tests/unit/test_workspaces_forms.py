@@ -80,16 +80,14 @@ class TestWorkspaceForm(TestCase):
             "end_date": date.today() + timedelta(days=30),
             "workspace_admin": self.org_member2.pk,  # Use non-owner member
             "operations_reviewer": self.org_member3.pk,  # Use non-owner member
+            "created_by": self.org_member2.pk,
         }
         
         form = WorkspaceForm(data=form_data, organization=self.organization)
-        # Note: form.is_valid() will be False because created_by is required by model but not in form
-        # We're testing that the form data is properly bound and field-level validation passes
-        self.assertEqual(form.data.get("title"), "Test Workspace")
-        self.assertEqual(form.data.get("remittance_rate"), "85.50")
-        # Test that no field-level errors exist for the provided fields
-        self.assertNotIn("title", form.errors)
-        self.assertNotIn("remittance_rate", form.errors)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["title"], "Test Workspace")
+        self.assertEqual(form.cleaned_data["remittance_rate"], Decimal("85.50"))
+    
 
     @pytest.mark.django_db
     def test_workspace_form_title_validation(self):

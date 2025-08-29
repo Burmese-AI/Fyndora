@@ -11,5 +11,4 @@ def create_remittance(sender, instance, created, **kwargs):
     """
 
     if created:
-        remittance = Remittance.objects.create(workspace_team=instance)
-        print(f"created {remittance}")
+        Remittance.objects.create(workspace_team=instance)

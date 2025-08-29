@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "guardian",
     "apps.organizations",
     "apps.accounts",
     "apps.core",
@@ -75,6 +76,7 @@ SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
+    "guardian.backends.ObjectPermissionBackend",
 ]
 
 # Use SQLite for testing - faster and doesn't require external dependencies

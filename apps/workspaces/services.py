@@ -95,7 +95,7 @@ def update_workspace_from_form(
     try:
         # Track what fields are being updated
         updated_fields = list(form.cleaned_data.keys())
-
+        print(f"Updated fields: {updated_fields}")
         workspace = model_update(workspace, form.cleaned_data)
         new_workspace_admin = form.cleaned_data.get("workspace_admin")
         new_operations_reviewer = form.cleaned_data.get("operations_reviewer")
@@ -161,12 +161,12 @@ def remove_team_from_workspace(*, workspace_team, user=None, team=None):
     try:
         # Store references before deletion
         workspace = workspace_team.workspace
-        team = workspace_team.team
+        removed_team = workspace_team.team
         # remove that team coordinator's view workspace teams under workspace permission
-        if team.team_coordinator:
+        if removed_team.team_coordinator:
             remove_perm(
                 WorkspacePermissions.VIEW_WORKSPACE_TEAMS_UNDER_WORKSPACE,
-                team.team_coordinator.user,
+                removed_team.team_coordinator.user,
                 workspace,
             )
         workspace_team.delete()
@@ -177,7 +177,7 @@ def remove_team_from_workspace(*, workspace_team, user=None, team=None):
                 BusinessAuditLogger.log_workspace_team_action(
                     user=user,
                     workspace=workspace,
-                    team=team,
+                    team=removed_team,
                     action="remove",
                     removal_reason="Manual removal from workspace",
                 )

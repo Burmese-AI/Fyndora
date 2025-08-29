@@ -32,8 +32,7 @@ class TeamUtilsTest(TestCase):
         self.team = TeamFactory(organization=self.organization)
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace,
-            team=self.team
+            workspace=self.workspace, team=self.team
         )
         # Create a team member object that has the structure expected by the utils
         self.team_member = MagicMock()
@@ -49,42 +48,29 @@ class TeamUtilsTest(TestCase):
         add_user_to_workspace_team_group([self.workspace_team], self.team_member)
 
         # Verify user was added to group
-        self.assertIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group.user_set.all())
 
     def test_add_user_to_workspace_team_group_multiple_workspaces(self):
         """Test adding user to multiple workspace team groups."""
         # Create additional workspace teams
         workspace2 = WorkspaceFactory(organization=self.organization)
-        workspace_team2 = WorkspaceTeamFactory(
-            workspace=workspace2,
-            team=self.team
-        )
+        workspace_team2 = WorkspaceTeamFactory(workspace=workspace2, team=self.team)
 
         # Create groups for both workspace teams
         group1_name = f"Workspace Team - {self.workspace_team.workspace_team_id}"
         group1 = Group.objects.create(name=group1_name)
-        
+
         group2_name = f"Workspace Team - {workspace_team2.workspace_team_id}"
         group2 = Group.objects.create(name=group2_name)
 
         # Add user to both groups
         add_user_to_workspace_team_group(
-            [self.workspace_team, workspace_team2],
-            self.team_member
+            [self.workspace_team, workspace_team2], self.team_member
         )
 
         # Verify user was added to both groups
-        self.assertIn(
-            self.org_member.user,
-            group1.user_set.all()
-        )
-        self.assertIn(
-            self.org_member.user,
-            group2.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group1.user_set.all())
+        self.assertIn(self.org_member.user, group2.user_set.all())
 
     def test_add_user_to_workspace_team_group_group_not_found(self):
         """Test adding user when workspace team group doesn't exist."""
@@ -101,7 +87,7 @@ class TeamUtilsTest(TestCase):
         group = Group.objects.create(name=group_name)
 
         # Mock the group's user_set.add to raise an exception
-        with patch.object(group.user_set, 'add', side_effect=Exception("Add failed")):
+        with patch.object(group.user_set, "add", side_effect=Exception("Add failed")):
             # Should not raise an exception due to try-catch
             add_user_to_workspace_team_group([self.workspace_team], self.team_member)
 
@@ -138,63 +124,41 @@ class TeamUtilsTest(TestCase):
         group.user_set.add(self.org_member.user)
 
         # Verify user is initially in group
-        self.assertIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group.user_set.all())
 
         # Remove user from group
         remove_user_from_workspace_team_group([self.workspace_team], self.team_member)
 
         # Verify user was removed from group
-        self.assertNotIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertNotIn(self.org_member.user, group.user_set.all())
 
     def test_remove_user_from_workspace_team_group_multiple_workspaces(self):
         """Test removing user from multiple workspace team groups."""
         # Create additional workspace teams
         workspace2 = WorkspaceFactory(organization=self.organization)
-        workspace_team2 = WorkspaceTeamFactory(
-            workspace=workspace2,
-            team=self.team
-        )
+        workspace_team2 = WorkspaceTeamFactory(workspace=workspace2, team=self.team)
 
         # Create groups for both workspace teams and add user
         group1_name = f"Workspace Team - {self.workspace_team.workspace_team_id}"
         group1 = Group.objects.create(name=group1_name)
         group1.user_set.add(self.org_member.user)
-        
+
         group2_name = f"Workspace Team - {workspace_team2.workspace_team_id}"
         group2 = Group.objects.create(name=group2_name)
         group2.user_set.add(self.org_member.user)
 
         # Verify user is initially in both groups
-        self.assertIn(
-            self.org_member.user,
-            group1.user_set.all()
-        )
-        self.assertIn(
-            self.org_member.user,
-            group2.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group1.user_set.all())
+        self.assertIn(self.org_member.user, group2.user_set.all())
 
         # Remove user from both groups
         remove_user_from_workspace_team_group(
-            [self.workspace_team, workspace_team2],
-            self.team_member
+            [self.workspace_team, workspace_team2], self.team_member
         )
 
         # Verify user was removed from both groups
-        self.assertNotIn(
-            self.org_member.user,
-            group1.user_set.all()
-        )
-        self.assertNotIn(
-            self.org_member.user,
-            group2.user_set.all()
-        )
+        self.assertNotIn(self.org_member.user, group1.user_set.all())
+        self.assertNotIn(self.org_member.user, group2.user_set.all())
 
     def test_remove_user_from_workspace_team_group_group_not_found(self):
         """Test removing user when workspace team group doesn't exist."""
@@ -212,15 +176,16 @@ class TeamUtilsTest(TestCase):
         group.user_set.add(self.org_member.user)
 
         # Verify user is initially in group
-        self.assertIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group.user_set.all())
 
         # Mock the group's user_set.remove to raise an exception
-        with patch.object(group.user_set, 'remove', side_effect=Exception("Remove failed")):
+        with patch.object(
+            group.user_set, "remove", side_effect=Exception("Remove failed")
+        ):
             # Should not raise an exception due to try-catch
-            remove_user_from_workspace_team_group([self.workspace_team], self.team_member)
+            remove_user_from_workspace_team_group(
+                [self.workspace_team], self.team_member
+            )
 
         # Verify user is still in group (removal failed due to exception)
         # Note: The actual function will still remove the user because the mock only affects
@@ -254,10 +219,7 @@ class TeamUtilsTest(TestCase):
         group = Group.objects.create(name=group_name)
 
         # Verify user is not in group
-        self.assertNotIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertNotIn(self.org_member.user, group.user_set.all())
 
         # Remove user from group (should not cause issues)
         remove_user_from_workspace_team_group([self.workspace_team], self.team_member)
@@ -278,10 +240,7 @@ class TeamUtilsEdgeCasesTest(TestCase):
     def test_add_user_to_workspace_team_group_with_none_team_member(self):
         """Test adding None team member to workspace team group."""
         workspace = WorkspaceFactory(organization=self.organization)
-        workspace_team = WorkspaceTeamFactory(
-            workspace=workspace,
-            team=self.team
-        )
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=self.team)
 
         # Create a group
         group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
@@ -296,10 +255,7 @@ class TeamUtilsEdgeCasesTest(TestCase):
     def test_remove_user_from_workspace_team_group_with_none_team_member(self):
         """Test removing None team member from workspace team group."""
         workspace = WorkspaceFactory(organization=self.organization)
-        workspace_team = WorkspaceTeamFactory(
-            workspace=workspace,
-            team=self.team
-        )
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=self.team)
 
         # Create a group
         group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
@@ -346,8 +302,7 @@ class TeamUtilsIntegrationTest(TestCase):
         self.team = TeamFactory(organization=self.organization)
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace,
-            team=self.team
+            workspace=self.workspace, team=self.team
         )
         # Create a team member object that has the structure expected by the utils
         self.team_member = MagicMock()
@@ -366,20 +321,14 @@ class TeamUtilsIntegrationTest(TestCase):
         add_user_to_workspace_team_group([self.workspace_team], self.team_member)
 
         # Verify user was added
-        self.assertIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group.user_set.all())
         self.assertEqual(group.user_set.count(), 1)
 
         # Remove user from group
         remove_user_from_workspace_team_group([self.workspace_team], self.team_member)
 
         # Verify user was removed
-        self.assertNotIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertNotIn(self.org_member.user, group.user_set.all())
         self.assertEqual(group.user_set.count(), 0)
 
     def test_multiple_users_in_workspace_team_groups(self):
@@ -387,14 +336,13 @@ class TeamUtilsIntegrationTest(TestCase):
         # Create additional users
         user2 = CustomUserFactory()
         org_member2 = OrganizationMemberFactory(
-            organization=self.organization,
-            user=user2
+            organization=self.organization, user=user2
         )
-        
+
         # Create team member objects
         team_member1 = MagicMock()
         team_member1.organization_member = self.org_member
-        
+
         team_member2 = MagicMock()
         team_member2.organization_member = org_member2
 
@@ -411,10 +359,7 @@ class TeamUtilsIntegrationTest(TestCase):
         self.assertEqual(group.user_set.count(), 2)
 
         # Verify both users are in group
-        self.assertIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertIn(self.org_member.user, group.user_set.all())
         self.assertIn(user2, group.user_set.all())
 
         # Remove first user
@@ -422,10 +367,7 @@ class TeamUtilsIntegrationTest(TestCase):
         self.assertEqual(group.user_set.count(), 1)
 
         # Verify only second user remains
-        self.assertNotIn(
-            self.org_member.user,
-            group.user_set.all()
-        )
+        self.assertNotIn(self.org_member.user, group.user_set.all())
         self.assertIn(user2, group.user_set.all())
 
         # Remove second user

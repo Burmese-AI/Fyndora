@@ -2,11 +2,9 @@
 Unit tests for Team permissions.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import Group, Permission
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Group
 
 from apps.teams.permissions import (
     assign_team_permissions,
@@ -21,10 +19,7 @@ from apps.teams.permissions import (
 from apps.core.permissions import (
     TeamPermissions,
     OrganizationPermissions,
-    WorkspacePermissions,
 )
-from apps.core.roles import get_permissions_for_role
-from apps.core.utils import permission_denied_view
 from tests.factories.organization_factories import (
     OrganizationWithOwnerFactory,
     OrganizationMemberFactory,
@@ -44,9 +39,11 @@ class TeamPermissionsTest(TestCase):
         self.user = CustomUserFactory()
         self.request_factory = RequestFactory()
 
-    @patch('apps.teams.permissions.get_permissions_for_role')
-    @patch('apps.teams.permissions.assign_perm')
-    def test_assign_team_permissions_success(self, mock_assign_perm, mock_get_permissions):
+    @patch("apps.teams.permissions.get_permissions_for_role")
+    @patch("apps.teams.permissions.assign_perm")
+    def test_assign_team_permissions_success(
+        self, mock_assign_perm, mock_get_permissions
+    ):
         """Test successful team permissions assignment."""
         # Mock permissions for team coordinator role
         mock_permissions = [
@@ -77,9 +74,11 @@ class TeamPermissionsTest(TestCase):
         if self.organization.owner:
             self.assertIn(self.organization.owner.user, group.user_set.all())
 
-    @patch('apps.teams.permissions.get_permissions_for_role')
-    @patch('apps.teams.permissions.assign_perm')
-    def test_assign_team_permissions_without_coordinator(self, mock_assign_perm, mock_get_permissions):
+    @patch("apps.teams.permissions.get_permissions_for_role")
+    @patch("apps.teams.permissions.assign_perm")
+    def test_assign_team_permissions_without_coordinator(
+        self, mock_assign_perm, mock_get_permissions
+    ):
         """Test team permissions assignment without coordinator."""
         # Mock permissions for team coordinator role
         mock_permissions = [
@@ -106,9 +105,11 @@ class TeamPermissionsTest(TestCase):
         if self.organization.owner:
             self.assertIn(self.organization.owner.user, group.user_set.all())
 
-    @patch('apps.teams.permissions.get_permissions_for_role')
-    @patch('apps.teams.permissions.assign_perm')
-    def test_assign_team_permissions_exception_handling(self, mock_assign_perm, mock_get_permissions):
+    @patch("apps.teams.permissions.get_permissions_for_role")
+    @patch("apps.teams.permissions.assign_perm")
+    def test_assign_team_permissions_exception_handling(
+        self, mock_assign_perm, mock_get_permissions
+    ):
         """Test team permissions assignment exception handling."""
         # Mock permissions for team coordinator role
         mock_permissions = [TeamPermissions.ADD_TEAM_MEMBER]
@@ -124,7 +125,7 @@ class TeamPermissionsTest(TestCase):
         """Test successful team permissions removal."""
         # Create a group first
         group_name = f"Team Coordinator - {self.team.team_id}"
-        group = Group.objects.create(name=group_name)
+        Group.objects.create(name=group_name)
 
         remove_team_permissions(self.team)
 
@@ -139,7 +140,7 @@ class TeamPermissionsTest(TestCase):
         # Should not raise an exception
         self.assertTrue(True)
 
-    @patch('apps.teams.permissions.remove_perm')
+    @patch("apps.teams.permissions.remove_perm")
     def test_update_team_coordinator_group_same_coordinator(self, mock_remove_perm):
         """Test updating team coordinator group when coordinator doesn't change."""
         # Same coordinator
@@ -151,7 +152,7 @@ class TeamPermissionsTest(TestCase):
         # Should return early without doing anything
         mock_remove_perm.assert_not_called()
 
-    @patch('apps.teams.permissions.remove_perm')
+    @patch("apps.teams.permissions.remove_perm")
     def test_update_team_coordinator_group_remove_previous(self, mock_remove_perm):
         """Test updating team coordinator group when removing previous coordinator."""
         # Create a group first
@@ -167,7 +168,7 @@ class TeamPermissionsTest(TestCase):
         # Verify previous coordinator was removed from group
         self.assertNotIn(self.org_member.user, group.user_set.all())
 
-    @patch('apps.teams.permissions.remove_perm')
+    @patch("apps.teams.permissions.remove_perm")
     def test_update_team_coordinator_group_add_new(self, mock_remove_perm):
         """Test updating team coordinator group when adding new coordinator."""
         # Create a group first
@@ -182,7 +183,7 @@ class TeamPermissionsTest(TestCase):
         # Verify new coordinator was added to group
         self.assertIn(self.org_member.user, group.user_set.all())
 
-    @patch('apps.teams.permissions.remove_perm')
+    @patch("apps.teams.permissions.remove_perm")
     def test_update_team_coordinator_group_replace_coordinator(self, mock_remove_perm):
         """Test updating team coordinator group when replacing coordinator."""
         # Create a group first
@@ -203,7 +204,7 @@ class TeamPermissionsTest(TestCase):
         # Verify new coordinator remains
         self.assertIn(new_coordinator.user, group.user_set.all())
 
-    @patch('apps.teams.permissions.remove_perm')
+    @patch("apps.teams.permissions.remove_perm")
     def test_update_team_coordinator_group_exception_handling(self, mock_remove_perm):
         """Test updating team coordinator group exception handling."""
         # Mock remove_perm to raise an exception
@@ -213,7 +214,9 @@ class TeamPermissionsTest(TestCase):
         new_coordinator = None
 
         with self.assertRaises(Exception):
-            update_team_coordinator_group(self.team, previous_coordinator, new_coordinator)
+            update_team_coordinator_group(
+                self.team, previous_coordinator, new_coordinator
+            )
 
 
 class TeamPermissionChecksTest(TestCase):
@@ -227,12 +230,12 @@ class TeamPermissionChecksTest(TestCase):
         self.user = CustomUserFactory()
         self.request_factory = RequestFactory()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_add_team_permission_success(self, mock_permission_denied):
         """Test successful add team permission check."""
         # Mock user has permission
-        with patch.object(self.user, 'has_perm', return_value=True):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             result = check_add_team_permission(request, self.organization)
@@ -241,12 +244,12 @@ class TeamPermissionChecksTest(TestCase):
             self.assertIsNone(result)
             mock_permission_denied.assert_not_called()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_add_team_permission_denied(self, mock_permission_denied):
         """Test add team permission check when denied."""
         # Mock user doesn't have permission
-        with patch.object(self.user, 'has_perm', return_value=False):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             mock_permission_denied.return_value = "Permission Denied"
@@ -257,12 +260,12 @@ class TeamPermissionChecksTest(TestCase):
             mock_permission_denied.assert_called_once()
             self.assertEqual(result, "Permission Denied")
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_change_team_permission_success(self, mock_permission_denied):
         """Test successful change team permission check."""
         # Mock user has permission
-        with patch.object(self.user, 'has_perm', return_value=True):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             result = check_change_team_permission(request, self.team)
@@ -271,12 +274,12 @@ class TeamPermissionChecksTest(TestCase):
             self.assertIsNone(result)
             mock_permission_denied.assert_not_called()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_change_team_permission_denied(self, mock_permission_denied):
         """Test change team permission check when denied."""
         # Mock user doesn't have permission
-        with patch.object(self.user, 'has_perm', return_value=False):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             mock_permission_denied.return_value = "Permission Denied"
@@ -287,12 +290,12 @@ class TeamPermissionChecksTest(TestCase):
             mock_permission_denied.assert_called_once()
             self.assertEqual(result, "Permission Denied")
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_delete_team_permission_success(self, mock_permission_denied):
         """Test successful delete team permission check."""
         # Mock user has permission
-        with patch.object(self.user, 'has_perm', return_value=True):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             result = check_delete_team_permission(request, self.team)
@@ -301,12 +304,12 @@ class TeamPermissionChecksTest(TestCase):
             self.assertIsNone(result)
             mock_permission_denied.assert_not_called()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_delete_team_permission_denied(self, mock_permission_denied):
         """Test delete team permission check when denied."""
         # Mock user doesn't have permission
-        with patch.object(self.user, 'has_perm', return_value=False):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             mock_permission_denied.return_value = "Permission Denied"
@@ -317,12 +320,12 @@ class TeamPermissionChecksTest(TestCase):
             mock_permission_denied.assert_called_once()
             self.assertEqual(result, "Permission Denied")
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_add_team_member_permission_success(self, mock_permission_denied):
         """Test successful add team member permission check."""
         # Mock user has permission
-        with patch.object(self.user, 'has_perm', return_value=True):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             result = check_add_team_member_permission(request, self.team)
@@ -331,12 +334,12 @@ class TeamPermissionChecksTest(TestCase):
             self.assertIsNone(result)
             mock_permission_denied.assert_not_called()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_add_team_member_permission_denied(self, mock_permission_denied):
         """Test add team member permission check when denied."""
         # Mock user doesn't have permission
-        with patch.object(self.user, 'has_perm', return_value=False):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             mock_permission_denied.return_value = "Permission Denied"
@@ -347,12 +350,12 @@ class TeamPermissionChecksTest(TestCase):
             mock_permission_denied.assert_called_once()
             self.assertEqual(result, "Permission Denied")
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_view_team_permission_success(self, mock_permission_denied):
         """Test successful view team permission check."""
         # Mock user has permission
-        with patch.object(self.user, 'has_perm', return_value=True):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=True):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             result = check_view_team_permission(request, self.team)
@@ -361,12 +364,12 @@ class TeamPermissionChecksTest(TestCase):
             self.assertIsNone(result)
             mock_permission_denied.assert_not_called()
 
-    @patch('apps.teams.permissions.permission_denied_view')
+    @patch("apps.teams.permissions.permission_denied_view")
     def test_check_view_team_permission_denied(self, mock_permission_denied):
         """Test view team permission check when denied."""
         # Mock user doesn't have permission
-        with patch.object(self.user, 'has_perm', return_value=False):
-            request = self.request_factory.get('/')
+        with patch.object(self.user, "has_perm", return_value=False):
+            request = self.request_factory.get("/")
             request.user = self.user
 
             mock_permission_denied.return_value = "Permission Denied"

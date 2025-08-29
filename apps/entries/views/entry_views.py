@@ -424,23 +424,26 @@ class WorkspaceEntryBulkUpdateView(
         )
 
     def validate_entry(self, entry):
-        workspace_team = entry.workspace_team
-        workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(
-            workspace_team=workspace_team, 
-            org_member=self.org_member
-        )
-        workspace_team_role = workspace_team_member.role if workspace_team_member else None
-        validator = TeamEntryValidator(
-            organization=self.organization,
-            workspace=self.workspace,
-            workspace_team=workspace_team,
-            workspace_team_role=workspace_team_role,
-            is_org_admin=self.is_org_admin,
-            is_workspace_admin=self.is_workspace_admin,
-            is_operation_reviewer=self.is_operation_reviewer,
-            is_team_coordinator=entry.workspace_team.team.team_coordinator == self.org_member,
-        )
-        validator.validate_entry_update(entry, self.new_status)
+        try:
+            workspace_team = entry.workspace_team
+            workspace_team_member = get_workspace_team_member_by_workspace_team_and_org_member(
+                workspace_team=workspace_team, 
+                org_member=self.org_member
+            )
+            workspace_team_role = workspace_team_member.role if workspace_team_member else None
+            validator = TeamEntryValidator(
+                organization=self.organization,
+                workspace=self.workspace,
+                workspace_team=workspace_team,
+                workspace_team_role=workspace_team_role,
+                is_org_admin=self.is_org_admin,
+                is_workspace_admin=self.is_workspace_admin,
+                is_operation_reviewer=self.is_operation_reviewer,
+                is_team_coordinator=entry.workspace_team.team.team_coordinator == self.org_member,
+            )
+            validator.validate_entry_update(entry, self.new_status)
+        except Exception as e:
+            return False
         return True
 
     def get_post_url(self) -> str:
@@ -498,6 +501,65 @@ class WorkspaceTeamEntryBulkDeleteView(
     def get_post_url(self) -> str:
         return reverse(
             "workspace_team_entry_bulk_delete",
+            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+class WorkspaceTeamEntryBulkUpdateView(
+    WorkspaceTeamRequiredMixin,
+    TeamLevelEntryView,
+    TeamLevelEntryFiltering,
+    BaseGetModalView,
+    BaseEntryBulkUpdateView,
+):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ]
+        )
+        
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        try:
+            validator = TeamEntryValidator(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            workspace_team_role=self.workspace_team_role,
+            is_org_admin=self.is_org_admin,
+            is_workspace_admin=self.is_workspace_admin,
+            is_operation_reviewer=self.is_operation_reviewer,
+            is_team_coordinator=self.is_team_coordinator,
+        )
+            validator.validate_entry_update(entry, self.new_status)
+        except Exception as e:
+            return False
+        return True
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_team_entry_bulk_update",
             kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
         )
 

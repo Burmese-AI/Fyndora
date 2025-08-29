@@ -4,7 +4,6 @@ Unit tests for Team models.
 
 from django.db import IntegrityError
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 
 from apps.teams.constants import TeamMemberRole
 from apps.teams.models import Team, TeamMember
@@ -211,10 +210,6 @@ class TeamMemberModelTest(TestCase):
         )
         self.assertNotEqual(team_member1.team, team_member2.team)
 
-
-
-
-
     def test_team_member_ordering(self):
         """Test that team members are ordered by creation date (newest first)."""
         member1 = OrganizationMemberFactory(organization=self.organization)
@@ -243,7 +238,9 @@ class TeamMemberModelTest(TestCase):
     def test_team_member_role_max_length(self):
         """Test team member role maximum length constraint."""
         team_member = TeamMemberFactory(
-            organization_member=OrganizationMemberFactory(organization=self.organization),
+            organization_member=OrganizationMemberFactory(
+                organization=self.organization
+            ),
             team=self.team,
             role=TeamMemberRole.AUDITOR,
         )
@@ -276,7 +273,7 @@ class TeamMemberModelTest(TestCase):
         team_member = TeamMemberFactory(
             organization_member=self.org_member, team=self.team
         )
-        
+
         # Test reverse relationships
         self.assertIn(team_member, self.org_member.team_memberships.all())
         self.assertIn(team_member, self.team.members.all())
@@ -284,7 +281,7 @@ class TeamMemberModelTest(TestCase):
     def test_team_member_all_role_choices(self):
         """Test all available role choices."""
         available_roles = [choice[0] for choice in TeamMemberRole.choices]
-        expected_roles = ['team_coordinator', 'submitter', 'auditor']
-        
+        expected_roles = ["team_coordinator", "submitter", "auditor"]
+
         for role in expected_roles:
             self.assertIn(role, available_roles)

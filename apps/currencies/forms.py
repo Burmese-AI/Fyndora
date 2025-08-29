@@ -81,3 +81,10 @@ class BaseExchangeRateUpdateForm(forms.ModelForm):
                 }
             ),
         }
+
+    # added the clean_note method to the base exchange rate update form..
+    def clean_note(self):
+        note = self.cleaned_data.get("note")
+        if note and len(note) > 255:
+            raise forms.ValidationError("Note cannot exceed 255 characters.")
+        return note

@@ -429,7 +429,7 @@ class TestBaseViewIntegration(TestCase):
 
         with patch("apps.core.views.crud_base_views.render") as mock_render:
             mock_render.return_value = HttpResponse("Table HTML")
-            response = view.render_to_response(context)
+            view.render_to_response(context)
             mock_render.assert_called_once_with(request, "test_table.html", context)
 
 
@@ -443,9 +443,7 @@ class TestPermissionIntegration(TestCase):
         user = CustomUserFactory()
         organization = OrganizationFactory()
         org_member = OrganizationMemberFactory(user=user, organization=organization)
-        workspace = WorkspaceFactory(
-            organization=organization, workspace_admin=org_member
-        )
+        WorkspaceFactory(organization=organization, workspace_admin=org_member)
 
         # Test permission checking workflow
         permissions = [
@@ -465,7 +463,7 @@ class TestPermissionIntegration(TestCase):
         """Test organization permissions integration."""
         user = CustomUserFactory()
         organization = OrganizationFactory()
-        org_member = OrganizationMemberFactory(user=user, organization=organization)
+        OrganizationMemberFactory(user=user, organization=organization)
 
         # Test permission checking workflow
         permissions = [

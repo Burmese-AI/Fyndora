@@ -65,8 +65,8 @@ class TeamViewsIntegrationTest(TestCase):
     def test_teams_view_integration(self):
         """Test teams list view integration."""
         # Create some teams
-        team1 = self.create_team_with_permissions(title="Team 1")
-        team2 = self.create_team_with_permissions(title="Team 2")
+        self.create_team_with_permissions(title="Team 1")
+        self.create_team_with_permissions(title="Team 2")
 
         url = reverse(
             "teams", kwargs={"organization_id": self.organization.organization_id}
@@ -196,8 +196,8 @@ class TeamViewsIntegrationTest(TestCase):
     def test_get_team_members_view_integration(self):
         """Test get team members view integration."""
         team = self.create_team_with_permissions()
-        member1 = TeamMemberFactory(team=team)
-        member2 = TeamMemberFactory(team=team)
+        TeamMemberFactory(team=team)
+        TeamMemberFactory(team=team)
 
         url = reverse(
             "team_members",
@@ -324,7 +324,7 @@ class TeamViewsIntegrationTest(TestCase):
 
     def test_create_team_with_permissions_integration(self):
         """Test creating a team with proper permissions."""
-        team = self.create_team_with_permissions(
+        self.create_team_with_permissions(
             title="Test Team", description="Test Description"
         )
 
@@ -341,7 +341,7 @@ class TeamViewsIntegrationTest(TestCase):
         }
 
         with patch("apps.teams.services.assign_team_permissions") as mock_assign:
-            response = self.client.post(url, data=form_data)
+            self.client.post(url, data=form_data)
 
             # Verify permissions were assigned
             mock_assign.assert_called_once()
@@ -666,7 +666,7 @@ class TeamEdgeCasesIntegrationTest(TestCase):
         response = self.client.post(add_url, data=member_data, HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
 
-        team_member = TeamMember.objects.get(organization_member=member, team=team)
+        TeamMember.objects.get(organization_member=member, team=team)
 
         # Try to add the same member again (should fail)
         response = self.client.post(add_url, data=member_data, HTTP_HX_REQUEST="true")

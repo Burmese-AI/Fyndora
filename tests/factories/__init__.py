@@ -36,9 +36,6 @@ from .entry_factories import (
     RemittanceEntryFactory,
     SmallAmountEntryFactory,
     TeamSubmittedEntryFactory,
-    OrganizationExpenseEntryFactory,
-    WorkspaceExpenseEntryFactory,
-    ReviewedEntryFactory,
 )
 from .organization_factories import (
     ArchivedOrganizationFactory,
@@ -70,6 +67,7 @@ from .workspace_factories import (
     WorkspaceTeamFactory,
     WorkspaceWithAdminFactory,
     WorkspaceWithTeamsFactory,
+    WorkspaceExchangeRateFactory,
 )
 from .invitation_factories import (
     InvitationFactory,
@@ -88,6 +86,9 @@ from .remittance_factories import (
     LargeAmountRemittanceFactory,
     SmallAmountRemittanceFactory,
     RemittanceWithNotesFactory,
+)
+from .currency_factories import (
+    CurrencyFactory,
 )
 
 __all__ = [
@@ -164,4 +165,8 @@ __all__ = [
     "LargeAmountRemittanceFactory",
     "SmallAmountRemittanceFactory",
     "RemittanceWithNotesFactory",
+    # Currency factories
+    "CurrencyFactory",
+    "WorkspaceExchangeRateFactory",
+    "OrganizationExchangeRateFactory",
 ]

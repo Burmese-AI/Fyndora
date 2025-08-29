@@ -124,6 +124,14 @@ class BaseEntryBulkActionView(
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
 
+            # List existing entry ids
+            # existing_ids = set(entries.values_list("pk", flat=True))
+
+            # List missing or inaccessible entries
+            # requested_set = set(entry_ids)
+            # commented out for ruff fix because it is not used (THA)
+            # missing_ids = requested_set - existing_ids
+
             # Validate each entry
             success, message = self.perform_action(request, entries)
 

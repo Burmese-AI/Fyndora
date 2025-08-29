@@ -27,6 +27,7 @@ from tests.factories import (
     StatusChangedAuditFactory,
     SystemAuditFactory,
 )
+from tests.factories.workspace_factories import WorkspaceFactory
 
 
 @pytest.mark.unit
@@ -374,7 +375,7 @@ class TestAuditTrailFactories(TestCase):
         entry = EntryFactory()
         audit = FlaggedAuditFactory(target_entity=entry)
 
-        self.assertEqual(audit.action_type, "flagged")
+        self.assertEqual(audit.action_type, AuditActionType.ENTRY_FLAGGED)
         self.assertIn("flag_reason", audit.metadata)
         self.assertIn("flagged_by", audit.metadata)
         self.assertIn("severity", audit.metadata)
@@ -465,6 +466,47 @@ class TestAuditTrailEdgeCases(TestCase):
         self.assertIsInstance(audit.target_entity_type, ContentType)
 
     @pytest.mark.django_db
+    def test_audit_trail_concurrent_creation(self):
+        """Test concurrent audit trail creation doesn't cause conflicts."""
+        import threading
+        from django.db import transaction
+
+        entry = EntryFactory()
+        results = []
+        errors = []
+
+        def create_audit(thread_id):
+            try:
+                with transaction.atomic():
+                    audit = AuditTrailFactory(
+                        target_entity=entry,
+                        action_type=f"test_action_{thread_id}",
+                        metadata={"thread_id": thread_id},
+                    )
+                    results.append(audit.audit_id)
+            except Exception as e:
+                errors.append(e)
+
+        # Create multiple threads
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=create_audit, args=(i,))
+            threads.append(thread)
+
+        # Start all threads
+        for thread in threads:
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+
+        # Verify results
+        self.assertEqual(len(errors), 0, f"Errors occurred: {errors}")
+        self.assertEqual(len(results), 5)
+        self.assertEqual(len(set(results)), 5)  # All UUIDs should be unique
+
+    @pytest.mark.django_db
     def test_audit_trail_with_large_metadata(self):
         """Test audit trail with large metadata objects."""
         entry = EntryFactory()
@@ -526,3 +568,166 @@ class TestAuditTrailEdgeCases(TestCase):
         # Should be ordered by timestamp descending (newest first)
         for i in range(len(audits) - 1):
             self.assertGreaterEqual(audits[i].timestamp, audits[i + 1].timestamp)
+
+
+@pytest.mark.unit
+class TestAuditTrailCriticalActions(TestCase):
+    """Test critical action type functionality."""
+
+    def test_critical_action_identification(self):
+        """Test that critical actions are properly identified."""
+        from apps.auditlog.constants import is_critical_action
+
+        # Test critical actions
+        critical_actions = [
+            AuditActionType.USER_DELETED,
+            AuditActionType.ORGANIZATION_DELETED,
+            AuditActionType.PERMISSION_REVOKED,
+            AuditActionType.DATA_EXPORTED,
+            AuditActionType.SYSTEM_ERROR,
+        ]
+
+        for action in critical_actions:
+            self.assertTrue(
+                is_critical_action(action), f"{action} should be identified as critical"
+            )
+
+        # Test non-critical actions
+        non_critical_actions = [
+            AuditActionType.LOGIN_SUCCESS,
+            AuditActionType.ENTRY_CREATED,
+            AuditActionType.FILE_DOWNLOADED,
+        ]
+
+        for action in non_critical_actions:
+            self.assertFalse(
+                is_critical_action(action),
+                f"{action} should not be identified as critical",
+            )
+
+    @pytest.mark.django_db
+    def test_critical_action_audit_creation(self):
+        """Test audit creation for critical actions."""
+        user = CustomUserFactory()
+        entry = EntryFactory()
+
+        # Create audit for critical action
+        audit = AuditTrailFactory(
+            user=user,
+            action_type=AuditActionType.DATA_EXPORTED,
+            target_entity=entry,
+            metadata={
+                "export_type": "entries",
+                "record_count": 100,
+                "reason": "compliance_audit",
+            },
+        )
+
+        self.assertEqual(audit.action_type, AuditActionType.DATA_EXPORTED)
+        self.assertIn("export_type", audit.metadata)
+        self.assertIn("record_count", audit.metadata)
+
+
+@pytest.mark.unit
+class TestAuditTrailWorkspaceDetection(TestCase):
+    """Test workspace detection and association."""
+
+    @pytest.mark.django_db
+    def test_workspace_detection_from_entry(self):
+        """Test workspace detection from entry target entity."""
+        workspace = WorkspaceFactory()
+        entry = EntryFactory(workspace=workspace)
+
+        audit = AuditTrailFactory(
+            target_entity=entry, action_type=AuditActionType.ENTRY_CREATED
+        )
+
+        # Verify the audit was created with correct target entity
+        self.assertEqual(audit.target_entity, entry)
+        self.assertEqual(
+            audit.target_entity_type, ContentType.objects.get_for_model(entry)
+        )
+
+    @pytest.mark.django_db
+    def test_workspace_as_target_entity(self):
+        """Test workspace as direct target entity."""
+        workspace = WorkspaceFactory()
+
+        audit = AuditTrailFactory(
+            target_entity=workspace, action_type=AuditActionType.WORKSPACE_CREATED
+        )
+
+        self.assertEqual(audit.target_entity, workspace)
+        self.assertEqual(
+            audit.target_entity_type, ContentType.objects.get_for_model(workspace)
+        )
+
+
+@pytest.mark.unit
+class TestAuditTrailQueryOptimization(TestCase):
+    """Test query optimization and database performance."""
+
+    @pytest.mark.django_db
+    def test_audit_trail_select_related_optimization(self):
+        """Test that queries can be optimized with select_related."""
+        user = CustomUserFactory()
+        entry = EntryFactory()
+
+        # Create multiple audit trails
+        for i in range(10):
+            AuditTrailFactory(
+                user=user,
+                target_entity=entry,
+                action_type=AuditActionType.ENTRY_CREATED,
+            )
+
+        # Test optimized query
+        with self.assertNumQueries(1):
+            audits = list(
+                AuditTrail.objects.select_related("user", "target_entity_type").filter(
+                    user=user
+                )[:5]
+            )
+
+            # Access related fields (should not trigger additional queries)
+            for audit in audits:
+                _ = audit.user.username
+                _ = audit.target_entity_type.model
+
+    @pytest.mark.django_db
+    def test_audit_trail_filtering_performance(self):
+        """Test performance of common filtering operations."""
+        import time
+
+        user = CustomUserFactory()
+        entry = EntryFactory()
+
+        # Create a larger dataset
+        for i in range(500):
+            AuditTrailFactory(
+                user=user if i % 2 == 0 else CustomUserFactory(),
+                target_entity=entry,
+                action_type=AuditActionType.ENTRY_CREATED
+                if i % 3 == 0
+                else AuditActionType.ENTRY_UPDATED,
+            )
+
+        # Test filtering by user
+        start_time = time.time()
+        user_audits = list(AuditTrail.objects.filter(user=user))
+        user_filter_time = time.time() - start_time
+
+        # Test filtering by action type
+        start_time = time.time()
+        action_audits = list(
+            AuditTrail.objects.filter(action_type=AuditActionType.ENTRY_CREATED)
+        )
+        action_filter_time = time.time() - start_time
+
+        # Performance assertions
+        self.assertLess(user_filter_time, 1.0, "User filtering took too long")
+        self.assertLess(action_filter_time, 1.0, "Action type filtering took too long")
+
+        # Verify results
+        self.assertGreater(len(user_audits), 0)
+        self.assertGreater(len(action_audits), 0)

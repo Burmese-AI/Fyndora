@@ -22,6 +22,8 @@ from apps.core.services.file_export_services import CsvExporter, PdfExporter
 from .services import export_overview_finance_report
 from apps.reports.selectors import EntrySelectors, RemittanceSelectors
 
+from django.http import Http404
+
 
 class OverviewFinanceReportView(
     OrganizationRequiredMixin,

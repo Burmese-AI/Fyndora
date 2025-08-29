@@ -26,3 +26,15 @@ class OrganizationPermissionCreationError(OrganizationError):
     """Raised when organization permission creation fails."""
 
     pass
+
+
+class OrganizationMemberPermissionError(OrganizationError):
+    """Raised when organization member permission fails."""
+
+    pass
+
+
+class OrganizationMemberPermissionCreationError(OrganizationError):
+    """Raised when organization member permission creation fails."""
+
+    pass

@@ -9,7 +9,6 @@ from guardian.shortcuts import assign_perm
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.roles import get_permissions_for_role
 from apps.core.utils import model_update
-from apps.currencies.models import Currency
 from apps.organizations.exceptions import (
     OrganizationCreationError,
     OrganizationUpdateError,
@@ -23,6 +22,7 @@ from .utils import (
     extract_organization_member_context,
     extract_request_metadata,
 )
+from apps.currencies.services import createCurrency
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ def create_organization_with_owner(*, form, user) -> Organization:
             BusinessAuditLogger.log_permission_change(
                 user=user,
                 target_user=user,
-                permission="organization.owner",
+                permission_type="organization.owner",
                 action="grant",
                 request=None,  # No request context available in service layer
                 organization_id=str(organization.organization_id),
@@ -199,7 +199,7 @@ def create_organization_exchange_rate(
     Creates an exchange rate for an organization.
     """
     try:
-        currency, _ = Currency.objects.get_or_create(code=currency_code)
+        currency = createCurrency(currency_code)
         exchange_rate = OrganizationExchangeRate.objects.create(
             organization=organization,
             currency=currency,
@@ -333,7 +333,10 @@ def update_organization_exchange_rate(
                     error=err,
                     request=None,
                     organization_id=str(organization.organization_id),
-                    exchange_rate_id=str(org_exchange_rate.id),
+                    # org_exchange_rate.id is not a valid field and not exist in model ,i change it to organization_exchange_rate_id (THA)
+                    exchange_rate_id=str(
+                        org_exchange_rate.organization_exchange_rate_id
+                    ),
                     error_type=type(err).__name__,
                     **extract_request_metadata(),
                 )

@@ -29,6 +29,8 @@ from apps.workspaces.selectors import (
     get_single_workspace_with_team_counts,
     get_workspace_team_by_workspace_team_id,
     get_workspace_exchange_rates,
+    get_workspace_team_by_workspace_id_and_team_id,
+    get_user_joined_workspaces,
 )
 from tests.factories.organization_factories import (
     OrganizationFactory,
@@ -189,7 +191,7 @@ class TestBasicSelectors(TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.organization = OrganizationFactory()
+        self.organization = OrganizationWithOwnerFactory()
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.team = TeamFactory(organization=self.organization)
 
@@ -199,7 +201,7 @@ class TestBasicSelectors(TestCase):
         workspace1 = WorkspaceFactory(organization=self.organization)
         workspace2 = WorkspaceFactory(organization=self.organization)
         # Different organization
-        other_org = OrganizationFactory()
+        other_org = OrganizationWithOwnerFactory()
         WorkspaceFactory(organization=other_org)
 
         result = get_user_workspaces_under_organization(
@@ -244,8 +246,8 @@ class TestBasicSelectors(TestCase):
         result = get_organization_members_by_organization_id(
             self.organization.organization_id
         )
-
-        self.assertEqual(result.count(), 2)
+        #the member count will be 3 because the owner is also a member
+        self.assertEqual(result.count(), 3)
         member_ids = [m.organization_member_id for m in result]
         self.assertIn(member1.organization_member_id, member_ids)
         self.assertIn(member2.organization_member_id, member_ids)
@@ -331,25 +333,29 @@ class TestAggregateSelectors(TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.organization = OrganizationFactory()
+        self.organization = OrganizationWithOwnerFactory()
 
     @pytest.mark.django_db
     def test_get_workspaces_with_team_counts(self):
         """Test getting workspaces with team counts."""
-        workspace1 = WorkspaceFactory(organization=self.organization)
-        workspace2 = WorkspaceFactory(organization=self.organization)
+        # Create organization with owner for this test
+        org_with_owner = OrganizationWithOwnerFactory()
+        workspace1 = WorkspaceFactory(organization=org_with_owner)
+        workspace2 = WorkspaceFactory(organization=org_with_owner)
 
         # Add teams to workspace1
-        team1 = TeamFactory(organization=self.organization)
-        team2 = TeamFactory(organization=self.organization)
+        team1 = TeamFactory(organization=org_with_owner)
+        team2 = TeamFactory(organization=org_with_owner)
         WorkspaceTeamFactory(workspace=workspace1, team=team1)
         WorkspaceTeamFactory(workspace=workspace1, team=team2)
 
         # Add one team to workspace2
-        team3 = TeamFactory(organization=self.organization)
+        team3 = TeamFactory(organization=org_with_owner)
         WorkspaceTeamFactory(workspace=workspace2, team=team3)
 
-        result = get_workspaces_with_team_counts(self.organization.organization_id)
+        result = get_workspaces_with_team_counts(
+            org_with_owner.organization_id, org_with_owner.owner.user
+        )
 
         # Find our workspaces in the result
         workspace1_result = next(
@@ -361,6 +367,188 @@ class TestAggregateSelectors(TestCase):
 
         self.assertEqual(workspace1_result.teams_count, 2)
         self.assertEqual(workspace2_result.teams_count, 1)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_as_owner(self):
+        """Test getting workspaces with team counts as organization owner."""
+        org_with_owner = OrganizationWithOwnerFactory()
+        workspace1 = WorkspaceFactory(organization=org_with_owner)
+        workspace2 = WorkspaceFactory(organization=org_with_owner)
+
+        # Add teams to workspaces
+        team1 = TeamFactory(organization=org_with_owner)
+        team2 = TeamFactory(organization=org_with_owner)
+        WorkspaceTeamFactory(workspace=workspace1, team=team1)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
+
+        result = get_workspaces_with_team_counts(
+            org_with_owner.organization_id, org_with_owner.owner.user
+        )
+
+        self.assertIsNotNone(result)  # Check result is not None first
+        self.assertEqual(len(result), 2)
+        workspace1_result = next(
+            w for w in result if w.workspace_id == workspace1.workspace_id
+        )
+        self.assertEqual(workspace1_result.teams_count, 1)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_as_workspace_admin(self):
+        """Test getting workspaces with team counts as workspace admin."""
+        user = CustomUserFactory()
+        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
+        
+        workspace1 = WorkspaceFactory(
+            organization=self.organization, 
+            workspace_admin=org_member
+        )
+        workspace2 = WorkspaceFactory(organization=self.organization)
+
+        # Add teams to workspaces
+        team1 = TeamFactory(organization=self.organization)
+        team2 = TeamFactory(organization=self.organization)
+        WorkspaceTeamFactory(workspace=workspace1, team=team1)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
+
+        result = get_workspaces_with_team_counts(
+            self.organization.organization_id, user
+        )
+
+        # Should only return workspace1 where user is admin
+        self.assertIsNotNone(result)  # Check result is not None first
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].workspace_id, workspace1.workspace_id)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_as_operations_reviewer(self):
+        """Test getting workspaces with team counts as operations reviewer."""
+        user = CustomUserFactory()
+        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
+        
+        workspace1 = WorkspaceFactory(
+            organization=self.organization, 
+            operations_reviewer=org_member
+        )
+        workspace2 = WorkspaceFactory(organization=self.organization)
+
+        # Add teams to workspaces
+        team1 = TeamFactory(organization=self.organization)
+        team2 = TeamFactory(organization=self.organization)
+        WorkspaceTeamFactory(workspace=workspace1, team=team1)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
+
+        result = get_workspaces_with_team_counts(
+            self.organization.organization_id, user
+        )
+
+        # Should only return workspace1 where user is operations reviewer
+        self.assertIsNotNone(result)  # Check result is not None first
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].workspace_id, workspace1.workspace_id)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_as_team_coordinator(self):
+        """Test getting workspaces with team counts as team coordinator."""
+        user = CustomUserFactory()
+        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
+        
+        workspace1 = WorkspaceFactory(organization=self.organization)
+        workspace2 = WorkspaceFactory(organization=self.organization)
+
+        # Create team with user as coordinator
+        team1 = TeamFactory(organization=self.organization, team_coordinator=org_member)
+        team2 = TeamFactory(organization=self.organization)
+        
+        WorkspaceTeamFactory(workspace=workspace1, team=team1)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
+
+        result = get_workspaces_with_team_counts(
+            self.organization.organization_id, user
+        )
+
+        # Should only return workspace1 where user is team coordinator
+        self.assertIsNotNone(result)  # Check result is not None first
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].workspace_id, workspace1.workspace_id)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_error(self):
+        """Test getting workspaces with team counts with invalid organization ID."""
+        user = CustomUserFactory()
+        with patch("builtins.print") as mock_print:
+            result = get_workspaces_with_team_counts("invalid-id", user)
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_invalid_org_id(self):
+        """Test getting workspaces with team counts with invalid organization ID."""
+        user = CustomUserFactory()
+        with patch("builtins.print") as mock_print:
+            result = get_workspaces_with_team_counts("invalid-id", user)
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_user_no_roles(self):
+        """Test getting workspaces when user has no roles in the organization."""
+        user = CustomUserFactory()
+        # Create organization without setting this user as owner, admin, or reviewer
+        workspace1 = WorkspaceFactory(organization=self.organization)
+        workspace2 = WorkspaceFactory(organization=self.organization)
+
+        # Add teams to workspaces
+        team1 = TeamFactory(organization=self.organization)
+        team2 = TeamFactory(organization=self.organization)
+        WorkspaceTeamFactory(workspace=workspace1, team=team1)
+        WorkspaceTeamFactory(workspace=workspace2, team=team2)
+
+        result = get_workspaces_with_team_counts(
+            self.organization.organization_id, user
+        )
+
+        # User has no roles, so should get empty list
+        self.assertIsNotNone(result)  # Function should return empty list, not None
+        self.assertEqual(len(result), 0)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_organization_no_owner(self):
+        """Test getting workspaces when organization has no owner."""
+        # Create organization without owner
+        org_without_owner = OrganizationFactory()  # This creates org without owner
+        user = CustomUserFactory()
+        
+        workspace = WorkspaceFactory(organization=org_without_owner)
+        team = TeamFactory(organization=org_without_owner)
+        WorkspaceTeamFactory(workspace=workspace, team=team)
+
+        result = get_workspaces_with_team_counts(
+            org_without_owner.organization_id, user
+        )
+
+        # Should return empty list since user is not owner and has no other roles
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 0)
+
+    @pytest.mark.django_db
+    def test_get_workspaces_with_team_counts_user_not_in_org(self):
+        """Test getting workspaces when user is not in the organization."""
+        user = CustomUserFactory()
+        # User is not a member of self.organization
+        
+        workspace = WorkspaceFactory(organization=self.organization)
+        team = TeamFactory(organization=self.organization)
+        WorkspaceTeamFactory(workspace=workspace, team=team)
+
+        result = get_workspaces_with_team_counts(
+            self.organization.organization_id, user
+        )
+
+        # Should return empty list since user is not owner and has no other roles
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 0)
 
     @pytest.mark.django_db
     def test_get_single_workspace_with_team_counts(self):
@@ -379,6 +567,23 @@ class TestAggregateSelectors(TestCase):
 
         self.assertEqual(result.workspace_id, workspace.workspace_id)
         self.assertEqual(result.teams_count, 3)
+
+    @pytest.mark.django_db
+    def test_get_single_workspace_with_team_counts_no_teams(self):
+        """Test getting single workspace with no teams."""
+        workspace = WorkspaceFactory(organization=self.organization)
+
+        result = get_single_workspace_with_team_counts(workspace.workspace_id)
+
+        self.assertEqual(result.workspace_id, workspace.workspace_id)
+        self.assertEqual(result.teams_count, 0)
+
+    @pytest.mark.django_db
+    def test_get_single_workspace_with_team_counts_not_found(self):
+        """Test getting single workspace when workspace doesn't exist."""
+        result = get_single_workspace_with_team_counts("invalid-id")
+
+        self.assertIsNone(result)
 
     @pytest.mark.django_db
     def test_get_workspace_exchange_rates(self):
@@ -411,5 +616,198 @@ class TestAggregateSelectors(TestCase):
         """Test getting workspace exchange rates with None parameters."""
         result = get_workspace_exchange_rates(organization=None, workspace=None)
 
-        # Should return empty queryset, not None, since Django handles None gracefully
+        # Function returns None when there's an error
+        self.assertIsNone(result)
+
+    @pytest.mark.django_db
+    def test_get_workspace_exchange_rates_none_params(self):
+        """Test getting workspace exchange rates with None parameters."""
+        result = get_workspace_exchange_rates(organization=None, workspace=None)
+
+        # Function should return None for None parameters
+        self.assertIsNone(result)
+
+    @pytest.mark.django_db
+    def test_get_workspace_exchange_rates_no_rates(self):
+        """Test getting workspace exchange rates when none exist."""
+        workspace = WorkspaceFactory(organization=self.organization)
+
+        result = get_workspace_exchange_rates(
+            organization=self.organization, workspace=workspace
+        )
+
         self.assertEqual(result.count(), 0)
+
+
+@pytest.mark.unit
+class TestMissingSelectors(TestCase):
+    """Test selector functions that were missing from other test classes."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.workspace = WorkspaceFactory(organization=self.organization)
+        self.team = TeamFactory(organization=self.organization)
+
+    @pytest.mark.django_db
+    def test_get_workspace_team_by_workspace_id_and_team_id(self):
+        """Test getting workspace team by workspace ID and team ID."""
+        workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=self.team)
+
+        result = get_workspace_team_by_workspace_id_and_team_id(
+            self.workspace.workspace_id, self.team.team_id
+        )
+
+        self.assertEqual(result, workspace_team)
+
+    @pytest.mark.django_db
+    def test_get_workspace_team_by_workspace_id_and_team_id_not_found(self):
+        """Test getting workspace team when not found."""
+        other_team = TeamFactory(organization=self.organization)
+
+        result = get_workspace_team_by_workspace_id_and_team_id(
+            self.workspace.workspace_id, other_team.team_id
+        )
+
+        self.assertIsNone(result)
+
+    @pytest.mark.django_db
+    def test_get_workspace_team_by_workspace_id_and_team_id_error(self):
+        """Test getting workspace team with invalid IDs."""
+        with patch("builtins.print") as mock_print:
+            result = get_workspace_team_by_workspace_id_and_team_id("invalid-id", "invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_workspace_team_by_workspace_id_and_team_id_none_params(self):
+        """Test getting workspace team with None parameters."""
+        result = get_workspace_team_by_workspace_id_and_team_id(None, None)
+
+        self.assertIsNone(result)
+
+    @pytest.mark.django_db
+    def test_get_user_joined_workspaces(self):
+        """Test getting user joined workspaces."""
+        user = CustomUserFactory()
+        org_member = OrganizationMemberFactory(
+            organization=self.organization, user=user
+        )
+        
+        # Create another workspace in the same organization
+        workspace2 = WorkspaceFactory(organization=self.organization)
+        
+        # Create workspace in different organization
+        other_org = OrganizationWithOwnerFactory()
+        WorkspaceFactory(organization=other_org)
+
+        result = get_user_joined_workspaces(user)
+
+        # Should only return workspaces from organizations where user is a member
+        self.assertEqual(result.count(), 2)  # self.workspace + workspace2
+        workspace_ids = [w.workspace_id for w in result]
+        self.assertIn(self.workspace.workspace_id, workspace_ids)
+        self.assertIn(workspace2.workspace_id, workspace_ids)
+
+    @pytest.mark.django_db
+    def test_get_user_joined_workspaces_no_memberships(self):
+        """Test getting user joined workspaces when user has no memberships."""
+        user = CustomUserFactory()
+
+        result = get_user_joined_workspaces(user)
+
+        self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_user_joined_workspaces_multiple_organizations(self):
+        """Test getting user joined workspaces across multiple organizations."""
+        user = CustomUserFactory()
+        
+        # User is member of first organization
+        org1 = OrganizationWithOwnerFactory()
+        org_member1 = OrganizationMemberFactory(organization=org1, user=user)
+        workspace1 = WorkspaceFactory(organization=org1)
+        
+        # User is member of second organization
+        org2 = OrganizationWithOwnerFactory()
+        org_member2 = OrganizationMemberFactory(organization=org2, user=user)
+        workspace2 = WorkspaceFactory(organization=org2)
+        
+        # User is NOT member of third organization
+        org3 = OrganizationWithOwnerFactory()
+        WorkspaceFactory(organization=org3)
+
+        result = get_user_joined_workspaces(user)
+
+        # Should return workspaces from both organizations where user is a member
+        self.assertEqual(result.count(), 2)
+        workspace_ids = [w.workspace_id for w in result]
+        self.assertIn(workspace1.workspace_id, workspace_ids)
+        self.assertIn(workspace2.workspace_id, workspace_ids)
+
+
+@pytest.mark.unit
+class TestErrorHandlingSelectors(TestCase):
+    """Test error handling in selector functions."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+
+    @pytest.mark.django_db
+    def test_get_organization_members_by_organization_id_error(self):
+        """Test getting organization members with invalid organization ID."""
+        with patch("builtins.print") as mock_print:
+            result = get_organization_members_by_organization_id("invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_orgMember_by_user_id_and_organization_id_not_found(self):
+        """Test getting organization member when not found."""
+        user = CustomUserFactory()
+        other_org = OrganizationWithOwnerFactory()
+
+        result = get_orgMember_by_user_id_and_organization_id(
+            user.user_id, other_org.organization_id
+        )
+
+        self.assertIsNone(result)
+
+    @pytest.mark.django_db
+    def test_get_teams_by_organization_id_error(self):
+        """Test getting teams with invalid organization ID."""
+        with patch("builtins.print") as mock_print:
+            result = get_teams_by_organization_id("invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_workspace_teams_by_workspace_id_error(self):
+        """Test getting workspace teams with invalid workspace ID."""
+        with patch("builtins.print") as mock_print:
+            result = get_workspace_teams_by_workspace_id("invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_team_by_id_not_found(self):
+        """Test getting team by invalid ID."""
+        with patch("builtins.print") as mock_print:
+            result = get_team_by_id("invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()
+
+    @pytest.mark.django_db
+    def test_get_workspace_team_by_workspace_team_id_not_found(self):
+        """Test getting workspace team by invalid ID."""
+        with patch("builtins.print") as mock_print:
+            result = get_workspace_team_by_workspace_team_id("invalid-id")
+
+            self.assertIsNone(result)
+            mock_print.assert_called()

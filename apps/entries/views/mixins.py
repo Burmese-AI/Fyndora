@@ -121,5 +121,5 @@ class WorkspaceLevelEntryFiltering(TeamLevelEntryFiltering):
             EntryStatus.APPROVED,
         ]
         context["default_status_option"] = EntryStatus.REVIEWED
-        context["filter_team_value"] = self.request.GET.get("team")
+        context["filter_team_value"] = self.request.GET.get("team") or None
         return context

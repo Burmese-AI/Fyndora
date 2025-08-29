@@ -1,15 +1,11 @@
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.utils import timezone
 
 from apps.core.utils import model_update
 from apps.entries.constants import EntryStatus, EntryType
-from apps.entries.models import Entry
 from apps.entries.selectors import get_total_amount_of_entries
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id
-from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
 from apps.workspaces.models import WorkspaceTeam
 
@@ -18,9 +14,6 @@ def calculate_due_amount(*, workspace_team: WorkspaceTeam):
     """
     Calculate the due amount for a workspace team.
     """
-    remittance = workspace_team.remittance
-    # Process due amount
-    due_amount = process_due_amount(workspace_team, remittance)
     # 1. Sum all APPROVED INCOME entries for this team
     income_total = get_total_amount_of_entries(
         entry_type=EntryType.INCOME,
@@ -62,9 +55,6 @@ def update_remittance(*, remittance: Remittance):
     remittance.update_status()
     remittance.check_if_overdue()
     remittance.check_if_overpaid()
-    print(
-        f"remittance due amount: {remittance.due_amount} | paid_amount {remittance.paid_amount}\n\n"
-    )
     # Save the updated fields to the database
     remittance.save(
         update_fields=[
@@ -106,4 +96,3 @@ def remittance_confirm_payment(*, remittance, user, organization_id):
     )
 
     return updated_remittance
-

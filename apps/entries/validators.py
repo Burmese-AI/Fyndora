@@ -84,14 +84,16 @@ class TeamEntryValidator:
 
     def validate_entry_update(self, entry: Entry, new_status=None, occurred_at=None):
         self.validate_team_remittance()
-        date_for_period_validation = occurred_at if occurred_at is not None else entry.occurred_at
+        date_for_period_validation = (
+            occurred_at if occurred_at is not None else entry.occurred_at
+        )
         self.validate_workspace_period(date_for_period_validation)
 
         if new_status is not None:
             self.validate_status_transition(new_status)
 
         return True
-    
+
     def validate_entry_create(self, entry_type: EntryType, occurred_at):
         self.validate_workspace_period(occurred_at)
         self.validate_entry_create_authorization(entry_type)

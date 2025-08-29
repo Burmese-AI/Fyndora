@@ -50,10 +50,10 @@
         <div class="flex flex-col w-full">
           <label class="label-text font-semibold text-base-content mb-1">Team</label>
           <select name="team" class="select select-sm select-bordered w-full bg-base-100">
-            <option value="">All teams</option>
+            <option value="" {% if not filter_team_value %}selected{% endif %}>All teams</option>
             {% for team in team_options %}
               <option value="{{ team.pk }}"
-                {% if team.pk == filter_team_value %}selected{% endif %}
+                {% if team.pk|stringformat:"s" == filter_team_value|stringformat:"s" %}selected{% endif %}
               >
                 {{ team.team.title }}
               </option>

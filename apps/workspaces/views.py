@@ -232,7 +232,9 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         # Update Remittance Due Amount of Each Team's Remittance
                         for workspace_team in workspace_teams:
                             remittance = workspace_team.remittance
-                            remittance.new_due_amount = calculate_due_amount(workspace_team=workspace_team)
+                            remittance.new_due_amount = calculate_due_amount(
+                                workspace_team=workspace_team
+                            )
                             update_remittance(remittance=remittance)
 
                     workspace = get_single_workspace_with_team_counts(workspace_id)
@@ -528,8 +530,10 @@ def change_workspace_team_remittance_rate_view(
                     )
                     # Updating due amount of remittance
                     remittance = workspace_team.remittance
-                    remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
-                    update_remittance(remittance=remittance)                    
+                    remittance.due_amount = calculate_due_amount(
+                        workspace_team=workspace_team
+                    )
+                    update_remittance(remittance=remittance)
                 messages.success(request, "Remittance rate updated successfully.")
                 workspace_team = get_workspace_team_by_workspace_team_id(
                     workspace_team_id

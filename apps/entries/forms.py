@@ -4,7 +4,6 @@ from apps.core.forms import MultipleFileField, MultipleFileInput
 from apps.attachments.utils import validate_uploaded_files
 from .constants import EntryStatus, EntryType
 from apps.teams.constants import TeamMemberRole
-from datetime import date
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_org_defined_currencies
 from .validators import TeamEntryValidator
@@ -236,7 +235,6 @@ class BaseUpdateEntryForm(BaseEntryForm):
 
 
 class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.validator = TeamEntryValidator(
@@ -249,13 +247,13 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
             is_operation_reviewer=self.is_operation_reviewer,
             is_team_coordinator=self.is_team_coordinator,
         )
-        
+
     def clean(self):
         cleaned_data = super().clean()
 
         new_status = cleaned_data.get("status")
         occurred_at = cleaned_data.get("occurred_at")
-        
+
         try:
             self.validator.validate_entry_update(
                 entry=self.instance,

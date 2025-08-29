@@ -455,6 +455,7 @@ class WorkspaceEntryBulkUpdateView(
     def get_modal_title(self) -> str:
         return ""
 
+
 class WorkspaceTeamEntryBulkDeleteView(
     WorkspaceTeamRequiredMixin,
     TeamLevelEntryView,
@@ -506,6 +507,7 @@ class WorkspaceTeamEntryBulkDeleteView(
 
     def get_modal_title(self) -> str:
         return ""
+
 
 class WorkspaceTeamEntryBulkUpdateView(
     WorkspaceTeamRequiredMixin,
@@ -562,6 +564,16 @@ class WorkspaceTeamEntryBulkUpdateView(
             "workspace_team_entry_bulk_update",
             kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
         )
+        
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        #At Team level, Approved status shouldn't be accessed
+        context["modal_status_options"] = [
+            (value, label) 
+            for value, label in EntryStatus.choices 
+            if value != EntryStatus.APPROVED
+        ]
+        return context
 
     def get_modal_title(self) -> str:
         return ""

@@ -49,6 +49,9 @@ from .mixins import (
 )
 from apps.entries.utils import can_view_total_workspace_teams_entries
 from ..validators import TeamEntryValidator
+from apps.workspaces.selectors import (
+    get_workspace_team_member_by_workspace_team_and_org_member,
+)
 
 class WorkspaceEntryListView(
     WorkspaceRequiredMixin,
@@ -90,9 +93,7 @@ class WorkspaceEntryListView(
         context = super().get_context_data(**kwargs)
         context["view"] = "workspace_lvl_entries"
         return context
-from apps.workspaces.selectors import (
-    get_workspace_team_member_by_workspace_team_and_org_member,
-)
+
 
 class WorkspaceTeamEntryListView(
     WorkspaceTeamRequiredMixin,
@@ -446,6 +447,58 @@ class WorkspaceEntryBulkUpdateView(
         return reverse(
             "workspace_entry_bulk_update",
             kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+class WorkspaceTeamEntryBulkDeleteView(
+    WorkspaceTeamRequiredMixin,
+    TeamLevelEntryView,
+    TeamLevelEntryFiltering,
+    BaseGetModalView,
+    BaseEntryBulkDeleteView,
+):
+    
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            statuses=[EntryStatus.PENDING]
+        )
+        
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        # Valid if status is pending and has never been modified
+        return (
+            entry.status == EntryStatus.PENDING
+            and not entry.status_last_updated_at
+            and not entry.last_status_modified_by
+        )
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_team_entry_bulk_delete",
+            kwargs={"organization_id": self.organization.pk, "workspace_id": self.workspace.pk, "workspace_team_id": self.workspace_team.pk},
         )
 
     def get_modal_title(self) -> str:

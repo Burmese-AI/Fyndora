@@ -284,13 +284,17 @@ def assign_workspace_team_permissions(
     workspace_admins_group_name = (
         f"Workspace Admins - {workspace_team.workspace.workspace_id}"
     )
-    workspace_admins_group, _ = Group.objects.get_or_create(name=workspace_admins_group_name)
+    workspace_admins_group, _ = Group.objects.get_or_create(
+        name=workspace_admins_group_name
+    )
 
     # to give some edit workspace team entry permission to operations reviewer
     operations_reviewer_group_name = (
         f"Operations Reviewer - {workspace_team.workspace.workspace_id}"
     )
-    operations_reviewer_group, _ = Group.objects.get_or_create(name=operations_reviewer_group_name)
+    operations_reviewer_group, _ = Group.objects.get_or_create(
+        name=operations_reviewer_group_name
+    )
 
     workspace_team_permissions = get_permissions_for_role("SUBMITTER")
     assigned_permissions = []

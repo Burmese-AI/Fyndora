@@ -70,7 +70,5 @@ def send_email_task(to, subject, contents):
                 continue
 
     # If we get here, all accounts failed
-    logger.exception(
-        f"Failed to send email to {to} from {gmail_user}."
-    )
+    logger.exception(f"Failed to send email to {to} from {gmail_user}.")
     # Don't re-raise the exception, just log it

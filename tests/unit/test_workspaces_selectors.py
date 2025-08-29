@@ -246,7 +246,7 @@ class TestBasicSelectors(TestCase):
         result = get_organization_members_by_organization_id(
             self.organization.organization_id
         )
-        #the member count will be 3 because the owner is also a member
+        # the member count will be 3 because the owner is also a member
         self.assertEqual(result.count(), 3)
         member_ids = [m.organization_member_id for m in result]
         self.assertIn(member1.organization_member_id, member_ids)
@@ -396,11 +396,12 @@ class TestAggregateSelectors(TestCase):
     def test_get_workspaces_with_team_counts_as_workspace_admin(self):
         """Test getting workspaces with team counts as workspace admin."""
         user = CustomUserFactory()
-        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
-        
+        org_member = OrganizationMemberFactory(
+            organization=self.organization, user=user
+        )
+
         workspace1 = WorkspaceFactory(
-            organization=self.organization, 
-            workspace_admin=org_member
+            organization=self.organization, workspace_admin=org_member
         )
         workspace2 = WorkspaceFactory(organization=self.organization)
 
@@ -423,11 +424,12 @@ class TestAggregateSelectors(TestCase):
     def test_get_workspaces_with_team_counts_as_operations_reviewer(self):
         """Test getting workspaces with team counts as operations reviewer."""
         user = CustomUserFactory()
-        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
-        
+        org_member = OrganizationMemberFactory(
+            organization=self.organization, user=user
+        )
+
         workspace1 = WorkspaceFactory(
-            organization=self.organization, 
-            operations_reviewer=org_member
+            organization=self.organization, operations_reviewer=org_member
         )
         workspace2 = WorkspaceFactory(organization=self.organization)
 
@@ -450,15 +452,17 @@ class TestAggregateSelectors(TestCase):
     def test_get_workspaces_with_team_counts_as_team_coordinator(self):
         """Test getting workspaces with team counts as team coordinator."""
         user = CustomUserFactory()
-        org_member = OrganizationMemberFactory(organization=self.organization, user=user)
-        
+        org_member = OrganizationMemberFactory(
+            organization=self.organization, user=user
+        )
+
         workspace1 = WorkspaceFactory(organization=self.organization)
         workspace2 = WorkspaceFactory(organization=self.organization)
 
         # Create team with user as coordinator
         team1 = TeamFactory(organization=self.organization, team_coordinator=org_member)
         team2 = TeamFactory(organization=self.organization)
-        
+
         WorkspaceTeamFactory(workspace=workspace1, team=team1)
         WorkspaceTeamFactory(workspace=workspace2, team=team2)
 
@@ -519,7 +523,7 @@ class TestAggregateSelectors(TestCase):
         # Create organization without owner
         org_without_owner = OrganizationFactory()  # This creates org without owner
         user = CustomUserFactory()
-        
+
         workspace = WorkspaceFactory(organization=org_without_owner)
         team = TeamFactory(organization=org_without_owner)
         WorkspaceTeamFactory(workspace=workspace, team=team)
@@ -537,7 +541,7 @@ class TestAggregateSelectors(TestCase):
         """Test getting workspaces when user is not in the organization."""
         user = CustomUserFactory()
         # User is not a member of self.organization
-        
+
         workspace = WorkspaceFactory(organization=self.organization)
         team = TeamFactory(organization=self.organization)
         WorkspaceTeamFactory(workspace=workspace, team=team)
@@ -675,7 +679,9 @@ class TestMissingSelectors(TestCase):
     def test_get_workspace_team_by_workspace_id_and_team_id_error(self):
         """Test getting workspace team with invalid IDs."""
         with patch("builtins.print") as mock_print:
-            result = get_workspace_team_by_workspace_id_and_team_id("invalid-id", "invalid-id")
+            result = get_workspace_team_by_workspace_id_and_team_id(
+                "invalid-id", "invalid-id"
+            )
 
             self.assertIsNone(result)
             mock_print.assert_called()
@@ -691,13 +697,11 @@ class TestMissingSelectors(TestCase):
     def test_get_user_joined_workspaces(self):
         """Test getting user joined workspaces."""
         user = CustomUserFactory()
-        org_member = OrganizationMemberFactory(
-            organization=self.organization, user=user
-        )
-        
+        OrganizationMemberFactory(organization=self.organization, user=user)
+
         # Create another workspace in the same organization
         workspace2 = WorkspaceFactory(organization=self.organization)
-        
+
         # Create workspace in different organization
         other_org = OrganizationWithOwnerFactory()
         WorkspaceFactory(organization=other_org)
@@ -723,17 +727,17 @@ class TestMissingSelectors(TestCase):
     def test_get_user_joined_workspaces_multiple_organizations(self):
         """Test getting user joined workspaces across multiple organizations."""
         user = CustomUserFactory()
-        
+
         # User is member of first organization
         org1 = OrganizationWithOwnerFactory()
-        org_member1 = OrganizationMemberFactory(organization=org1, user=user)
+        OrganizationMemberFactory(organization=org1, user=user)
         workspace1 = WorkspaceFactory(organization=org1)
-        
+
         # User is member of second organization
         org2 = OrganizationWithOwnerFactory()
-        org_member2 = OrganizationMemberFactory(organization=org2, user=user)
+        OrganizationMemberFactory(organization=org2, user=user)
         workspace2 = WorkspaceFactory(organization=org2)
-        
+
         # User is NOT member of third organization
         org3 = OrganizationWithOwnerFactory()
         WorkspaceFactory(organization=org3)

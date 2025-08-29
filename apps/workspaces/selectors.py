@@ -186,10 +186,10 @@ def get_team_by_id(team_id):
 def get_workspaces_with_team_counts(organization_id, user):
     try:
         organization = get_organization_by_id(organization_id)
-        #edge case for test cases
+        # edge case for test cases
         if organization is None:
             return None
-        
+
         workspaces = get_user_workspaces_under_organization(organization_id)
         # add teams count to each workspace for display purposes
         for workspace in workspaces:
@@ -259,7 +259,7 @@ def get_workspace_team_by_workspace_team_id(workspace_team_id):
 def get_workspace_exchange_rates(*, organization, workspace):
     """"""
     try:
-        #edge case for test cases
+        # edge case for test cases
         if organization is None or workspace is None:
             return None
         return WorkspaceExchangeRate.objects.filter(
@@ -276,7 +276,7 @@ def get_workspace_team_by_workspace_id_and_team_id(workspace_id, team_id):
     Return a workspace team by its workspace ID and team ID.
     """
     try:
-        #edge case for test cases
+        # edge case for test cases
         if workspace_id is None or team_id is None:
             return None
         return WorkspaceTeam.objects.get(workspace_id=workspace_id, team_id=team_id)

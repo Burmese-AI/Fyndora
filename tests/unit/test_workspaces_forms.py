@@ -13,7 +13,6 @@ from decimal import Decimal
 
 import pytest
 from django import forms
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from apps.workspaces.forms import (
@@ -46,7 +45,7 @@ class TestWorkspaceForm(TestCase):
         self.org_member1 = OrganizationMemberFactory(organization=self.organization)
         self.org_member2 = OrganizationMemberFactory(organization=self.organization)
         self.org_member3 = OrganizationMemberFactory(organization=self.organization)
-        
+
         # Set the first member as the organization owner
         self.organization.owner = self.org_member1
         self.organization.save()
@@ -55,13 +54,13 @@ class TestWorkspaceForm(TestCase):
     def test_workspace_form_initialization(self):
         """Test form initialization with organization."""
         form = WorkspaceForm(organization=self.organization)
-        
+
         # Check that workspace_admin and operations_reviewer querysets are populated
         # The queryset should exclude the owner (org_member1)
         self.assertNotIn(self.org_member1, form.fields["workspace_admin"].queryset)
         self.assertIn(self.org_member2, form.fields["workspace_admin"].queryset)
         self.assertIn(self.org_member3, form.fields["workspace_admin"].queryset)
-        
+
         # Check that required fields are present
         self.assertIn("title", form.fields)
         self.assertIn("start_date", form.fields)
@@ -82,12 +81,11 @@ class TestWorkspaceForm(TestCase):
             "operations_reviewer": self.org_member3.pk,  # Use non-owner member
             "created_by": self.org_member2.pk,
         }
-        
+
         form = WorkspaceForm(data=form_data, organization=self.organization)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["title"], "Test Workspace")
         self.assertEqual(form.cleaned_data["remittance_rate"], Decimal("85.50"))
-    
 
     @pytest.mark.django_db
     def test_workspace_form_title_validation(self):
@@ -98,18 +96,18 @@ class TestWorkspaceForm(TestCase):
             "end_date": date.today() + timedelta(days=30),
             "remittance_rate": 90,
         }
-        
+
         # Valid title - form should be valid for field-level validation
         form = WorkspaceForm(data=form_data, organization=self.organization)
         # Note: form.is_valid() will be False because created_by is required by model but not in form
         # We're testing field-level validation here, not complete form validation
         self.assertNotIn("title", form.errors)
-        
+
         # Empty title
         form_data["title"] = ""
         form = WorkspaceForm(data=form_data, organization=self.organization)
         self.assertIn("title", form.errors)
-        
+
         # Whitespace only title
         form_data["title"] = "   "
         form = WorkspaceForm(data=form_data, organization=self.organization)
@@ -124,21 +122,25 @@ class TestWorkspaceForm(TestCase):
             "end_date": date.today() + timedelta(days=30),
             "remittance_rate": 90,
         }
-        
+
         # Valid rates - test field-level validation
         valid_rates = [0, 50, 100, 85.5]
         for rate in valid_rates:
             form_data["remittance_rate"] = rate
             form = WorkspaceForm(data=form_data, organization=self.organization)
             # Test that remittance_rate field has no errors (field-level validation passes)
-            self.assertNotIn("remittance_rate", form.errors, f"Rate {rate} should be valid")
-        
+            self.assertNotIn(
+                "remittance_rate", form.errors, f"Rate {rate} should be valid"
+            )
+
         # Invalid rates
         invalid_rates = [-1, 101, 150.5]
         for rate in invalid_rates:
             form_data["remittance_rate"] = rate
             form = WorkspaceForm(data=form_data, organization=self.organization)
-            self.assertIn("remittance_rate", form.errors, f"Rate {rate} should be invalid")
+            self.assertIn(
+                "remittance_rate", form.errors, f"Rate {rate} should be invalid"
+            )
 
     @pytest.mark.django_db
     def test_workspace_form_date_validation(self):
@@ -147,7 +149,7 @@ class TestWorkspaceForm(TestCase):
             "title": "Test Workspace",
             "remittance_rate": 90,
         }
-        
+
         # Valid dates - test field-level validation
         form_data["start_date"] = date.today()
         form_data["end_date"] = date.today() + timedelta(days=30)
@@ -155,7 +157,7 @@ class TestWorkspaceForm(TestCase):
         # Test that no field-level errors exist for dates
         self.assertNotIn("start_date", form.errors)
         self.assertNotIn("end_date", form.errors)
-        
+
         # End date before start date - test custom validation
         form_data["start_date"] = date.today() + timedelta(days=30)
         form_data["end_date"] = date.today()
@@ -169,22 +171,19 @@ class TestWorkspaceForm(TestCase):
         """Test that end date cannot be in the past when editing."""
         # Create a workspace that ended yesterday
         past_workspace = WorkspaceFactory(
-            organization=self.organization,
-            end_date=date.today() - timedelta(days=1)
+            organization=self.organization, end_date=date.today() - timedelta(days=1)
         )
-        
+
         form_data = {
             "title": "Updated Workspace",
             "start_date": date.today() - timedelta(days=30),
             "end_date": date.today() - timedelta(days=1),
             "remittance_rate": 90,
         }
-        
+
         # Try to edit the past workspace
         form = WorkspaceForm(
-            data=form_data, 
-            organization=self.organization, 
-            instance=past_workspace
+            data=form_data, organization=self.organization, instance=past_workspace
         )
         # This should trigger the custom validation in clean() method
         form.is_valid()  # Call is_valid to trigger clean() method
@@ -201,7 +200,7 @@ class TestWorkspaceForm(TestCase):
             "workspace_admin": self.org_member2.pk,  # Use non-owner member
             "operations_reviewer": self.org_member2.pk,  # Same person
         }
-        
+
         form = WorkspaceForm(data=form_data, organization=self.organization)
         # This should trigger the custom validation in clean() method
         form.is_valid()  # Call is_valid to trigger clean() method
@@ -211,11 +210,8 @@ class TestWorkspaceForm(TestCase):
     def test_workspace_form_title_uniqueness_validation(self):
         """Test title uniqueness within organization."""
         # Create existing workspace
-        existing_workspace = WorkspaceFactory(
-            organization=self.organization,
-            title="Existing Title"
-        )
-        
+        WorkspaceFactory(organization=self.organization, title="Existing Title")
+
         # Try to create another with same title
         form_data = {
             "title": "Existing Title",  # Same title
@@ -223,7 +219,7 @@ class TestWorkspaceForm(TestCase):
             "end_date": date.today() + timedelta(days=30),
             "remittance_rate": 90,
         }
-        
+
         form = WorkspaceForm(data=form_data, organization=self.organization)
         # This should trigger the custom validation in clean() method
         form.is_valid()  # Call is_valid to trigger clean() method
@@ -234,10 +230,9 @@ class TestWorkspaceForm(TestCase):
         """Test that editing a workspace allows keeping the same title."""
         # Create existing workspace
         existing_workspace = WorkspaceFactory(
-            organization=self.organization,
-            title="Existing Title"
+            organization=self.organization, title="Existing Title"
         )
-        
+
         # Edit the same workspace (should allow same title)
         form_data = {
             "title": "Existing Title",  # Same title
@@ -245,11 +240,9 @@ class TestWorkspaceForm(TestCase):
             "end_date": date.today() + timedelta(days=30),
             "remittance_rate": 90,
         }
-        
+
         form = WorkspaceForm(
-            data=form_data, 
-            organization=self.organization, 
-            instance=existing_workspace
+            data=form_data, organization=self.organization, instance=existing_workspace
         )
         # Test that title field has no errors (field-level validation passes)
         # Note: form.is_valid() will be False because created_by is required by model but not in form
@@ -259,10 +252,9 @@ class TestWorkspaceForm(TestCase):
     def test_workspace_form_admin_change_permission(self):
         """Test workspace admin field can be disabled."""
         form = WorkspaceForm(
-            organization=self.organization,
-            can_change_workspace_admin=False
+            organization=self.organization, can_change_workspace_admin=False
         )
-        
+
         # Check that workspace_admin field is disabled
         self.assertTrue(form.fields["workspace_admin"].widget.attrs.get("disabled"))
 
@@ -277,7 +269,7 @@ class TestAddTeamToWorkspaceForm(TestCase):
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.organization.owner = self.org_member
         self.organization.save()
-        
+
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.team = TeamFactory(organization=self.organization)
         self.other_team = TeamFactory(organization=self.organization)
@@ -286,14 +278,13 @@ class TestAddTeamToWorkspaceForm(TestCase):
     def test_add_team_form_initialization(self):
         """Test form initialization with organization and workspace."""
         form = AddTeamToWorkspaceForm(
-            organization=self.organization,
-            workspace=self.workspace
+            organization=self.organization, workspace=self.workspace
         )
-        
+
         # Check that team queryset is populated
         self.assertIn(self.team, form.fields["team"].queryset)
         self.assertIn(self.other_team, form.fields["team"].queryset)
-        
+
         # Check label is set correctly
         expected_label = f"Select Team from {self.organization.title}"
         self.assertEqual(form.fields["team"].label, expected_label)
@@ -305,11 +296,9 @@ class TestAddTeamToWorkspaceForm(TestCase):
             "team": self.team.pk,
             "custom_remittance_rate": Decimal("75.00"),
         }
-        
+
         form = AddTeamToWorkspaceForm(
-            data=form_data,
-            organization=self.organization,
-            workspace=self.workspace
+            data=form_data, organization=self.organization, workspace=self.workspace
         )
         self.assertTrue(form.is_valid())
 
@@ -318,17 +307,15 @@ class TestAddTeamToWorkspaceForm(TestCase):
         """Test that team cannot be added if already exists in workspace."""
         # Add team to workspace first
         WorkspaceTeamFactory(workspace=self.workspace, team=self.team)
-        
+
         # Try to add the same team again
         form_data = {
             "team": self.team.pk,
             "custom_remittance_rate": Decimal("80.00"),
         }
-        
+
         form = AddTeamToWorkspaceForm(
-            data=form_data,
-            organization=self.organization,
-            workspace=self.workspace
+            data=form_data, organization=self.organization, workspace=self.workspace
         )
         self.assertFalse(form.is_valid())
         self.assertIn("team", form.errors)
@@ -340,11 +327,9 @@ class TestAddTeamToWorkspaceForm(TestCase):
             "team": self.team.pk,
             # No custom_remittance_rate
         }
-        
+
         form = AddTeamToWorkspaceForm(
-            data=form_data,
-            organization=self.organization,
-            workspace=self.workspace
+            data=form_data, organization=self.organization, workspace=self.workspace
         )
         self.assertTrue(form.is_valid())
 
@@ -359,7 +344,7 @@ class TestChangeWorkspaceTeamRemittanceRateForm(TestCase):
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.organization.owner = self.org_member
         self.organization.save()
-        
+
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
 
@@ -369,10 +354,9 @@ class TestChangeWorkspaceTeamRemittanceRateForm(TestCase):
         form_data = {
             "custom_remittance_rate": Decimal("85.00"),
         }
-        
+
         form = ChangeWorkspaceTeamRemittanceRateForm(
-            data=form_data,
-            workspace=self.workspace
+            data=form_data, workspace=self.workspace
         )
         self.assertTrue(form.is_valid())
 
@@ -384,38 +368,38 @@ class TestChangeWorkspaceTeamRemittanceRateForm(TestCase):
         for rate in valid_rates:
             form_data = {"custom_remittance_rate": rate}
             form = ChangeWorkspaceTeamRemittanceRateForm(
-                data=form_data,
-                workspace=self.workspace
+                data=form_data, workspace=self.workspace
             )
             # Test that custom_remittance_rate field has no errors (field-level validation passes)
-            self.assertNotIn("custom_remittance_rate", form.errors, f"Rate {rate} should be valid")
-        
+            self.assertNotIn(
+                "custom_remittance_rate", form.errors, f"Rate {rate} should be valid"
+            )
+
         # Invalid rates
         invalid_rates = [-1, 101, 150.5]
         for rate in invalid_rates:
             form_data = {"custom_remittance_rate": rate}
             form = ChangeWorkspaceTeamRemittanceRateForm(
-                data=form_data,
-                workspace=self.workspace
+                data=form_data, workspace=self.workspace
             )
-            self.assertIn("custom_remittance_rate", form.errors, f"Rate {rate} should be invalid")
+            self.assertIn(
+                "custom_remittance_rate", form.errors, f"Rate {rate} should be invalid"
+            )
 
     @pytest.mark.django_db
     def test_change_remittance_rate_form_workspace_ended_validation(self):
         """Test that remittance rate cannot be changed for ended workspace."""
         # Create workspace that ended yesterday
         ended_workspace = WorkspaceFactory(
-            organization=self.organization,
-            end_date=date.today() - timedelta(days=1)
+            organization=self.organization, end_date=date.today() - timedelta(days=1)
         )
-        
+
         form_data = {
             "custom_remittance_rate": Decimal("75.00"),
         }
-        
+
         form = ChangeWorkspaceTeamRemittanceRateForm(
-            data=form_data,
-            workspace=ended_workspace
+            data=form_data, workspace=ended_workspace
         )
         self.assertFalse(form.is_valid())
         self.assertIn("__all__", form.errors)
@@ -431,7 +415,7 @@ class TestWorkspaceExchangeRateCreateForm(TestCase):
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.organization.owner = self.org_member
         self.organization.save()
-        
+
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.currency = CurrencyFactory()
 
@@ -439,10 +423,9 @@ class TestWorkspaceExchangeRateCreateForm(TestCase):
     def test_exchange_rate_create_form_initialization(self):
         """Test form initialization."""
         form = WorkspaceExchangeRateCreateForm(
-            organization=self.organization,
-            workspace=self.workspace
+            organization=self.organization, workspace=self.workspace
         )
-        
+
         # Check that required fields are present
         self.assertIn("currency_code", form.fields)
         self.assertIn("rate", form.fields)
@@ -459,13 +442,11 @@ class TestWorkspaceExchangeRateCreateForm(TestCase):
             "effective_date": date.today(),
             "note": "Test rate",
         }
-        
+
         form = WorkspaceExchangeRateCreateForm(
-            data=form_data,
-            organization=self.organization,
-            workspace=self.workspace
+            data=form_data, organization=self.organization, workspace=self.workspace
         )
-        
+
         # Form validation will fail because org exchange rate doesn't exist
         # This is expected behavior
         self.assertFalse(form.is_valid())
@@ -481,25 +462,21 @@ class TestWorkspaceExchangeRateUpdateForm(TestCase):
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.organization.owner = self.org_member
         self.organization.save()
-        
+
         self.workspace = WorkspaceFactory(organization=self.organization)
 
     @pytest.mark.django_db
     def test_exchange_rate_update_form_initialization(self):
         """Test form initialization."""
         form = WorkspaceExchangeRateUpdateForm(
-            organization=self.organization,
-            workspace=self.workspace
+            organization=self.organization, workspace=self.workspace
         )
-        
+
         # Check that is_approved field is present
         self.assertIn("is_approved", form.fields)
-        
+
         # Check that it's a checkbox
-        self.assertIsInstance(
-            form.fields["is_approved"].widget, 
-            forms.CheckboxInput
-        )
+        self.assertIsInstance(form.fields["is_approved"].widget, forms.CheckboxInput)
 
     @pytest.mark.django_db
     def test_exchange_rate_update_form_creation_with_valid_data(self):
@@ -510,10 +487,8 @@ class TestWorkspaceExchangeRateUpdateForm(TestCase):
             "note": "Updated rate",
             "is_approved": True,
         }
-        
+
         form = WorkspaceExchangeRateUpdateForm(
-            data=form_data,
-            organization=self.organization,
-            workspace=self.workspace
+            data=form_data, organization=self.organization, workspace=self.workspace
         )
         self.assertTrue(form.is_valid())

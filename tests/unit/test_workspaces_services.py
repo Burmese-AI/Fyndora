@@ -9,13 +9,12 @@ Tests cover:
 - Error handling and audit logging
 """
 
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
 
@@ -33,7 +32,6 @@ from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateEr
 from apps.workspaces.models import Workspace, WorkspaceTeam, WorkspaceExchangeRate
 from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
-    OrganizationFactory,
     OrganizationMemberFactory,
     OrganizationWithOwnerFactory,
 )
@@ -66,8 +64,12 @@ class TestCreateWorkspaceFromForm(TestCase):
         )
         mock_form.cleaned_data = {"title": "Test Workspace"}
 
-        with patch("apps.workspaces.services.assign_workspace_permissions") as mock_assign:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.assign_workspace_permissions"
+        ) as mock_assign:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 result = create_workspace_from_form(
                     form=mock_form,
                     orgMember=self.org_member,
@@ -88,8 +90,12 @@ class TestCreateWorkspaceFromForm(TestCase):
         )
         mock_form.cleaned_data = {"title": "Test Workspace"}
 
-        with patch("apps.workspaces.services.assign_workspace_permissions") as mock_assign:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.assign_workspace_permissions"
+        ) as mock_assign:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 result = create_workspace_from_form(
                     form=mock_form,
                     orgMember=None,
@@ -109,7 +115,9 @@ class TestCreateWorkspaceFromForm(TestCase):
         mock_form.save.side_effect = Exception("Form save error")
         mock_form.cleaned_data = {"title": "Test Workspace"}
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             with self.assertRaises(WorkspaceCreationError):
                 create_workspace_from_form(
                     form=mock_form,
@@ -129,10 +137,14 @@ class TestCreateWorkspaceFromForm(TestCase):
         )
         mock_form.cleaned_data = {"title": "Test Workspace"}
 
-        with patch("apps.workspaces.services.assign_workspace_permissions") as mock_assign:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.assign_workspace_permissions"
+        ) as mock_assign:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 mock_log.side_effect = Exception("Logging error")
-                
+
                 # Should still create workspace even if logging fails
                 result = create_workspace_from_form(
                     form=mock_form,
@@ -154,7 +166,9 @@ class TestUpdateWorkspaceFromForm(TestCase):
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.user = CustomUserFactory()
         self.previous_admin = OrganizationMemberFactory(organization=self.organization)
-        self.previous_reviewer = OrganizationMemberFactory(organization=self.organization)
+        self.previous_reviewer = OrganizationMemberFactory(
+            organization=self.organization
+        )
 
     @pytest.mark.django_db
     def test_update_workspace_success(self):
@@ -168,8 +182,12 @@ class TestUpdateWorkspaceFromForm(TestCase):
             "created_by": org_member,
         }
 
-        with patch("apps.workspaces.services.update_workspace_admin_group") as mock_update:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 result = update_workspace_from_form(
                     form=mock_form,
                     workspace=self.workspace,
@@ -194,8 +212,12 @@ class TestUpdateWorkspaceFromForm(TestCase):
             "created_by": org_member,
         }
 
-        with patch("apps.workspaces.services.update_workspace_admin_group") as mock_update:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 result = update_workspace_from_form(
                     form=mock_form,
                     workspace=self.workspace,
@@ -214,11 +236,18 @@ class TestUpdateWorkspaceFromForm(TestCase):
         """Test workspace update when an error occurs."""
         # Mock form
         mock_form = Mock()
-        mock_form.cleaned_data = {"workspace_admin": self.previous_admin, "created_by": self.user}
+        mock_form.cleaned_data = {
+            "workspace_admin": self.previous_admin,
+            "created_by": self.user,
+        }
 
-        with patch("apps.workspaces.services.update_workspace_admin_group") as mock_update:
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
             mock_update.side_effect = Exception("Update error")
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log:
                 with self.assertRaises(WorkspaceUpdateError):
                     update_workspace_from_form(
                         form=mock_form,
@@ -248,7 +277,9 @@ class TestRemoveTeamFromWorkspace(TestCase):
     @pytest.mark.django_db
     def test_remove_team_success(self):
         """Test successful team removal."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = remove_team_from_workspace(
                 workspace_team=self.workspace_team,
                 user=self.user,
@@ -261,7 +292,9 @@ class TestRemoveTeamFromWorkspace(TestCase):
     @pytest.mark.django_db
     def test_remove_team_without_user(self):
         """Test team removal without user."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = remove_team_from_workspace(
                 workspace_team=self.workspace_team,
                 user=None,
@@ -280,7 +313,9 @@ class TestRemoveTeamFromWorkspace(TestCase):
         self.workspace_team.team.team_coordinator = team_member.organization_member
         self.workspace_team.team.save()
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             with patch("apps.workspaces.services.remove_perm") as mock_remove_perm:
                 result = remove_team_from_workspace(
                     workspace_team=self.workspace_team,
@@ -295,11 +330,13 @@ class TestRemoveTeamFromWorkspace(TestCase):
     @pytest.mark.django_db
     def test_remove_team_error(self):
         """Test team removal when an error occurs."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the delete to raise an error
-            with patch.object(self.workspace_team, 'delete') as mock_delete:
+            with patch.object(self.workspace_team, "delete") as mock_delete:
                 mock_delete.side_effect = Exception("Delete error")
-                
+
                 with self.assertRaises(ValidationError):
                     remove_team_from_workspace(
                         workspace_team=self.workspace_team,
@@ -324,7 +361,9 @@ class TestAddTeamToWorkspace(TestCase):
     @pytest.mark.django_db
     def test_add_team_success(self):
         """Test successful team addition."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = add_team_to_workspace(
                 workspace_id=self.workspace.workspace_id,
                 team_id=self.team.team_id,
@@ -342,7 +381,9 @@ class TestAddTeamToWorkspace(TestCase):
     @pytest.mark.django_db
     def test_add_team_without_custom_rate(self):
         """Test team addition without custom remittance rate."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = add_team_to_workspace(
                 workspace_id=self.workspace.workspace_id,
                 team_id=self.team.team_id,
@@ -352,13 +393,17 @@ class TestAddTeamToWorkspace(TestCase):
             )
 
             self.assertIsInstance(result, WorkspaceTeam)
-            self.assertEqual(result.custom_remittance_rate, self.workspace.remittance_rate)
+            self.assertEqual(
+                result.custom_remittance_rate, self.workspace.remittance_rate
+            )
             mock_log.assert_called_once()
 
     @pytest.mark.django_db
     def test_add_team_without_user(self):
         """Test team addition without user."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = add_team_to_workspace(
                 workspace_id=self.workspace.workspace_id,
                 team_id=self.team.team_id,
@@ -374,11 +419,13 @@ class TestAddTeamToWorkspace(TestCase):
     @pytest.mark.django_db
     def test_add_team_error(self):
         """Test team addition when an error occurs."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the create to raise an error
-            with patch.object(WorkspaceTeam.objects, 'create') as mock_create:
+            with patch.object(WorkspaceTeam.objects, "create") as mock_create:
                 mock_create.side_effect = Exception("Create error")
-                
+
                 with self.assertRaises(Exception):
                     add_team_to_workspace(
                         workspace_id=self.workspace.workspace_id,
@@ -416,7 +463,9 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = update_workspace_team_remittance_rate_from_form(
                 form=mock_form,
                 workspace_team=self.workspace_team,
@@ -433,9 +482,13 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         """Test updating remittance rate to workspace default (should set to None)."""
         # Mock form
         mock_form = Mock()
-        mock_form.cleaned_data = {"custom_remittance_rate": Decimal("90.00")}  # Same as workspace
+        mock_form.cleaned_data = {
+            "custom_remittance_rate": Decimal("90.00")
+        }  # Same as workspace
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = update_workspace_team_remittance_rate_from_form(
                 form=mock_form,
                 workspace_team=self.workspace_team,
@@ -454,7 +507,9 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
             result = update_workspace_team_remittance_rate_from_form(
                 form=mock_form,
                 workspace_team=self.workspace_team,
@@ -473,11 +528,13 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the save to raise an error
-            with patch.object(self.workspace_team, 'save') as mock_save:
+            with patch.object(self.workspace_team, "save") as mock_save:
                 mock_save.side_effect = Exception("Save error")
-                
+
                 with self.assertRaises(Exception):
                     update_workspace_team_remittance_rate_from_form(
                         form=mock_form,
@@ -502,7 +559,9 @@ class TestCreateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_create_exchange_rate_success(self):
         """Test successful exchange rate creation."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             result = create_workspace_exchange_rate(
                 workspace=self.workspace,
                 organization_member=self.org_member,
@@ -523,7 +582,9 @@ class TestCreateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_create_exchange_rate_without_org_member(self):
         """Test exchange rate creation without organization member."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             result = create_workspace_exchange_rate(
                 workspace=self.workspace,
                 organization_member=None,
@@ -540,11 +601,13 @@ class TestCreateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_create_exchange_rate_integrity_error(self):
         """Test exchange rate creation with integrity error."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the create to raise an integrity error
-            with patch.object(WorkspaceExchangeRate.objects, 'create') as mock_create:
+            with patch.object(WorkspaceExchangeRate.objects, "create") as mock_create:
                 mock_create.side_effect = IntegrityError("Duplicate key")
-                
+
                 with self.assertRaises(ValidationError):
                     create_workspace_exchange_rate(
                         workspace=self.workspace,
@@ -560,11 +623,13 @@ class TestCreateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_create_exchange_rate_general_error(self):
         """Test exchange rate creation with general error."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the create to raise a general error
-            with patch.object(WorkspaceExchangeRate.objects, 'create') as mock_create:
+            with patch.object(WorkspaceExchangeRate.objects, "create") as mock_create:
                 mock_create.side_effect = Exception("General error")
-                
+
                 with self.assertRaises(ValidationError):
                     create_workspace_exchange_rate(
                         workspace=self.workspace,
@@ -597,7 +662,9 @@ class TestUpdateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_update_exchange_rate_success(self):
         """Test successful exchange rate update."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             result = update_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
                 note="Updated note",
@@ -619,7 +686,9 @@ class TestUpdateWorkspaceExchangeRate(TestCase):
         self.exchange_rate.approved_by = self.org_member
         self.exchange_rate.save()
 
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             result = update_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
                 note="Updated note",
@@ -635,7 +704,9 @@ class TestUpdateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_update_exchange_rate_without_org_member(self):
         """Test exchange rate update without organization member."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             result = update_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
                 note="Updated note",
@@ -650,11 +721,13 @@ class TestUpdateWorkspaceExchangeRate(TestCase):
     @pytest.mark.django_db
     def test_update_exchange_rate_error(self):
         """Test exchange rate update when an error occurs."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the model_update to raise an error
             with patch("apps.workspaces.services.model_update") as mock_update:
                 mock_update.side_effect = Exception("Update error")
-                
+
                 with self.assertRaises(ValidationError):
                     update_workspace_exchange_rate(
                         workspace_exchange_rate=self.exchange_rate,
@@ -685,8 +758,10 @@ class TestDeleteWorkspaceExchangeRate(TestCase):
     def test_delete_exchange_rate_success(self):
         """Test successful exchange rate deletion."""
         exchange_rate_id = self.exchange_rate.pk
-        
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             delete_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
                 user=self.user,
@@ -695,15 +770,17 @@ class TestDeleteWorkspaceExchangeRate(TestCase):
             # Verify it was deleted
             with self.assertRaises(WorkspaceExchangeRate.DoesNotExist):
                 WorkspaceExchangeRate.objects.get(pk=exchange_rate_id)
-            
+
             mock_log.assert_called_once()
 
     @pytest.mark.django_db
     def test_delete_exchange_rate_without_user(self):
         """Test exchange rate deletion without user."""
         exchange_rate_id = self.exchange_rate.pk
-        
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action") as mock_log:
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
             delete_workspace_exchange_rate(
                 workspace_exchange_rate=self.exchange_rate,
                 user=None,
@@ -712,18 +789,20 @@ class TestDeleteWorkspaceExchangeRate(TestCase):
             # Verify it was deleted
             with self.assertRaises(WorkspaceExchangeRate.DoesNotExist):
                 WorkspaceExchangeRate.objects.get(pk=exchange_rate_id)
-            
+
             # Should not log when no user
             mock_log.assert_not_called()
 
     @pytest.mark.django_db
     def test_delete_exchange_rate_error(self):
         """Test exchange rate deletion when an error occurs."""
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure") as mock_log:
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log:
             # Mock the delete to raise an error
-            with patch.object(self.exchange_rate, 'delete') as mock_delete:
+            with patch.object(self.exchange_rate, "delete") as mock_delete:
                 mock_delete.side_effect = Exception("Delete error")
-                
+
                 with self.assertRaises(ValidationError):
                     delete_workspace_exchange_rate(
                         workspace_exchange_rate=self.exchange_rate,
@@ -768,9 +847,11 @@ class TestServiceEdgeCases(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"title": "Updated Workspace"}
 
-        with patch("apps.workspaces.services.update_workspace_admin_group") as mock_update:
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
             mock_update.side_effect = Exception("Update error")
-            
+
             with self.assertRaises(WorkspaceUpdateError):
                 update_workspace_from_form(
                     form=mock_form,
@@ -794,10 +875,14 @@ class TestServiceEdgeCases(TestCase):
         )
         mock_form.cleaned_data = {"title": "Test Workspace"}
 
-        with patch("apps.workspaces.services.assign_workspace_permissions") as mock_assign:
-            with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action") as mock_log:
+        with patch(
+            "apps.workspaces.services.assign_workspace_permissions"
+        ) as mock_assign:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
                 mock_log.side_effect = Exception("Logging error")
-                
+
                 # Should still create workspace even if logging fails
                 result = create_workspace_from_form(
                     form=mock_form,
@@ -812,10 +897,8 @@ class TestServiceEdgeCases(TestCase):
     def test_remove_team_permission_cleanup(self):
         """Test that team removal properly cleans up permissions."""
         team = TeamFactory(organization=self.organization)
-        workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace, team=team
-        )
-        
+        workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=team)
+
         # Set team coordinator
         team_member = TeamMemberFactory(team=team)
         team.team_coordinator = team_member.organization_member
@@ -837,8 +920,10 @@ class TestServiceEdgeCases(TestCase):
         """Test that new currencies are created when needed."""
         # Test with a currency code that doesn't exist
         org_member = OrganizationMemberFactory(organization=self.organization)
-        
-        with patch("apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"):
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ):
             result = create_workspace_exchange_rate(
                 workspace=self.workspace,
                 organization_member=org_member,
@@ -850,7 +935,7 @@ class TestServiceEdgeCases(TestCase):
 
             self.assertIsInstance(result, WorkspaceExchangeRate)
             self.assertEqual(result.currency.code, "XYZ")
-            
+
             # Verify currency was created
             currency = Currency.objects.get(code="XYZ")
             self.assertIsNotNone(currency)

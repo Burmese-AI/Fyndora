@@ -255,19 +255,19 @@ class TestWorkspaceTeamModel(TestCase):
     def test_workspace_team_created_updated_timestamps(self):
         """Test that workspace team has proper timestamps."""
         workspace_team = WorkspaceTeamFactory()
-        
+
         # Check that timestamps are set
         self.assertIsNotNone(workspace_team.created_at)
         self.assertIsNotNone(workspace_team.updated_at)
-        
+
         # Check that created_at is before or equal to updated_at
         self.assertLessEqual(workspace_team.created_at, workspace_team.updated_at)
-        
+
         # Update the instance
         original_updated_at = workspace_team.updated_at
         workspace_team.custom_remittance_rate = Decimal("25.00")
         workspace_team.save()
-        
+
         # Check that updated_at changed
         workspace_team.refresh_from_db()
         self.assertGreater(workspace_team.updated_at, original_updated_at)
@@ -287,7 +287,7 @@ class TestWorkspaceTeamModel(TestCase):
 
         # Get all workspace teams for this workspace
         workspace_teams = WorkspaceTeam.objects.filter(workspace=workspace)
-        
+
         # Should be ordered by -created_at (newest first)
         self.assertEqual(workspace_teams[0], workspace_team2)
         self.assertEqual(workspace_teams[1], workspace_team1)
@@ -297,10 +297,10 @@ class TestWorkspaceTeamModel(TestCase):
     def test_workspace_team_permissions(self):
         """Test that WorkspaceTeam model has correct permissions defined."""
         from apps.core.permissions import WorkspaceTeamPermissions
-        
+
         # Get the model's permissions
         model_permissions = WorkspaceTeam._meta.permissions
-        
+
         # Check that all expected permissions are present
         expected_permissions = [
             WorkspaceTeamPermissions.VIEW_WORKSPACE_TEAM,
@@ -308,7 +308,7 @@ class TestWorkspaceTeamModel(TestCase):
             WorkspaceTeamPermissions.CHANGE_WORKSPACE_TEAM_ENTRY,
             WorkspaceTeamPermissions.DELETE_WORKSPACE_TEAM_ENTRY,
         ]
-        
+
         for permission in expected_permissions:
             # Find the permission in the model's permissions
             found = False
@@ -316,8 +316,10 @@ class TestWorkspaceTeamModel(TestCase):
                 if perm_tuple[0] == permission:
                     found = True
                     break
-            self.assertTrue(found, f"Permission {permission} not found in model permissions")
-        
+            self.assertTrue(
+                found, f"Permission {permission} not found in model permissions"
+            )
+
         # Verify the total count matches
         self.assertEqual(len(model_permissions), len(expected_permissions))
 

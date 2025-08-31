@@ -23,8 +23,9 @@ def get_invitation_url(
     if request:
         return request.build_absolute_uri(relative_path)
 
-    # if Domain is provieded
-    if domain_override:
-        return f"https://{domain_override}{relative_path}"
+    # if Domain is provided
+    # i added domain_override.strip() as Without .strip(), you might accidentally get something like:So ,added for edge test case purposes (THA)
+    if domain_override and domain_override.strip():
+        return f"https://{domain_override.strip()}{relative_path}"
 
     raise ValueError("Either request or domain_override is required")

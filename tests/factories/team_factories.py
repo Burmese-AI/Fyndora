@@ -20,7 +20,19 @@ class TeamFactory(DjangoModelFactory):
         model = Team
 
     organization = factory.SubFactory(OrganizationFactory)
-    title = factory.Sequence(lambda n: f"Team {n}")
+    title = factory.Sequence(lambda n: f"Fundraising Team {n}")
+    description = factory.Faker("sentence", nb_words=6)
+    # team_coordinator and created_by are None by default
+
+
+class TeamFactoryWithTitle(DjangoModelFactory):
+    """Factory for creating Team instances with a specific title."""
+
+    class Meta:
+        model = Team
+
+    organization = factory.SubFactory(OrganizationFactory)
+    title = factory.Sequence(lambda n: f"Fundraising Team {n}")
     description = factory.Faker("sentence", nb_words=6)
     # team_coordinator and created_by are None by default
 

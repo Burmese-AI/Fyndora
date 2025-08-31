@@ -50,6 +50,7 @@ from .team_factories import (
     TeamFactory,
     TeamMemberFactory,
     TeamWithCoordinatorFactory,
+    TeamFactoryWithTitle,
 )
 from .user_factories import (
     CustomUserFactory,
@@ -169,4 +170,5 @@ __all__ = [
     "CurrencyFactory",
     "WorkspaceExchangeRateFactory",
     "OrganizationExchangeRateFactory",
+    "TeamFactoryWithTitle",
 ]

@@ -11,6 +11,7 @@ from tests.factories import (
     TeamWithCoordinatorFactory,
     TeamMemberFactory,
     AuditorMemberFactory,
+    TeamFactoryWithTitle,
 )
 
 

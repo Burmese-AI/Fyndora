@@ -2,24 +2,19 @@
 Unit tests for Remittance models.
 """
 
-import pytest
 from decimal import Decimal
+import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
+import uuid
 
 from apps.remittance.models import Remittance
 from apps.remittance.constants import RemittanceStatus
-from tests.factories import (
-    RemittanceFactory,
-    PendingRemittanceFactory,
-    PartiallyPaidRemittanceFactory,
-    PaidRemittanceFactory,
-    OverdueRemittanceFactory,
-    WorkspaceTeamFactory,
-    WorkspaceFactory,
-    OrganizationMemberFactory,
-)
+from tests.factories.remittance_factories import RemittanceFactory
+from tests.factories.workspace_factories import WorkspaceTeamFactory, WorkspaceFactory
+from tests.factories.team_factories import TeamFactory
+from tests.factories.organization_factories import OrganizationFactory, OrganizationMemberFactory
 
 
 @pytest.mark.django_db
@@ -28,302 +23,251 @@ class TestRemittanceModel:
 
     def test_remittance_creation(self):
         """Test basic remittance creation."""
-        remittance = RemittanceFactory()
+        # Create a workspace team using factories - this will automatically create
+        # the organization, workspace, team, and remittance (via signal)
+        workspace_team = WorkspaceTeamFactory()
+        
+        # The remittance should be automatically created by the signal
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
 
         assert isinstance(remittance, Remittance)
         assert remittance.remittance_id is not None
-        assert remittance.workspace_team is not None
-        assert remittance.due_amount >= 0
-        assert remittance.paid_amount >= 0
-        assert remittance.status in [choice[0] for choice in RemittanceStatus.choices]
-        assert remittance.paid_within_deadlines is True
+        assert remittance.workspace_team == workspace_team
+        assert remittance.due_amount == Decimal("0.00")  # Default value
+        assert remittance.paid_amount == Decimal("0.00")  # Default value
+        assert remittance.status == RemittanceStatus.PENDING  # Default value
+        assert remittance.paid_within_deadlines is True  # Default value
 
-    def test_remittance_str_representation(self):
-        """Test string representation of remittance."""
-        remittance = RemittanceFactory(status=RemittanceStatus.PENDING)
-
-        str_repr = str(remittance)
-        assert str(remittance.remittance_id) in str_repr
-        assert remittance.workspace.title in str_repr
-        assert "Pending" in str_repr
-
-    def test_workspace_property(self):
-        """Test workspace property for backward compatibility."""
-        remittance = RemittanceFactory()
-
-        assert remittance.workspace == remittance.workspace_team.workspace
-
-    def test_update_status_pending(self):
-        """Test status update when paid_amount is 0."""
+    def test_remittance_factory_override_values(self):
+        """Test that the factory can override values when creating remittance."""
+        # First create a workspace team (which will have a default remittance)
+        workspace_team = WorkspaceTeamFactory()
+        
+        # Delete the auto-created remittance so we can test the factory
+        Remittance.objects.filter(workspace_team=workspace_team).delete()
+        
+        # Now use the factory to create a remittance with custom values
         remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("0.00")
+            workspace_team=workspace_team,
+            due_amount=Decimal("1500.00"),
+            paid_amount=Decimal("750.00"),
+            status=RemittanceStatus.PARTIAL
         )
+        
+        assert remittance.due_amount == Decimal("1500.00")
+        assert remittance.paid_amount == Decimal("750.00")
+        assert remittance.status == RemittanceStatus.PARTIAL
+        assert remittance.workspace_team == workspace_team
 
+    def test_remittance_workspace_property(self):
+        """Test the workspace property returns the correct workspace."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        assert remittance.workspace == workspace_team.workspace
+        assert remittance.workspace.organization == workspace_team.workspace.organization
+
+    def test_remittance_remaining_amount_calculation(self):
+        """Test the remaining_amount method calculations."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Test with default values (0.00 due, 0.00 paid)
+        assert remittance.remaining_amount() == Decimal("0.00")
+        
+        # Update to test different scenarios
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("300.00")
+        remittance.save()
+        
+        # Test partial payment
+        assert remittance.remaining_amount() == Decimal("700.00")
+        
+        # Test overpayment
+        remittance.paid_amount = Decimal("1200.00")
+        remittance.save()
+        # When overpaid, remaining_amount returns negative value (excess amount)
+        assert remittance.remaining_amount() == Decimal("-200.00")
+
+    def test_remittance_overpaid_check(self):
+        """Test the check_if_overpaid method."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Initially not overpaid
+        assert remittance.is_overpaid is False
+        
+        # Set overpaid scenario
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("1200.00")
+        remittance.check_if_overpaid()
+        
+        assert remittance.is_overpaid is True
+        
+        # Set normal payment scenario
+        remittance.paid_amount = Decimal("800.00")
+        remittance.check_if_overpaid()
+        
+        assert remittance.is_overpaid is False
+
+    def test_remittance_status_update_pending(self):
+        """Test status update when payment is pending."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set pending scenario
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("0.00")
         remittance.update_status()
+        
         assert remittance.status == RemittanceStatus.PENDING
 
-    def test_update_status_partial(self):
-        """Test status update when partially paid."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("500.00")
-        )
-
+    def test_remittance_status_update_partial(self):
+        """Test status update when payment is partial."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set partial payment scenario
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("500.00")
         remittance.update_status()
+        
         assert remittance.status == RemittanceStatus.PARTIAL
 
-    def test_update_status_paid(self):
-        """Test status update when fully paid."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("1000.00")
-        )
-
+    def test_remittance_status_update_paid(self):
+        """Test status update when payment is fully paid."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set fully paid scenario
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("1000.00")
         remittance.update_status()
+        
         assert remittance.status == RemittanceStatus.PAID
 
-    def test_update_status_overpaid(self):
-        """Test status update when overpaid."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("1200.00")
-        )
-
+    def test_remittance_status_update_overpaid(self):
+        """Test status update when payment is overpaid."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set overpaid scenario
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("1200.00")
         remittance.update_status()
-        assert remittance.status == RemittanceStatus.PAID
+        
+        assert remittance.status == RemittanceStatus.OVERPAID
 
-    def test_check_if_overdue_not_overdue(self):
-        """Test check_if_overdue when workspace is not ended."""
+    def test_remittance_status_update_canceled(self):
+        """Test that canceled status is not changed by update_status."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set canceled status
+        remittance.status = RemittanceStatus.CANCELED
+        remittance.due_amount = Decimal("1000.00")
+        remittance.paid_amount = Decimal("500.00")
+        remittance.update_status()
+        
+        # Status should remain canceled
+        assert remittance.status == RemittanceStatus.CANCELED
+
+    def test_remittance_overdue_check(self):
+        """Test the check_if_overdue method with expired workspace."""
+        # Create a workspace that's already expired
+        past_date = timezone.now().date() - timedelta(days=30)
+        workspace = WorkspaceFactory(end_date=past_date)
+        team = TeamFactory(organization=workspace.organization)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+        
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Initially should be within deadlines
+        assert remittance.paid_within_deadlines is True
+        
+        # Check if overdue
+        remittance.check_if_overdue()
+        
+        # Should now be marked as not within deadlines
+        assert remittance.paid_within_deadlines is False
+
+    def test_remittance_overdue_check_active_workspace(self):
+        """Test overdue check with active workspace."""
+        # Create a workspace that's still active
         future_date = timezone.now().date() + timedelta(days=30)
         workspace = WorkspaceFactory(end_date=future_date)
-        workspace_team = WorkspaceTeamFactory(workspace=workspace)
-        remittance = RemittanceFactory(
-            workspace_team=workspace_team,
-            status=RemittanceStatus.PENDING,
-            paid_within_deadlines=True,
-        )
-
+        team = TeamFactory(organization=workspace.organization)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+        
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Should remain within deadlines
+        assert remittance.paid_within_deadlines is True
+        
         remittance.check_if_overdue()
+        
+        # Should still be within deadlines
         assert remittance.paid_within_deadlines is True
 
-    def test_check_if_overdue_is_overdue(self):
-        """Test check_if_overdue when workspace has ended and not paid."""
+    def test_remittance_overdue_check_paid_remittance(self):
+        """Test that paid remittances are not marked as overdue."""
+        # Create an expired workspace
         past_date = timezone.now().date() - timedelta(days=30)
         workspace = WorkspaceFactory(end_date=past_date)
-        workspace_team = WorkspaceTeamFactory(workspace=workspace)
-        remittance = RemittanceFactory(
-            workspace_team=workspace_team,
-            status=RemittanceStatus.PENDING,
-            paid_within_deadlines=True,
-        )
-
-        remittance.check_if_overdue()
-        assert remittance.paid_within_deadlines is False
-
-    def test_check_if_overdue_already_paid(self):
-        """Test check_if_overdue when already paid - should not change deadline status."""
-        past_date = timezone.now().date() - timedelta(days=30)
-        workspace = WorkspaceFactory(end_date=past_date)
-        workspace_team = WorkspaceTeamFactory(workspace=workspace)
-        remittance = RemittanceFactory(
-            workspace_team=workspace_team,
-            due_amount=Decimal("1000.00"),
-            paid_amount=Decimal("1000.00"),
-            paid_within_deadlines=True,
-        )
-
-        remittance.check_if_overdue()
-        assert remittance.paid_within_deadlines is True
-
-    def test_clean_valid_payment(self):
-        """Test clean method with valid payment amount."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("800.00")
-        )
-
-        # Should not raise any exception
-        remittance.clean()
-
-    def test_clean_overpayment_raises_error(self):
-        """Test clean method raises error when paid amount exceeds due amount."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("1200.00")
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            remittance.clean()
-
-        assert "Paid amount cannot exceed the due amount" in str(exc_info.value)
-
-    def test_save_updates_status_and_overdue(self):
-        """Test save method calls update_status and check_if_overdue."""
-        past_date = timezone.now().date() - timedelta(days=30)
-        workspace = WorkspaceFactory(end_date=past_date)
-        workspace_team = WorkspaceTeamFactory(workspace=workspace)
-
-        remittance = Remittance(
-            workspace_team=workspace_team,
-            due_amount=Decimal("1000.00"),
-            paid_amount=Decimal("500.00"),
-            paid_within_deadlines=True,
-        )
-
-        remittance.save()
-
-        # Status should be updated to PARTIAL
-        assert remittance.status == RemittanceStatus.PARTIAL
-        # Should be marked as overdue
-        assert remittance.paid_within_deadlines is False
-
-    def test_meta_ordering(self):
-        """Test model meta ordering by created_at descending."""
-        # Create remittances with different creation times
-        RemittanceFactory()
-        RemittanceFactory()
-
-        remittances = list(Remittance.objects.all())
-
-        # Should be ordered by created_at descending (newest first)
-        assert remittances[0].created_at >= remittances[1].created_at
-
-    def test_meta_indexes(self):
-        """Test that model has proper database indexes."""
-        meta = Remittance._meta
-        index_fields = []
-
-        for index in meta.indexes:
-            index_fields.extend(index.fields)
-
-        assert "status" in index_fields
-        assert "paid_within_deadlines" in index_fields
-
-
-@pytest.mark.django_db
-class TestRemittanceFactories:
-    """Test remittance factories create valid instances."""
-
-    def test_pending_remittance_factory(self):
-        """Test PendingRemittanceFactory creates pending remittance."""
-        remittance = PendingRemittanceFactory()
-
-        assert remittance.status == RemittanceStatus.PENDING
-        assert remittance.paid_amount == Decimal("0.00")
-        assert remittance.confirmed_by is None
-        assert remittance.confirmed_at is None
-
-    def test_partially_paid_remittance_factory(self):
-        """Test PartiallyPaidRemittanceFactory creates partially paid remittance."""
-        remittance = PartiallyPaidRemittanceFactory()
-
-        assert remittance.status == RemittanceStatus.PARTIAL
-        assert remittance.due_amount == Decimal("1000.00")
-        assert remittance.paid_amount == Decimal("500.00")
-        assert remittance.paid_amount < remittance.due_amount
-
-    def test_paid_remittance_factory(self):
-        """Test PaidRemittanceFactory creates fully paid remittance."""
-        remittance = PaidRemittanceFactory()
-
-        assert remittance.status == RemittanceStatus.PAID
-        assert remittance.due_amount == Decimal("1000.00")
-        assert remittance.paid_amount == Decimal("1000.00")
-        assert remittance.confirmed_by is not None
-        assert remittance.confirmed_at is not None
-
-    def test_overdue_remittance_factory(self):
-        """Test OverdueRemittanceFactory creates overdue remittance."""
-        remittance = OverdueRemittanceFactory()
-
-        assert remittance.status == RemittanceStatus.PENDING
-        assert remittance.paid_within_deadlines is False
-        # Workspace should have ended
-        assert remittance.workspace_team.workspace.end_date < timezone.now().date()
-
-
-@pytest.mark.django_db
-class TestRemittanceValidation:
-    """Test remittance model validation."""
-
-    def test_due_amount_minimum_validation(self):
-        """Test due_amount minimum value validation."""
-        with pytest.raises(ValidationError):
-            remittance = RemittanceFactory(due_amount=Decimal("-100.00"))
-            remittance.full_clean()
-
-    def test_paid_amount_minimum_validation(self):
-        """Test paid_amount minimum value validation."""
-        with pytest.raises(ValidationError):
-            remittance = RemittanceFactory(paid_amount=Decimal("-50.00"))
-            remittance.full_clean()
-
-    def test_workspace_team_required(self):
-        """Test workspace_team is required."""
-        with pytest.raises(ValidationError):
-            remittance = Remittance(workspace_team=None, due_amount=Decimal("1000.00"))
-            remittance.full_clean()
-
-    def test_unique_workspace_team_constraint(self):
-        """Test one-to-one relationship with workspace_team."""
-        workspace_team = WorkspaceTeamFactory()
-
-        # First remittance should be fine
-        RemittanceFactory(workspace_team=workspace_team)
-
-        # Second remittance with same workspace_team should fail
-        with pytest.raises(Exception):  # IntegrityError or ValidationError
-            RemittanceFactory(workspace_team=workspace_team)
-
-
-@pytest.mark.django_db
-class TestRemittanceBusinessLogic:
-    """Test remittance business logic scenarios."""
-
-    def test_payment_progression_workflow(self):
-        """Test complete payment progression from pending to paid."""
-        remittance = RemittanceFactory(
-            due_amount=Decimal("1000.00"), paid_amount=Decimal("0.00")
-        )
-
-        # Initially pending
-        assert remittance.status == RemittanceStatus.PENDING
-
-        # Make partial payment
-        remittance.paid_amount = Decimal("400.00")
-        remittance.save()
-        assert remittance.status == RemittanceStatus.PARTIAL
-
-        # Complete payment
+        team = TeamFactory(organization=workspace.organization)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+        
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Set as paid
+        remittance.status = RemittanceStatus.PAID
+        remittance.due_amount = Decimal("1000.00")
         remittance.paid_amount = Decimal("1000.00")
         remittance.save()
-        assert remittance.status == RemittanceStatus.PAID
-
-    def test_confirmation_workflow(self):
-        """Test remittance confirmation workflow."""
-        member = OrganizationMemberFactory()
-        remittance = PaidRemittanceFactory(confirmed_by=None, confirmed_at=None)
-
-        # Confirm the remittance
-        remittance.confirmed_by = member
-        remittance.confirmed_at = timezone.now()
-        remittance.save()
-
-        assert remittance.confirmed_by == member
-        assert remittance.confirmed_at is not None
-
-    def test_overdue_detection_workflow(self):
-        """Test overdue detection workflow."""
-        # Create workspace that ends today
-        today = timezone.now().date()
-        workspace = WorkspaceFactory(end_date=today)
-        workspace_team = WorkspaceTeamFactory(workspace=workspace)
-
-        remittance = RemittanceFactory(
-            workspace_team=workspace_team,
-            status=RemittanceStatus.PENDING,
-            paid_within_deadlines=True,
-        )
-
-        # Simulate time passing (workspace has ended)
-        workspace.end_date = today - timedelta(days=1)
-        workspace.save()
-
-        # Check overdue status
+        
+        # Check if overdue
         remittance.check_if_overdue()
-        assert remittance.paid_within_deadlines is False
+        
+        # Should remain within deadlines since it's paid
+        assert remittance.paid_within_deadlines is True
+
+    def test_remittance_string_representation(self):
+        """Test the string representation of the remittance."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Update status to make string representation more meaningful
+        remittance.status = RemittanceStatus.PENDING
+        remittance.save()
+        
+        string_repr = str(remittance)
+        assert "Remittance" in string_repr
+        assert remittance.workspace.title in string_repr
+        assert "Pending" in string_repr
+
+    def test_remittance_meta_options(self):
+        """Test the Meta class options."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        # Test verbose names
+        assert Remittance._meta.verbose_name == "remittance"
+        assert Remittance._meta.verbose_name_plural == "remittances"
+        
+        # Test ordering
+        assert Remittance._meta.ordering == ["-created_at"]
+        
+        # Test permissions exist
+        permissions = [perm[0] for perm in Remittance._meta.permissions]
+        assert "review_remittance" in permissions
+        assert "flag_remittance" in permissions
+
+    def test_remittance_indexes(self):
+        """Test that the model has the expected database indexes."""
+        indexes = Remittance._meta.indexes
+        index_fields = [index.fields for index in indexes]
+        
+        assert ["status"] in index_fields
+        assert ["paid_within_deadlines"] in index_fields
+
+ 

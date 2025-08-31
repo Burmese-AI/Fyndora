@@ -3,12 +3,11 @@ Unit tests for invitation models.
 """
 
 import pytest
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
 from django.urls import reverse
 from django.db import IntegrityError
-from unittest.mock import patch
 from django.db.models.signals import post_save
 from apps.invitations.signals import send_invitation_email
 
@@ -32,7 +31,7 @@ class TestInvitationModel(TestCase):
         """Set up test data."""
         # Disable the post_save signal for invitations to prevent email sending
         post_save.disconnect(send_invitation_email, sender=Invitation)
-        
+
         self.organization = OrganizationFactory()
         self.user = CustomUserFactory()
         self.organization_member = OrganizationMemberFactory(
@@ -97,7 +96,7 @@ class TestInvitationModel(TestCase):
         # Check base model fields
         assert invitation.created_at is not None
         assert invitation.updated_at is not None
-        
+
         # Test that updated_at changes when saving
         old_updated_at = invitation.updated_at
         invitation.email = "newemail@example.com"
@@ -128,11 +127,11 @@ class TestInvitationModel(TestCase):
         # But they should be unique and properly formatted
         old_invitation_id = invitation1.invitation_id
         old_token = invitation1.token
-        
+
         # We can change them, but they should remain UUIDs
         invitation1.invitation_id = invitation1.invitation_id  # Same value
         invitation1.token = invitation1.token  # Same value
-        
+
         assert invitation1.invitation_id == old_invitation_id
         assert invitation1.token == old_token
 
@@ -269,7 +268,9 @@ class TestInvitationModel(TestCase):
             organization=self.organization, invited_by=self.organization_member
         )
 
-        expected_url = reverse("accept_invitation", kwargs={"invitation_token": invitation.token})
+        expected_url = reverse(
+            "accept_invitation", kwargs={"invitation_token": invitation.token}
+        )
         assert invitation.get_acceptance_url() == expected_url
 
     def test_invitation_cascade_delete_organization(self):
@@ -322,7 +323,7 @@ class TestInvitationModel(TestCase):
             organization=self.organization, invited_by=self.organization_member
         )
         invitation3.token = invitation1.token
-        
+
         with pytest.raises(IntegrityError):
             invitation3.save()
 

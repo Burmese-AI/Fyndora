@@ -34,15 +34,15 @@ class TestInvitationServices(TestCase):
         # Disable signals to speed up tests and prevent Celery tasks
         signals.post_save.disconnect(sender=Invitation)
         signals.pre_save.disconnect(sender=Invitation)
-        
+
         # Mock only the email sending to prevent Celery calls, but allow other logic
-        self.email_patcher = patch('apps.emails.services.send_invitation_email')
+        self.email_patcher = patch("apps.emails.services.send_invitation_email")
         self.mock_send_email = self.email_patcher.start()
-        
+
         # Mock the Celery task to prevent broker connection attempts
-        self.celery_patcher = patch('apps.emails.tasks.send_email_task.delay')
+        self.celery_patcher = patch("apps.emails.tasks.send_email_task.delay")
         self.mock_celery_task = self.celery_patcher.start()
-        
+
         self.organization = OrganizationFactory()
         self.user = CustomUserFactory()
         self.member = OrganizationMemberFactory(
@@ -55,11 +55,16 @@ class TestInvitationServices(TestCase):
         # Stop all mocks
         self.email_patcher.stop()
         self.celery_patcher.stop()
-        
+
         # Re-enable signals
         from apps.invitations import signals as invitation_signals
-        signals.post_save.connect(invitation_signals.send_invitation_email, sender=Invitation)
-        signals.pre_save.connect(invitation_signals.handle_invitation_creation, sender=Invitation)
+
+        signals.post_save.connect(
+            invitation_signals.send_invitation_email, sender=Invitation
+        )
+        signals.pre_save.connect(
+            invitation_signals.handle_invitation_creation, sender=Invitation
+        )
 
     def test_create_invitation_success(self):
         """Test successful invitation creation."""
@@ -142,7 +147,6 @@ class TestInvitationServices(TestCase):
                 email="",  # Empty email
                 expired_at=expired_at,
             )
-        
 
     def test_accept_invitation_success(self):
         """Test successful invitation acceptance."""
@@ -258,9 +262,11 @@ class TestInvitationServices(TestCase):
         accepting_user = CustomUserFactory(email="test@example.com")
 
         # Mock OrganizationMember.objects.create to raise an exception
-        with patch('apps.organizations.models.OrganizationMember.objects.create') as mock_create:
+        with patch(
+            "apps.organizations.models.OrganizationMember.objects.create"
+        ) as mock_create:
             mock_create.side_effect = IntegrityError("Database error")
-            
+
             with self.assertRaises(IntegrityError):
                 services.accept_invitation(invitation=invitation, user=accepting_user)
 
@@ -345,7 +351,6 @@ class TestInvitationServices(TestCase):
         self.assertIsNotNone(message)
         self.assertIsNone(invitation_obj)
 
-
     def test_deactivate_unused_invitations_no_matches(self):
         """Test deactivating unused invitations when no matches exist."""
         count = services.deactivate_all_unused_active_invitations(
@@ -397,7 +402,9 @@ class TestInvitationServices(TestCase):
         services.delete_invitation(invitation)
 
         # Verify invitation is deleted
-        self.assertFalse(Invitation.objects.filter(invitation_id=invitation_id).exists())
+        self.assertFalse(
+            Invitation.objects.filter(invitation_id=invitation_id).exists()
+        )
 
     def test_delete_invitation_nonexistent(self):
         """Test deleting a non-existent invitation."""
@@ -415,7 +422,7 @@ class TestInvitationServices(TestCase):
             # Create a new invitation object with the same ID but don't save it
             fake_invitation = Invitation(invitation_id=invitation_id)
             services.delete_invitation(fake_invitation)
-        except Exception as e:
+        except Exception:
             # If it does raise an exception, that's also acceptable
             pass
 
@@ -437,7 +444,6 @@ class TestInvitationServices(TestCase):
         # Verify used invitation remains unchanged
         used_invitation.refresh_from_db()
         self.assertFalse(used_invitation.is_active)  # Was already inactive
-
 
     def test_create_invitation_with_none_parameters(self):
         """Test invitation creation with None parameters."""

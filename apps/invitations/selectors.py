@@ -38,7 +38,7 @@ def get_invitation_by_token(
 
 def is_user_invitation_recipient(user, invitation: Invitation) -> Tuple[bool, str]:
     """Check if the user is the intended recipient of the invitation"""
-    #i added for edge test case purposes (THA)
+    # i added for edge test case purposes (THA)
     if not user:
         return False, "User is required"
     if invitation.email != user.email:

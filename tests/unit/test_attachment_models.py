@@ -96,7 +96,7 @@ class TestAttachmentModel(TestCase):
         # soft delete the attachment due to CASCADE. The attachment should remain active.
         # Check that attachment still exists in default queryset
         assert Attachment.objects.filter(attachment_id=attachment_id).exists()
-        
+
         # The entry should be soft deleted
         assert not entry.__class__.objects.filter(pk=entry.pk).exists()
 
@@ -441,7 +441,7 @@ class TestAttachmentValidation(TestCase):
         """Test attachment with unicode filename."""
         entry = EntryFactory()
         unicode_filename = "测试文件.pdf"
-        
+
         attachment = Attachment(
             entry=entry,
             file_url=SimpleUploadedFile(unicode_filename, b"content"),
@@ -449,7 +449,7 @@ class TestAttachmentValidation(TestCase):
         )
         attachment.full_clean()
         attachment.save()
-        
+
         # Django automatically prepends upload_to path and may generate unique filenames
         # So check that filename is included and path starts correctly
         assert unicode_filename in attachment.file_url.name
@@ -459,7 +459,7 @@ class TestAttachmentValidation(TestCase):
         """Test attachment with special characters in filename."""
         entry = EntryFactory()
         special_filename = "file-with-special-chars_@#$%.pdf"
-        
+
         attachment = Attachment(
             entry=entry,
             file_url=SimpleUploadedFile(special_filename, b"content"),
@@ -467,7 +467,7 @@ class TestAttachmentValidation(TestCase):
         )
         attachment.full_clean()
         attachment.save()
-        
+
         # Django automatically prepends upload_to path and sanitizes filenames
         # Check that the base filename (without special chars) is included
         assert "file-with-special-chars" in attachment.file_url.name
@@ -478,7 +478,7 @@ class TestAttachmentValidation(TestCase):
         """Test attachment with very long filename."""
         entry = EntryFactory()
         long_filename = "a" * 200 + ".pdf"
-        
+
         attachment = Attachment(
             entry=entry,
             file_url=SimpleUploadedFile(long_filename, b"content"),
@@ -486,7 +486,7 @@ class TestAttachmentValidation(TestCase):
         )
         attachment.full_clean()
         attachment.save()
-        
+
         # Django automatically prepends upload_to path and may truncate/sanitize filenames
         # Check that the extension is preserved and path starts correctly
         assert ".pdf" in attachment.file_url.name
@@ -497,7 +497,7 @@ class TestAttachmentValidation(TestCase):
     def test_attachment_duplicate_filenames_same_entry(self):
         """Test that same entry can have attachments with same filename."""
         entry = EntryFactory()
-        
+
         # Create two attachments with same filename for same entry
         attachment1 = Attachment(
             entry=entry,
@@ -505,17 +505,17 @@ class TestAttachmentValidation(TestCase):
             file_type=AttachmentType.PDF,
         )
         attachment1.save()
-        
+
         attachment2 = Attachment(
             entry=entry,
             file_url=SimpleUploadedFile("duplicate.pdf", b"content2"),
             file_type=AttachmentType.PDF,
         )
         attachment2.save()
-        
+
         # Both should exist
         assert Attachment.objects.filter(entry=entry).count() == 2
-        
+
         # Django generates unique filenames to avoid conflicts
         # So we check that both have the base filename in their path
         assert "duplicate" in attachment1.file_url.name
@@ -524,26 +524,28 @@ class TestAttachmentValidation(TestCase):
         assert ".pdf" in attachment2.file_url.name
         assert attachment1.file_url.name.startswith("attachments/")
         assert attachment2.file_url.name.startswith("attachments/")
-        
+
         # Filenames should be different due to Django's unique generation
         assert attachment1.file_url.name != attachment2.file_url.name
 
     def test_attachment_queryset_methods(self):
         """Test custom queryset methods if they exist."""
         entry = EntryFactory()
-        
+
         # Create attachments with specific types
         pdf_attachment = AttachmentFactory(entry=entry, file_type=AttachmentType.PDF)
-        image_attachment = AttachmentFactory(entry=entry, file_type=AttachmentType.IMAGE)
-        
+        image_attachment = AttachmentFactory(
+            entry=entry, file_type=AttachmentType.IMAGE
+        )
+
         # Test basic queryset operations
         assert Attachment.objects.count() == 2
         assert Attachment.objects.filter(entry=entry).count() == 2
-        
+
         # Test filtering by file type
         pdf_attachments = Attachment.objects.filter(file_type=AttachmentType.PDF)
         image_attachments = Attachment.objects.filter(file_type=AttachmentType.IMAGE)
-        
+
         assert pdf_attachment in pdf_attachments
         assert image_attachment in image_attachments
         assert pdf_attachment not in image_attachments
@@ -551,8 +553,8 @@ class TestAttachmentValidation(TestCase):
 
     def test_attachment_model_constraints(self):
         """Test model constraints and database-level validations."""
-        entry = EntryFactory()
-        
+        EntryFactory()
+
         # Test that we can't create attachment without required fields
         with pytest.raises(IntegrityError):
             Attachment.objects.create(
@@ -565,30 +567,32 @@ class TestAttachmentValidation(TestCase):
         """Test that files are uploaded to correct directory."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Check that file is uploaded to attachments/ directory
         assert attachment.file_url.name.startswith("attachments/")
 
     def test_attachment_bulk_operations(self):
         """Test bulk operations on attachments."""
         entry = EntryFactory()
-        
+
         # Create multiple attachments
         attachments_data = [
-            {"file_url": SimpleUploadedFile(f"file{i}.pdf", b"content"),
-             "file_type": AttachmentType.PDF}
+            {
+                "file_url": SimpleUploadedFile(f"file{i}.pdf", b"content"),
+                "file_type": AttachmentType.PDF,
+            }
             for i in range(5)
         ]
-        
+
         attachments = []
         for data in attachments_data:
             attachment = Attachment(entry=entry, **data)
             attachment.full_clean()
             attachments.append(attachment)
-        
+
         # Bulk create
         Attachment.objects.bulk_create(attachments)
-        
+
         # Verify all were created
         assert Attachment.objects.filter(entry=entry).count() == 5
 
@@ -596,11 +600,11 @@ class TestAttachmentValidation(TestCase):
         """Test bulk soft delete operations."""
         entry = EntryFactory()
         attachments = [AttachmentFactory(entry=entry) for _ in range(3)]
-        
+
         # Bulk soft delete
         attachment_ids = [att.attachment_id for att in attachments]
         Attachment.objects.filter(attachment_id__in=attachment_ids).delete()
-        
+
         # All should be soft deleted
         assert Attachment.objects.filter(entry=entry).count() == 0
         assert Attachment.all_objects.filter(entry=entry).count() == 3
@@ -609,22 +613,24 @@ class TestAttachmentValidation(TestCase):
         """Test bulk restore operations."""
         entry = EntryFactory()
         attachments = [AttachmentFactory(entry=entry) for _ in range(3)]
-        
+
         # Soft delete all
         for attachment in attachments:
             attachment.delete()
-        
+
         # Bulk restore
         attachment_ids = [att.attachment_id for att in attachments]
-        Attachment.all_objects.filter(attachment_id__in=attachment_ids).update(deleted_at=None)
-        
+        Attachment.all_objects.filter(attachment_id__in=attachment_ids).update(
+            deleted_at=None
+        )
+
         # All should be restored
         assert Attachment.objects.filter(entry=entry).count() == 3
 
     def test_attachment_file_field_validation(self):
         """Test file field validation edge cases."""
         entry = EntryFactory()
-        
+
         # Test with None file_url
         with pytest.raises(ValidationError):
             attachment = Attachment(
@@ -637,7 +643,7 @@ class TestAttachmentValidation(TestCase):
     def test_attachment_file_type_edge_cases(self):
         """Test file type field edge cases."""
         entry = EntryFactory()
-        
+
         # Test with empty string
         with pytest.raises(ValidationError):
             attachment = Attachment(
@@ -646,7 +652,7 @@ class TestAttachmentValidation(TestCase):
                 file_type="",
             )
             attachment.full_clean()
-        
+
         # Test with whitespace-only string
         with pytest.raises(ValidationError):
             attachment = Attachment(
@@ -660,25 +666,25 @@ class TestAttachmentValidation(TestCase):
         """Test that Attachment properly inherits from base models."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Check inheritance from baseModel
-        assert hasattr(attachment, 'created_at')
-        assert hasattr(attachment, 'updated_at')
-        
+        assert hasattr(attachment, "created_at")
+        assert hasattr(attachment, "updated_at")
+
         # Check inheritance from SoftDeleteModel
-        assert hasattr(attachment, 'deleted_at')
-        assert hasattr(attachment, 'delete')
-        assert hasattr(attachment, 'hard_delete')
-        assert hasattr(attachment, 'restore')
+        assert hasattr(attachment, "deleted_at")
+        assert hasattr(attachment, "delete")
+        assert hasattr(attachment, "hard_delete")
+        assert hasattr(attachment, "restore")
 
     def test_attachment_str_method_edge_cases(self):
         """Test string representation edge cases."""
         entry = EntryFactory()
-        
+
         # Test with deleted attachment
         attachment = AttachmentFactory(entry=entry)
         attachment.delete()
-        
+
         # String should still work
         str_repr = str(attachment)
         assert attachment.file_type in str_repr
@@ -688,34 +694,37 @@ class TestAttachmentValidation(TestCase):
     def test_attachment_queryset_annotations(self):
         """Test queryset annotations and aggregations."""
         entry = EntryFactory()
-        
+
         # Create attachments with different types
         AttachmentFactory(entry=entry, file_type=AttachmentType.PDF)
         AttachmentFactory(entry=entry, file_type=AttachmentType.IMAGE)
         AttachmentFactory(entry=entry, file_type=AttachmentType.SPREADSHEET)
-        
+
         # Test aggregation
         from django.db.models import Count
-        type_counts = Attachment.objects.values('file_type').annotate(
-            count=Count('file_type')
-        ).order_by('file_type')
-        
+
+        type_counts = (
+            Attachment.objects.values("file_type")
+            .annotate(count=Count("file_type"))
+            .order_by("file_type")
+        )
+
         assert len(type_counts) == 3
-        assert type_counts[0]['count'] == 1
-        assert type_counts[1]['count'] == 1
-        assert type_counts[2]['count'] == 1
+        assert type_counts[0]["count"] == 1
+        assert type_counts[1]["count"] == 1
+        assert type_counts[2]["count"] == 1
 
     def test_attachment_transaction_rollback(self):
         """Test that failed transactions properly rollback."""
         from django.db import transaction
-        
+
         entry = EntryFactory()
-        
+
         try:
             with transaction.atomic():
                 # Create valid attachment
-                attachment1 = AttachmentFactory(entry=entry)
-                
+                AttachmentFactory(entry=entry)
+
                 # Try to create invalid attachment (should fail)
                 invalid_attachment = Attachment(
                     entry=entry,
@@ -724,9 +733,9 @@ class TestAttachmentValidation(TestCase):
                 )
                 invalid_attachment.full_clean()
                 invalid_attachment.save()
-                
+
         except ValidationError:
             pass
-        
+
         # Both attachments should not exist due to rollback
         assert Attachment.objects.filter(entry=entry).count() == 0

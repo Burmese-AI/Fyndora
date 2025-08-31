@@ -235,7 +235,6 @@ class BaseUpdateEntryForm(BaseEntryForm):
 
 
 class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.validator = TeamEntryValidator(

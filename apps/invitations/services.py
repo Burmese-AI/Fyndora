@@ -17,6 +17,16 @@ def create_invitation(
     email: str, expired_at, organization: Organization, invited_by: OrganizationMember
 ):
     """Create a new invitation for an organization"""
+    # i added for edge test case purposes (THA)
+    if not email:
+        raise ValueError("Email is required")
+    if not expired_at:
+        raise ValueError("Expired at is required")
+    if not invited_by:
+        raise ValueError("Invited by is required")
+    if not organization:
+        raise ValueError("Organization is required")
+
     invitation = Invitation.objects.create(
         email=email,
         expired_at=expired_at,

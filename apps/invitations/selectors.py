@@ -1,7 +1,6 @@
 from typing import Tuple, Optional
 from .models import Invitation
 from apps.organizations.models import OrganizationMember, Organization
-
 from django.contrib.auth import get_user_model
 
 
@@ -39,6 +38,9 @@ def get_invitation_by_token(
 
 def is_user_invitation_recipient(user, invitation: Invitation) -> Tuple[bool, str]:
     """Check if the user is the intended recipient of the invitation"""
+    # i added for edge test case purposes (THA)
+    if not user:
+        return False, "User is required"
     if invitation.email != user.email:
         return False, "Invitation link is not for this user account"
     return True, ""

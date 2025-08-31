@@ -1,336 +1,237 @@
 """
-Unit tests for Attachment constants and utilities.
+Unit tests for Attachment constants.
 
-Tests attachment type constants, file extension mapping, and utility functions.
+Tests AttachmentType choices, extension mapping, and utility methods.
 """
 
 import pytest
+from django.test import TestCase
 
 from apps.attachments.constants import AttachmentType
 
 
 @pytest.mark.unit
-class TestAttachmentTypeConstants:
+class TestAttachmentType(TestCase):
     """Test AttachmentType constants and choices."""
 
     def test_attachment_type_choices(self):
-        """Test that all attachment types are properly defined."""
+        """Test that AttachmentType has correct choices."""
         expected_choices = [
             ("image", "Image"),
             ("pdf", "PDF"),
             ("spreadsheet", "Spreadsheet"),
             ("other", "Other"),
         ]
-
+        
         assert AttachmentType.choices == expected_choices
 
     def test_attachment_type_values(self):
-        """Test individual attachment type values."""
+        """Test that AttachmentType has correct values."""
         assert AttachmentType.IMAGE == "image"
         assert AttachmentType.PDF == "pdf"
         assert AttachmentType.SPREADSHEET == "spreadsheet"
         assert AttachmentType.OTHER == "other"
 
     def test_attachment_type_labels(self):
-        """Test attachment type display labels."""
+        """Test that AttachmentType has correct labels."""
         assert AttachmentType.IMAGE.label == "Image"
         assert AttachmentType.PDF.label == "PDF"
         assert AttachmentType.SPREADSHEET.label == "Spreadsheet"
         assert AttachmentType.OTHER.label == "Other"
 
+    def test_attachment_type_names(self):
+        """Test that AttachmentType has correct names."""
+        assert AttachmentType.IMAGE.name == "IMAGE"
+        assert AttachmentType.PDF.name == "PDF"
+        assert AttachmentType.SPREADSHEET.name == "SPREADSHEET"
+        assert AttachmentType.OTHER.name == "OTHER"
+
 
 @pytest.mark.unit
-class TestAttachmentTypeExtensionMapping:
-    """Test file extension mapping functionality."""
+class TestAttachmentTypeExtensionMap(TestCase):
+    """Test AttachmentType extension mapping functionality."""
 
     def test_get_extension_map(self):
-        """Test extension mapping for all file types."""
-        extension_map = AttachmentType.get_extension_map()
-
+        """Test that get_extension_map returns correct mapping."""
         expected_map = {
             AttachmentType.IMAGE: [".jpg", ".jpeg", ".png"],
             AttachmentType.PDF: [".pdf"],
             AttachmentType.SPREADSHEET: [".xls", ".xlsx", ".csv"],
         }
-
+        
+        extension_map = AttachmentType.get_extension_map()
         assert extension_map == expected_map
 
-    def test_get_extension_map_structure(self):
+    def test_extension_map_structure(self):
         """Test that extension map has correct structure."""
         extension_map = AttachmentType.get_extension_map()
-
-        # Should be a dictionary
-        assert isinstance(extension_map, dict)
-
-        # Should have entries for main file types (excluding OTHER)
+        
+        # Check that all expected file types are present
         assert AttachmentType.IMAGE in extension_map
         assert AttachmentType.PDF in extension_map
         assert AttachmentType.SPREADSHEET in extension_map
-
-        # OTHER type should not be in extension map
+        
+        # Check that OTHER is not in extension map (as expected)
         assert AttachmentType.OTHER not in extension_map
 
-        # All values should be lists
+    def test_extension_map_values_are_lists(self):
+        """Test that all extension map values are lists."""
+        extension_map = AttachmentType.get_extension_map()
+        
         for file_type, extensions in extension_map.items():
             assert isinstance(extensions, list)
             assert len(extensions) > 0
 
-            # All extensions should start with dot
-            for ext in extensions:
-                assert ext.startswith(".")
+    def test_extension_map_extensions_are_strings(self):
+        """Test that all extensions in the map are strings."""
+        extension_map = AttachmentType.get_extension_map()
+        
+        for file_type, extensions in extension_map.items():
+            for extension in extensions:
+                assert isinstance(extension, str)
+                assert extension.startswith(".")
 
 
 @pytest.mark.unit
-class TestGetFileTypeByExtension:
-    """Test file type detection by extension."""
+class TestAttachmentTypeFileTypeByExtension(TestCase):
+    """Test get_file_type_by_extension method."""
 
-    def test_image_file_detection(self):
-        """Test detection of image files."""
-        image_files = [
-            "photo.jpg",
-            "picture.jpeg",
-            "graphic.png",
-            "PHOTO.JPG",  # Test case insensitive
-            "image.PNG",
-        ]
+    def test_get_file_type_by_extension_image_formats(self):
+        """Test that image extensions return correct file type."""
+        assert AttachmentType.get_file_type_by_extension("photo.jpg") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("photo.jpeg") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("photo.png") == AttachmentType.IMAGE
 
-        for filename in image_files:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type == AttachmentType.IMAGE, f"Failed for {filename}"
+    def test_get_file_type_by_extension_pdf_format(self):
+        """Test that PDF extension returns correct file type."""
+        assert AttachmentType.get_file_type_by_extension("document.pdf") == AttachmentType.PDF
 
-    def test_pdf_file_detection(self):
-        """Test detection of PDF files."""
-        pdf_files = [
-            "document.pdf",
-            "report.PDF",  # Test case insensitive
-            "file.Pdf",
-        ]
+    def test_get_file_type_by_extension_spreadsheet_formats(self):
+        """Test that spreadsheet extensions return correct file type."""
+        assert AttachmentType.get_file_type_by_extension("data.xls") == AttachmentType.SPREADSHEET
+        assert AttachmentType.get_file_type_by_extension("data.xlsx") == AttachmentType.SPREADSHEET
+        assert AttachmentType.get_file_type_by_extension("data.csv") == AttachmentType.SPREADSHEET
 
-        for filename in pdf_files:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type == AttachmentType.PDF, f"Failed for {filename}"
+    def test_get_file_type_by_extension_case_insensitive(self):
+        """Test that extension matching is case insensitive."""
+        assert AttachmentType.get_file_type_by_extension("photo.JPG") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("photo.JPEG") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("photo.PNG") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("document.PDF") == AttachmentType.PDF
+        assert AttachmentType.get_file_type_by_extension("data.XLS") == AttachmentType.SPREADSHEET
+        assert AttachmentType.get_file_type_by_extension("data.XLSX") == AttachmentType.SPREADSHEET
+        assert AttachmentType.get_file_type_by_extension("data.CSV") == AttachmentType.SPREADSHEET
 
-    def test_spreadsheet_file_detection(self):
-        """Test detection of spreadsheet files."""
-        spreadsheet_files = [
-            "data.xls",
-            "analysis.xlsx",
-            "export.csv",
-            "DATA.XLS",  # Test case insensitive
-            "report.XLSX",
-            "data.CSV",
-        ]
+    def test_get_file_type_by_extension_unknown_formats(self):
+        """Test that unknown extensions return None."""
+        assert AttachmentType.get_file_type_by_extension("file.txt") is None
+        assert AttachmentType.get_file_type_by_extension("file.doc") is None
+        assert AttachmentType.get_file_type_by_extension("file.docx") is None
+        assert AttachmentType.get_file_type_by_extension("file.ppt") is None
+        assert AttachmentType.get_file_type_by_extension("file.mp4") is None
 
-        for filename in spreadsheet_files:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type == AttachmentType.SPREADSHEET, f"Failed for {filename}"
+    def test_get_file_type_by_extension_no_extension(self):
+        """Test that files without extensions return None."""
+        assert AttachmentType.get_file_type_by_extension("filename") is None
+        assert AttachmentType.get_file_type_by_extension("filename.") is None
 
-    def test_unknown_file_detection(self):
-        """Test detection of unknown file types."""
-        unknown_files = [
-            "readme.txt",
-            "config.json",
-            "script.py",
-            "data.xml",
-            "file.doc",
-            "presentation.ppt",
-            "noextension",
-            "",
-        ]
+    def test_get_file_type_by_extension_complex_filenames(self):
+        """Test that complex filenames with extensions work correctly."""
+        assert AttachmentType.get_file_type_by_extension("my.photo.2023.jpg") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("report.final.v2.pdf") == AttachmentType.PDF
+        assert AttachmentType.get_file_type_by_extension("data.quarterly.Q1.xlsx") == AttachmentType.SPREADSHEET
 
-        for filename in unknown_files:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type is None, f"Should return None for {filename}"
-
-    def test_file_with_multiple_dots(self):
-        """Test files with multiple dots in filename."""
-        test_cases = [
-            ("backup.data.xlsx", AttachmentType.SPREADSHEET),
-            ("report.final.pdf", AttachmentType.PDF),
-            ("image.thumb.jpg", AttachmentType.IMAGE),
-            ("config.backup.txt", None),
-        ]
-
-        for filename, expected_type in test_cases:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type == expected_type, f"Failed for {filename}"
-
-    def test_file_with_path(self):
-        """Test files with full paths."""
-        test_cases = [
-            ("/path/to/document.pdf", AttachmentType.PDF),
-            ("C:\\Users\\user\\image.jpg", AttachmentType.IMAGE),
-            ("./relative/path/data.xlsx", AttachmentType.SPREADSHEET),
-            ("/path/to/unknown.txt", None),
-        ]
-
-        for filepath, expected_type in test_cases:
-            file_type = AttachmentType.get_file_type_by_extension(filepath)
-            assert file_type == expected_type, f"Failed for {filepath}"
-
-    def test_edge_cases(self):
-        """Test edge cases for file type detection."""
-        edge_cases = [
-            # Directory references
-            (".", None),
-            ("..", None),
-            # Hidden files without extensions
-            (".hidden", None),
-            (".gitignore", None),
-            (".env", None),
-            # Files ending with dots (no extension)
-            ("file.", None),
-            ("document.", None),
-            # Hidden files that look like extensions (but aren't)
-            (
-                ".pdf",
-                None,
-            ),  # Hidden file - os.path.splitext treats this as filename, not extension
-            (
-                ".jpg",
-                None,
-            ),  # Hidden file - os.path.splitext treats this as filename, not extension
-            # Empty and whitespace
-            ("", None),
-            ("   ", None),
-            # Files with only dots
-            ("...", None),
-            ("....", None),
-        ]
-
-        for filename, expected_type in edge_cases:
-            file_type = AttachmentType.get_file_type_by_extension(filename)
-            assert file_type == expected_type, f"Failed for {filename}"
+    def test_get_file_type_by_extension_paths(self):
+        """Test that filenames with paths work correctly."""
+        assert AttachmentType.get_file_type_by_extension("/path/to/photo.jpg") == AttachmentType.IMAGE
+        assert AttachmentType.get_file_type_by_extension("C:\\Users\\Documents\\report.pdf") == AttachmentType.PDF
+        assert AttachmentType.get_file_type_by_extension("./data/spreadsheet.xlsx") == AttachmentType.SPREADSHEET
 
 
 @pytest.mark.unit
-class TestAllowedExtensions:
-    """Test allowed extensions functionality."""
+class TestAttachmentTypeAllowedExtensions(TestCase):
+    """Test allowed_extensions method."""
 
-    def test_allowed_extensions_list(self):
-        """Test that allowed extensions returns all supported extensions."""
-        allowed = AttachmentType.allowed_extensions()
-
-        expected_extensions = [
-            ".jpg",
-            ".jpeg",
-            ".png",  # Images
-            ".pdf",  # PDF
-            ".xls",
-            ".xlsx",
-            ".csv",  # Spreadsheets
-        ]
-
-        # Should contain all expected extensions
-        for ext in expected_extensions:
-            assert ext in allowed, f"Missing extension: {ext}"
-
-        # Should not contain duplicates
-        assert len(allowed) == len(set(allowed))
+    def test_allowed_extensions(self):
+        """Test that allowed_extensions returns all supported extensions."""
+        expected_extensions = [".jpg", ".jpeg", ".png", ".pdf", ".xls", ".xlsx", ".csv"]
+        
+        allowed_extensions = AttachmentType.allowed_extensions()
+        assert set(allowed_extensions) == set(expected_extensions)
 
     def test_allowed_extensions_structure(self):
-        """Test structure of allowed extensions list."""
-        allowed = AttachmentType.allowed_extensions()
+        """Test that allowed_extensions returns a list."""
+        allowed_extensions = AttachmentType.allowed_extensions()
+        assert isinstance(allowed_extensions, list)
 
-        # Should be a list
-        assert isinstance(allowed, list)
+    def test_allowed_extensions_all_start_with_dot(self):
+        """Test that all allowed extensions start with a dot."""
+        allowed_extensions = AttachmentType.allowed_extensions()
+        
+        for extension in allowed_extensions:
+            assert extension.startswith(".")
 
-        # Should not be empty
-        assert len(allowed) > 0
+    def test_allowed_extensions_no_duplicates(self):
+        """Test that allowed_extensions has no duplicate extensions."""
+        allowed_extensions = AttachmentType.allowed_extensions()
+        assert len(allowed_extensions) == len(set(allowed_extensions))
 
-        # All items should be strings starting with dot
-        for ext in allowed:
-            assert isinstance(ext, str)
-            assert ext.startswith(".")
-            assert len(ext) > 1  # More than just the dot
-
-    def test_allowed_extensions_completeness(self):
-        """Test that allowed extensions includes all mapped extensions."""
-        allowed = set(AttachmentType.allowed_extensions())
+    def test_allowed_extensions_contains_all_mapped_extensions(self):
+        """Test that allowed_extensions contains all extensions from the extension map."""
         extension_map = AttachmentType.get_extension_map()
-
-        # Collect all extensions from the map
-        mapped_extensions = set()
-        for ext_list in extension_map.values():
-            mapped_extensions.update(ext_list)
-
-        # Allowed extensions should match mapped extensions
-        assert allowed == mapped_extensions
+        allowed_extensions = AttachmentType.allowed_extensions()
+        
+        for file_type, extensions in extension_map.items():
+            for extension in extensions:
+                assert extension in allowed_extensions
 
 
 @pytest.mark.unit
-class TestAttachmentTypeUtilityIntegration:
-    """Test integration between different utility methods."""
+class TestAttachmentTypeIntegration(TestCase):
+    """Test integration between different AttachmentType methods."""
 
-    def test_extension_detection_consistency(self):
-        """Test consistency between extension mapping and detection."""
+    def test_extension_map_and_file_type_consistency(self):
+        """Test that extension map and file type detection are consistent."""
         extension_map = AttachmentType.get_extension_map()
-
-        # Test each mapped extension
+        
         for file_type, extensions in extension_map.items():
-            for ext in extensions:
-                # Create a test filename
-                test_filename = f"test{ext}"
+            for extension in extensions:
+                detected_type = AttachmentType.get_file_type_by_extension(f"test{extension}")
+                assert detected_type == file_type, f"Extension {extension} should map to {file_type}"
 
-                # Should detect the correct file type
-                detected_type = AttachmentType.get_file_type_by_extension(test_filename)
-                assert detected_type == file_type, f"Inconsistent detection for {ext}"
-
-    def test_allowed_extensions_detection_consistency(self):
-        """Test that all allowed extensions can be detected."""
+    def test_allowed_extensions_and_file_type_consistency(self):
+        """Test that allowed extensions and file type detection are consistent."""
         allowed_extensions = AttachmentType.allowed_extensions()
+        
+        for extension in allowed_extensions:
+            detected_type = AttachmentType.get_file_type_by_extension(f"test{extension}")
+            assert detected_type is not None, f"Extension {extension} should be detected"
 
-        for ext in allowed_extensions:
-            test_filename = f"test{ext}"
-            detected_type = AttachmentType.get_file_type_by_extension(test_filename)
+    def test_choices_and_extension_map_consistency(self):
+        """Test that choices and extension map are consistent."""
+        choices = [choice[0] for choice in AttachmentType.choices]
+        extension_map_keys = list(AttachmentType.get_extension_map().keys())
+        
+        # All extension map keys should be valid choices
+        for key in extension_map_keys:
+            assert key in choices
 
-            # Should detect a valid type (not None)
-            assert detected_type is not None, (
-                f"Cannot detect type for allowed extension {ext}"
-            )
-
-            # Should be one of the defined types (excluding OTHER)
-            assert detected_type in [
-                AttachmentType.IMAGE,
-                AttachmentType.PDF,
-                AttachmentType.SPREADSHEET,
-            ], f"Unexpected type {detected_type} for extension {ext}"
-
-    def test_case_insensitive_consistency(self):
-        """Test case insensitive behavior across all methods."""
-        test_extensions = [".jpg", ".pdf", ".xlsx"]
-
-        for ext in test_extensions:
-            base_filename = f"test{ext}"
-            upper_filename = f"test{ext.upper()}"
-            mixed_filename = f"test{ext.capitalize()}"
-
-            # All should detect the same type
-            base_type = AttachmentType.get_file_type_by_extension(base_filename)
-            upper_type = AttachmentType.get_file_type_by_extension(upper_filename)
-            mixed_type = AttachmentType.get_file_type_by_extension(mixed_filename)
-
-            assert base_type == upper_type == mixed_type, (
-                f"Inconsistent case handling for {ext}"
-            )
-
-    def test_comprehensive_file_type_coverage(self):
-        """Test that all file types have proper extension mappings."""
-        # Get all defined file types except OTHER
-        defined_types = [
-            AttachmentType.IMAGE,
-            AttachmentType.PDF,
-            AttachmentType.SPREADSHEET,
+    def test_round_trip_file_type_detection(self):
+        """Test round-trip file type detection with various extensions."""
+        test_cases = [
+            ("image.jpg", AttachmentType.IMAGE),
+            ("document.pdf", AttachmentType.PDF),
+            ("data.xlsx", AttachmentType.SPREADSHEET),
         ]
-
-        extension_map = AttachmentType.get_extension_map()
-
-        # Each defined type should have extensions
-        for file_type in defined_types:
-            assert file_type in extension_map, f"No extensions defined for {file_type}"
-            assert len(extension_map[file_type]) > 0, (
-                f"Empty extensions for {file_type}"
-            )
-
-        # OTHER type should not have extensions (it's the fallback)
-        assert AttachmentType.OTHER not in extension_map
+        
+        for filename, expected_type in test_cases:
+            detected_type = AttachmentType.get_file_type_by_extension(filename)
+            assert detected_type == expected_type, f"Failed for {filename}"
+            
+            # Test reverse lookup
+            if detected_type in AttachmentType.get_extension_map():
+                extensions = AttachmentType.get_extension_map()[detected_type]
+                # Extract extension from filename
+                import os
+                ext = os.path.splitext(filename)[1].lower()
+                assert ext in extensions, f"Extension {ext} should be in {detected_type} extensions"

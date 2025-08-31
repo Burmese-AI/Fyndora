@@ -6,7 +6,11 @@ import pytest
 from decimal import Decimal
 from datetime import date
 
-from apps.organizations.models import Organization, OrganizationMember, OrganizationExchangeRate
+from apps.organizations.models import (
+    Organization,
+    OrganizationMember,
+    OrganizationExchangeRate,
+)
 from apps.organizations.constants import StatusChoices
 from apps.currencies.models import Currency
 from tests.factories import (
@@ -51,9 +55,7 @@ class TestOrganizationFactories:
         custom_status = StatusChoices.CLOSED
 
         org = OrganizationFactory(
-            title=custom_title,
-            description=custom_description,
-            status=custom_status
+            title=custom_title, description=custom_description, status=custom_status
         )
 
         assert org.title == custom_title
@@ -112,9 +114,7 @@ class TestOrganizationMemberFactories:
         is_active = False
 
         member = OrganizationMemberFactory(
-            organization=org,
-            user=user,
-            is_active=is_active
+            organization=org, user=user, is_active=is_active
         )
 
         assert member.organization == org
@@ -190,7 +190,7 @@ class TestOrganizationExchangeRateFactory:
             rate=custom_rate,
             effective_date=custom_date,
             note=custom_note,
-            added_by=added_by
+            added_by=added_by,
         )
 
         assert exchange_rate.organization == org
@@ -204,9 +204,9 @@ class TestOrganizationExchangeRateFactory:
         """Test OrganizationExchangeRateFactory creates USD currency if none exists."""
         # Ensure no USD currency exists
         Currency.objects.filter(code="USD").delete()
-        
+
         exchange_rate = OrganizationExchangeRateFactory()
-        
+
         assert exchange_rate.currency.code == "USD"
         assert exchange_rate.currency.name == "US Dollar"
 
@@ -214,9 +214,9 @@ class TestOrganizationExchangeRateFactory:
         """Test OrganizationExchangeRateFactory uses existing USD currency."""
         # Create USD currency first
         usd_currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         exchange_rate = OrganizationExchangeRateFactory()
-        
+
         assert exchange_rate.currency == usd_currency
 
 

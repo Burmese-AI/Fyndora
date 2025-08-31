@@ -11,7 +11,14 @@ class RemittanceStatusTest(TestCase):
 
     def test_remittance_status_choices_exist(self):
         """Test that all expected remittance status choices exist."""
-        expected_statuses = ["pending", "partial", "paid", "overpaid", "overdue", "canceled"]
+        expected_statuses = [
+            "pending",
+            "partial",
+            "paid",
+            "overpaid",
+            "overdue",
+            "canceled",
+        ]
 
         for status in expected_statuses:
             assert hasattr(RemittanceStatus, status.upper())
@@ -108,7 +115,14 @@ class RemittanceStatusTest(TestCase):
 
         # Check that all expected statuses are present
         status_values = [status.value for status in statuses]
-        expected_values = ["pending", "partial", "paid", "overpaid", "overdue", "canceled"]
+        expected_values = [
+            "pending",
+            "partial",
+            "paid",
+            "overpaid",
+            "overdue",
+            "canceled",
+        ]
 
         for expected_value in expected_values:
             assert expected_value in status_values
@@ -116,7 +130,14 @@ class RemittanceStatusTest(TestCase):
     def test_remittance_status_choice_validation(self):
         """Test that status choices can be used for validation."""
         # Valid choices should work
-        valid_choices = ["pending", "partial", "paid", "overpaid", "overdue", "canceled"]
+        valid_choices = [
+            "pending",
+            "partial",
+            "paid",
+            "overpaid",
+            "overdue",
+            "canceled",
+        ]
 
         for choice in valid_choices:
             assert choice in [status.value for status in RemittanceStatus]
@@ -149,14 +170,15 @@ class RemittanceStatusTest(TestCase):
         """Test that all status values and labels are unique."""
         values = [status.value for status in RemittanceStatus]
         labels = [status.label for status in RemittanceStatus]
-        
+
         # Check that values are unique
         assert len(values) == len(set(values))
-        
+
         # Check that labels are unique
         assert len(labels) == len(set(labels))
 
     def test_remittance_status_inheritance(self):
         """Test that RemittanceStatus inherits from models.TextChoices."""
         from django.db import models
+
         assert issubclass(RemittanceStatus, models.TextChoices)

@@ -51,6 +51,7 @@ addopts = [
     "--cov-report=html",
     "--cov-report=term-missing",
     "--cov-fail-under=85",
+    "--cov-append",
 ]
 markers = [
     "unit: Unit tests for models, utilities, and business logic",

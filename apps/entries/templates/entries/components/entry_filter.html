@@ -1,9 +1,9 @@
 <div class="flex flex-wrap gap-3 p-3 bg-base-100 rounded-lg shadow-sm border border-base-200 items-end">
   <form 
-    hx-get="{{ filter_url }}"
-    hx-target="{{ filter_target|default:'#content-container' }}" 
+    hx-get="{{ filter_url|default:'#' }}"
+    hx-target="{{ filter_target|default:'#entry-layout-container' }}" 
     hx-trigger="change delay:200ms, keyup delay:400ms"
-    hx-swap="innerHTML"
+    hx-swap="outerHTML"
     hx-push-url="true"
     class="w-full grid grid-cols-1 sm:grid-cols-6 gap-3 items-end"
   >
@@ -87,7 +87,7 @@
   
       
       {% else %}
-      <p class="text-sm text-base-content/70 italic col-span-full">No filters available.</p>
+        <p class="text-sm text-base-content/70 italic col-span-full">No filters available.</p>
       {% endif %}
     </form>
 </div>

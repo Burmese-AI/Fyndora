@@ -62,7 +62,8 @@ class WorkspaceEntryListView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
+    optional_htmx_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_level_entry_index.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -104,7 +105,8 @@ class WorkspaceTeamEntryListView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
+    optional_htmx_template_name = "entries/partials/table.html"
     template_name = "entries/team_level_entry_index_for_review.html"
     secondary_template_name = "entries/team_level_entry_index_for_submitters.html"
 
@@ -143,7 +145,7 @@ class WorkspaceTeamEntryCreateView(
     model = Entry
     form_class = CreateWorkspaceTeamEntryForm
     modal_template_name = "entries/components/create_modal.html"
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
     def dispatch(self, request, *args, **kwargs):
@@ -294,7 +296,7 @@ class WorkspaceTeamEntryDeleteView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
 
     def dispatch(self, request, *args, **kwargs):
         if not can_delete_workspace_team_entry(request.user, self.workspace_team):

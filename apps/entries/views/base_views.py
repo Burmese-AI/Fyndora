@@ -60,7 +60,7 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
 class BaseEntryBulkActionView(
     HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
 ):
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
     context_object_name = CONTEXT_OBJECT_NAME
 
     def get_queryset(self):

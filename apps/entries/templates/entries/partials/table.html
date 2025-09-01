@@ -1,67 +1,62 @@
-<div {% if is_oob %}hx-swap-oob="true"{% endif %} id="entries_table">
+<div 
+  {% if is_oob %}hx-swap-oob="true"{% endif %} 
+  id="table" 
+  class="mt-4 overflow-x-auto w-full"
+>
 
-  {% include "entries/components/entry_filter.html" with filter_url=filter_url filter_target="#content-container" status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
+  <table class="table w-full">
+    <thead>
+      <tr>
+        <th>
+          <label>
+            <input
+              type="checkbox"
+              id="select-all"
+              class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary/25"
+              onclick="toggleSelectAll(this)"
+            />
+          </label>
+        </th>
+        <th>Submitted By</th>
+        <th>Description</th>
+        <th class="text-center">Status</th>
+        <th class="text-center">Type</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th>Exchange Rate</th>
+        <th>Converted Amount</th>
+        <th>Occurred On</th>
+        <th>Last Reviewed By</th>
+        <th class="text-center">Created At</th>
+        <th class="text-center">Actions</th>
+      </tr>
+    </thead>
 
-  <div id="table" class="mt-4 overflow-x-auto w-full">
-  
-    <table class="table w-full">
-      <thead>
+    <tbody>
+      {% for entry in entries %}
+        {% include "entries/partials/row.html" with entry=entry %}
+      {% empty %}
         <tr>
-          <th>
-            <label>
-              <input
-                type="checkbox"
-                id="select-all"
-                class="checkbox checkbox-xs md:checkbox-sm checkbox-secondary/25"
-                onclick="toggleSelectAll(this)"
-              />
-            </label>
-          </th>
-          <th>Submitted By</th>
-          <th>Description</th>
-          <th class="text-center">Status</th>
-          <th class="text-center">Type</th>
-          <th>Amount</th>
-          <th>Currency</th>
-          <th>Exchange Rate</th>
-          <th>Converted Amount</th>
-          <th>Occurred On</th>
-          <th>Last Reviewed By</th>
-          <th class="text-center">Created At</th>
-          <th class="text-center">Actions</th>
+          <td colspan="8" class="text-center p-4 text-sm text-neutral">
+            No Expense Entries found
+          </td>
         </tr>
-      </thead>
-  
-      <tbody>
-        {% for entry in entries %}
-          {% include "entries/partials/row.html" with entry=entry %}
-        {% empty %}
-          <tr>
-            <td colspan="8" class="text-center p-4 text-sm text-neutral">
-              No Expense Entries found
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  
-    {% if is_paginated %}
-      {% include "components/pagination.html" with request=request %}
-    {% endif %}
-  </div>
+      {% endfor %}
+    </tbody>
+  </table>
 
-  {# This script will be re-executed every time #entries_table is swapped #}
+  {% if is_paginated %}
+    {% include "components/pagination.html" with request=request %}
+  {% endif %}
+  
   <script>
-    // These functions need to be accessible globally or defined in a way
-    // that they can be called by `onclick` attributes.
-    // If you always swap the whole `entries_table`, defining them here works fine.
-
+    
     function updateBulkActions() {
-      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox'); // Scope to #entries_table
-      const checked = document.querySelectorAll('#entries_table .bulk-checkbox:checked');
-      const button = document.getElementById('bulk-select-button'); // This is OUTSIDE the #entries_table
-      const countSpan = document.getElementById('selected-count'); // This is OUTSIDE the #entries_table
-      const selectAll = document.getElementById('select-all'); // This checkbox is INSIDE the #entries_table
+      const checkboxes = document.querySelectorAll('#entry-layout-container .bulk-checkbox'); // Scope to #entry-layout-container
+      const checked = document.querySelectorAll('#entry-layout-container .bulk-checkbox:checked');
+      const button = document.getElementById('bulk-select-button'); // This is OUTSIDE the #entry-layout-container
+      const countSpan = document.getElementById('selected-count'); // This is OUTSIDE the #entry-layout-container
+      const selectAll = document.getElementById('select-all'); // This checkbox is INSIDE the #entry-layout-container
 
       const count = checked.length;
 
@@ -92,7 +87,7 @@
     }
   
     function toggleSelectAll(source) {
-      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox');
+      const checkboxes = document.querySelectorAll('#entry-layout-container .bulk-checkbox');
       const isChecked = source.checked;
       checkboxes.forEach(cb => {
         cb.checked = isChecked;
@@ -101,17 +96,14 @@
     }
   
     function clearSelection() {
-      document.querySelectorAll('#entries_table .bulk-checkbox:checked').forEach(cb => {
+      document.querySelectorAll('#entry-layout-container .bulk-checkbox:checked').forEach(cb => {
         cb.checked = false;
       });
       updateBulkActions();
     }
 
     // --- Initialization logic to run every time this script is loaded (i.e., after a swap) ---
-    (function() { // Wrap in an IIFE to avoid polluting global scope unnecessarily
-      // Clear any previous selection that might have persisted due to the button state
-      // This directly addresses your "reset the bulk select button" idea.
-      // We explicitly make sure the button goes away if the new table is empty.
+    (function() {
       const button = document.getElementById('bulk-select-button');
       if (button) {
         button.classList.add('hidden');
@@ -125,11 +117,8 @@
         selectAll.indeterminate = false;
       }
 
-      const checkboxes = document.querySelectorAll('#entries_table .bulk-checkbox');
+      const checkboxes = document.querySelectorAll('#entry-layout-container .bulk-checkbox');
       checkboxes.forEach(cb => {
-        // IMPORTANT: Remove any existing change listeners BEFORE adding new ones
-        // This prevents duplicate event handlers if the script runs multiple times
-        // without the original elements being completely destroyed.
         cb.removeEventListener('change', updateBulkActions);
         cb.addEventListener('change', updateBulkActions);
       });
@@ -138,5 +127,4 @@
     })(); // Execute the IIFE immediately
 
   </script>
-
 </div>

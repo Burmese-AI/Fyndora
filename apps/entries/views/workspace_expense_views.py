@@ -53,7 +53,8 @@ class WorkspaceExpenseListView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
+    optional_htmx_template_name = "entries/partials/table.html"
     template_name = "entries/workspace_expense_index.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -98,7 +99,7 @@ class WorkspaceExpenseCreateView(
     form_class = CreateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/create_modal.html"
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
 
     def dispatch(self, request, *args, **kwargs):
         if not can_add_workspace_expense(request.user, self.workspace):
@@ -229,7 +230,7 @@ class WorkspaceExpenseDeleteView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
 
     def dispatch(self, request, *args, **kwargs):
         if not can_delete_workspace_expense(request.user, self.workspace):

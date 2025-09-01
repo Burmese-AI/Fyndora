@@ -26,13 +26,18 @@ class BaseListView(LoginRequiredMixin, ListView):
     context_object_name = None
     template_name = None
     table_template_name = None
+    optional_htmx_template_name = None
     paginate_by = PAGINATION_SIZE
 
     def render_to_response(
         self, context: dict[str, Any], **response_kwargs: Any
     ) -> HttpResponse:
         if self.request.htmx:
-            return render(self.request, self.table_template_name, context)
+            return render(
+                self.request, 
+                self.optional_htmx_template_name if self.optional_htmx_template_name else self.table_template_name, 
+                context
+            )
         return super().render_to_response(context, **response_kwargs)
 
 

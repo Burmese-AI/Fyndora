@@ -9,6 +9,7 @@ from guardian.shortcuts import assign_perm
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.roles import get_permissions_for_role
 from apps.core.utils import model_update
+from apps.currencies.selectors import get_or_create_currency_by_code
 from apps.organizations.exceptions import (
     OrganizationCreationError,
     OrganizationUpdateError,
@@ -199,7 +200,7 @@ def create_organization_exchange_rate(
     Creates an exchange rate for an organization.
     """
     try:
-        currency = createCurrency(currency_code)
+        currency = get_or_create_currency_by_code(currency_code)
         exchange_rate = OrganizationExchangeRate.objects.create(
             organization=organization,
             currency=currency,

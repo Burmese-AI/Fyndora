@@ -7,6 +7,7 @@ from django.db.utils import IntegrityError
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.utils import model_update
 from apps.currencies.models import Currency
+from apps.currencies.selectors import get_or_create_currency_by_code
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 from apps.workspaces.permissions import (
@@ -338,7 +339,7 @@ def create_workspace_exchange_rate(
     *, workspace, organization_member, currency_code, rate, note, effective_date
 ):
     try:
-        currency, _ = Currency.objects.get_or_create(code=currency_code)
+        currency = get_or_create_currency_by_code(currency_code)
         exchange_rate = WorkspaceExchangeRate.objects.create(
             workspace=workspace,
             currency=currency,

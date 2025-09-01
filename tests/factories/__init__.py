@@ -36,6 +36,9 @@ from .entry_factories import (
     RemittanceEntryFactory,
     SmallAmountEntryFactory,
     TeamSubmittedEntryFactory,
+    OrganizationExpenseEntryFactory,
+    WorkspaceExpenseEntryFactory,
+    ReviewedEntryFactory,
 )
 from .organization_factories import (
     ArchivedOrganizationFactory,
@@ -133,6 +136,9 @@ __all__ = [
     "SmallAmountEntryFactory",
     "TeamSubmittedEntryFactory",
     "EntryWithReviewFactory",
+    "OrganizationExpenseEntryFactory",
+    "WorkspaceExpenseEntryFactory",
+    "ReviewedEntryFactory",
     # Attachment factories
     "AttachmentFactory",
     "ImageAttachmentFactory",
@@ -171,4 +177,5 @@ __all__ = [
     "WorkspaceExchangeRateFactory",
     "OrganizationExchangeRateFactory",
     "TeamFactoryWithTitle",
+    
 ]

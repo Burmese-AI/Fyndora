@@ -92,6 +92,7 @@ class WorkspaceExpenseCreateView(
     WorkspaceLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseCreateView,
 ):
@@ -225,6 +226,7 @@ class WorkspaceExpenseDeleteView(
     WorkspaceRequiredMixin,
     EntryRequiredMixin,
     WorkspaceLevelEntryView,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseDeleteView,
 ):

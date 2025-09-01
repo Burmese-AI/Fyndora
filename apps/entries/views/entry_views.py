@@ -139,6 +139,7 @@ class WorkspaceTeamEntryCreateView(
     TeamLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    TeamLevelEntryFiltering,
     HtmxTableServiceMixin,
     BaseCreateView,
 ):
@@ -291,6 +292,7 @@ class WorkspaceTeamEntryDeleteView(
     WorkspaceTeamRequiredMixin,
     EntryRequiredMixin,
     TeamLevelEntryView,
+    TeamLevelEntryFiltering,
     HtmxTableServiceMixin,
     BaseDeleteView,
 ):

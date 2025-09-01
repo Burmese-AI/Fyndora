@@ -89,6 +89,7 @@ class OrganizationExpenseCreateView(
     OrganizationLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseCreateView,
 ):
@@ -210,6 +211,7 @@ class OrganizationExpenseDeleteView(
     OrganizationRequiredMixin,
     EntryRequiredMixin,
     OrganizationLevelEntryView,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseDeleteView,
 ):

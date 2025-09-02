@@ -32,7 +32,8 @@ class EntryStats:
             workspace=workspace,
             workspace_team=workspace_team,
             entry_types=entry_types,
-            status=status,
+            #chnaged to statuses .. before it was status, wrong use of function parameter.
+            statuses=[status],
         )
 
     def total(self):

@@ -41,95 +41,6 @@ class AuditLogSelector:
         return search_conditions
 
     @staticmethod
-    def _get_related_entity_logs(
-        entity_id: str, entity_type: str, base_qs: QuerySet
-    ) -> QuerySet[AuditTrail]:
-        """
-        Get audit logs for entities related to the target entity.
-        """
-        related_conditions = Q()
-
-        # 1. Find logs that reference this entity in their metadata
-        related_conditions |= Q(
-            metadata__contains={f"related_{entity_type.lower()}_id": entity_id}
-        )
-        related_conditions |= Q(
-            metadata__contains={f"parent_{entity_type.lower()}_id": entity_id}
-        )
-        related_conditions |= Q(
-            metadata__contains={f"child_{entity_type.lower()}_id": entity_id}
-        )
-
-        # 2. For workspace-scoped entities, include workspace-level changes
-        if entity_type.lower() in ["entry", "organization", "team"]:
-            # Get workspace_id from the original entity's metadata
-            workspace_logs = (
-                base_qs.filter(metadata__has_key="workspace_id")
-                .values_list("metadata__workspace_id", flat=True)
-                .distinct()
-            )
-
-            for workspace_id in workspace_logs:
-                if workspace_id:
-                    # Include workspace-level changes that might affect this entity
-                    related_conditions |= Q(
-                        metadata__workspace_id=workspace_id,
-                        action_type__in=[
-                            AuditActionType.WORKSPACE_STATUS_CHANGED,
-                            AuditActionType.WORKSPACE_UPDATED,
-                            AuditActionType.ORGANIZATION_STATUS_CHANGED,
-                            AuditActionType.ORGANIZATION_UPDATED,
-                        ],
-                    )
-
-        # 3. Entity-specific relationships
-        if entity_type.lower() == "entry":
-            # For entries, include related remittance and attachment changes
-            related_conditions |= Q(metadata__contains={"entry_id": entity_id})
-            related_conditions |= Q(
-                target_entity_type__model__in=["remittance", "attachment"],
-                metadata__contains={"related_entry_id": entity_id},
-            )
-
-        elif entity_type.lower() == "organization":
-            # For organizations, include related workspace and team changes
-            related_conditions |= Q(metadata__contains={"organization_id": entity_id})
-
-        elif entity_type.lower() == "workspace":
-            # For workspaces, include all entity changes within the workspace
-            related_conditions |= Q(metadata__workspace_id=entity_id)
-
-        elif entity_type.lower() == "user" or entity_type.lower() == "customuser":
-            # For users, include invitation and team membership changes
-            related_conditions |= Q(metadata__contains={"user_id": entity_id})
-            related_conditions |= Q(metadata__contains={"invited_user_id": entity_id})
-            # Also include logs where this user is the actor
-            related_conditions |= Q(user_id=entity_id)
-
-        # 4. Bulk operations that might have affected this entity
-        related_conditions |= Q(
-            action_type=AuditActionType.BULK_OPERATION,
-            metadata__contains={f"affected_{entity_type.lower()}_ids": [entity_id]},
-        )
-
-        # Execute the query for related logs
-        related_qs = AuditTrail.objects.filter(related_conditions)
-
-        # Also include direct logs for this entity
-        try:
-            content_type = ContentType.objects.get(model=entity_type.lower())
-            direct_conditions = Q(
-                target_entity_id=entity_id, target_entity_type=content_type
-            )
-            # Combine both conditions with OR
-            combined_conditions = related_conditions | direct_conditions
-            related_qs = AuditTrail.objects.filter(combined_conditions)
-        except ContentType.DoesNotExist:
-            related_qs = AuditTrail.objects.filter(related_conditions)
-
-        return related_qs.select_related("user", "target_entity_type")
-
-    @staticmethod
     def get_audit_logs_with_filters(
         workspace_id: Optional[str] = None,
         user_id: Optional[str] = None,
@@ -212,6 +123,96 @@ class AuditLogSelector:
             qs = qs.exclude(user__isnull=True)
 
         return qs.order_by(order_by)
+
+    @staticmethod
+    def get_logs_with_field_changes(
+        field_name: Optional[str] = None,
+        old_value: Optional[str] = None,
+        new_value: Optional[str] = None,
+        **kwargs,
+    ) -> QuerySet[AuditTrail]:
+        """
+        Get audit logs that contain field changes (old_values and new_values).
+        """
+        # Start with logs that have both old and new values
+        qs = AuditTrail.objects.filter(metadata__has_keys=["old_values", "new_values"])
+
+        if field_name:
+            # Filter logs that have changes for the specific field
+            qs = qs.filter(
+                metadata__old_values__has_key=field_name,
+                metadata__new_values__has_key=field_name,
+            )
+
+        if old_value and field_name:
+            # Filter by specific old value
+            qs = qs.filter(**{f"metadata__old_values__{field_name}": old_value})
+
+        if new_value and field_name:
+            # Filter by specific new value
+            qs = qs.filter(**{f"metadata__new_values__{field_name}": new_value})
+
+        # Apply additional filters if provided
+        if kwargs:
+            qs = AuditLogSelector.get_audit_logs_with_filters(**kwargs).filter(
+                pk__in=qs.values_list("pk", flat=True)
+            )
+
+        return qs.select_related("user", "target_entity_type")
+
+    @staticmethod
+    def get_users_with_activity(
+        start_date: Optional[Union[datetime, date]] = None,
+        end_date: Optional[Union[datetime, date]] = None,
+    ) -> QuerySet:
+        """
+        Get users who have audit log activity within the specified date range.
+        """
+        qs = AuditTrail.objects.select_related("user")
+
+        if start_date:
+            qs = qs.filter(timestamp__gte=start_date)
+        if end_date:
+            qs = qs.filter(timestamp__lte=end_date)
+
+        return User.objects.filter(
+            user_id__in=qs.values_list("user_id", flat=True).distinct()
+        ).order_by("username")
+
+    @staticmethod
+    def get_entity_types_with_activity(
+        start_date: Optional[Union[datetime, date]] = None,
+        end_date: Optional[Union[datetime, date]] = None,
+    ) -> QuerySet[ContentType]:
+        """
+        Get entity types that have audit log activity within the specified date range.
+        """
+        qs = AuditTrail.objects.select_related("target_entity_type")
+
+        if start_date:
+            qs = qs.filter(timestamp__gte=start_date)
+        if end_date:
+            qs = qs.filter(timestamp__lte=end_date)
+
+        return ContentType.objects.filter(
+            id__in=qs.values_list("target_entity_type_id", flat=True).distinct()
+        ).order_by("model")
+
+    @staticmethod
+    def get_actions_by_operation_type(
+        operation_type: str, **kwargs
+    ) -> QuerySet[AuditTrail]:
+        """
+        Get actions by operation type (created, updated, deleted, status_changed, etc.).
+        """
+        qs = AuditTrail.objects.filter(action_type__icontains=f"_{operation_type}")
+
+        # Apply additional filters if provided
+        if kwargs:
+            filtered_qs = AuditLogSelector.get_audit_logs_with_filters(**kwargs)
+            qs = qs.filter(pk__in=filtered_qs.values_list("pk", flat=True))
+
+        return qs.select_related("user", "target_entity_type")
 
 
 def get_retention_summary() -> Dict[str, int]:

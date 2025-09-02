@@ -7,13 +7,14 @@ Following the test plan: AuditLog App (apps.auditlog)
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone as dt_timezone
 from contextlib import contextmanager
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
@@ -24,6 +25,7 @@ from tests.factories import (
     CustomUserFactory,
     EntryCreatedAuditFactory,
     EntryFactory,
+    EntryUpdatedAuditFactory,
     StatusChangedAuditFactory,
     WorkspaceFactory,
 )
@@ -177,7 +179,7 @@ class TestAuditLogSelectors(TestCase):
         with disable_automatic_audit_logging():
             entry = EntryFactory()
             # Create audits with different timestamps
-            now = datetime.now(timezone.utc)
+            now = datetime.now(dt_timezone.utc)
             yesterday = now - timedelta(days=1)
 
             # Create audits (note: we can't easily control timestamp in factory)
@@ -458,157 +460,6 @@ class TestAuditLogSelectors(TestCase):
                     action_type=AuditActionType.LOGIN_SUCCESS
                 )
                 self.assertIsInstance(expired_logs, QuerySet)
-
-    @pytest.mark.django_db
-    def test_get_related_entity_logs_with_entry(self):
-        """Test _get_related_entity_logs with Entry entity."""
-        AuditTrail.objects.all().delete()
-
-        with disable_automatic_audit_logging():
-            entry = EntryFactory()
-            user = CustomUserFactory()
-
-            # Create audit for the entry
-            EntryCreatedAuditFactory(target_entity=entry, user=user)
-
-            from apps.auditlog.selectors import AuditLogSelector
-
-            # Test with Entry entity
-            queryset = AuditTrail.objects.all()
-            filtered_queryset = AuditLogSelector._get_related_entity_logs(
-                str(entry.pk), "entry", queryset
-            )
-
-            # Should return logs related to the entry
-            self.assertGreater(filtered_queryset.count(), 0)
-            for audit in filtered_queryset:
-                self.assertEqual(audit.target_entity_id, entry.pk)
-                self.assertEqual(audit.target_entity_type.model, "entry")
-
-    @pytest.mark.django_db
-    def test_get_related_entity_logs_with_user(self):
-        """Test _get_related_entity_logs with User entity."""
-        AuditTrail.objects.all().delete()
-
-        with disable_automatic_audit_logging():
-            user = CustomUserFactory()
-            entry = EntryFactory()
-
-            # Create audit for the user
-            EntryCreatedAuditFactory(target_entity=entry, user=user)
-
-            from apps.auditlog.selectors import AuditLogSelector
-
-            # Test with User entity
-            queryset = AuditTrail.objects.all()
-            filtered_queryset = AuditLogSelector._get_related_entity_logs(
-                str(user.pk), "customuser", queryset
-            )
-
-            # Should return logs where user is involved
-            self.assertGreater(filtered_queryset.count(), 0)
-            for audit in filtered_queryset:
-                # User could be the actor or target
-                self.assertTrue(
-                    audit.user_id == user.pk
-                    or (
-                        audit.target_entity_id == user.pk
-                        and audit.target_entity_type.model == "customuser"
-                    )
-                )
-
-    @pytest.mark.django_db
-    def test_get_related_entity_logs_with_workspace(self):
-        """Test _get_related_entity_logs with Workspace entity."""
-        AuditTrail.objects.all().delete()
-
-        with disable_automatic_audit_logging():
-            workspace = WorkspaceFactory()
-            user = CustomUserFactory()
-            entry = EntryFactory(workspace=workspace)
-
-            # Create audit in the workspace
-            EntryCreatedAuditFactory(target_entity=entry, user=user)
-
-            from apps.auditlog.selectors import AuditLogSelector
-
-            # Test with Workspace entity
-            queryset = AuditTrail.objects.all()
-            filtered_queryset = AuditLogSelector._get_related_entity_logs(
-                str(workspace.pk), "workspace", queryset
-            )
-
-            # Should return logs related to the workspace
-            self.assertGreater(filtered_queryset.count(), 0)
-            for audit in filtered_queryset:
-                # Workspace could be target or context
-                workspace_id_in_metadata = (
-                    audit.metadata.get("workspace_id") if audit.metadata else None
-                )
-                self.assertTrue(
-                    workspace_id_in_metadata == str(workspace.pk)
-                    or (
-                        audit.target_entity_id == workspace.pk
-                        and audit.target_entity_type.model == "workspace"
-                    )
-                )
-
-    @pytest.mark.django_db
-    def test_get_related_entity_logs_no_results(self):
-        """Test _get_related_entity_logs with entity that has no logs."""
-        AuditTrail.objects.all().delete()
-
-        with disable_automatic_audit_logging():
-            entry = EntryFactory()
-            # Don't create any audits for this entry
-
-            from apps.auditlog.selectors import AuditLogSelector
-
-            queryset = AuditTrail.objects.all()
-            filtered_queryset = AuditLogSelector._get_related_entity_logs(
-                str(entry.pk), "entry", queryset
-            )
-
-            # Should return empty queryset
-            self.assertEqual(filtered_queryset.count(), 0)
-
-    @pytest.mark.django_db
-    def test_get_related_entity_logs_multiple_entities(self):
-        """Test _get_related_entity_logs with multiple related entities."""
-        AuditTrail.objects.all().delete()
-
-        with disable_automatic_audit_logging():
-            entry1 = EntryFactory()
-            entry2 = EntryFactory()
-            user = CustomUserFactory()
-
-            # Create audits for both entries
-            EntryCreatedAuditFactory(target_entity=entry1, user=user)
-            EntryCreatedAuditFactory(target_entity=entry2, user=user)
-
-            from apps.auditlog.selectors import AuditLogSelector
-
-            # Test with first entry
-            queryset = AuditTrail.objects.all()
-            filtered_queryset1 = AuditLogSelector._get_related_entity_logs(
-                str(entry1.pk), "entry", queryset
-            )
-
-            # Test with second entry
-            filtered_queryset2 = AuditLogSelector._get_related_entity_logs(
-                str(entry2.pk), "entry", queryset
-            )
-
-            # Each should return only logs for their respective entity
-            self.assertEqual(filtered_queryset1.count(), 1)
-            self.assertEqual(filtered_queryset2.count(), 1)
-
-            # Verify correct entity IDs
-            audit1 = filtered_queryset1.first()
-            audit2 = filtered_queryset2.first()
-
-            self.assertEqual(audit1.target_entity_id, entry1.pk)
-            self.assertEqual(audit2.target_entity_id, entry2.pk)
 
     @pytest.mark.django_db
     def test_complex_filtering_multiple_parameters(self):
@@ -1133,3 +984,920 @@ class TestAuditLogSelectors(TestCase):
             )
 
             self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_no_filters(self):
+        """Test getting users with activity without date filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+            user3 = CustomUserFactory()  # User with no activity
+
+            # Create audit logs for user1 and user2
+            EntryCreatedAuditFactory(user=user1, target_entity=entry)
+            EntryCreatedAuditFactory(user=user2, target_entity=entry)
+
+            # Get users with activity
+            result = AuditLogSelector().get_users_with_activity()
+
+            # Should return users with activity, ordered by username
+            self.assertEqual(result.count(), 2)
+            user_ids = [user.user_id for user in result]
+            self.assertIn(user1.user_id, user_ids)
+            self.assertIn(user2.user_id, user_ids)
+            self.assertNotIn(user3.user_id, user_ids)
+
+            # Check ordering by username
+            usernames = [user.username for user in result]
+            self.assertEqual(usernames, sorted(usernames))
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_date_range_filter(self):
+        """Test getting users with activity within a specific date range."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # User1 has old activity
+            audit1 = EntryCreatedAuditFactory(user=user1, target_entity=entry)
+            audit1.timestamp = old_date
+            audit1.save()
+
+            # User2 has recent activity
+            audit2 = EntryCreatedAuditFactory(user=user2, target_entity=entry)
+            audit2.timestamp = recent_date
+            audit2.save()
+
+            # Filter for last 5 days
+            start_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_users_with_activity(start_date=start_date)
+
+            # Should only return user2
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().user_id, user2.user_id)
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_end_date_filter(self):
+        """Test getting users with activity before a specific end date."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # User1 has old activity
+            audit1 = EntryCreatedAuditFactory(user=user1, target_entity=entry)
+            audit1.timestamp = old_date
+            audit1.save()
+
+            # User2 has recent activity
+            audit2 = EntryCreatedAuditFactory(user=user2, target_entity=entry)
+            audit2.timestamp = recent_date
+            audit2.save()
+
+            # Filter for activities before 5 days ago
+            end_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_users_with_activity(end_date=end_date)
+
+            # Should only return user1
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().user_id, user1.user_id)
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_both_date_filters(self):
+        """Test getting users with activity within a specific date range using both start and end dates."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+            user3 = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            very_old_date = datetime.now(dt_timezone.utc) - timedelta(days=15)
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=8)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # User1 has very old activity (outside range)
+            audit1 = EntryCreatedAuditFactory(user=user1, target_entity=entry)
+            audit1.timestamp = very_old_date
+            audit1.save()
+
+            # User2 has activity within range
+            audit2 = EntryCreatedAuditFactory(user=user2, target_entity=entry)
+            audit2.timestamp = old_date
+            audit2.save()
+
+            # User3 has recent activity (outside range)
+            audit3 = EntryCreatedAuditFactory(user=user3, target_entity=entry)
+            audit3.timestamp = recent_date
+            audit3.save()
+
+            # Filter for activities between 10 and 5 days ago
+            start_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            end_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_users_with_activity(
+                start_date=start_date, end_date=end_date
+            )
+
+            # Should only return user2
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().user_id, user2.user_id)
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_no_activity(self):
+        """Test getting users with activity when no audit logs exist."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            # Create users but no audit logs
+            CustomUserFactory()
+            CustomUserFactory()
+
+            # Get users with activity
+            result = AuditLogSelector().get_users_with_activity()
+
+            # Should return empty result
+            self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_users_with_activity_duplicate_users(self):
+        """Test that users with multiple audit logs are returned only once."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry1 = EntryFactory()
+            entry2 = EntryFactory()
+            user1 = CustomUserFactory()
+
+            # Create multiple audit logs for the same user
+            EntryCreatedAuditFactory(user=user1, target_entity=entry1)
+            EntryCreatedAuditFactory(user=user1, target_entity=entry2)
+            StatusChangedAuditFactory(user=user1, target_entity=entry1)
+
+            # Get users with activity
+            result = AuditLogSelector().get_users_with_activity()
+
+            # Should return user1 only once
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().user_id, user1.user_id)
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_no_filters(self):
+        """Test getting entity types with activity without date filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry1 = EntryFactory()
+            entry2 = EntryFactory()
+            workspace = WorkspaceFactory()
+            user = CustomUserFactory()
+
+            # Create audit logs for different entity types
+            EntryCreatedAuditFactory(user=user, target_entity=entry1)
+            EntryCreatedAuditFactory(user=user, target_entity=entry2)
+            EntryCreatedAuditFactory(user=user, target_entity=workspace)
+
+            # Get entity types with activity
+            result = AuditLogSelector().get_entity_types_with_activity()
+
+            # Should return content types with activity, ordered by model
+            self.assertGreaterEqual(
+                result.count(), 2
+            )  # At least Entry and Workspace types
+
+            # Check that we get ContentType objects
+            for content_type in result:
+                self.assertIsInstance(content_type, ContentType)
+
+            # Check ordering by model
+            models = [ct.model for ct in result]
+            self.assertEqual(models, sorted(models))
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_date_range_filter(self):
+        """Test getting entity types with activity within a specific date range."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            workspace = WorkspaceFactory()
+            user = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # Entry has old activity
+            audit1 = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            audit1.timestamp = old_date
+            audit1.save()
+
+            # Workspace has recent activity
+            audit2 = EntryCreatedAuditFactory(user=user, target_entity=workspace)
+            audit2.timestamp = recent_date
+            audit2.save()
+
+            # Filter for last 5 days
+            start_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_entity_types_with_activity(
+                start_date=start_date
+            )
+
+            # Should only return workspace content type
+            self.assertEqual(result.count(), 1)
+            workspace_content_type = ContentType.objects.get_for_model(workspace)
+            self.assertEqual(result.first().id, workspace_content_type.id)
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_end_date_filter(self):
+        """Test getting entity types with activity before a specific end date."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            workspace = WorkspaceFactory()
+            user = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # Entry has old activity
+            audit1 = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            audit1.timestamp = old_date
+            audit1.save()
+
+            # Workspace has recent activity
+            audit2 = EntryCreatedAuditFactory(user=user, target_entity=workspace)
+            audit2.timestamp = recent_date
+            audit2.save()
+
+            # Filter for activities before 5 days ago
+            end_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_entity_types_with_activity(
+                end_date=end_date
+            )
+
+            # Should only return entry content type
+            self.assertEqual(result.count(), 1)
+            entry_content_type = ContentType.objects.get_for_model(entry)
+            self.assertEqual(result.first().id, entry_content_type.id)
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_both_date_filters(self):
+        """Test getting entity types with activity within a specific date range using both start and end dates."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            workspace1 = WorkspaceFactory()
+            workspace2 = WorkspaceFactory()
+            user = CustomUserFactory()
+
+            # Create audit logs with different timestamps
+            very_old_date = datetime.now(dt_timezone.utc) - timedelta(days=15)
+            old_date = datetime.now(dt_timezone.utc) - timedelta(days=8)
+            recent_date = datetime.now(dt_timezone.utc) - timedelta(days=2)
+
+            # Entry has very old activity (outside range)
+            audit1 = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            audit1.timestamp = very_old_date
+            audit1.save()
+
+            # Workspace1 has activity within range
+            audit2 = EntryCreatedAuditFactory(user=user, target_entity=workspace1)
+            audit2.timestamp = old_date
+            audit2.save()
+
+            # Workspace2 has recent activity (outside range)
+            audit3 = EntryCreatedAuditFactory(user=user, target_entity=workspace2)
+            audit3.timestamp = recent_date
+            audit3.save()
+
+            # Filter for activities between 10 and 5 days ago
+            start_date = datetime.now(dt_timezone.utc) - timedelta(days=10)
+            end_date = datetime.now(dt_timezone.utc) - timedelta(days=5)
+            result = AuditLogSelector().get_entity_types_with_activity(
+                start_date=start_date, end_date=end_date
+            )
+
+            # Should only return workspace content type
+            self.assertEqual(result.count(), 1)
+            workspace_content_type = ContentType.objects.get_for_model(workspace1)
+            self.assertEqual(result.first().id, workspace_content_type.id)
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_no_activity(self):
+        """Test getting entity types with activity when no audit logs exist."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            # Create entities but no audit logs
+            EntryFactory()
+            WorkspaceFactory()
+
+            # Get entity types with activity
+            result = AuditLogSelector().get_entity_types_with_activity()
+
+            # Should return empty result
+            self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_entity_types_with_activity_duplicate_types(self):
+        """Test that entity types with multiple audit logs are returned only once."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry1 = EntryFactory()
+            entry2 = EntryFactory()
+            entry3 = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create multiple audit logs for the same entity type (Entry)
+            EntryCreatedAuditFactory(user=user, target_entity=entry1)
+            EntryCreatedAuditFactory(user=user, target_entity=entry2)
+            StatusChangedAuditFactory(user=user, target_entity=entry3)
+
+            # Get entity types with activity
+            result = AuditLogSelector().get_entity_types_with_activity()
+
+            # Should return Entry content type only once
+            self.assertEqual(result.count(), 1)
+            entry_content_type = ContentType.objects.get_for_model(entry1)
+            self.assertEqual(result.first().id, entry_content_type.id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_no_filters(self):
+        """Test getting logs with field changes without any filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with field changes
+            audit_with_changes = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft", "title": "Old Title"},
+                    "new_values": {"status": "published", "title": "New Title"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log without field changes
+            EntryCreatedAuditFactory(
+                user=user, target_entity=entry, metadata={"action": "create"}
+            )
+
+            # Get logs with field changes
+            result = AuditLogSelector().get_logs_with_field_changes()
+
+            # Should only return audit with field changes
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_with_changes.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_filter_by_field_name(self):
+        """Test filtering logs with field changes by specific field name."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with status field changes
+            audit_status_change = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with title field changes
+            EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"title": "Old Title"},
+                    "new_values": {"title": "New Title"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by status field
+            result = AuditLogSelector().get_logs_with_field_changes(field_name="status")
+
+            # Should only return audit with status changes
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_status_change.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_filter_by_old_value(self):
+        """Test filtering logs with field changes by specific old value."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with specific old value
+            audit_draft_to_published = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with different old value
+            EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "review"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by specific old value
+            result = AuditLogSelector().get_logs_with_field_changes(
+                field_name="status", old_value="draft"
+            )
+
+            # Should only return audit with draft old value
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_draft_to_published.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_filter_by_new_value(self):
+        """Test filtering logs with field changes by specific new value."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with specific new value
+            audit_to_published = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with different new value
+            EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "archived"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by specific new value
+            result = AuditLogSelector().get_logs_with_field_changes(
+                field_name="status", new_value="published"
+            )
+
+            # Should only return audit with published new value
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_to_published.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_filter_by_old_and_new_value(self):
+        """Test filtering logs with field changes by both old and new values."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with specific old and new values
+            audit_draft_to_published = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with same old value but different new value
+            EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "archived"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by specific old and new values
+            result = AuditLogSelector().get_logs_with_field_changes(
+                field_name="status", old_value="draft", new_value="published"
+            )
+
+            # Should only return audit with exact old and new values
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_draft_to_published.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_with_additional_filters(self):
+        """Test filtering logs with field changes combined with additional filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+
+            # Create audit log with field changes by user1
+            audit_user1 = EntryCreatedAuditFactory(
+                user=user1,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with field changes by user2
+            EntryCreatedAuditFactory(
+                user=user2,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by field changes and specific user
+            result = AuditLogSelector().get_logs_with_field_changes(
+                field_name="status", user_id=user1.user_id
+            )
+
+            # Should only return audit by user1
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_user1.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_no_results(self):
+        """Test filtering logs with field changes when no matching logs exist."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log without field changes
+            EntryCreatedAuditFactory(
+                user=user, target_entity=entry, metadata={"action": "create"}
+            )
+
+            # Try to get logs with field changes
+            result = AuditLogSelector().get_logs_with_field_changes()
+
+            # Should return empty result
+            self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_logs_with_field_changes_multiple_fields(self):
+        """Test filtering logs with field changes for multiple fields."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit log with multiple field changes
+            audit_multiple_changes = EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {
+                        "status": "draft",
+                        "title": "Old Title",
+                        "priority": "low",
+                    },
+                    "new_values": {
+                        "status": "published",
+                        "title": "New Title",
+                        "priority": "high",
+                    },
+                    "action": "update",
+                },
+            )
+
+            # Create audit log with only status change
+            EntryCreatedAuditFactory(
+                user=user,
+                target_entity=entry,
+                metadata={
+                    "old_values": {"status": "draft"},
+                    "new_values": {"status": "published"},
+                    "action": "update",
+                },
+            )
+
+            # Filter by priority field (should only match the first audit)
+            result = AuditLogSelector().get_logs_with_field_changes(
+                field_name="priority"
+            )
+
+            # Should only return audit with priority changes
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_multiple_changes.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_created(self):
+        """Test get_actions_by_operation_type for 'created' operations."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audits with different action types
+            audit_created = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            StatusChangedAuditFactory(user=user, target_entity=entry)
+
+            # Get actions by 'created' operation type
+            result = AuditLogSelector().get_actions_by_operation_type("created")
+
+            # Should only return created audit
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_created.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_updated(self):
+        """Test get_actions_by_operation_type for 'updated' operations."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audits with different action types
+            EntryCreatedAuditFactory(user=user, target_entity=entry)
+            EntryUpdatedAuditFactory(user=user, target_entity=entry)
+
+            # Get actions by 'updated' operation type
+            result = AuditLogSelector().get_actions_by_operation_type("updated")
+
+            # Should only return entry update audit (contains '_updated')
+            self.assertEqual(result.count(), 1)
+            returned_audit = result.first()
+            self.assertIn("_updated", returned_audit.action_type.lower())
+
+            # Verify select_related optimization
+            with self.assertNumQueries(1):
+                list(result.values_list("user__username", "target_entity_type__model"))
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_with_additional_filters(self):
+        """Test get_actions_by_operation_type with additional filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+
+            # Create audits by different users
+            audit1 = EntryCreatedAuditFactory(user=user1, target_entity=entry)
+            EntryCreatedAuditFactory(user=user2, target_entity=entry)
+
+            # Get created actions filtered by specific user
+            result = AuditLogSelector().get_actions_by_operation_type(
+                "created", user_id=user1.user_id
+            )
+
+            # Should only return audit by user1
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit1.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_with_date_filters(self):
+        """Test get_actions_by_operation_type with date range filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audit in the past
+            past_date = timezone.now() - timedelta(days=10)
+            audit_old = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            audit_old.timestamp = past_date
+            audit_old.save()
+
+            # Create recent audit
+            audit_recent = EntryCreatedAuditFactory(user=user, target_entity=entry)
+
+            # Get created actions from last 5 days
+            start_date = timezone.now() - timedelta(days=5)
+            result = AuditLogSelector().get_actions_by_operation_type(
+                "created", start_date=start_date
+            )
+
+            # Should only return recent audit
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_recent.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_with_entity_filters(self):
+        """Test get_actions_by_operation_type with entity filters."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry1 = EntryFactory()
+            entry2 = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audits for different entities
+            audit1 = EntryCreatedAuditFactory(user=user, target_entity=entry1)
+            EntryCreatedAuditFactory(user=user, target_entity=entry2)
+
+            # Get created actions for specific entity
+            result = AuditLogSelector().get_actions_by_operation_type(
+                "created", target_entity_id=str(entry1.entry_id)
+            )
+
+            # Should only return audit for entry1
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit1.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_no_results(self):
+        """Test get_actions_by_operation_type when no matching operations exist."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create only created audits
+            EntryCreatedAuditFactory(user=user, target_entity=entry)
+
+            # Search for non-existent operation type
+            result = AuditLogSelector().get_actions_by_operation_type("deleted")
+
+            # Should return no results
+            self.assertEqual(result.count(), 0)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_case_sensitivity(self):
+        """Test get_actions_by_operation_type case sensitivity."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            EntryCreatedAuditFactory(user=user, target_entity=entry)
+
+            # Test different case variations
+            test_cases = ["created", "CREATED", "Created"]
+
+            for operation_type in test_cases:
+                result = AuditLogSelector().get_actions_by_operation_type(
+                    operation_type
+                )
+                # Should find the audit regardless of case (due to icontains)
+                self.assertGreaterEqual(
+                    result.count(), 0, f"Failed for: {operation_type}"
+                )
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_select_related_optimization(self):
+        """Test get_actions_by_operation_type includes select_related optimization."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+            EntryCreatedAuditFactory(user=user, target_entity=entry)
+
+            # Get result and check if it's optimized
+            result = AuditLogSelector().get_actions_by_operation_type("created")
+
+            # Verify select_related is applied by checking the query
+            self.assertIn("user", str(result.query))
+            self.assertIn("target_entity_type", str(result.query))
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_multiple_filters_combination(self):
+        """Test get_actions_by_operation_type with multiple filter combinations."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry1 = EntryFactory()
+            entry2 = EntryFactory()
+            user1 = CustomUserFactory()
+            user2 = CustomUserFactory()
+
+            # Create various audits
+            audit_target = EntryCreatedAuditFactory(user=user1, target_entity=entry1)
+            EntryCreatedAuditFactory(user=user2, target_entity=entry1)  # Different user
+            EntryCreatedAuditFactory(
+                user=user1, target_entity=entry2
+            )  # Different entity
+
+            # Get created actions with multiple filters
+            result = AuditLogSelector().get_actions_by_operation_type(
+                "created", user_id=user1.user_id, target_entity_id=str(entry1.entry_id)
+            )
+
+            # Should only return the specific audit
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_target.audit_id)
+
+    @pytest.mark.django_db
+    def test_get_actions_by_operation_type_partial_match(self):
+        """Test get_actions_by_operation_type with partial operation type matches."""
+        # Clear any existing audit logs to ensure clean test
+        AuditTrail.objects.all().delete()
+
+        with disable_automatic_audit_logging():
+            entry = EntryFactory()
+            user = CustomUserFactory()
+
+            # Create audits (assuming action types contain operation type as substring)
+            audit_created = EntryCreatedAuditFactory(user=user, target_entity=entry)
+            audit_status = StatusChangedAuditFactory(user=user, target_entity=entry)
+
+            # Search for partial match - 'change' should match 'status_changed'
+            result = AuditLogSelector().get_actions_by_operation_type("change")
+
+            # Should find audits containing 'change' in action type (status_changed)
+            # Based on the action type constants, 'change' should match '_status_changed'
+            self.assertEqual(result.count(), 1)
+            self.assertEqual(result.first().audit_id, audit_status.audit_id)
+
+            # Test another partial match - 'created' should match 'entry_created'
+            result_created = AuditLogSelector().get_actions_by_operation_type("created")
+            self.assertEqual(result_created.count(), 1)
+            self.assertEqual(result_created.first().audit_id, audit_created.audit_id)

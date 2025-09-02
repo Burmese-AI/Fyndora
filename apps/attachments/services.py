@@ -61,18 +61,19 @@ def replace_or_append_attachments(
         existing_attachments = list(entry.attachments.all())
         # Soft delete all existing attachments
         entry.attachments.all().delete()
+        print("Soft Deleted Attachments")
 
         # Log bulk attachment removal if user is provided
-        if user and existing_attachments:
-            entry_context = extract_entry_business_context(entry)
-            BusinessAuditLogger.log_bulk_operation(
-                user=user,
-                operation_type="attachment_replacement_deletion",
-                affected_objects=existing_attachments,
-                request=request,
-                replaced_count=len(existing_attachments),
-                **entry_context,
-            )
+        # if user and existing_attachments:
+        #     entry_context = extract_entry_business_context(entry)
+        #     BusinessAuditLogger.log_bulk_operation(
+        #         user=user,
+        #         operation_type="attachment_replacement_deletion",
+        #         affected_objects=existing_attachments,
+        #         request=request,
+        #         replaced_count=len(existing_attachments),
+        #         **entry_context,
+        #     )
 
     # Create New Attachments linked to the Entry
     created_attachments = []
@@ -86,17 +87,17 @@ def replace_or_append_attachments(
         created_attachments.append(attachment)
 
         # Log individual attachment creation
-        if user:
-            attachment_context = extract_attachment_business_context(attachment)
-            BusinessAuditLogger.log_file_operation(
-                user=user,
-                file_obj=attachment,
-                operation="upload",
-                request=request,
-                operation_context="replace_or_append",
-                is_replacement=replace_attachments,
-                **attachment_context,
-            )
+        # if user:
+        #     attachment_context = extract_attachment_business_context(attachment)
+        #     BusinessAuditLogger.log_file_operation(
+        #         user=user,
+        #         file_obj=attachment,
+        #         operation="upload",
+        #         request=request,
+        #         operation_context="replace_or_append",
+        #         is_replacement=replace_attachments,
+        #         **attachment_context,
+        #     )
 
     return created_attachments
 
@@ -112,24 +113,24 @@ def create_attachments(*, entry, attachments, user=None, request=None):
         )
         for attachment in attachments
     ]
-
+    print(f"prepared attachments => {prepared_attachments}")
     # Bulk Create the Attachments
     Attachment.objects.bulk_create(prepared_attachments)
 
     # Log each attachment creation for audit trail
-    if user:
-        entry_context = extract_entry_business_context(entry)
-        for attachment_obj in prepared_attachments:
-            BusinessAuditLogger.log_file_operation(
-                user=user,
-                file_obj=attachment_obj,
-                operation="upload",
-                request=request,
-                attachment_id=str(attachment_obj.attachment_id),
-                operation_context="bulk_create",
-                bulk_operation=True,
-                total_attachments=len(prepared_attachments),
-                **entry_context,
-            )
+    # if user:
+    #     entry_context = extract_entry_business_context(entry)
+    #     for attachment_obj in prepared_attachments:
+    #         BusinessAuditLogger.log_file_operation(
+    #             user=user,
+    #             file_obj=attachment_obj,
+    #             operation="upload",
+    #             request=request,
+    #             attachment_id=str(attachment_obj.attachment_id),
+    #             operation_context="bulk_create",
+    #             bulk_operation=True,
+    #             total_attachments=len(prepared_attachments),
+    #             **entry_context,
+    #         )
 
     return prepared_attachments

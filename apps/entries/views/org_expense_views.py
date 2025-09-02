@@ -192,7 +192,7 @@ class OrganizationExpenseUpdateView(
                 description=form.cleaned_data["description"],
                 currency=form.cleaned_data["currency"],
                 attachments=form.cleaned_data["attachment_files"],
-                replace_attachments=True,
+                replace_attachments=form.cleaned_data["replace_attachments"],
                 user=self.request.user,
                 request=self.request,
             )

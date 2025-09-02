@@ -303,7 +303,9 @@ class TestCreateOrganizationExchangeRate(TestCase):
             mock_create.return_value = mock_exchange_rate
 
             # Mock audit logging to raise an exception
-            mock_audit_logger.log_organization_exchange_rate_action.side_effect = Exception("Audit logging failed")
+            mock_audit_logger.log_organization_exchange_rate_action.side_effect = (
+                Exception("Audit logging failed")
+            )
 
             # Call the service function
             result = create_organization_exchange_rate(
@@ -375,14 +377,18 @@ class TestUpdateOrganizationExchangeRate(TestCase):
 
     @patch("apps.organizations.services.BusinessAuditLogger")
     @patch("apps.organizations.services.model_update")
-    def test_update_exchange_rate_audit_logging_failure(self, mock_model_update, mock_audit_logger):
+    def test_update_exchange_rate_audit_logging_failure(
+        self, mock_model_update, mock_audit_logger
+    ):
         """Test exchange rate update when audit logging fails."""
         # Mock successful model update
         updated_rate = OrganizationExchangeRateFactory(note="Updated note")
         mock_model_update.return_value = updated_rate
 
         # Mock audit logging to raise an exception
-        mock_audit_logger.log_organization_exchange_rate_action.side_effect = Exception("Audit logging failed")
+        mock_audit_logger.log_organization_exchange_rate_action.side_effect = Exception(
+            "Audit logging failed"
+        )
 
         # Call the service function
         result = update_organization_exchange_rate(

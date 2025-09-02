@@ -233,7 +233,7 @@ def create_organization_exchange_rate(
                 f"Audit logging failed for exchange rate creation: {audit_error}",
                 exc_info=True,
             )
-        #return the exchange rate (THA)
+        # return the exchange rate (THA)
         return exchange_rate
 
     except IntegrityError as e:

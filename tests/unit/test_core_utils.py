@@ -1,408 +1,509 @@
 """
-Unit tests for core utility functions.
-
-Tests model_update utility function validation and update behavior.
+Unit tests for apps.core.utils
 """
 
 import pytest
-from decimal import Decimal
+from unittest.mock import Mock
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import Group
 
-from apps.core.utils import model_update
-from tests.factories import EntryFactory
-from tests.factories import CustomUserFactory, OrganizationMemberFactory
+from apps.core.utils import (
+    percent_change,
+    round_decimal,
+    get_paginated_context,
+    model_update,
+    can_manage_organization,
+    revoke_workspace_admin_permission,
+    revoke_operations_reviewer_permission,
+    revoke_team_coordinator_permission,
+    revoke_workspace_team_member_permission,
+    check_if_member_is_owner,
+)
+from apps.core.permissions import OrganizationPermissions
+from tests.factories import (
+    CustomUserFactory,
+    OrganizationFactory,
+    WorkspaceFactory,
+    TeamFactory,
+    WorkspaceTeamFactory,
+    OrganizationMemberFactory,
+)
 
 
 @pytest.mark.unit
-@pytest.mark.django_db
-# initially, ko swam used org models to test the decimal field by using the expense field of the org model.However , as we removed the expense field from the org model, we are using the entry model to test the decimal field.
-class TestModelUpdateUtility:
+class TestPercentChange:
+    """Test percent_change utility function."""
+
+    def test_percent_change_positive_change(self):
+        """Test percent change with positive change."""
+        result = percent_change(120.0, 100.0)
+        assert result == "+20.0% from last period"
+
+    def test_percent_change_negative_change(self):
+        """Test percent change with negative change."""
+        result = percent_change(80.0, 100.0)
+        assert result == "-20.0% from last period"
+
+    def test_percent_change_no_change(self):
+        """Test percent change with no change."""
+        result = percent_change(100.0, 100.0)
+        assert result == "+0.0% from last period"
+
+    def test_percent_change_previous_zero(self):
+        """Test percent change when previous value is zero."""
+        result = percent_change(100.0, 0.0)
+        assert result == "0% change"
+
+    def test_percent_change_current_zero(self):
+        """Test percent change when current value is zero."""
+        result = percent_change(0.0, 100.0)
+        assert result == "-100.0% from last period"
+
+    def test_percent_change_both_zero(self):
+        """Test percent change when both values are zero."""
+        result = percent_change(0.0, 0.0)
+        assert result == "0% change"
+
+    def test_percent_change_large_numbers(self):
+        """Test percent change with large numbers."""
+        result = percent_change(1000000.0, 500000.0)
+        assert result == "+100.0% from last period"
+
+    def test_percent_change_small_numbers(self):
+        """Test percent change with small numbers."""
+        result = percent_change(0.1, 0.05)
+        assert result == "+100.0% from last period"
+
+    def test_percent_change_decimal_precision(self):
+        """Test percent change with decimal precision."""
+        result = percent_change(33.33, 25.0)
+        assert result == "+33.3% from last period"
+
+    def test_percent_change_negative_previous(self):
+        """Test percent change with negative previous value."""
+        result = percent_change(50.0, -25.0)
+        assert result == "-300.0% from last period"
+
+    def test_percent_change_negative_current(self):
+        """Test percent change with negative current value."""
+        result = percent_change(-25.0, 50.0)
+        assert result == "-150.0% from last period"
+
+    def test_percent_change_both_negative(self):
+        """Test percent change with both values negative."""
+        result = percent_change(-30.0, -50.0)
+        assert result == "-40.0% from last period"
+
+
+@pytest.mark.unit
+class TestRoundDecimal:
+    """Test round_decimal utility function."""
+
+    def test_round_decimal_default_places(self):
+        """Test rounding with default 2 decimal places."""
+        result = round_decimal(3.14159)
+        assert result == 3.14
+
+    def test_round_decimal_custom_places(self):
+        """Test rounding with custom decimal places."""
+        result = round_decimal(3.14159, places=3)
+        assert result == 3.14
+
+    def test_round_decimal_round_half_up(self):
+        """Test rounding with ROUND_HALF_UP behavior."""
+        result = round_decimal(2.5, places=0)
+        assert result == 2.5
+
+    def test_round_decimal_round_half_up_negative(self):
+        """Test rounding with ROUND_HALF_UP behavior for negative numbers."""
+        result = round_decimal(-2.5, places=0)
+        assert result == -2.5
+
+    def test_round_decimal_string_input(self):
+        """Test rounding with string input."""
+        result = round_decimal("3.14159")
+        assert result == 3.14
+
+    def test_round_decimal_integer_input(self):
+        """Test rounding with integer input."""
+        result = round_decimal(5)
+        assert result == 5.0
+
+    def test_round_decimal_zero(self):
+        """Test rounding with zero."""
+        result = round_decimal(0)
+        assert result == 0.0
+
+    def test_round_decimal_negative(self):
+        """Test rounding with negative number."""
+        result = round_decimal(-3.14159)
+        assert result == -3.14
+
+    def test_round_decimal_large_number(self):
+        """Test rounding with large number."""
+        result = round_decimal(1234567.891234, places=1)
+        assert result == 1234567.89
+
+    def test_round_decimal_small_number(self):
+        """Test rounding with very small number."""
+        result = round_decimal(0.000123456, places=4)
+        assert result == 0.0
+
+
+@pytest.mark.unit
+class TestGetPaginatedContext:
+    """Test get_paginated_context utility function."""
+
+    def test_get_paginated_context_basic(self):
+        """Test basic pagination context creation."""
+        queryset = [1, 2, 3, 4, 5]
+        context = {}
+
+        result = get_paginated_context(
+            queryset=queryset, context=context, object_name="items"
+        )
+
+        assert "page_obj" in result
+        assert "paginator" in result
+        assert "items" in result
+        assert "is_paginated" in result
+        assert result["items"] == [1, 2, 3, 4, 5]
+        assert result["is_paginated"] is False
+
+    def test_get_paginated_context_with_existing_context(self):
+        """Test pagination context with existing context data."""
+        queryset = [1, 2, 3]
+        context = {"existing_key": "existing_value"}
+
+        result = get_paginated_context(
+            queryset=queryset, context=context, object_name="items"
+        )
+
+        assert result["existing_key"] == "existing_value"
+        assert "items" in result
+        assert result["items"] == [1, 2, 3]
+
+    def test_get_paginated_context_custom_page_size(self):
+        """Test pagination context with custom page size."""
+        queryset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items", page_size=3
+        )
+
+        assert len(result["items"]) == 3
+        assert result["items"] == [1, 2, 3]
+        assert result["is_paginated"] is True
+
+    def test_get_paginated_context_custom_page_number(self):
+        """Test pagination context with custom page number."""
+        queryset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items", page_size=3, page_no=2
+        )
+
+        assert result["items"] == [4, 5, 6]
+
+    def test_get_paginated_context_empty_queryset(self):
+        """Test pagination context with empty queryset."""
+        queryset = []
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items"
+        )
+
+        assert result["items"] == []
+        assert result["is_paginated"] is False
+
+    def test_get_paginated_context_single_item(self):
+        """Test pagination context with single item."""
+        queryset = [1]
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items"
+        )
+
+        assert result["items"] == [1]
+        assert result["is_paginated"] is False
+
+    def test_get_paginated_context_large_queryset(self):
+        """Test pagination context with large queryset."""
+        queryset = list(range(1, 101))  # 100 items
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items", page_size=10
+        )
+
+        assert len(result["items"]) == 10
+        assert result["items"] == list(range(1, 11))
+        assert result["is_paginated"] is True
+
+    def test_get_paginated_context_invalid_page_number(self):
+        """Test pagination context with invalid page number."""
+        queryset = [1, 2, 3, 4, 5]
+
+        result = get_paginated_context(
+            queryset=queryset,
+            context={},
+            object_name="items",
+            page_size=2,
+            page_no=999,  # Invalid page number
+        )
+
+        # Should return the last page
+        assert result["items"] == [5]
+
+    def test_get_paginated_context_zero_page_number(self):
+        """Test pagination context with zero page number."""
+        queryset = [1, 2, 3, 4, 5]
+
+        result = get_paginated_context(
+            queryset=queryset, context={}, object_name="items", page_size=2, page_no=0
+        )
+
+        # Should return the last page (Django paginator behavior)
+        assert result["items"] == [5]
+
+
+@pytest.mark.unit
+class TestModelUpdate:
     """Test model_update utility function."""
 
-    def test_model_update_valid_data(self):
-        """Test model_update with valid data."""
-        # Use Entry model as it already exists with decimal fields
-        test_model = EntryFactory(amount=Decimal("100.00"))
+    def test_model_update_basic(self):
+        """Test basic model update functionality."""
+        mock_instance = Mock()
+        mock_instance.full_clean = Mock()
+        mock_instance.save = Mock()
 
-        updated_model = model_update(
-            instance=test_model,
-            data={
-                "description": "Updated Description",
-                "amount": Decimal("200.00"),
-            },
-            update_fields=["description", "amount"],
+        data = {"name": "New Name", "email": "new@example.com"}
+
+        result = model_update(mock_instance, data)
+
+        assert result == mock_instance
+        assert mock_instance.name == "New Name"
+        assert mock_instance.email == "new@example.com"
+        mock_instance.full_clean.assert_called_once()
+        mock_instance.save.assert_called_once_with(update_fields=None)
+
+    def test_model_update_with_update_fields(self):
+        """Test model update with specific update fields."""
+        mock_instance = Mock()
+        mock_instance.full_clean = Mock()
+        mock_instance.save = Mock()
+
+        data = {"name": "New Name", "email": "new@example.com"}
+        update_fields = ["name"]
+
+        result = model_update(mock_instance, data, update_fields)
+
+        assert result == mock_instance
+        assert mock_instance.name == "New Name"
+        assert mock_instance.email == "new@example.com"
+        mock_instance.full_clean.assert_called_once()
+        mock_instance.save.assert_called_once_with(update_fields=["name"])
+
+    def test_model_update_validation_error(self):
+        """Test model update with validation error."""
+        mock_instance = Mock()
+        mock_instance.full_clean = Mock(side_effect=ValidationError("Invalid data"))
+        mock_instance.save = Mock()
+
+        data = {"name": "Invalid Name"}
+
+        with pytest.raises(ValidationError, match="Invalid data"):
+            model_update(mock_instance, data)
+
+        mock_instance.full_clean.assert_called_once()
+        mock_instance.save.assert_not_called()
+
+
+@pytest.mark.unit
+class TestCanManageOrganization:
+    """Test can_manage_organization utility function."""
+
+    def test_can_manage_organization_with_permission(self):
+        """Test can_manage_organization when user has permission."""
+        user = Mock()
+        organization = Mock()
+        user.has_perm = Mock(return_value=True)
+
+        result = can_manage_organization(user, organization)
+
+        assert result is True
+        user.has_perm.assert_called_once_with(
+            OrganizationPermissions.MANAGE_ORGANIZATION, organization
         )
 
-        assert updated_model.description == "Updated Description"
-        assert updated_model.amount == Decimal("200.00")
+    def test_can_manage_organization_without_permission(self):
+        """Test can_manage_organization when user lacks permission."""
+        user = Mock()
+        organization = Mock()
+        user.has_perm = Mock(return_value=False)
 
-        # Verify it was saved
-        updated_model.refresh_from_db()
-        assert updated_model.description == "Updated Description"
-        assert updated_model.amount == Decimal("200.00")
+        result = can_manage_organization(user, organization)
 
-    def test_model_update_with_validation_error(self):
-        """Test model_update with data that fails validation."""
-        test_model = EntryFactory(amount=Decimal("100.00"))
-
-        # Try to update with negative amount (should fail validation)
-        with pytest.raises(ValidationError):
-            model_update(
-                instance=test_model,
-                data={"amount": Decimal("-100.00")},
-                update_fields=["amount"],
-            )
-
-    def test_model_update_without_update_fields(self):
-        """Test model_update without specifying update_fields."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
+        assert result is False
+        user.has_perm.assert_called_once_with(
+            OrganizationPermissions.MANAGE_ORGANIZATION, organization
         )
-
-        updated_model = model_update(
-            instance=test_model, data={"description": "Updated Description"}
-        )
-
-        assert updated_model.description == "Updated Description"
-
-        # Verify it was saved (all fields)
-        updated_model.refresh_from_db()
-        assert updated_model.description == "Updated Description"
-
-    def test_model_update_partial_fields(self):
-        """Test model_update with only specific fields."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
-        )
-
-        updated_model = model_update(
-            instance=test_model,
-            data={
-                "description": "Updated Description",
-                "amount": Decimal("200.00"),
-            },
-            update_fields=["description"],  # Only update description
-        )
-
-        assert updated_model.description == "Updated Description"
-        assert updated_model.amount == Decimal("200.00")  # In memory
-
-        # Verify only description was saved to database
-        updated_model.refresh_from_db()
-        assert updated_model.description == "Updated Description"
-        # Note: Since we only updated description field, amount change may not persist
-        # This depends on Django's update_fields behavior
-
-    def test_model_update_empty_data(self):
-        """Test model_update with empty data."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
-        )
-        original_description = test_model.description
-
-        updated_model = model_update(instance=test_model, data={}, update_fields=[])
-
-        # Should remain unchanged
-        assert updated_model.description == original_description
-
-        updated_model.refresh_from_db()
-        assert updated_model.description == original_description
-
-    def test_model_update_returns_instance(self):
-        """Test that model_update returns the updated instance."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
-        )
-
-        result = model_update(
-            instance=test_model,
-            data={"description": "New Description"},
-            update_fields=["description"],
-        )
-
-        # Should return the same instance
-        assert result is test_model
-        assert result.description == "New Description"
-
-    def test_model_update_calls_full_clean(self):
-        """Test that model_update calls full_clean for validation."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
-        )
-
-        # This should trigger validation and fail
-        with pytest.raises(ValidationError):
-            model_update(
-                instance=test_model,
-                data={"amount": Decimal("-50.00")},  # Negative amount fails validation
-                update_fields=["amount"],
-            )
-
-        # Original instance should be unchanged since validation failed
-        test_model.refresh_from_db()
-        assert test_model.amount == Decimal("100.00")  # Original value
-
-    def test_model_update_with_multiple_field_types(self):
-        """Test model_update with different field types."""
-        test_model = EntryFactory(
-            description="Original Description", amount=Decimal("100.00")
-        )
-
-        updated_model = model_update(
-            instance=test_model,
-            data={
-                "description": "New Description",
-                "amount": Decimal("250.50"),
-                "is_flagged": True,
-            },
-            update_fields=["description", "amount", "is_flagged"],
-        )
-
-        assert updated_model.description == "New Description"
-        assert updated_model.amount == Decimal("250.50")
-
-        if updated_model.is_flagged:
-            assert updated_model.is_flagged
-        else:
-            assert not updated_model.is_flagged
-
-        # Verify persistence
-        updated_model.refresh_from_db()
-        assert updated_model.description == "New Description"
-        assert updated_model.amount == Decimal("250.50")
-        assert updated_model.is_flagged
 
 
 @pytest.mark.unit
 @pytest.mark.django_db
-class TestCoreUtilityFunctions:
-    """Test core utility functions."""
+class TestRevokeWorkspaceAdminPermission:
+    """Test revoke_workspace_admin_permission utility function."""
 
-    def setup_method(self):
-        """Set up test data."""
-        from tests.factories import (
-            CustomUserFactory,
-            OrganizationFactory,
-            OrganizationMemberFactory,
-            WorkspaceFactory,
-            TeamFactory,
-            WorkspaceTeamFactory,
-        )
-        from django.contrib.auth.models import Group
-        from apps.core.permissions import OrganizationPermissions
+    def test_revoke_workspace_admin_permission_existing_group(self):
+        """Test revoking permission from existing group."""
+        user = CustomUserFactory()
+        workspace = WorkspaceFactory()
+        group_name = f"Workspace Admins - {workspace.workspace_id}"
 
-        self.user = CustomUserFactory()
-        self.organization = OrganizationFactory()
-        self.organization_member = OrganizationMemberFactory(
-            user=self.user, organization=self.organization
-        )
-        self.workspace = WorkspaceFactory(organization=self.organization)
-        self.team = TeamFactory(organization=self.organization)
-        self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace, team=self.team
-        )
-        self.OrganizationPermissions = OrganizationPermissions
-        self.Group = Group
-
-    def test_can_manage_organization_with_permission(self):
-        """Test can_manage_organization returns True when user has permission."""
-        from apps.core.utils import can_manage_organization
-
-        # Mock user.has_perm to return True
-        self.user.has_perm = lambda perm, obj: True
-
-        result = can_manage_organization(self.user, self.organization)
-        assert result is True
-
-    def test_can_manage_organization_without_permission(self):
-        """Test can_manage_organization returns False when user lacks permission."""
-        from apps.core.utils import can_manage_organization
-
-        # Mock user.has_perm to return False
-        self.user.has_perm = lambda perm, obj: False
-
-        result = can_manage_organization(self.user, self.organization)
-        assert result is False
-
-    def test_can_manage_organization_calls_has_perm_with_correct_parameters(self):
-        """Test can_manage_organization calls has_perm with correct permission and organization."""
-        from apps.core.utils import can_manage_organization
-
-        # Track calls to has_perm
-        called_perms = []
-        called_objs = []
-
-        def mock_has_perm(perm, obj):
-            called_perms.append(perm)
-            called_objs.append(obj)
-            return True
-
-        self.user.has_perm = mock_has_perm
-
-        can_manage_organization(self.user, self.organization)
-
-        assert len(called_perms) == 1
-        assert called_perms[0] == self.OrganizationPermissions.MANAGE_ORGANIZATION
-        assert len(called_objs) == 1
-        assert called_objs[0] == self.organization
-
-    def test_revoke_workspace_admin_permission(self):
-        """Test revoke_workspace_admin_permission removes user from workspace admin group."""
-        from apps.core.utils import revoke_workspace_admin_permission
-
-        # Create workspace admin group and add user
-        group_name = f"Workspace Admins - {self.workspace.workspace_id}"
-        group = self.Group.objects.create(name=group_name)
-        group.user_set.add(self.user)
+        # Create group and add user
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(user)
 
         # Verify user is in group
-        assert self.user in group.user_set.all()
+        assert user in group.user_set.all()
 
         # Revoke permission
-        revoke_workspace_admin_permission(self.user, self.workspace)
+        revoke_workspace_admin_permission(user, workspace)
 
         # Verify user is removed from group
         group.refresh_from_db()
-        assert self.user not in group.user_set.all()
+        assert user not in group.user_set.all()
 
-    def test_revoke_workspace_admin_permission_creates_group_if_not_exists(self):
-        """Test revoke_workspace_admin_permission creates group if it doesn't exist."""
-        from apps.core.utils import revoke_workspace_admin_permission
+    def test_revoke_workspace_admin_permission_new_group(self):
+        """Test revoking permission when group doesn't exist."""
+        user = CustomUserFactory()
+        workspace = WorkspaceFactory()
+        group_name = f"Workspace Admins - {workspace.workspace_id}"
 
-        group_name = f"Workspace Admins - {self.workspace.workspace_id}"
+        # Verify group doesn't exist
+        assert not Group.objects.filter(name=group_name).exists()
 
-        # Verify group doesn't exist initially
-        assert not self.Group.objects.filter(name=group_name).exists()
-
-        # Revoke permission (should create group)
-        revoke_workspace_admin_permission(self.user, self.workspace)
+        # Revoke permission (should create group but not add user)
+        revoke_workspace_admin_permission(user, workspace)
 
         # Verify group was created
-        assert self.Group.objects.filter(name=group_name).exists()
+        group = Group.objects.get(name=group_name)
+        assert user not in group.user_set.all()
 
-    def test_revoke_operations_reviewer_permission(self):
-        """Test revoke_operations_reviewer_permission removes user from operations reviewer group."""
-        from apps.core.utils import revoke_operations_reviewer_permission
 
-        # Create operations reviewer group and add user
-        group_name = f"Operations Reviewer - {self.workspace.workspace_id}"
-        group = self.Group.objects.create(name=group_name)
-        group.user_set.add(self.user)
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestRevokeOperationsReviewerPermission:
+    """Test revoke_operations_reviewer_permission utility function."""
+
+    def test_revoke_operations_reviewer_permission_existing_group(self):
+        """Test revoking permission from existing group."""
+        user = CustomUserFactory()
+        workspace = WorkspaceFactory()
+        group_name = f"Operations Reviewer - {workspace.workspace_id}"
+
+        # Create group and add user
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(user)
 
         # Verify user is in group
-        assert self.user in group.user_set.all()
+        assert user in group.user_set.all()
 
         # Revoke permission
-        revoke_operations_reviewer_permission(self.user, self.workspace)
+        revoke_operations_reviewer_permission(user, workspace)
 
         # Verify user is removed from group
         group.refresh_from_db()
-        assert self.user not in group.user_set.all()
+        assert user not in group.user_set.all()
 
-    def test_revoke_team_coordinator_permission(self):
-        """Test revoke_team_coordinator_permission removes user from team coordinator group."""
-        from apps.core.utils import revoke_team_coordinator_permission
 
-        # Create team coordinator group and add user
-        group_name = f"Team Coordinator - {self.team.team_id}"
-        group = self.Group.objects.create(name=group_name)
-        group.user_set.add(self.user)
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestRevokeTeamCoordinatorPermission:
+    """Test revoke_team_coordinator_permission utility function."""
+
+    def test_revoke_team_coordinator_permission_existing_group(self):
+        """Test revoking permission from existing group."""
+        user = CustomUserFactory()
+        team = TeamFactory()
+        group_name = f"Team Coordinator - {team.team_id}"
+
+        # Create group and add user
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(user)
 
         # Verify user is in group
-        assert self.user in group.user_set.all()
+        assert user in group.user_set.all()
 
         # Revoke permission
-        revoke_team_coordinator_permission(self.user, self.team)
+        revoke_team_coordinator_permission(user, team)
 
         # Verify user is removed from group
         group.refresh_from_db()
-        assert self.user not in group.user_set.all()
+        assert user not in group.user_set.all()
 
-    def test_revoke_workspace_team_member_permission(self):
-        """Test revoke_workspace_team_member_permission removes user from workspace team group."""
-        from apps.core.utils import revoke_workspace_team_member_permission
 
-        # Create workspace team group and add user
-        group_name = f"Workspace Team - {self.workspace_team.workspace_team_id}"
-        group = self.Group.objects.create(name=group_name)
-        group.user_set.add(self.user)
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestRevokeWorkspaceTeamMemberPermission:
+    """Test revoke_workspace_team_member_permission utility function."""
+
+    def test_revoke_workspace_team_member_permission_existing_group(self):
+        """Test revoking permission from existing group."""
+        user = CustomUserFactory()
+        workspace_team = WorkspaceTeamFactory()
+        group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
+
+        # Create group and add user
+        group = Group.objects.create(name=group_name)
+        group.user_set.add(user)
 
         # Verify user is in group
-        assert self.user in group.user_set.all()
+        assert user in group.user_set.all()
 
         # Revoke permission
-        revoke_workspace_team_member_permission(self.user, self.workspace_team)
+        revoke_workspace_team_member_permission(user, workspace_team)
 
         # Verify user is removed from group
         group.refresh_from_db()
-        assert self.user not in group.user_set.all()
+        assert user not in group.user_set.all()
 
-    def test_revoke_permissions_with_user_not_in_group(self):
-        """Test revoke functions handle case where user is not in group gracefully."""
-        from apps.core.utils import (
-            revoke_workspace_admin_permission,
-            revoke_operations_reviewer_permission,
-            revoke_team_coordinator_permission,
-            revoke_workspace_team_member_permission,
-        )
 
-        # These should not raise errors even if user is not in group
-        revoke_workspace_admin_permission(self.user, self.workspace)
-        revoke_operations_reviewer_permission(self.user, self.workspace)
-        revoke_team_coordinator_permission(self.user, self.team)
-        revoke_workspace_team_member_permission(self.user, self.workspace_team)
+@pytest.mark.unit
+@pytest.mark.django_db
+class TestCheckIfMemberIsOwner:
+    """Test check_if_member_is_owner utility function."""
 
     def test_check_if_member_is_owner_true(self):
-        """Test check_if_member_is_owner returns True when member is organization owner."""
-        from apps.core.utils import check_if_member_is_owner
+        """Test when member is the owner."""
+        organization = OrganizationFactory()
+        owner_member = OrganizationMemberFactory(organization=organization)
+        organization.owner = owner_member
+        organization.save()
 
-        # Set the member as organization owner
-        self.organization.owner = self.organization_member
-        self.organization.save()
+        result = check_if_member_is_owner(owner_member, organization)
 
-        result = check_if_member_is_owner(self.organization_member, self.organization)
         assert result is True
 
     def test_check_if_member_is_owner_false(self):
-        """Test check_if_member_is_owner returns False when member is not organization owner."""
-        from apps.core.utils import check_if_member_is_owner
+        """Test when member is not the owner."""
+        organization = OrganizationFactory()
+        owner_member = OrganizationMemberFactory(organization=organization)
+        other_member = OrganizationMemberFactory(organization=organization)
+        organization.owner = owner_member
+        organization.save()
 
-        # Create another member who is not the owner
-        other_member = OrganizationMemberFactory(organization=self.organization)
+        result = check_if_member_is_owner(other_member, organization)
 
-        result = check_if_member_is_owner(other_member, self.organization)
         assert result is False
 
-    def test_check_if_member_is_owner_with_none_owner(self):
-        """Test check_if_member_is_owner handles case where organization has no owner."""
-        from apps.core.utils import check_if_member_is_owner
+    def test_check_if_member_is_owner_no_owner(self):
+        """Test when organization has no owner."""
+        organization = OrganizationFactory()
+        organization.owner = None
+        organization.save()
+        member = OrganizationMemberFactory(organization=organization)
 
-        # Ensure organization has no owner
-        self.organization.owner = None
-        self.organization.save()
+        result = check_if_member_is_owner(member, organization)
 
-        result = check_if_member_is_owner(self.organization_member, self.organization)
         assert result is False
-
-    def test_check_if_member_is_owner_compares_user_objects(self):
-        """Test check_if_member_is_owner correctly compares user objects."""
-        from apps.core.utils import check_if_member_is_owner
-
-        # Set the member as organization owner
-        self.organization.owner = self.organization_member
-        self.organization.save()
-
-        # Create another member with different user but same organization
-        other_user = CustomUserFactory()
-        other_member = OrganizationMemberFactory(
-            user=other_user, organization=self.organization
-        )
-
-        # Should return True for owner member
-        assert (
-            check_if_member_is_owner(self.organization_member, self.organization)
-            is True
-        )
-
-        # Should return False for non-owner member
-        assert check_if_member_is_owner(other_member, self.organization) is False

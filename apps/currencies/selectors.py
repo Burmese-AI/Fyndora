@@ -6,7 +6,12 @@ from apps.organizations.models import OrganizationExchangeRate
 
 
 def get_currency_by_code(code: str) -> Currency:
-    return Currency.objects.get(code=code)
+    try:
+        return Currency.objects.get(code=code)
+    # return None if the currency does not exist (THA)
+    except Currency.DoesNotExist:
+        return None
+
 
 def get_or_create_currency_by_code(code: str) -> Currency:
     currency = get_currency_by_code(code)

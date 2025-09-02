@@ -23,7 +23,6 @@ from .utils import (
     extract_organization_member_context,
     extract_request_metadata,
 )
-from apps.currencies.services import createCurrency
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +233,8 @@ def create_organization_exchange_rate(
                 f"Audit logging failed for exchange rate creation: {audit_error}",
                 exc_info=True,
             )
+        # return the exchange rate (THA)
+        return exchange_rate
 
     except IntegrityError as e:
         # Audit logging: Log failed exchange rate creation

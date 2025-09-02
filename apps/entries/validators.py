@@ -69,10 +69,12 @@ class TeamEntryValidator:
             EntryType.INCOME,
             EntryType.DISBURSEMENT,
         ] and not (
-            self.is_org_admin or self.workspace_team_role == TeamMemberRole.SUBMITTER
+            self.is_org_admin
+            or self.is_team_coordinator
+            or self.workspace_team_role == TeamMemberRole.SUBMITTER
         ):
             raise ValidationError(
-                "Only Admin and Submitters are authorized for this action."
+                "Only Admin, Team Coordinators, and Submitters are authorized for this action."
             )
 
         if entry_type == EntryType.REMITTANCE and not (

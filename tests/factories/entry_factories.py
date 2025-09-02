@@ -15,12 +15,10 @@ from apps.entries.constants import EntryType
 from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
     OrganizationFactory,
-    OrganizationExchangeRateFactory,
 )
 from tests.factories.workspace_factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
-    WorkspaceExchangeRateFactory,
 )
 
 
@@ -43,8 +41,8 @@ class EntryFactory(DjangoModelFactory):
         lambda: Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
     )
     exchange_rate_used = Decimal("1.00")
-    org_exchange_rate_ref = factory.SubFactory(OrganizationExchangeRateFactory)
-    workspace_exchange_rate_ref = factory.SubFactory(WorkspaceExchangeRateFactory)
+    org_exchange_rate_ref = None
+    workspace_exchange_rate_ref = None
     submitted_by_org_member = factory.SubFactory(OrganizationMemberFactory)
     submitted_by_team_member = None
     status = EntryStatus.PENDING
@@ -70,25 +68,25 @@ class EntryFactory(DjangoModelFactory):
             self.workspace_team.save()
 
         # Get or create exchange rate references to avoid duplicates
-        if self.org_exchange_rate_ref:
+        if self.org_exchange_rate_ref is None:
             from apps.organizations.models import OrganizationExchangeRate
 
             org_rate, created = OrganizationExchangeRate.objects.get_or_create(
                 organization=self.organization,
                 currency=self.currency,
                 effective_date=self.occurred_at,
-                defaults={"rate": self.org_exchange_rate_ref.rate},
+                defaults={"rate": Decimal("1.00")},
             )
             self.org_exchange_rate_ref = org_rate
 
-        if self.workspace_exchange_rate_ref:
+        if self.workspace_exchange_rate_ref is None:
             from apps.workspaces.models import WorkspaceExchangeRate
 
             workspace_rate, created = WorkspaceExchangeRate.objects.get_or_create(
                 workspace=self.workspace,
                 currency=self.currency,
                 effective_date=self.occurred_at,
-                defaults={"rate": self.workspace_exchange_rate_ref.rate},
+                defaults={"rate": Decimal("1.00")},
             )
             self.workspace_exchange_rate_ref = workspace_rate
 
@@ -258,47 +256,82 @@ class EntryWithReviewFactory(EntryFactory):
 class OrganizationExpenseEntryFactory(EntryFactory):
     """Factory for creating organization-level expense entries."""
 
+    class Meta:
+        skip_postgeneration_save = True
+
     entry_type = EntryType.ORG_EXP
     submitted_by_org_member = factory.SubFactory(OrganizationMemberFactory)
     submitted_by_team_member = None
     workspace = None
     workspace_team = None
     description = factory.Sequence(lambda n: f"Organization expense {n}")
-    org_exchange_rate_ref = factory.LazyAttribute(
-        lambda obj: obj.org_exchange_rate_ref or None
-    )
+    org_exchange_rate_ref = None
+    workspace_exchange_rate_ref = None  # Explicitly set to None
+    organization = None  # Will be set in post_generation
+
+    @factory.post_generation
+    def setup_org_relationships(self, create, extracted, **kwargs):
+        """Ensure organization relationships are properly set."""
+        if not create:
+            return
+
+        # Set organization from the org member
+        if self.submitted_by_org_member:
+            # Ensure the org_member is saved and has organization
+            if not self.submitted_by_org_member.pk:
+                self.submitted_by_org_member.save()
+            if self.submitted_by_org_member.organization:
+                self.organization = self.submitted_by_org_member.organization
+                self.save()
 
 
 class WorkspaceExpenseEntryFactory(EntryFactory):
     """Factory for creating workspace-level expense entries."""
 
+    class Meta:
+        skip_postgeneration_save = True
+
     entry_type = EntryType.WORKSPACE_EXP
     submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
     submitted_by_org_member = None
     description = factory.Sequence(lambda n: f"Workspace expense {n}")
-    workspace_exchange_rate_ref = factory.LazyAttribute(
-        lambda obj: obj.workspace_exchange_rate_ref or None
-    )
+    workspace_exchange_rate_ref = None
+    org_exchange_rate_ref = None  # Explicitly set to None
+    organization = None  # Will be set in post_generation
+
+    @factory.post_generation
+    def setup_workspace_relationships(self, create, extracted, **kwargs):
+        """Ensure workspace relationships are properly set."""
+        if not create:
+            return
+
+        # Set organization from the team member
+        if self.submitted_by_team_member:
+            # Ensure the team_member is saved and has organization_member
+            if not self.submitted_by_team_member.pk:
+                self.submitted_by_team_member.save()
+            if (
+                self.submitted_by_team_member.organization_member
+                and self.submitted_by_team_member.organization_member.organization
+            ):
+                self.organization = (
+                    self.submitted_by_team_member.organization_member.organization
+                )
+                self.save()
 
 
 # in tests/factories/entry_factories.py (or wherever your entry factories live)
 
 
-class ReviewedEntryFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Entry
+class ReviewedEntryFactory(EntryFactory):
+    """Factory for creating reviewed entries."""
 
-    # You can choose either team member or org member
-    submitted_by_team_member = factory.SubFactory(TeamMemberFactory)
-    organization = factory.LazyAttribute(
-        lambda o: o.submitted_by_team_member.organization_member.organization
-    )
-    workspace = None
-    workspace_team = None
-    entry_type = "INCOME"
-    amount = 100.00
-    description = "Reviewed entry"
     status = EntryStatus.REVIEWED
+    occurred_at = factory.LazyFunction(lambda: date.today())
+    currency = factory.LazyFunction(
+        lambda: Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    )
+    exchange_rate_used = Decimal("1.00")
 
     last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
     status_note = "Reviewed note"

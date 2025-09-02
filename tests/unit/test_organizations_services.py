@@ -203,15 +203,15 @@ class TestCreateOrganizationExchangeRate(TestCase):
         )
         # Don't create real currency in setUp to avoid interference
 
-    @patch("apps.organizations.services.createCurrency")
+    @patch("apps.organizations.services.get_or_create_currency_by_code")
     @patch("apps.organizations.services.BusinessAuditLogger")
     def test_create_exchange_rate_success(
-        self, mock_audit_logger, mock_create_currency
+        self, mock_audit_logger, mock_get_or_create_currency
     ):
         """Test successful exchange rate creation."""
         # Mock currency creation
         mock_currency = MagicMock()
-        mock_create_currency.return_value = mock_currency
+        mock_get_or_create_currency.return_value = mock_currency
 
         # Mock OrganizationExchangeRate.objects.create
         with patch.object(OrganizationExchangeRate.objects, "create") as mock_create:
@@ -233,15 +233,15 @@ class TestCreateOrganizationExchangeRate(TestCase):
             # Verify audit logging
             mock_audit_logger.log_organization_exchange_rate_action.assert_called()
 
-    @patch("apps.organizations.services.createCurrency")
+    @patch("apps.organizations.services.get_or_create_currency_by_code")
     @patch("apps.organizations.services.BusinessAuditLogger")
     def test_create_exchange_rate_integrity_error(
-        self, mock_audit_logger, mock_create_currency
+        self, mock_audit_logger, mock_get_or_create_currency
     ):
         """Test exchange rate creation with integrity error."""
         # Mock currency creation
         mock_currency = MagicMock()
-        mock_create_currency.return_value = mock_currency
+        mock_get_or_create_currency.return_value = mock_currency
 
         # Mock integrity error
         with patch.object(OrganizationExchangeRate.objects, "create") as mock_create:
@@ -260,15 +260,15 @@ class TestCreateOrganizationExchangeRate(TestCase):
             # Verify audit logging was attempted
             mock_audit_logger.log_operation_failure.assert_called()
 
-    @patch("apps.organizations.services.createCurrency")
+    @patch("apps.organizations.services.get_or_create_currency_by_code")
     @patch("apps.organizations.services.BusinessAuditLogger")
     def test_create_exchange_rate_general_error(
-        self, mock_audit_logger, mock_create_currency
+        self, mock_audit_logger, mock_get_or_create_currency
     ):
         """Test exchange rate creation with general error."""
         # Mock currency creation
         mock_currency = MagicMock()
-        mock_create_currency.return_value = mock_currency
+        mock_get_or_create_currency.return_value = mock_currency
 
         # Mock general error
         with patch.object(OrganizationExchangeRate.objects, "create") as mock_create:
@@ -286,6 +286,42 @@ class TestCreateOrganizationExchangeRate(TestCase):
 
             # Verify audit logging was attempted
             mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.get_or_create_currency_by_code")
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_create_exchange_rate_audit_logging_failure(
+        self, mock_audit_logger, mock_get_or_create_currency
+    ):
+        """Test exchange rate creation when audit logging fails."""
+        # Mock currency creation
+        mock_currency = MagicMock()
+        mock_get_or_create_currency.return_value = mock_currency
+
+        # Mock successful exchange rate creation
+        with patch.object(OrganizationExchangeRate.objects, "create") as mock_create:
+            mock_exchange_rate = MagicMock()
+            mock_create.return_value = mock_exchange_rate
+
+            # Mock audit logging to raise an exception
+            mock_audit_logger.log_organization_exchange_rate_action.side_effect = (
+                Exception("Audit logging failed")
+            )
+
+            # Call the service function
+            result = create_organization_exchange_rate(
+                organization=self.organization,
+                organization_member=self.organization_member,
+                currency_code="USD",
+                rate=Decimal("1.00"),
+                note="Test rate",
+                effective_date=date.today(),
+            )
+
+            # Verify the function still returns the exchange rate despite audit failure
+            assert result == mock_exchange_rate
+
+            # Verify audit logging was attempted and failed
+            mock_audit_logger.log_organization_exchange_rate_action.assert_called()
 
 
 class TestUpdateOrganizationExchangeRate(TestCase):
@@ -338,6 +374,35 @@ class TestUpdateOrganizationExchangeRate(TestCase):
 
             # Verify audit logging was attempted
             mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    @patch("apps.organizations.services.model_update")
+    def test_update_exchange_rate_audit_logging_failure(
+        self, mock_model_update, mock_audit_logger
+    ):
+        """Test exchange rate update when audit logging fails."""
+        # Mock successful model update
+        updated_rate = OrganizationExchangeRateFactory(note="Updated note")
+        mock_model_update.return_value = updated_rate
+
+        # Mock audit logging to raise an exception
+        mock_audit_logger.log_organization_exchange_rate_action.side_effect = Exception(
+            "Audit logging failed"
+        )
+
+        # Call the service function
+        result = update_organization_exchange_rate(
+            organization=self.organization,
+            organization_member=self.organization_member,
+            org_exchange_rate=self.exchange_rate,
+            note="Updated note",
+        )
+
+        # Verify the function still returns the updated rate despite audit failure
+        assert result == updated_rate
+
+        # Verify audit logging was attempted and failed
+        mock_audit_logger.log_organization_exchange_rate_action.assert_called()
 
 
 class TestDeleteOrganizationExchangeRate(TestCase):

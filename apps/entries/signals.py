@@ -11,11 +11,14 @@ from apps.remittance.services import (
 
 @receiver(post_save, sender=Entry)
 def keep_remittance_updated_with_entry(sender, instance: Entry, created, **kwargs):
-    
-    #Prevent Remittance Process on Expense entry types
-    if instance.entry_type not in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
+    # Prevent Remittance Process on Expense entry types
+    if instance.entry_type not in [
+        EntryType.INCOME,
+        EntryType.DISBURSEMENT,
+        EntryType.REMITTANCE,
+    ]:
         return
-    
+
     workspace_team = instance.workspace_team
     remittance = workspace_team.remittance
     required_to_update = False
@@ -34,11 +37,14 @@ def keep_remittance_updated_with_entry(sender, instance: Entry, created, **kwarg
 
 @receiver(post_delete, sender=Entry)
 def revert_remittance_on_entry_delete(sender, instance: Entry, **kwargs):
-    
-    #Prevent Remittance Process on Expense entry types
-    if instance.entry_type not in [EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
+    # Prevent Remittance Process on Expense entry types
+    if instance.entry_type not in [
+        EntryType.INCOME,
+        EntryType.DISBURSEMENT,
+        EntryType.REMITTANCE,
+    ]:
         return
-    
+
     # Only act if entry was APPROVED before deletion
     if instance.status != EntryStatus.APPROVED:
         return

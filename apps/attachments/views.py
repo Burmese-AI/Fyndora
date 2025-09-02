@@ -1,10 +1,8 @@
 from django.http import HttpResponse, FileResponse, Http404
 import os
-from django.views.generic import DeleteView
 from django.views.decorators.http import require_http_methods
 
 from apps.attachments.selectors import get_attachment
-from .models import Attachment
 from django.template.loader import render_to_string
 from django.contrib.messages import get_messages
 
@@ -45,5 +43,5 @@ def download_attachment(request, attachment_id):
     return FileResponse(
         open(file_path, "rb"),
         as_attachment=True,
-        filename=os.path.basename(attachment.file_url.name)
+        filename=os.path.basename(attachment.file_url.name),
     )

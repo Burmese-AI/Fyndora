@@ -6,13 +6,12 @@ from django.shortcuts import get_object_or_404
 
 from apps.organizations.models import (
     Organization,
-    OrganizationMember,
 )
-from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
+
 
 # Selectors for Services and Views
 def get_entries(
@@ -67,6 +66,9 @@ def get_entries(
                 entry_type__in=team_entry_types,
                 organization=organization,
             )
+        else:
+            # If no context is provided, still create a filter for team entry types for testing edge purposes..
+            team_filter = Q(entry_type__in=team_entry_types)
 
         filters |= team_filter
 
@@ -77,10 +79,9 @@ def get_entries(
     if annotate_attachment_count:
         queryset = queryset.annotate(
             attachment_count=Count(
-            "attachments",
-            filter=Q(attachments__deleted_at__isnull=True)
+                "attachments", filter=Q(attachments__deleted_at__isnull=True)
+            )
         )
-    )
 
     # Apply additional filters
     if statuses:
@@ -90,7 +91,7 @@ def get_entries(
     if workspace_team_id:
         queryset = queryset.filter(workspace_team__pk=workspace_team_id)
     if workspace_id:
-        queryset = queryset.filter(workspace_pk=workspace_id)
+        queryset = queryset.filter(workspace__pk=workspace_id)
     if search:
         queryset = queryset.filter(Q(description__icontains=search))
 
@@ -152,8 +153,7 @@ def get_entry(pk, required_attachment_count=False):
     if required_attachment_count:
         queryset = queryset.annotate(
             attachment_count=Count(
-            "attachments",
-            filter=Q(attachments__deleted_at__isnull=True)
+                "attachments", filter=Q(attachments__deleted_at__isnull=True)
+            )
         )
-    )
     return get_object_or_404(queryset, pk=pk)

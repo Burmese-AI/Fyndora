@@ -12,6 +12,7 @@ from apps.workspaces.models import Workspace, WorkspaceTeam
 from .constants import EntryStatus, EntryType
 from .models import Entry
 
+
 # Selectors for Services and Views
 def get_entries(
     *,
@@ -78,10 +79,9 @@ def get_entries(
     if annotate_attachment_count:
         queryset = queryset.annotate(
             attachment_count=Count(
-            "attachments",
-            filter=Q(attachments__deleted_at__isnull=True)
+                "attachments", filter=Q(attachments__deleted_at__isnull=True)
+            )
         )
-    )
 
     # Apply additional filters
     if statuses:
@@ -153,8 +153,7 @@ def get_entry(pk, required_attachment_count=False):
     if required_attachment_count:
         queryset = queryset.annotate(
             attachment_count=Count(
-            "attachments",
-            filter=Q(attachments__deleted_at__isnull=True)
+                "attachments", filter=Q(attachments__deleted_at__isnull=True)
+            )
         )
-    )
     return get_object_or_404(queryset, pk=pk)

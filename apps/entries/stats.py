@@ -32,7 +32,7 @@ class EntryStats:
             workspace=workspace,
             workspace_team=workspace_team,
             entry_types=entry_types,
-            #chnaged to statuses .. before it was status, wrong use of function parameter.
+            # chnaged to statuses .. before it was status, wrong use of function parameter.
             statuses=[status],
         )
 

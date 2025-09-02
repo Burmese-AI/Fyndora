@@ -11,5 +11,5 @@ urlpatterns = [
         "<uuid:attachment_id>/download/",
         download_attachment,
         name="download_attachment",
-    )
+    ),
 ]

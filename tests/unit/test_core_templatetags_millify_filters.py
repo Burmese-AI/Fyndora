@@ -74,21 +74,21 @@ class TestMillifyNumberFilter:
 
     def test_millify_number_with_invalid_string(self):
         """Test millify_number with invalid string input."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number("invalid")
             assert result is None
             mock_print.assert_called_once()
 
     def test_millify_number_with_none(self):
         """Test millify_number with None input."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number(None)
             assert result is None
             mock_print.assert_called_once()
 
     def test_millify_number_with_empty_string(self):
         """Test millify_number with empty string."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number("")
             assert result is None
             mock_print.assert_called_once()
@@ -108,7 +108,7 @@ class TestMillifyNumberFilter:
 
     def test_millify_number_with_negative_precision(self):
         """Test millify_number with negative precision."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number(1234, precision=-1)
             assert result is None
             mock_print.assert_called_once()
@@ -120,38 +120,40 @@ class TestMillifyNumberFilter:
 
     def test_millify_number_with_invalid_precision(self):
         """Test millify_number with invalid precision."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number(1234, precision="invalid")
             assert result is None
             mock_print.assert_called_once()
 
     def test_millify_number_with_millify_exception(self):
         """Test millify_number when millify function raises exception."""
-        with patch('apps.core.templatetags.millify_filters.millify') as mock_millify:
+        with patch("apps.core.templatetags.millify_filters.millify") as mock_millify:
             mock_millify.side_effect = Exception("Test exception")
-            
-            with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+
+            with patch("apps.core.templatetags.millify_filters.print") as mock_print:
                 result = millify_number(1000)
                 assert result is None
-                mock_print.assert_called_once_with("Error in millify_number: Test exception")
+                mock_print.assert_called_once_with(
+                    "Error in millify_number: Test exception"
+                )
 
     def test_millify_number_with_float_conversion_exception(self):
         """Test millify_number when float conversion fails."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number("not_a_number")
             assert result is None
             mock_print.assert_called_once()
 
     def test_millify_number_with_int_conversion_exception(self):
         """Test millify_number when int conversion for precision fails."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number(1000, precision="not_a_number")
             assert result is None
             mock_print.assert_called_once()
 
     def test_millify_number_with_complex_numbers(self):
         """Test millify_number with complex number-like strings."""
-        with patch('apps.core.templatetags.millify_filters.print') as mock_print:
+        with patch("apps.core.templatetags.millify_filters.print") as mock_print:
             result = millify_number("1+2j")
             assert result is None
             mock_print.assert_called_once()

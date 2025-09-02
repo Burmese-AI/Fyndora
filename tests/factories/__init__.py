@@ -177,5 +177,4 @@ __all__ = [
     "WorkspaceExchangeRateFactory",
     "OrganizationExchangeRateFactory",
     "TeamFactoryWithTitle",
-    
 ]

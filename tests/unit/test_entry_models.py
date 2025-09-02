@@ -76,7 +76,9 @@ class TestEntryModel:
         )
 
         # The actual __str__ method returns: "pk - entry_type - amount - status"
-        expected_str = f"{entry.pk} - {entry.entry_type} - {entry.amount} - {entry.status}"
+        expected_str = (
+            f"{entry.pk} - {entry.entry_type} - {entry.amount} - {entry.status}"
+        )
         assert str(entry) == expected_str
 
     def test_converted_amount_property(self):
@@ -350,8 +352,6 @@ class TestEntryRelationships:
 
         assert entry.submitted_by_team_member == team_member
 
-
-
     def test_organization_relationship(self):
         """Test organization foreign key relationship."""
         entry = EntryFactory()
@@ -385,8 +385,6 @@ class TestEntryRelationships:
         entry = ApprovedEntryFactory(last_status_modified_by=reviewer)
 
         assert entry.last_status_modified_by == reviewer
-
-
 
 
 @pytest.mark.unit
@@ -435,12 +433,6 @@ class TestEntryFactories:
             assert entry.status_last_updated_at is not None
         else:
             assert entry.last_status_modified_by is None
-
-
-
-
-
-
 
     def test_flagged_entry_factory(self):
         """Test FlaggedEntryFactory creates flagged entry."""

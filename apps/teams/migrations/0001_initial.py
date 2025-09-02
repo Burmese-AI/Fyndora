@@ -6,57 +6,132 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('organizations', '0001_initial'),
+        ("organizations", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Team',
+            name="Team",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('deleted_at', models.DateTimeField(blank=True, null=True)),
-                ('team_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=255)),
-                ('description', models.TextField(blank=True, null=True)),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_teams', to='organizations.organizationmember')),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='teams', to='organizations.organization')),
-                ('team_coordinator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='coordinated_teams', to='organizations.organizationmember')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("deleted_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "team_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("description", models.TextField(blank=True, null=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_teams",
+                        to="organizations.organizationmember",
+                    ),
+                ),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="teams",
+                        to="organizations.organization",
+                    ),
+                ),
+                (
+                    "team_coordinator",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="coordinated_teams",
+                        to="organizations.organizationmember",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'team',
-                'verbose_name_plural': 'teams',
-                'ordering': ['-created_at'],
-                'permissions': [('add_team_member', 'Can add team member by Team Admin and Org Owner')],
+                "verbose_name": "team",
+                "verbose_name_plural": "teams",
+                "ordering": ["-created_at"],
+                "permissions": [
+                    (
+                        "add_team_member",
+                        "Can add team member by Team Admin and Org Owner",
+                    )
+                ],
             },
         ),
         migrations.CreateModel(
-            name='TeamMember',
+            name="TeamMember",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('deleted_at', models.DateTimeField(blank=True, null=True)),
-                ('team_member_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('role', models.CharField(choices=[('team_coordinator', 'Team Coordinator'), ('submitter', 'Submitter'), ('auditor', 'Auditor')], default='submitter', max_length=32)),
-                ('organization_member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='team_memberships', to='organizations.organizationmember')),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='members', to='teams.team')),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("deleted_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "team_member_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "role",
+                    models.CharField(
+                        choices=[
+                            ("team_coordinator", "Team Coordinator"),
+                            ("submitter", "Submitter"),
+                            ("auditor", "Auditor"),
+                        ],
+                        default="submitter",
+                        max_length=32,
+                    ),
+                ),
+                (
+                    "organization_member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="team_memberships",
+                        to="organizations.organizationmember",
+                    ),
+                ),
+                (
+                    "team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="members",
+                        to="teams.team",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'team member',
-                'verbose_name_plural': 'team members',
-                'ordering': ['-created_at'],
+                "verbose_name": "team member",
+                "verbose_name_plural": "team members",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.AddConstraint(
-            model_name='team',
-            constraint=models.UniqueConstraint(fields=('title', 'organization'), name='unique_team'),
+            model_name="team",
+            constraint=models.UniqueConstraint(
+                fields=("title", "organization"), name="unique_team"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='teammember',
-            constraint=models.UniqueConstraint(condition=models.Q(('deleted_at__isnull', True)), fields=('team', 'organization_member'), name='unique_team_member'),
+            model_name="teammember",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("deleted_at__isnull", True)),
+                fields=("team", "organization_member"),
+                name="unique_team_member",
+            ),
         ),
     ]

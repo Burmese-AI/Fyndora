@@ -38,14 +38,15 @@ class TestBaseEntryForm(TestCase):
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     def test_base_entry_form_valid_data(self):
@@ -56,7 +57,7 @@ class TestBaseEntryForm(TestCase):
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         form = BaseEntryForm(
             data=form_data,
             org_member=self.org_member,
@@ -64,7 +65,7 @@ class TestBaseEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         assert form.is_valid(), f"Form errors: {form.errors}"
         assert form.cleaned_data["amount"] == Decimal("100.50")
         assert form.cleaned_data["description"] == "Test expense"
@@ -77,7 +78,7 @@ class TestBaseEntryForm(TestCase):
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         form = BaseEntryForm(
             data=form_data,
             org_member=self.org_member,
@@ -85,7 +86,7 @@ class TestBaseEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         assert not form.is_valid()
         assert "amount" in form.errors
 
@@ -95,7 +96,7 @@ class TestBaseEntryForm(TestCase):
             "amount": "100.50",
             # Missing description, currency, occurred_at
         }
-        
+
         form = BaseEntryForm(
             data=form_data,
             org_member=self.org_member,
@@ -103,7 +104,7 @@ class TestBaseEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         assert not form.is_valid()
         assert "description" in form.errors
         assert "currency" in form.errors
@@ -113,14 +114,14 @@ class TestBaseEntryForm(TestCase):
         """Test that currency field only shows organization currencies."""
         # Create another currency not associated with organization
         other_currency = Currency.objects.create(code="EUR", name="Euro")
-        
+
         form = BaseEntryForm(
             org_member=self.org_member,
             organization=self.organization,
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         currency_choices = list(form.fields["currency"].queryset)
         assert self.currency in currency_choices
         assert other_currency not in currency_choices
@@ -129,20 +130,18 @@ class TestBaseEntryForm(TestCase):
         """Test that BaseEntryForm validates attachments."""
         # Create a test file (small enough to pass validation, with allowed extension)
         test_file = SimpleUploadedFile(
-            "test.pdf",
-            b"test file content",
-            content_type="application/pdf"
+            "test.pdf", b"test file content", content_type="application/pdf"
         )
-        
+
         form_data = {
             "amount": "100.50",
             "description": "Test expense",
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         files = {"attachment_files": [test_file]}
-        
+
         form = BaseEntryForm(
             data=form_data,
             files=files,
@@ -151,7 +150,7 @@ class TestBaseEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         assert form.is_valid(), f"Form errors: {form.errors}"
 
 
@@ -163,14 +162,15 @@ class TestCreateOrganizationExpenseEntryForm(TestCase):
         self.organization = OrganizationFactory()
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     def test_org_expense_form_org_admin_access(self):
@@ -181,14 +181,14 @@ class TestCreateOrganizationExpenseEntryForm(TestCase):
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         form = CreateOrganizationExpenseEntryForm(
             data=form_data,
             org_member=self.org_member,
             organization=self.organization,
             is_org_admin=True,
         )
-        
+
         assert form.is_valid(), f"Form errors: {form.errors}"
 
     def test_org_expense_form_non_admin_access_denied(self):
@@ -199,16 +199,18 @@ class TestCreateOrganizationExpenseEntryForm(TestCase):
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         form = CreateOrganizationExpenseEntryForm(
             data=form_data,
             org_member=self.org_member,
             organization=self.organization,
             is_org_admin=False,
         )
-        
+
         assert not form.is_valid()
-        assert "You are not authorized to create organization expenses" in str(form.errors["__all__"])
+        assert "You are not authorized to create organization expenses" in str(
+            form.errors["__all__"]
+        )
 
 
 class TestCreateWorkspaceTeamEntryForm(TestCase):
@@ -220,20 +222,21 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         self.org_member = OrganizationMemberFactory(organization=self.organization)
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
-        
+
         # Set the team coordinator to the org member
         self.workspace_team.team.team_coordinator = self.org_member
         self.workspace_team.team.save()
-        
+
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     def test_workspace_team_form_team_coordinator_access(self):
@@ -242,9 +245,9 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=self.org_member,
-            role=TeamMemberRole.TEAM_COORDINATOR
+            role=TeamMemberRole.TEAM_COORDINATOR,
         )
-        
+
         form_data = {
             "amount": "100.00",
             "description": "Team expense",
@@ -252,7 +255,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             "occurred_at": date.today(),
             "entry_type": "income",
         }
-        
+
         form = CreateWorkspaceTeamEntryForm(
             data=form_data,
             org_member=self.org_member,
@@ -261,7 +264,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_team_coordinator=True,
         )
-        
+
         assert form.is_valid(), f"Form errors: {form.errors}"
 
     def test_workspace_team_form_submitter_access(self):
@@ -271,9 +274,9 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
-            role=TeamMemberRole.SUBMITTER
+            role=TeamMemberRole.SUBMITTER,
         )
-        
+
         form_data = {
             "amount": "100.00",
             "description": "Team expense",
@@ -281,7 +284,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             "occurred_at": date.today(),
             "entry_type": "disbursement",
         }
-        
+
         form = CreateWorkspaceTeamEntryForm(
             data=form_data,
             org_member=submitter_org_member,
@@ -290,7 +293,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             workspace_team_role=TeamMemberRole.SUBMITTER,
         )
-        
+
         assert form.is_valid(), f"Form.errors: {form.errors}"
 
     def test_workspace_team_form_submitter_remittance_denied(self):
@@ -300,9 +303,9 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
-            role=TeamMemberRole.SUBMITTER
+            role=TeamMemberRole.SUBMITTER,
         )
-        
+
         form_data = {
             "amount": "100.00",
             "description": "Team expense",
@@ -310,7 +313,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             "occurred_at": date.today(),
             "entry_type": "remittance",
         }
-        
+
         form = CreateWorkspaceTeamEntryForm(
             data=form_data,
             org_member=submitter_org_member,
@@ -319,7 +322,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             workspace_team_role=TeamMemberRole.SUBMITTER,
         )
-        
+
         # This should fail validation due to entry type restrictions
         assert not form.is_valid()
 
@@ -329,9 +332,9 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=self.org_member,
-            role=TeamMemberRole.TEAM_COORDINATOR
+            role=TeamMemberRole.TEAM_COORDINATOR,
         )
-        
+
         # Test team coordinator choices
         form = CreateWorkspaceTeamEntryForm(
             org_member=self.org_member,
@@ -340,7 +343,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_team_coordinator=True,
         )
-        
+
         coordinator_choices = form.get_allowed_entry_types()
         expected_coordinator_choices = [
             (EntryType.INCOME, "Income"),
@@ -354,9 +357,9 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
-            role=TeamMemberRole.SUBMITTER
+            role=TeamMemberRole.SUBMITTER,
         )
-        
+
         # Test submitter choices
         form = CreateWorkspaceTeamEntryForm(
             org_member=submitter_org_member,
@@ -365,7 +368,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             workspace_team_role=TeamMemberRole.SUBMITTER,
         )
-        
+
         submitter_choices = form.get_allowed_entry_types()
         expected_submitter_choices = [
             (EntryType.INCOME, "Income"),
@@ -384,14 +387,15 @@ class TestBaseUpdateEntryForm(TestCase):
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     def test_update_form_pending_entry_all_fields_editable(self):
@@ -402,7 +406,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             status=EntryStatus.PENDING,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -410,7 +414,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         # All fields should be enabled for pending entries
         assert not form.fields["amount"].disabled
         assert not form.fields["description"].disabled
@@ -426,7 +430,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             status=EntryStatus.APPROVED,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -434,7 +438,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         # Core fields should be disabled for non-pending entries
         assert form.fields["amount"].disabled
         assert form.fields["description"].disabled
@@ -450,7 +454,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             status=EntryStatus.PENDING,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -459,7 +463,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             workspace_team_role=TeamMemberRole.SUBMITTER,
         )
-        
+
         # Status fields should be disabled for submitters
         assert form.fields["status"].disabled
         assert form.fields["status_note"].disabled
@@ -473,7 +477,7 @@ class TestBaseUpdateEntryForm(TestCase):
             status=EntryStatus.PENDING,
             entry_type=EntryType.REMITTANCE,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -482,7 +486,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_team_coordinator=True,
         )
-        
+
         # Status fields should be disabled for team coordinators on remittance
         assert form.fields["status"].disabled
         assert form.fields["status_note"].disabled
@@ -494,7 +498,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -503,7 +507,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_org_admin=True,
         )
-        
+
         allowed_statuses = form.get_allowed_statuses()
         expected_statuses = [
             (EntryStatus.PENDING, "Pending"),
@@ -520,7 +524,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         form = BaseUpdateEntryForm(
             instance=entry,
             org_member=self.org_member,
@@ -529,7 +533,7 @@ class TestBaseUpdateEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_team_coordinator=True,
         )
-        
+
         allowed_statuses = form.get_allowed_statuses()
         expected_statuses = [
             (EntryStatus.PENDING, "Pending"),
@@ -550,14 +554,15 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
@@ -569,7 +574,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             status=EntryStatus.PENDING,
         )
-        
+
         form_data = {
             "amount": "150.00",
             "description": "Updated description",
@@ -578,7 +583,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             "status": EntryStatus.REVIEWED,
             "status_note": "Reviewed and updated",
         }
-        
+
         form = UpdateWorkspaceTeamEntryForm(
             data=form_data,
             instance=entry,
@@ -588,7 +593,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_org_admin=True,
         )
-        
+
         assert form.is_valid(), f"Form errors: {form.errors}"
 
     def test_update_workspace_team_form_invalid_status_transition(self):
@@ -599,7 +604,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             status=EntryStatus.PENDING,
         )
-        
+
         form_data = {
             "amount": "150.00",
             "description": "Updated description",
@@ -608,7 +613,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             "status": EntryStatus.APPROVED,  # Invalid transition
             "status_note": "Approved",
         }
-        
+
         form = UpdateWorkspaceTeamEntryForm(
             data=form_data,
             instance=entry,
@@ -618,7 +623,7 @@ class TestUpdateWorkspaceTeamEntryForm(TestCase):
             workspace_team=self.workspace_team,
             is_team_coordinator=True,  # Limited permissions
         )
-        
+
         # This should fail validation due to status transition rules
         assert not form.is_valid()
 
@@ -633,14 +638,15 @@ class TestEntryFormsIntegration(TestCase):
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         self.currency = Currency.objects.create(code="USD", name="US Dollar")
-        
+
         # Create organization exchange rate
         from apps.organizations.models import OrganizationExchangeRate
+
         self.org_exchange_rate = OrganizationExchangeRate.objects.create(
             organization=self.organization,
             currency=self.currency,
             effective_date=date.today(),
-            rate=Decimal("1.00")
+            rate=Decimal("1.00"),
         )
 
     def test_form_clean_method_currency_validation(self):
@@ -651,7 +657,7 @@ class TestEntryFormsIntegration(TestCase):
             "currency": "",  # Empty currency
             "occurred_at": date.today(),
         }
-        
+
         form = BaseEntryForm(
             data=form_data,
             org_member=self.org_member,
@@ -659,7 +665,7 @@ class TestEntryFormsIntegration(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         assert not form.is_valid()
         assert "Currency is required" in str(form.errors["__all__"])
 
@@ -669,18 +675,18 @@ class TestEntryFormsIntegration(TestCase):
         large_file = SimpleUploadedFile(
             "large.pdf",
             b"x" * (6 * 1024 * 1024),  # 6MB file (over 5MB limit)
-            content_type="application/pdf"
+            content_type="application/pdf",
         )
-        
+
         form_data = {
             "amount": "100.00",
             "description": "Test expense",
             "currency": self.currency.currency_id,
             "occurred_at": date.today(),
         }
-        
+
         files = {"attachment_files": [large_file]}
-        
+
         form = BaseEntryForm(
             data=form_data,
             files=files,
@@ -689,6 +695,6 @@ class TestEntryFormsIntegration(TestCase):
             workspace=self.workspace,
             workspace_team=self.workspace_team,
         )
-        
+
         # This should fail validation due to file size
         assert not form.is_valid()

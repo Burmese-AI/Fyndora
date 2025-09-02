@@ -43,5 +43,5 @@ def download_attachment(request, attachment_id):
     return FileResponse(
         open(file_path, "rb"),
         as_attachment=True,
-        filename=os.path.basename(attachment.file_url.name)
+        filename=os.path.basename(attachment.file_url.name),
     )

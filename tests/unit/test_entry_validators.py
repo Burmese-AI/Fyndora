@@ -29,7 +29,7 @@ class TestTeamEntryValidator:
         self.workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() - timedelta(days=30),
-            end_date=date.today() + timedelta(days=30)
+            end_date=date.today() + timedelta(days=30),
         )
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         # Remittance is automatically created by signals when WorkspaceTeam is created
@@ -46,7 +46,7 @@ class TestTeamEntryValidator:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         assert validator.organization == self.organization
         assert validator.workspace == self.workspace
         assert validator.workspace_team == self.workspace_team
@@ -81,7 +81,7 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_status_transition(EntryStatus.APPROVED)
 
@@ -97,7 +97,7 @@ class TestValidateStatusTransition:
             is_operation_reviewer=True,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_status_transition(EntryStatus.APPROVED)
 
@@ -113,8 +113,11 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Only Admin and Operation Reviewer can approve entries."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Only Admin and Operation Reviewer can approve entries.",
+        ):
             validator.validate_status_transition(EntryStatus.APPROVED)
 
     def test_validate_status_transition_other_status_by_authorized_user(self):
@@ -129,7 +132,7 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_status_transition(EntryStatus.REVIEWED)
 
@@ -145,8 +148,10 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="You are not allowed to update entry status."):
+
+        with pytest.raises(
+            ValidationError, match="You are not allowed to update entry status."
+        ):
             validator.validate_status_transition(EntryStatus.REVIEWED)
 
     def test_validate_status_transition_other_status_by_team_coordinator(self):
@@ -161,7 +166,7 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=True,
         )
-        
+
         # Should not raise any exception
         validator.validate_status_transition(EntryStatus.REVIEWED)
 
@@ -177,7 +182,7 @@ class TestValidateStatusTransition:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_status_transition(EntryStatus.REJECTED)
 
@@ -193,7 +198,7 @@ class TestValidateWorkspacePeriod:
         self.workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() - timedelta(days=30),
-            end_date=date.today() + timedelta(days=30)
+            end_date=date.today() + timedelta(days=30),
         )
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         # Remittance is automatically created by signals when WorkspaceTeam is created
@@ -210,7 +215,7 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_workspace_period(date.today())
 
@@ -226,7 +231,7 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         valid_date = date.today() - timedelta(days=15)
         # Should not raise any exception
         validator.validate_workspace_period(valid_date)
@@ -237,10 +242,10 @@ class TestValidateWorkspacePeriod:
         future_workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() + timedelta(days=10),
-            end_date=date.today() + timedelta(days=40)
+            end_date=date.today() + timedelta(days=40),
         )
         future_workspace_team = WorkspaceTeamFactory(workspace=future_workspace)
-        
+
         validator = TeamEntryValidator(
             organization=self.organization,
             workspace=future_workspace,
@@ -251,8 +256,11 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Entries can only be submitted during the workspace period."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Entries can only be submitted during the workspace period.",
+        ):
             validator.validate_workspace_period(date.today())
 
     def test_validate_workspace_period_invalid_today_after_end(self):
@@ -261,10 +269,10 @@ class TestValidateWorkspacePeriod:
         past_workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() - timedelta(days=40),
-            end_date=date.today() - timedelta(days=10)
+            end_date=date.today() - timedelta(days=10),
         )
         past_workspace_team = WorkspaceTeamFactory(workspace=past_workspace)
-        
+
         validator = TeamEntryValidator(
             organization=self.organization,
             workspace=past_workspace,
@@ -275,8 +283,11 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Entries can only be submitted during the workspace period."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Entries can only be submitted during the workspace period.",
+        ):
             validator.validate_workspace_period(date.today())
 
     def test_validate_workspace_period_invalid_occurred_at_before_start(self):
@@ -291,10 +302,13 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         invalid_date = date.today() - timedelta(days=40)  # Before workspace start
-        
-        with pytest.raises(ValidationError, match="The occurred date must be within the workspace period."):
+
+        with pytest.raises(
+            ValidationError,
+            match="The occurred date must be within the workspace period.",
+        ):
             validator.validate_workspace_period(invalid_date)
 
     def test_validate_workspace_period_invalid_occurred_at_after_end(self):
@@ -309,10 +323,13 @@ class TestValidateWorkspacePeriod:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         invalid_date = date.today() + timedelta(days=40)  # After workspace end
-        
-        with pytest.raises(ValidationError, match="The occurred date must be within the workspace period."):
+
+        with pytest.raises(
+            ValidationError,
+            match="The occurred date must be within the workspace period.",
+        ):
             validator.validate_workspace_period(invalid_date)
 
 
@@ -331,7 +348,7 @@ class TestValidateTeamRemittance:
     def test_validate_team_remittance_not_confirmed(self):
         """Test validation when remittance is not confirmed."""
         # Use the existing remittance from setup (already has confirmed_by=None)
-        
+
         validator = TeamEntryValidator(
             organization=self.organization,
             workspace=self.workspace,
@@ -342,7 +359,7 @@ class TestValidateTeamRemittance:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_team_remittance()
 
@@ -352,7 +369,7 @@ class TestValidateTeamRemittance:
         org_member = OrganizationMemberFactory(organization=self.organization)
         self.workspace_team.remittance.confirmed_by = org_member
         self.workspace_team.remittance.save()
-        
+
         validator = TeamEntryValidator(
             organization=self.organization,
             workspace=self.workspace,
@@ -363,8 +380,11 @@ class TestValidateTeamRemittance:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Remittance for this workspace team is already confirmed."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Remittance for this workspace team is already confirmed.",
+        ):
             validator.validate_team_remittance()
 
 
@@ -392,7 +412,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.INCOME)
 
@@ -408,7 +428,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=True,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.INCOME)
 
@@ -424,7 +444,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.INCOME)
 
@@ -440,8 +460,11 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Only Admin, Team Coordinators, and Submitters are authorized for this action."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Only Admin, Team Coordinators, and Submitters are authorized for this action.",
+        ):
             validator.validate_entry_create_authorization(EntryType.INCOME)
 
     def test_validate_entry_create_authorization_disbursement_by_org_admin(self):
@@ -456,7 +479,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.DISBURSEMENT)
 
@@ -472,7 +495,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.REMITTANCE)
 
@@ -488,7 +511,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=True,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create_authorization(EntryType.REMITTANCE)
 
@@ -504,8 +527,11 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Only Admin and Team Coordinator are authorized for this action."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Only Admin and Team Coordinator are authorized for this action.",
+        ):
             validator.validate_entry_create_authorization(EntryType.REMITTANCE)
 
     def test_validate_entry_create_authorization_workspace_expense(self):
@@ -520,7 +546,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception (no restrictions for workspace expense)
         validator.validate_entry_create_authorization(EntryType.WORKSPACE_EXP)
 
@@ -536,7 +562,7 @@ class TestValidateEntryCreateAuthorization:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception (no restrictions for org expense)
         validator.validate_entry_create_authorization(EntryType.ORG_EXP)
 
@@ -552,7 +578,7 @@ class TestValidateEntryUpdate:
         self.workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() - timedelta(days=30),
-            end_date=date.today() + timedelta(days=30)
+            end_date=date.today() + timedelta(days=30),
         )
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         # Remittance is automatically created by signals when WorkspaceTeam is created
@@ -560,7 +586,7 @@ class TestValidateEntryUpdate:
             organization=self.organization,
             workspace=self.workspace,
             workspace_team=self.workspace_team,
-            occurred_at=date.today()
+            occurred_at=date.today(),
         )
 
     def test_validate_entry_update_success(self):
@@ -575,13 +601,11 @@ class TestValidateEntryUpdate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         result = validator.validate_entry_update(
-            entry=self.entry,
-            new_status=EntryStatus.APPROVED,
-            occurred_at=date.today()
+            entry=self.entry, new_status=EntryStatus.APPROVED, occurred_at=date.today()
         )
-        
+
         assert result is True
 
     def test_validate_entry_update_with_remittance_confirmed(self):
@@ -590,7 +614,7 @@ class TestValidateEntryUpdate:
         org_member = OrganizationMemberFactory(organization=self.organization)
         self.workspace_team.remittance.confirmed_by = org_member
         self.workspace_team.remittance.save()
-        
+
         validator = TeamEntryValidator(
             organization=self.organization,
             workspace=self.workspace,
@@ -601,8 +625,11 @@ class TestValidateEntryUpdate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Remittance for this workspace team is already confirmed."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Remittance for this workspace team is already confirmed.",
+        ):
             validator.validate_entry_update(entry=self.entry)
 
     def test_validate_entry_update_with_invalid_occurred_at(self):
@@ -617,14 +644,14 @@ class TestValidateEntryUpdate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         invalid_date = date.today() + timedelta(days=40)  # After workspace end
-        
-        with pytest.raises(ValidationError, match="The occurred date must be within the workspace period."):
-            validator.validate_entry_update(
-                entry=self.entry,
-                occurred_at=invalid_date
-            )
+
+        with pytest.raises(
+            ValidationError,
+            match="The occurred date must be within the workspace period.",
+        ):
+            validator.validate_entry_update(entry=self.entry, occurred_at=invalid_date)
 
     def test_validate_entry_update_with_unauthorized_status_change(self):
         """Test entry update with unauthorized status change."""
@@ -638,11 +665,12 @@ class TestValidateEntryUpdate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="You are not allowed to update entry status."):
+
+        with pytest.raises(
+            ValidationError, match="You are not allowed to update entry status."
+        ):
             validator.validate_entry_update(
-                entry=self.entry,
-                new_status=EntryStatus.REVIEWED
+                entry=self.entry, new_status=EntryStatus.REVIEWED
             )
 
 
@@ -657,7 +685,7 @@ class TestValidateEntryCreate:
         self.workspace = WorkspaceFactory(
             organization=self.organization,
             start_date=date.today() - timedelta(days=30),
-            end_date=date.today() + timedelta(days=30)
+            end_date=date.today() + timedelta(days=30),
         )
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
         # Remittance is automatically created by signals when WorkspaceTeam is created
@@ -674,11 +702,10 @@ class TestValidateEntryCreate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         # Should not raise any exception
         validator.validate_entry_create(
-            entry_type=EntryType.INCOME,
-            occurred_at=date.today()
+            entry_type=EntryType.INCOME, occurred_at=date.today()
         )
 
     def test_validate_entry_create_with_invalid_occurred_at(self):
@@ -693,13 +720,15 @@ class TestValidateEntryCreate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
+
         invalid_date = date.today() + timedelta(days=40)  # After workspace end
-        
-        with pytest.raises(ValidationError, match="The occurred date must be within the workspace period."):
+
+        with pytest.raises(
+            ValidationError,
+            match="The occurred date must be within the workspace period.",
+        ):
             validator.validate_entry_create(
-                entry_type=EntryType.INCOME,
-                occurred_at=invalid_date
+                entry_type=EntryType.INCOME, occurred_at=invalid_date
             )
 
     def test_validate_entry_create_with_unauthorized_user(self):
@@ -714,9 +743,11 @@ class TestValidateEntryCreate:
             is_operation_reviewer=False,
             is_team_coordinator=False,
         )
-        
-        with pytest.raises(ValidationError, match="Only Admin, Team Coordinators, and Submitters are authorized for this action."):
+
+        with pytest.raises(
+            ValidationError,
+            match="Only Admin, Team Coordinators, and Submitters are authorized for this action.",
+        ):
             validator.validate_entry_create(
-                entry_type=EntryType.INCOME,
-                occurred_at=date.today()
+                entry_type=EntryType.INCOME, occurred_at=date.today()
             )

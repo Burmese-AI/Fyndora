@@ -3,14 +3,9 @@ Unit tests for apps.core.utils
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from decimal import Decimal, ROUND_HALF_UP
-from django.core.paginator import Paginator
+from unittest.mock import Mock
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
-from django.contrib import messages
-from django.shortcuts import redirect
-from django_htmx.http import HttpResponseClientRedirect
 
 from apps.core.utils import (
     percent_change,
@@ -24,7 +19,6 @@ from apps.core.utils import (
     revoke_workspace_team_member_permission,
     check_if_member_is_owner,
 )
-from apps.core.constants import PAGINATION_SIZE
 from apps.core.permissions import OrganizationPermissions
 from tests.factories import (
     CustomUserFactory,
@@ -164,13 +158,11 @@ class TestGetPaginatedContext:
         """Test basic pagination context creation."""
         queryset = [1, 2, 3, 4, 5]
         context = {}
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context=context,
-            object_name="items"
+            queryset=queryset, context=context, object_name="items"
         )
-        
+
         assert "page_obj" in result
         assert "paginator" in result
         assert "items" in result
@@ -182,13 +174,11 @@ class TestGetPaginatedContext:
         """Test pagination context with existing context data."""
         queryset = [1, 2, 3]
         context = {"existing_key": "existing_value"}
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context=context,
-            object_name="items"
+            queryset=queryset, context=context, object_name="items"
         )
-        
+
         assert result["existing_key"] == "existing_value"
         assert "items" in result
         assert result["items"] == [1, 2, 3]
@@ -196,14 +186,11 @@ class TestGetPaginatedContext:
     def test_get_paginated_context_custom_page_size(self):
         """Test pagination context with custom page size."""
         queryset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items",
-            page_size=3
+            queryset=queryset, context={}, object_name="items", page_size=3
         )
-        
+
         assert len(result["items"]) == 3
         assert result["items"] == [1, 2, 3]
         assert result["is_paginated"] is True
@@ -211,54 +198,43 @@ class TestGetPaginatedContext:
     def test_get_paginated_context_custom_page_number(self):
         """Test pagination context with custom page number."""
         queryset = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items",
-            page_size=3,
-            page_no=2
+            queryset=queryset, context={}, object_name="items", page_size=3, page_no=2
         )
-        
+
         assert result["items"] == [4, 5, 6]
 
     def test_get_paginated_context_empty_queryset(self):
         """Test pagination context with empty queryset."""
         queryset = []
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items"
+            queryset=queryset, context={}, object_name="items"
         )
-        
+
         assert result["items"] == []
         assert result["is_paginated"] is False
 
     def test_get_paginated_context_single_item(self):
         """Test pagination context with single item."""
         queryset = [1]
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items"
+            queryset=queryset, context={}, object_name="items"
         )
-        
+
         assert result["items"] == [1]
         assert result["is_paginated"] is False
 
     def test_get_paginated_context_large_queryset(self):
         """Test pagination context with large queryset."""
         queryset = list(range(1, 101))  # 100 items
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items",
-            page_size=10
+            queryset=queryset, context={}, object_name="items", page_size=10
         )
-        
+
         assert len(result["items"]) == 10
         assert result["items"] == list(range(1, 11))
         assert result["is_paginated"] is True
@@ -266,30 +242,26 @@ class TestGetPaginatedContext:
     def test_get_paginated_context_invalid_page_number(self):
         """Test pagination context with invalid page number."""
         queryset = [1, 2, 3, 4, 5]
-        
+
         result = get_paginated_context(
             queryset=queryset,
             context={},
             object_name="items",
             page_size=2,
-            page_no=999  # Invalid page number
+            page_no=999,  # Invalid page number
         )
-        
+
         # Should return the last page
         assert result["items"] == [5]
 
     def test_get_paginated_context_zero_page_number(self):
         """Test pagination context with zero page number."""
         queryset = [1, 2, 3, 4, 5]
-        
+
         result = get_paginated_context(
-            queryset=queryset,
-            context={},
-            object_name="items",
-            page_size=2,
-            page_no=0
+            queryset=queryset, context={}, object_name="items", page_size=2, page_no=0
         )
-        
+
         # Should return the last page (Django paginator behavior)
         assert result["items"] == [5]
 
@@ -303,11 +275,11 @@ class TestModelUpdate:
         mock_instance = Mock()
         mock_instance.full_clean = Mock()
         mock_instance.save = Mock()
-        
+
         data = {"name": "New Name", "email": "new@example.com"}
-        
+
         result = model_update(mock_instance, data)
-        
+
         assert result == mock_instance
         assert mock_instance.name == "New Name"
         assert mock_instance.email == "new@example.com"
@@ -319,12 +291,12 @@ class TestModelUpdate:
         mock_instance = Mock()
         mock_instance.full_clean = Mock()
         mock_instance.save = Mock()
-        
+
         data = {"name": "New Name", "email": "new@example.com"}
         update_fields = ["name"]
-        
+
         result = model_update(mock_instance, data, update_fields)
-        
+
         assert result == mock_instance
         assert mock_instance.name == "New Name"
         assert mock_instance.email == "new@example.com"
@@ -336,12 +308,12 @@ class TestModelUpdate:
         mock_instance = Mock()
         mock_instance.full_clean = Mock(side_effect=ValidationError("Invalid data"))
         mock_instance.save = Mock()
-        
+
         data = {"name": "Invalid Name"}
-        
+
         with pytest.raises(ValidationError, match="Invalid data"):
             model_update(mock_instance, data)
-        
+
         mock_instance.full_clean.assert_called_once()
         mock_instance.save.assert_not_called()
 
@@ -355,13 +327,12 @@ class TestCanManageOrganization:
         user = Mock()
         organization = Mock()
         user.has_perm = Mock(return_value=True)
-        
+
         result = can_manage_organization(user, organization)
-        
+
         assert result is True
         user.has_perm.assert_called_once_with(
-            OrganizationPermissions.MANAGE_ORGANIZATION, 
-            organization
+            OrganizationPermissions.MANAGE_ORGANIZATION, organization
         )
 
     def test_can_manage_organization_without_permission(self):
@@ -369,13 +340,12 @@ class TestCanManageOrganization:
         user = Mock()
         organization = Mock()
         user.has_perm = Mock(return_value=False)
-        
+
         result = can_manage_organization(user, organization)
-        
+
         assert result is False
         user.has_perm.assert_called_once_with(
-            OrganizationPermissions.MANAGE_ORGANIZATION, 
-            organization
+            OrganizationPermissions.MANAGE_ORGANIZATION, organization
         )
 
 
@@ -389,17 +359,17 @@ class TestRevokeWorkspaceAdminPermission:
         user = CustomUserFactory()
         workspace = WorkspaceFactory()
         group_name = f"Workspace Admins - {workspace.workspace_id}"
-        
+
         # Create group and add user
         group = Group.objects.create(name=group_name)
         group.user_set.add(user)
-        
+
         # Verify user is in group
         assert user in group.user_set.all()
-        
+
         # Revoke permission
         revoke_workspace_admin_permission(user, workspace)
-        
+
         # Verify user is removed from group
         group.refresh_from_db()
         assert user not in group.user_set.all()
@@ -409,13 +379,13 @@ class TestRevokeWorkspaceAdminPermission:
         user = CustomUserFactory()
         workspace = WorkspaceFactory()
         group_name = f"Workspace Admins - {workspace.workspace_id}"
-        
+
         # Verify group doesn't exist
         assert not Group.objects.filter(name=group_name).exists()
-        
+
         # Revoke permission (should create group but not add user)
         revoke_workspace_admin_permission(user, workspace)
-        
+
         # Verify group was created
         group = Group.objects.get(name=group_name)
         assert user not in group.user_set.all()
@@ -431,17 +401,17 @@ class TestRevokeOperationsReviewerPermission:
         user = CustomUserFactory()
         workspace = WorkspaceFactory()
         group_name = f"Operations Reviewer - {workspace.workspace_id}"
-        
+
         # Create group and add user
         group = Group.objects.create(name=group_name)
         group.user_set.add(user)
-        
+
         # Verify user is in group
         assert user in group.user_set.all()
-        
+
         # Revoke permission
         revoke_operations_reviewer_permission(user, workspace)
-        
+
         # Verify user is removed from group
         group.refresh_from_db()
         assert user not in group.user_set.all()
@@ -457,17 +427,17 @@ class TestRevokeTeamCoordinatorPermission:
         user = CustomUserFactory()
         team = TeamFactory()
         group_name = f"Team Coordinator - {team.team_id}"
-        
+
         # Create group and add user
         group = Group.objects.create(name=group_name)
         group.user_set.add(user)
-        
+
         # Verify user is in group
         assert user in group.user_set.all()
-        
+
         # Revoke permission
         revoke_team_coordinator_permission(user, team)
-        
+
         # Verify user is removed from group
         group.refresh_from_db()
         assert user not in group.user_set.all()
@@ -483,17 +453,17 @@ class TestRevokeWorkspaceTeamMemberPermission:
         user = CustomUserFactory()
         workspace_team = WorkspaceTeamFactory()
         group_name = f"Workspace Team - {workspace_team.workspace_team_id}"
-        
+
         # Create group and add user
         group = Group.objects.create(name=group_name)
         group.user_set.add(user)
-        
+
         # Verify user is in group
         assert user in group.user_set.all()
-        
+
         # Revoke permission
         revoke_workspace_team_member_permission(user, workspace_team)
-        
+
         # Verify user is removed from group
         group.refresh_from_db()
         assert user not in group.user_set.all()
@@ -510,9 +480,9 @@ class TestCheckIfMemberIsOwner:
         owner_member = OrganizationMemberFactory(organization=organization)
         organization.owner = owner_member
         organization.save()
-        
+
         result = check_if_member_is_owner(owner_member, organization)
-        
+
         assert result is True
 
     def test_check_if_member_is_owner_false(self):
@@ -522,9 +492,9 @@ class TestCheckIfMemberIsOwner:
         other_member = OrganizationMemberFactory(organization=organization)
         organization.owner = owner_member
         organization.save()
-        
+
         result = check_if_member_is_owner(other_member, organization)
-        
+
         assert result is False
 
     def test_check_if_member_is_owner_no_owner(self):
@@ -533,7 +503,7 @@ class TestCheckIfMemberIsOwner:
         organization.owner = None
         organization.save()
         member = OrganizationMemberFactory(organization=organization)
-        
+
         result = check_if_member_is_owner(member, organization)
-        
+
         assert result is False

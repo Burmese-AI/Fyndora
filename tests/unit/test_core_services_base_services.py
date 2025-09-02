@@ -21,7 +21,9 @@ class TestBaseFileExporter:
     def test_export_raises_not_implemented_error(self):
         exporter = BaseFileExporter("prefix", [])
 
-        with pytest.raises(NotImplementedError, match="Subclasses must implement export\\(\\)"):
+        with pytest.raises(
+            NotImplementedError, match="Subclasses must implement export\\(\\)"
+        ):
             exporter.export()
 
     def test_export_with_different_blocks(self):

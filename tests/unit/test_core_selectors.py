@@ -141,7 +141,10 @@ class TestWorkspaceQueries:
 
         queryset = get_workspace_teams_under_organization(organization.pk)
         workspace_team_ids = set(queryset.values_list("pk", flat=True))
-        assert workspace_team_one.pk in workspace_team_ids and workspace_team_two.pk in workspace_team_ids
+        assert (
+            workspace_team_one.pk in workspace_team_ids
+            and workspace_team_two.pk in workspace_team_ids
+        )
 
     def test_get_workspaces_under_organization_exception(self, monkeypatch):
         from apps.workspaces import models as ws_models
@@ -160,5 +163,3 @@ class TestWorkspaceQueries:
 
         monkeypatch.setattr(ws_models.WorkspaceTeam.objects, "filter", boom)
         assert get_workspace_teams_under_organization("orgid") is None
-
-

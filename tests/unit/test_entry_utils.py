@@ -2,8 +2,7 @@
 Unit tests for apps.entries.utils helpers.
 """
 
-from decimal import Decimal
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -46,6 +45,7 @@ class TestPermissionHelpers:
         self.organization = OrganizationWithOwnerFactory()
         self.workspace = WorkspaceFactory(organization=self.organization)
         self.workspace_team = WorkspaceTeamFactory(workspace=self.workspace)
+
         # Use a simple mock-ish user that has a has_perm method we can patch
         class DummyUser:
             def has_perm(self, perm, obj=None):
@@ -208,7 +208,9 @@ class TestOwnHigherAdminRole:
         self.operations_reviewer = OrganizationMemberFactory(
             organization=self.organization
         )
-        self.team_coordinator = OrganizationMemberFactory(organization=self.organization)
+        self.team_coordinator = OrganizationMemberFactory(
+            organization=self.organization
+        )
 
         # Attach roles
         self.workspace = WorkspaceFactory(
@@ -233,10 +235,10 @@ class TestOwnHigherAdminRole:
         )
 
     def test_true_for_org_owner(self):
-        assert own_higher_admin_role(self.organization.owner, self.workspace_team) is True
+        assert (
+            own_higher_admin_role(self.organization.owner, self.workspace_team) is True
+        )
 
     def test_false_for_regular_member(self):
         random_member = OrganizationMemberFactory(organization=self.organization)
         assert own_higher_admin_role(random_member, self.workspace_team) is False
-
-

@@ -28,9 +28,9 @@ class TestEntryType(TestCase):
             ("workspace_exp", "Workspace Expense"),
             ("org_exp", "Organization Expense"),
         ]
-        
+
         assert len(EntryType.choices) == len(expected_choices)
-        
+
         for choice in expected_choices:
             assert choice in EntryType.choices
 
@@ -70,9 +70,9 @@ class TestEntryStatus(TestCase):
             ("approved", "Approved"),
             ("rejected", "Rejected"),
         ]
-        
+
         assert len(EntryStatus.choices) == len(expected_choices)
-        
+
         for choice in expected_choices:
             assert choice in EntryStatus.choices
 
@@ -114,5 +114,6 @@ class TestEntryConstantsIntegration(TestCase):
     def test_choices_are_text_choices(self):
         """Test that both choice classes inherit from TextChoices."""
         from django.db import models
+
         assert issubclass(EntryType, models.TextChoices)
         assert issubclass(EntryStatus, models.TextChoices)

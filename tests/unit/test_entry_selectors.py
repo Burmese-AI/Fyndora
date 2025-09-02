@@ -35,14 +35,18 @@ class TestGetEntries:
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.team_member.team
         )
-        
+
         # Create currencies
-        self.usd_currency = Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+        self.usd_currency = Currency.objects.get_or_create(
+            code="USD", name="US Dollar"
+        )[0]
         self.eur_currency = Currency.objects.get_or_create(code="EUR", name="Euro")[0]
 
     def test_get_entries_requires_entry_types(self):
         """Test that get_entries raises ValueError when no entry types provided."""
-        with pytest.raises(ValueError, match="At least one entry type must be provided"):
+        with pytest.raises(
+            ValueError, match="At least one entry type must be provided"
+        ):
             get_entries(entry_types=[])
 
     def test_get_entries_with_team_entry_types_and_workspace_team(self):
@@ -60,7 +64,7 @@ class TestGetEntries:
             organization=self.organization,
             currency=self.usd_currency,
         )
-        
+
         # Create entries for different workspace team
         other_workspace_team = WorkspaceTeamFactory()
         IncomeEntryFactory(
@@ -93,7 +97,7 @@ class TestGetEntries:
             organization=self.organization,
             currency=self.usd_currency,
         )
-        
+
         # Create entries for different workspace
         other_workspace = WorkspaceFactory()
         IncomeEntryFactory(
@@ -123,7 +127,7 @@ class TestGetEntries:
             organization=self.organization,
             currency=self.usd_currency,
         )
-        
+
         # Create entries for different organization
         other_org = OrganizationWithOwnerFactory()
         IncomeEntryFactory(
@@ -140,8 +144,6 @@ class TestGetEntries:
         entry_ids = [entry.entry_id for entry in entries]
         assert income_entry.entry_id in entry_ids
         assert disbursement_entry.entry_id in entry_ids
-
-
 
     def test_get_entries_with_status_filter(self):
         """Test get_entries filters by status."""
@@ -286,7 +288,7 @@ class TestGetEntries:
         )
 
         # Check that attachments are prefetched
-        assert hasattr(entries.first(), '_prefetched_objects_cache')
+        assert hasattr(entries.first(), "_prefetched_objects_cache")
 
     def test_get_entries_with_annotate_attachment_count(self):
         """Test get_entries annotates attachment count when requested."""
@@ -305,7 +307,7 @@ class TestGetEntries:
 
         # Check that attachment_count is annotated
         first_entry = entries.first()
-        assert hasattr(first_entry, 'attachment_count')
+        assert hasattr(first_entry, "attachment_count")
         assert first_entry.attachment_count == 0  # No attachments created
 
     def test_get_entries_returns_none_when_no_filters(self):
@@ -321,7 +323,7 @@ class TestGetEntries:
         """Test get_entries returns entries ordered by occurred_at descending."""
         # Create entries with different dates
         from datetime import date, timedelta
-        
+
         old_entry = IncomeEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
@@ -360,7 +362,9 @@ class TestGetTotalAmountOfEntries:
         self.workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace, team=self.team_member.team
         )
-        self.usd_currency = Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+        self.usd_currency = Currency.objects.get_or_create(
+            code="USD", name="US Dollar"
+        )[0]
 
     def test_get_total_amount_of_entries_with_workspace_team(self):
         """Test get_total_amount_of_entries calculates total for workspace team."""
@@ -461,7 +465,7 @@ class TestGetTotalAmountOfEntries:
             exchange_rate_used=Decimal("1.00"),
             status=EntryStatus.APPROVED,
         )
-        
+
         # Create pending income entry (should not be included)
         IncomeEntryFactory(
             workspace_team=self.workspace_team,
@@ -472,7 +476,7 @@ class TestGetTotalAmountOfEntries:
             exchange_rate_used=Decimal("1.00"),
             status=EntryStatus.PENDING,
         )
-        
+
         # Create approved disbursement entry (should not be included)
         DisbursementEntryFactory(
             workspace_team=self.workspace_team,
@@ -543,24 +547,22 @@ class TestGetEntry:
 
     def test_get_entry_with_required_attachment_count(self):
         """Test get_entry annotates attachment count when requested."""
-        retrieved_entry = get_entry(
-            self.entry.entry_id, 
-            required_attachment_count=True
-        )
-        
-        assert hasattr(retrieved_entry, 'attachment_count')
+        retrieved_entry = get_entry(self.entry.entry_id, required_attachment_count=True)
+
+        assert hasattr(retrieved_entry, "attachment_count")
         assert retrieved_entry.attachment_count == 0  # No attachments created
 
     def test_get_entry_returns_404_for_nonexistent_entry(self):
         """Test get_entry returns 404 for non-existent entry."""
         import uuid
+
         non_existent_id = uuid.uuid4()
-        
+
         with pytest.raises(Exception):  # get_object_or_404 raises Http404
             get_entry(non_existent_id)
 
     def test_get_entry_without_attachment_count(self):
         """Test get_entry doesn't annotate attachment count by default."""
         retrieved_entry = get_entry(self.entry.entry_id)
-        
-        assert not hasattr(retrieved_entry, 'attachment_count')
+
+        assert not hasattr(retrieved_entry, "attachment_count")

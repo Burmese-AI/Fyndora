@@ -268,13 +268,13 @@ class OrganizationExpenseEntryFactory(EntryFactory):
     org_exchange_rate_ref = None
     workspace_exchange_rate_ref = None  # Explicitly set to None
     organization = None  # Will be set in post_generation
-    
+
     @factory.post_generation
     def setup_org_relationships(self, create, extracted, **kwargs):
         """Ensure organization relationships are properly set."""
         if not create:
             return
-            
+
         # Set organization from the org member
         if self.submitted_by_org_member:
             # Ensure the org_member is saved and has organization
@@ -283,8 +283,6 @@ class OrganizationExpenseEntryFactory(EntryFactory):
             if self.submitted_by_org_member.organization:
                 self.organization = self.submitted_by_org_member.organization
                 self.save()
-    
-
 
 
 class WorkspaceExpenseEntryFactory(EntryFactory):
@@ -300,24 +298,26 @@ class WorkspaceExpenseEntryFactory(EntryFactory):
     workspace_exchange_rate_ref = None
     org_exchange_rate_ref = None  # Explicitly set to None
     organization = None  # Will be set in post_generation
-    
+
     @factory.post_generation
     def setup_workspace_relationships(self, create, extracted, **kwargs):
         """Ensure workspace relationships are properly set."""
         if not create:
             return
-            
+
         # Set organization from the team member
         if self.submitted_by_team_member:
             # Ensure the team_member is saved and has organization_member
             if not self.submitted_by_team_member.pk:
                 self.submitted_by_team_member.save()
-            if (self.submitted_by_team_member.organization_member and 
-                self.submitted_by_team_member.organization_member.organization):
-                self.organization = self.submitted_by_team_member.organization_member.organization
+            if (
+                self.submitted_by_team_member.organization_member
+                and self.submitted_by_team_member.organization_member.organization
+            ):
+                self.organization = (
+                    self.submitted_by_team_member.organization_member.organization
+                )
                 self.save()
-    
-
 
 
 # in tests/factories/entry_factories.py (or wherever your entry factories live)
@@ -325,7 +325,7 @@ class WorkspaceExpenseEntryFactory(EntryFactory):
 
 class ReviewedEntryFactory(EntryFactory):
     """Factory for creating reviewed entries."""
-    
+
     status = EntryStatus.REVIEWED
     occurred_at = factory.LazyFunction(lambda: date.today())
     currency = factory.LazyFunction(

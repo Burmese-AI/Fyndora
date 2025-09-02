@@ -3,11 +3,10 @@ Unit tests for apps.reports.services
 """
 
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from decimal import Decimal
 
 from apps.reports.services import export_overview_finance_report
-from apps.core.services.base_services import BaseFileExporter
 
 
 @pytest.mark.unit
@@ -41,19 +40,19 @@ class TestExportOverviewFinanceReport:
                                 "remittance_rate": 90,
                                 "org_share": Decimal("225.00"),
                             }
-                        ]
+                        ],
                     }
-                ]
+                ],
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -70,14 +69,14 @@ class TestExportOverviewFinanceReport:
                 "org_share": Decimal("68.00"),
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -92,14 +91,14 @@ class TestExportOverviewFinanceReport:
                 # Missing net_income, remittance_rate, org_share
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -114,14 +113,14 @@ class TestExportOverviewFinanceReport:
                 "remittance_rate": None,
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -136,14 +135,14 @@ class TestExportOverviewFinanceReport:
                 "remittance_rate": 0,
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -168,17 +167,17 @@ class TestExportOverviewFinanceReport:
                         "remittance_rate": 90,
                         "org_share": Decimal("225.00"),
                     }
-                ]
+                ],
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -195,17 +194,17 @@ class TestExportOverviewFinanceReport:
                 "org_share": Decimal("225.00"),
                 "parent_lvl_total_expense": Decimal("10.00"),
                 "final_net_profit": Decimal("215.00"),
-                "children": []
+                "children": [],
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -246,8 +245,8 @@ class TestExportOverviewFinanceReport:
                                 "net_income": Decimal("150.00"),
                                 "remittance_rate": 85,
                                 "org_share": Decimal("127.50"),
-                            }
-                        ]
+                            },
+                        ],
                     },
                     {
                         "title": "Workspace 2",
@@ -257,19 +256,19 @@ class TestExportOverviewFinanceReport:
                         "org_share": Decimal("400.00"),
                         "parent_lvl_total_expense": Decimal("25.00"),
                         "final_net_profit": Decimal("375.00"),
-                        "children": []
-                    }
-                ]
+                        "children": [],
+                    },
+                ],
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -285,17 +284,17 @@ class TestExportOverviewFinanceReport:
                 "org_share": Decimal("800.00"),
                 "parent_lvl_total_expense": Decimal("50.00"),
                 "final_net_profit": Decimal("750.00"),
-                "children": []
+                "children": [],
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -313,14 +312,14 @@ class TestExportOverviewFinanceReport:
                 # No children key
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -334,14 +333,14 @@ class TestExportOverviewFinanceReport:
                 "total_expense": Decimal("200.00"),
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
-        result = export_overview_finance_report(context, mock_exporter_class)
-        
+
+        export_overview_finance_report(context, mock_exporter_class)
+
         # Verify exporter class was called with correct parameters
         mock_exporter_class.assert_called_once()
         call_args = mock_exporter_class.call_args[0]
@@ -358,29 +357,29 @@ class TestExportOverviewFinanceReport:
                 "total_expense": Decimal("200.00"),
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         export_overview_finance_report(context, mock_exporter_class)
-        
+
         # Get the blocks passed to exporter
         call_args = mock_exporter_class.call_args[0]
         blocks = call_args[1]
-        
+
         # Check paragraph block
         paragraph_block = blocks[0]
         assert paragraph_block["type"] == "paragraph"
         assert paragraph_block["text"] == "Report for Test Organization"
-        
+
         # Check table block
         table_block = blocks[1]
         assert table_block["type"] == "table"
         assert "columns" in table_block
         assert "rows" in table_block
-        
+
         # Check columns structure
         expected_columns = [
             ("name", "Name"),
@@ -407,14 +406,14 @@ class TestExportOverviewFinanceReport:
                 "org_share": Decimal("50.00"),
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -431,14 +430,14 @@ class TestExportOverviewFinanceReport:
                 "org_share": "68.00",
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.return_value = "exported_data"
-        
+
         result = export_overview_finance_report(context, mock_exporter_class)
-        
+
         assert result == "exported_data"
         mock_exporter_class.assert_called_once()
         mock_exporter.export.assert_called_once()
@@ -452,25 +451,25 @@ class TestExportOverviewFinanceReport:
                 "total_expense": Decimal("200.00"),
             }
         }
-        
+
         mock_exporter_class = Mock()
         mock_exporter = Mock()
         mock_exporter_class.return_value = mock_exporter
         mock_exporter.export.side_effect = Exception("Export failed")
-        
+
         with pytest.raises(Exception, match="Export failed"):
             export_overview_finance_report(context, mock_exporter_class)
 
     def test_export_overview_finance_report_with_none_context(self):
         """Test export with None context."""
         context = None
-        
+
         with pytest.raises(TypeError):
             export_overview_finance_report(context, Mock())
 
     def test_export_overview_finance_report_with_missing_report_data(self):
         """Test export with missing report_data key."""
         context = {}
-        
+
         with pytest.raises(KeyError):
             export_overview_finance_report(context, Mock())

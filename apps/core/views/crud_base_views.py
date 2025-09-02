@@ -34,17 +34,13 @@ class BaseListView(LoginRequiredMixin, ListView):
     ) -> HttpResponse:
         if self.request.htmx:
             page_param = self.request.GET.get("page")
-            #If page param exists and optional template is defined, render optional template
+            # If page param exists and optional template is defined, render optional template
             if page_param and self.optional_htmx_template_name:
                 template_to_render = self.optional_htmx_template_name
             else:
                 template_to_render = self.table_template_name
 
-            return render(
-                self.request,
-                template_to_render,
-                context
-            )
+            return render(self.request, template_to_render, context)
         return super().render_to_response(context, **response_kwargs)
 
 

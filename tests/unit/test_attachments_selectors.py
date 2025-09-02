@@ -3,8 +3,8 @@ Unit tests for apps.attachments.selectors
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from unittest.mock import patch
+from django.core.exceptions import ValidationError
 
 from apps.attachments.selectors import get_attachment
 from apps.attachments.models import Attachment
@@ -20,9 +20,9 @@ class TestGetAttachment:
         """Test getting attachment by primary key successfully."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         result = get_attachment(attachment.attachment_id)
-        
+
         assert result == attachment
         assert result.entry == entry
 
@@ -30,9 +30,9 @@ class TestGetAttachment:
         """Test getting attachment with string primary key."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         result = get_attachment(str(attachment.attachment_id))
-        
+
         assert result == attachment
 
     def test_get_attachment_does_not_exist(self):
@@ -57,17 +57,19 @@ class TestGetAttachment:
 
     def test_get_attachment_multiple_objects_returned(self):
         """Test getting attachment when multiple objects are returned."""
-        with patch('apps.attachments.selectors.Attachment.objects.get') as mock_get:
-            mock_get.side_effect = Attachment.MultipleObjectsReturned("Multiple attachments found")
-            
+        with patch("apps.attachments.selectors.Attachment.objects.get") as mock_get:
+            mock_get.side_effect = Attachment.MultipleObjectsReturned(
+                "Multiple attachments found"
+            )
+
             with pytest.raises(Attachment.MultipleObjectsReturned):
                 get_attachment("some-id")
 
     def test_get_attachment_with_database_error(self):
         """Test getting attachment when database error occurs."""
-        with patch('apps.attachments.selectors.Attachment.objects.get') as mock_get:
+        with patch("apps.attachments.selectors.Attachment.objects.get") as mock_get:
             mock_get.side_effect = Exception("Database connection error")
-            
+
             with pytest.raises(Exception, match="Database connection error"):
                 get_attachment("some-id")
 
@@ -75,10 +77,10 @@ class TestGetAttachment:
         """Test getting attachment that has been soft deleted."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Soft delete the attachment
         attachment.delete()
-        
+
         # Should raise DoesNotExist because soft deleted objects are excluded
         with pytest.raises(Attachment.DoesNotExist):
             get_attachment(attachment.attachment_id)
@@ -88,14 +90,14 @@ class TestGetAttachment:
         # Create entries with different types
         income_entry = EntryFactory(entry_type="income")
         disbursement_entry = EntryFactory(entry_type="disbursement")
-        
+
         income_attachment = AttachmentFactory(entry=income_entry)
         disbursement_attachment = AttachmentFactory(entry=disbursement_entry)
-        
+
         # Test getting both attachments
         result1 = get_attachment(income_attachment.attachment_id)
         result2 = get_attachment(disbursement_attachment.attachment_id)
-        
+
         assert result1 == income_attachment
         assert result2 == disbursement_attachment
         assert result1.entry.entry_type == "income"
@@ -104,15 +106,15 @@ class TestGetAttachment:
     def test_get_attachment_with_different_file_types(self):
         """Test getting attachments with different file types."""
         entry = EntryFactory()
-        
+
         # Create attachments with different file types
         receipt_attachment = AttachmentFactory(entry=entry, file_type="receipt")
         invoice_attachment = AttachmentFactory(entry=entry, file_type="invoice")
-        
+
         # Test getting both attachments
         result1 = get_attachment(receipt_attachment.attachment_id)
         result2 = get_attachment(invoice_attachment.attachment_id)
-        
+
         assert result1 == receipt_attachment
         assert result2 == invoice_attachment
         assert result1.file_type == "receipt"
@@ -122,9 +124,9 @@ class TestGetAttachment:
         """Test that get_attachment returns the correct model instance."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         result = get_attachment(attachment.attachment_id)
-        
+
         # Verify it's the correct model instance
         assert isinstance(result, Attachment)
         assert result.pk == attachment.pk
@@ -137,19 +139,19 @@ class TestGetAttachment:
         """Test getting attachment with large primary key value."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Test with the actual UUID
         result = get_attachment(attachment.attachment_id)
-        
+
         assert result == attachment
 
     def test_get_attachment_preserves_relationships(self):
         """Test that get_attachment preserves all relationships."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         result = get_attachment(attachment.attachment_id)
-        
+
         # Verify all relationships are preserved
         assert result.entry == entry
         assert result.entry.organization == entry.organization
@@ -191,7 +193,7 @@ class TestGetAttachment:
         """Test that get_attachment performs efficiently."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Test multiple calls to ensure no performance degradation
         for _ in range(5):
             result = get_attachment(attachment.attachment_id)
@@ -201,13 +203,13 @@ class TestGetAttachment:
         """Test get_attachment behavior with concurrent access simulation."""
         entry = EntryFactory()
         attachment = AttachmentFactory(entry=entry)
-        
+
         # Simulate concurrent access by calling multiple times
         results = []
         for _ in range(3):
             result = get_attachment(attachment.attachment_id)
             results.append(result)
-        
+
         # All results should be the same attachment
         for result in results:
             assert result == attachment

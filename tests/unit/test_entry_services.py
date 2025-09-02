@@ -52,14 +52,14 @@ class TestExtractUserFromActor:
         """Test extracting user from TeamMember."""
         team_member = TeamMemberFactory()
         user = _extract_user_from_actor(team_member)
-        
+
         assert user == team_member.organization_member.user
 
     def test_extract_user_from_org_member(self):
         """Test extracting user from OrganizationMember."""
         org_member = OrganizationMemberFactory()
         user = _extract_user_from_actor(org_member)
-        
+
         assert user == org_member.user
 
     def test_extract_user_from_user_object(self):
@@ -67,7 +67,7 @@ class TestExtractUserFromActor:
         org_member = OrganizationMemberFactory()
         user_obj = org_member.user
         user = _extract_user_from_actor(user_obj)
-        
+
         assert user == user_obj
 
     def test_extract_user_from_object_with_user_attr(self):
@@ -75,9 +75,9 @@ class TestExtractUserFromActor:
         org_member = OrganizationMemberFactory()
         mock_actor = Mock()
         mock_actor.user = org_member.user
-        
+
         user = _extract_user_from_actor(mock_actor)
-        
+
         assert user == org_member.user
 
 
@@ -103,7 +103,9 @@ class TestValidateReviewData:
 
     def test_validate_rejected_without_notes(self):
         """Test validation with rejected status but no notes."""
-        with pytest.raises(ValidationError, match="Notes are required when rejected an entry"):
+        with pytest.raises(
+            ValidationError, match="Notes are required when rejected an entry"
+        ):
             _validate_review_data(status=EntryStatus.REJECTED)
 
 
@@ -122,10 +124,12 @@ class TestCreateEntryWithAttachments:
         )
         self.currency = Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
-    @patch('apps.entries.services.create_attachments')
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
-    def test_create_entry_with_attachments_success(self, mock_logger, mock_create_attachments, mock_get_rate):
+    @patch("apps.entries.services.get_closest_exchanged_rate")
+    @patch("apps.entries.services.create_attachments")
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
+    def test_create_entry_with_attachments_success(
+        self, mock_logger, mock_create_attachments, mock_get_rate
+    ):
         """Test successful entry creation with attachments."""
         # Mock exchange rate
         mock_rate = Mock()
@@ -166,7 +170,7 @@ class TestCreateEntryWithAttachments:
         # Verify audit logging
         mock_logger.assert_called_once()
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
+    @patch("apps.entries.services.get_closest_exchanged_rate")
     def test_create_entry_without_attachments(self, mock_get_rate):
         """Test entry creation without attachments (should be flagged)."""
         # Mock exchange rate
@@ -189,7 +193,7 @@ class TestCreateEntryWithAttachments:
 
         assert entry.is_flagged is True  # No attachments
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
+    @patch("apps.entries.services.get_closest_exchanged_rate")
     def test_create_entry_no_exchange_rate(self, mock_get_rate):
         """Test entry creation when no exchange rate is available."""
         mock_get_rate.return_value = None
@@ -224,8 +228,8 @@ class TestUpdateEntryUserInputs:
         """Test successful entry update."""
         # Create a different currency to trigger exchange rate update
         different_currency = Currency.objects.get_or_create(code="EUR", name="Euro")[0]
-        
-        with patch('apps.entries.services.get_closest_exchanged_rate') as mock_get_rate:
+
+        with patch("apps.entries.services.get_closest_exchanged_rate") as mock_get_rate:
             mock_rate = Mock()
             mock_rate.rate = Decimal("1.50")
             mock_get_rate.return_value = mock_rate
@@ -252,7 +256,10 @@ class TestUpdateEntryUserInputs:
         self.entry.status = EntryStatus.APPROVED
         self.entry.save()
 
-        with pytest.raises(ValidationError, match="User can only update Entry info during the pending stage"):
+        with pytest.raises(
+            ValidationError,
+            match="User can only update Entry info during the pending stage",
+        ):
             update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
@@ -264,11 +271,11 @@ class TestUpdateEntryUserInputs:
                 replace_attachments=False,
             )
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
+    @patch("apps.entries.services.get_closest_exchanged_rate")
     def test_update_entry_user_inputs_no_exchange_rate(self, mock_get_rate):
         """Test updating entry when no exchange rate is available."""
         mock_get_rate.return_value = None
-        
+
         # Create a different currency to trigger exchange rate lookup
         different_currency = Currency.objects.get_or_create(code="EUR", name="Euro")[0]
 
@@ -295,11 +302,10 @@ class TestUpdateEntryStatus:
         self.entry = EntryFactory()
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_status_change')
+    @patch("apps.entries.services.BusinessAuditLogger.log_status_change")
     def test_update_entry_status_success(self, mock_logger):
         """Test successful status update."""
-        
-        
+
         update_entry_status(
             entry=self.entry,
             status=EntryStatus.APPROVED,
@@ -325,7 +331,7 @@ class TestBulkUpdateEntryStatus:
     def test_bulk_update_entry_status(self):
         """Test bulk status update."""
         entries = [EntryFactory() for _ in range(3)]
-        
+
         # Update status for all entries
         for entry in entries:
             entry.status = EntryStatus.APPROVED
@@ -351,7 +357,7 @@ class TestDeleteEntry:
         """Set up test data."""
         self.entry = EntryFactory(status=EntryStatus.PENDING)
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_delete_entry_success(self, mock_logger):
         """Test successful entry deletion."""
         # Get user from either team member or org member
@@ -359,12 +365,12 @@ class TestDeleteEntry:
             user = self.entry.submitted_by_team_member.organization_member.user
         else:
             user = self.entry.submitted_by_org_member.user
-        
+
         result = delete_entry(entry=self.entry, user=user)
 
         assert result == self.entry
         assert not Entry.objects.filter(entry_id=self.entry.entry_id).exists()
-        
+
         # Verify audit logging
         mock_logger.assert_called_once()
 
@@ -373,7 +379,10 @@ class TestDeleteEntry:
         self.entry.last_status_modified_by = OrganizationMemberFactory()
         self.entry.save()
 
-        with pytest.raises(ValidationError, match="Cannot delete an entry when someone has already modified the status"):
+        with pytest.raises(
+            ValidationError,
+            match="Cannot delete an entry when someone has already modified the status",
+        ):
             delete_entry(entry=self.entry)
 
     def test_delete_entry_non_pending_status(self):
@@ -381,7 +390,9 @@ class TestDeleteEntry:
         self.entry.status = EntryStatus.APPROVED
         self.entry.save()
 
-        with pytest.raises(ValidationError, match="Cannot delete an entry that is not pending review"):
+        with pytest.raises(
+            ValidationError, match="Cannot delete an entry that is not pending review"
+        ):
             delete_entry(entry=self.entry)
 
 
@@ -393,11 +404,12 @@ class TestBulkDeleteEntries:
     def test_bulk_delete_entries(self):
         """Test bulk entry deletion."""
         entries = [EntryFactory(status=EntryStatus.PENDING) for _ in range(3)]
-        
 
         # The function tries to call .delete() on the list, which will fail
         # This test documents the current behavior (which has a bug)
-        with pytest.raises(AttributeError, match="'list' object has no attribute 'delete'"):
+        with pytest.raises(
+            AttributeError, match="'list' object has no attribute 'delete'"
+        ):
             bulk_delete_entries(entries=entries)
 
 
@@ -415,8 +427,8 @@ class TestEntryCreate:
             workspace=self.workspace, team=self.team_member.team
         )
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.get_closest_exchanged_rate")
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_entry_create_success(self, mock_logger, mock_get_rate):
         """Test successful entry creation."""
         # Mock exchange rate
@@ -448,7 +460,9 @@ class TestEntryCreate:
 
     def test_entry_create_workspace_expense_without_workspace(self):
         """Test entry creation for workspace expense without workspace."""
-        with pytest.raises(ValidationError, match="Workspace is required for workspace expense entries"):
+        with pytest.raises(
+            ValidationError, match="Workspace is required for workspace expense entries"
+        ):
             entry_create(
                 submitted_by=self.team_member,
                 entry_type=EntryType.WORKSPACE_EXP,
@@ -459,7 +473,9 @@ class TestEntryCreate:
 
     def test_entry_create_team_entry_without_workspace_team(self):
         """Test entry creation for team entry without workspace team."""
-        with pytest.raises(ValidationError, match="Workspace team is required for team-based entries"):
+        with pytest.raises(
+            ValidationError, match="Workspace team is required for team-based entries"
+        ):
             entry_create(
                 submitted_by=self.team_member,
                 entry_type=EntryType.INCOME,
@@ -468,7 +484,7 @@ class TestEntryCreate:
                 organization=self.organization,
             )
 
-    @patch('apps.entries.services.get_closest_exchanged_rate')
+    @patch("apps.entries.services.get_closest_exchanged_rate")
     def test_entry_create_no_exchange_rate(self, mock_get_rate):
         """Test entry creation when no exchange rate is available."""
         mock_get_rate.return_value = None
@@ -495,7 +511,7 @@ class TestEntryReview:
         self.entry = EntryFactory(status=EntryStatus.PENDING)
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_entry_review_approve(self, mock_logger):
         """Test entry approval."""
         result = entry_review(
@@ -514,7 +530,7 @@ class TestEntryReview:
         # Verify audit logging
         mock_logger.assert_called_once()
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_entry_review_reject(self, mock_logger):
         """Test entry rejection."""
         result = entry_review(
@@ -529,7 +545,7 @@ class TestEntryReview:
         assert self.entry.status == EntryStatus.REJECTED
         assert self.entry.status_note == "Rejected"
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_entry_review_flag(self, mock_logger):
         """Test entry flagging."""
         result = entry_review(
@@ -556,7 +572,9 @@ class TestEntryReview:
 
     def test_entry_review_reject_without_notes(self):
         """Test entry rejection without notes."""
-        with pytest.raises(ValidationError, match="Notes are required when rejected an entry"):
+        with pytest.raises(
+            ValidationError, match="Notes are required when rejected an entry"
+        ):
             entry_review(
                 entry=self.entry,
                 reviewer=self.reviewer,
@@ -565,7 +583,9 @@ class TestEntryReview:
 
     def test_entry_review_flag_without_notes(self):
         """Test entry flagging without notes."""
-        with pytest.raises(ValidationError, match="Notes are required when flagging an entry"):
+        with pytest.raises(
+            ValidationError, match="Notes are required when flagging an entry"
+        ):
             entry_review(
                 entry=self.entry,
                 reviewer=self.reviewer,
@@ -597,7 +617,7 @@ class TestApproveEntry:
         self.entry = EntryFactory(status=EntryStatus.PENDING)
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.entry_review')
+    @patch("apps.entries.services.entry_review")
     def test_approve_entry(self, mock_entry_review):
         """Test entry approval."""
         mock_entry_review.return_value = self.entry
@@ -628,7 +648,7 @@ class TestRejectEntry:
         self.entry = EntryFactory(status=EntryStatus.PENDING)
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.entry_review')
+    @patch("apps.entries.services.entry_review")
     def test_reject_entry(self, mock_entry_review):
         """Test entry rejection."""
         mock_entry_review.return_value = self.entry
@@ -659,7 +679,7 @@ class TestFlagEntry:
         self.entry = EntryFactory(status=EntryStatus.PENDING)
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.entry_review')
+    @patch("apps.entries.services.entry_review")
     def test_flag_entry(self, mock_entry_review):
         """Test entry flagging."""
         mock_entry_review.return_value = self.entry
@@ -691,7 +711,7 @@ class TestBulkReviewEntries:
         self.entries = [EntryFactory(status=EntryStatus.PENDING) for _ in range(3)]
         self.reviewer = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_bulk_operation')
+    @patch("apps.entries.services.BusinessAuditLogger.log_bulk_operation")
     def test_bulk_review_entries_success(self, mock_logger):
         """Test successful bulk review."""
         result = bulk_review_entries(
@@ -722,7 +742,9 @@ class TestBulkReviewEntries:
 
     def test_bulk_review_entries_reject_without_notes(self):
         """Test bulk rejection without notes."""
-        with pytest.raises(ValidationError, match="Notes are required when rejected an entry"):
+        with pytest.raises(
+            ValidationError, match="Notes are required when rejected an entry"
+        ):
             bulk_review_entries(
                 entries=self.entries,
                 reviewer=self.reviewer,
@@ -740,7 +762,7 @@ class TestEntryUpdate:
         self.entry = EntryFactory(status=EntryStatus.PENDING)
         self.updater = OrganizationMemberFactory()
 
-    @patch('apps.entries.services.BusinessAuditLogger.log_entry_action')
+    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
     def test_entry_update_success(self, mock_logger):
         """Test successful entry update."""
         result = entry_update(
@@ -789,7 +811,7 @@ class TestGetOrgExpenseStats:
         """Set up test data."""
         self.organization = OrganizationWithOwnerFactory()
 
-    @patch('apps.entries.services.EntryStats')
+    @patch("apps.entries.services.EntryStats")
     def test_get_org_expense_stats(self, mock_entry_stats):
         """Test getting organization expense stats."""
         # Mock the EntryStats instance

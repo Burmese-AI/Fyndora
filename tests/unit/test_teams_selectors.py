@@ -3,8 +3,7 @@ Unit tests for apps.teams.selectors
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from django.core.exceptions import ObjectDoesNotExist
+from unittest.mock import patch
 
 from apps.teams.selectors import (
     get_team_members,
@@ -31,9 +30,9 @@ class TestGetTeamMembers:
         """Test getting all team members without filters."""
         team_member1 = TeamMemberFactory()
         team_member2 = TeamMemberFactory()
-        
+
         result = get_team_members()
-        
+
         assert team_member1 in result
         assert team_member2 in result
         assert result.count() >= 2
@@ -43,9 +42,9 @@ class TestGetTeamMembers:
         team = TeamFactory()
         team_member1 = TeamMemberFactory(team=team)
         team_member2 = TeamMemberFactory()  # Different team
-        
+
         result = get_team_members(team=team)
-        
+
         assert team_member1 in result
         assert team_member2 not in result
         assert result.count() == 1
@@ -53,21 +52,23 @@ class TestGetTeamMembers:
     def test_get_team_members_with_prefetch_user(self):
         """Test getting team members with user prefetch."""
         team_member = TeamMemberFactory()
-        
+
         result = get_team_members(prefetch_user=True)
-        
+
         assert team_member in result
         # Check that select_related was applied (queryset should have the prefetch)
-        assert hasattr(result, '_prefetch_related_lookups') or hasattr(result, '_prefetch_done')
+        assert hasattr(result, "_prefetch_related_lookups") or hasattr(
+            result, "_prefetch_done"
+        )
 
     def test_get_team_members_with_both_filters(self):
         """Test getting team members with both team filter and prefetch."""
         team = TeamFactory()
         team_member1 = TeamMemberFactory(team=team)
         team_member2 = TeamMemberFactory()  # Different team
-        
+
         result = get_team_members(team=team, prefetch_user=True)
-        
+
         assert team_member1 in result
         assert team_member2 not in result
         assert result.count() == 1
@@ -76,9 +77,9 @@ class TestGetTeamMembers:
         """Test getting team members with None team (should return all)."""
         team_member1 = TeamMemberFactory()
         team_member2 = TeamMemberFactory()
-        
+
         result = get_team_members(team=None)
-        
+
         assert team_member1 in result
         assert team_member2 in result
         assert result.count() >= 2
@@ -93,20 +94,20 @@ class TestGetAllTeamMembers:
         """Test getting all team members successfully."""
         team_member1 = TeamMemberFactory()
         team_member2 = TeamMemberFactory()
-        
+
         result = get_all_team_members()
-        
+
         assert team_member1 in result
         assert team_member2 in result
         assert result.count() >= 2
 
     def test_get_all_team_members_with_exception(self):
         """Test getting all team members when exception occurs."""
-        with patch('apps.teams.selectors.TeamMember.objects.all') as mock_all:
+        with patch("apps.teams.selectors.TeamMember.objects.all") as mock_all:
             mock_all.side_effect = Exception("Database error")
-            
+
             result = get_all_team_members()
-            
+
             assert result.count() == 0
             assert result.model == TeamMember
 
@@ -122,9 +123,9 @@ class TestGetTeamsByOrganizationId:
         team1 = TeamFactory(organization=organization)
         team2 = TeamFactory(organization=organization)
         team3 = TeamFactory()  # Different organization
-        
+
         result = get_teams_by_organization_id(organization.organization_id)
-        
+
         assert team1 in result
         assert team2 in result
         assert team3 not in result
@@ -132,18 +133,18 @@ class TestGetTeamsByOrganizationId:
 
     def test_get_teams_by_organization_id_with_exception(self):
         """Test getting teams by organization ID when exception occurs."""
-        with patch('apps.teams.selectors.Team.objects.filter') as mock_filter:
+        with patch("apps.teams.selectors.Team.objects.filter") as mock_filter:
             mock_filter.side_effect = Exception("Database error")
-            
+
             result = get_teams_by_organization_id("some-id")
-            
+
             assert result.count() == 0
             assert result.model == Team
 
     def test_get_teams_by_organization_id_with_nonexistent_org(self):
         """Test getting teams for nonexistent organization."""
         result = get_teams_by_organization_id("nonexistent-id")
-        
+
         assert result.count() == 0
 
 
@@ -155,33 +156,33 @@ class TestGetTeamById:
     def test_get_team_by_id_success(self):
         """Test getting team by ID successfully."""
         team = TeamFactory()
-        
+
         result = get_team_by_id(team.team_id)
-        
+
         assert result == team
 
     def test_get_team_by_id_does_not_exist(self):
         """Test getting team by ID when team doesn't exist."""
         result = get_team_by_id("nonexistent-id")
-        
+
         assert result is None
 
     def test_get_team_by_id_with_exception(self):
         """Test getting team by ID when exception occurs."""
-        with patch('apps.teams.selectors.Team.objects.get') as mock_get:
+        with patch("apps.teams.selectors.Team.objects.get") as mock_get:
             mock_get.side_effect = Exception("Database error")
-            
+
             result = get_team_by_id("some-id")
-            
+
             assert result is None
 
     def test_get_team_by_id_with_multiple_objects_returned(self):
         """Test getting team by ID when multiple objects are returned."""
-        with patch('apps.teams.selectors.Team.objects.get') as mock_get:
+        with patch("apps.teams.selectors.Team.objects.get") as mock_get:
             mock_get.side_effect = Team.MultipleObjectsReturned("Multiple teams found")
-            
+
             result = get_team_by_id("some-id")
-            
+
             assert result is None
 
 
@@ -193,33 +194,35 @@ class TestGetTeamMemberById:
     def test_get_team_member_by_id_success(self):
         """Test getting team member by ID successfully."""
         team_member = TeamMemberFactory()
-        
+
         result = get_team_member_by_id(team_member.team_member_id)
-        
+
         assert result == team_member
 
     def test_get_team_member_by_id_does_not_exist(self):
         """Test getting team member by ID when team member doesn't exist."""
         result = get_team_member_by_id("nonexistent-id")
-        
+
         assert result is None
 
     def test_get_team_member_by_id_with_exception(self):
         """Test getting team member by ID when exception occurs."""
-        with patch('apps.teams.selectors.TeamMember.objects.get') as mock_get:
+        with patch("apps.teams.selectors.TeamMember.objects.get") as mock_get:
             mock_get.side_effect = Exception("Database error")
-            
+
             result = get_team_member_by_id("some-id")
-            
+
             assert result is None
 
     def test_get_team_member_by_id_with_multiple_objects_returned(self):
         """Test getting team member by ID when multiple objects are returned."""
-        with patch('apps.teams.selectors.TeamMember.objects.get') as mock_get:
-            mock_get.side_effect = TeamMember.MultipleObjectsReturned("Multiple team members found")
-            
+        with patch("apps.teams.selectors.TeamMember.objects.get") as mock_get:
+            mock_get.side_effect = TeamMember.MultipleObjectsReturned(
+                "Multiple team members found"
+            )
+
             result = get_team_member_by_id("some-id")
-            
+
             assert result is None
 
 
@@ -234,9 +237,9 @@ class TestGetTeamMembersByTeamId:
         team_member1 = TeamMemberFactory(team=team)
         team_member2 = TeamMemberFactory(team=team)
         team_member3 = TeamMemberFactory()  # Different team
-        
+
         result = get_team_members_by_team_id(team.team_id)
-        
+
         assert team_member1 in result
         assert team_member2 in result
         assert team_member3 not in result
@@ -244,26 +247,26 @@ class TestGetTeamMembersByTeamId:
 
     def test_get_team_members_by_team_id_with_exception(self):
         """Test getting team members by team ID when exception occurs."""
-        with patch('apps.teams.selectors.TeamMember.objects.filter') as mock_filter:
+        with patch("apps.teams.selectors.TeamMember.objects.filter") as mock_filter:
             mock_filter.side_effect = Exception("Database error")
-            
+
             result = get_team_members_by_team_id("some-id")
-            
+
             assert result.count() == 0
             assert result.model == TeamMember
 
     def test_get_team_members_by_team_id_with_nonexistent_team(self):
         """Test getting team members for nonexistent team."""
         result = get_team_members_by_team_id("nonexistent-id")
-        
+
         assert result.count() == 0
 
     def test_get_team_members_by_team_id_empty_result(self):
         """Test getting team members for team with no members."""
         team = TeamFactory()
-        
+
         result = get_team_members_by_team_id(team.team_id)
-        
+
         assert result.count() == 0
 
 
@@ -278,20 +281,20 @@ class TestTeamsSelectorsIntegration:
         team = TeamFactory(organization=organization)
         team_member1 = TeamMemberFactory(team=team)
         team_member2 = TeamMemberFactory(team=team)
-        
+
         # Test getting team by organization
         teams = get_teams_by_organization_id(organization.organization_id)
         assert team in teams
-        
+
         # Test getting team by ID
         found_team = get_team_by_id(team.team_id)
         assert found_team == team
-        
+
         # Test getting team members by team
         team_members = get_team_members_by_team_id(team.team_id)
         assert team_member1 in team_members
         assert team_member2 in team_members
-        
+
         # Test getting team members with team filter
         filtered_members = get_team_members(team=team)
         assert team_member1 in filtered_members
@@ -301,25 +304,25 @@ class TestTeamsSelectorsIntegration:
         """Test selector functions with soft deleted objects."""
         team = TeamFactory()
         team_member = TeamMemberFactory(team=team)
-        
+
         # Soft delete the team member
         team_member.delete()
-        
+
         # Should not return soft deleted objects
         result = get_team_members_by_team_id(team.team_id)
         assert team_member not in result
-        
+
         result = get_team_member_by_id(team_member.team_member_id)
         assert result is None
 
     def test_selector_functions_with_different_data_types(self):
         """Test selector functions with different data types for IDs."""
         team = TeamFactory()
-        
+
         # Test with string ID
         result1 = get_team_by_id(str(team.team_id))
         assert result1 == team
-        
+
         # Test with UUID object
         result2 = get_team_by_id(team.team_id)
         assert result2 == team
@@ -328,26 +331,26 @@ class TestTeamsSelectorsIntegration:
         """Test that selector functions handle performance considerations."""
         team = TeamFactory()
         team_member = TeamMemberFactory(team=team)
-        
+
         # Test prefetch_user parameter
         result = get_team_members(team=team, prefetch_user=True)
         assert team_member in result
-        
+
         # Verify that the queryset has the expected structure
-        assert hasattr(result, 'query')
+        assert hasattr(result, "query")
 
     def test_selector_functions_edge_cases(self):
         """Test selector functions with edge cases."""
         # Test with empty string ID
         result = get_team_by_id("")
         assert result is None
-        
+
         result = get_team_member_by_id("")
         assert result is None
-        
+
         # Test with None ID
         result = get_team_by_id(None)
         assert result is None
-        
+
         result = get_team_member_by_id(None)
         assert result is None

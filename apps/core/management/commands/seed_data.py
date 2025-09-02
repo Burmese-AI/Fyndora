@@ -973,9 +973,7 @@ class Command(BaseCommand):
                     submitted_by_org_member=workspace_admin,  # ONLY workspace admin
                     submitted_by_team_member=None,
                     status=random.choice(entry_statuses),
-                    is_flagged=random.choice([True, False])
-                    if random.random() < 0.1
-                    else False,
+                    is_flagged=True,
                 )
 
         except Exception as e:
@@ -1042,9 +1040,7 @@ class Command(BaseCommand):
                     submitted_by_org_member=org_owner,  # ONLY organization owner
                     submitted_by_team_member=None,
                     status=random.choice(entry_statuses),
-                    is_flagged=random.choice([True, False])
-                    if random.random() < 0.1
-                    else False,
+                    is_flagged=True,
                 )
 
         except Exception as e:
@@ -1179,9 +1175,7 @@ class Command(BaseCommand):
                     submitted_by_org_member=submitted_by_org_member,
                     submitted_by_team_member=submitted_by_team_member,
                     status=random.choice(entry_statuses),
-                    is_flagged=random.choice([True, False])
-                    if random.random() < 0.1
-                    else False,
+                    is_flagged=True,
                 )
 
         except Exception as e:

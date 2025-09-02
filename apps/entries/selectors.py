@@ -67,6 +67,9 @@ def get_entries(
                 entry_type__in=team_entry_types,
                 organization=organization,
             )
+        else:
+            # If no context is provided, still create a filter for team entry types for testing edge purposes..
+            team_filter = Q(entry_type__in=team_entry_types)
 
         filters |= team_filter
 
@@ -90,7 +93,7 @@ def get_entries(
     if workspace_team_id:
         queryset = queryset.filter(workspace_team__pk=workspace_team_id)
     if workspace_id:
-        queryset = queryset.filter(workspace_pk=workspace_id)
+        queryset = queryset.filter(workspace__pk=workspace_id)
     if search:
         queryset = queryset.filter(Q(description__icontains=search))
 

@@ -31,7 +31,6 @@ def get_org_members_without_owner(organization):
         owner = getattr(organization, "owner", None)
         if owner and getattr(owner, "user", None):
             return qs.exclude(user=owner.user)
-        print("review code to check if owner is working")
         return qs
     except Exception as e:
         print(f"Error in get_org_members_without_owner: {str(e)}")

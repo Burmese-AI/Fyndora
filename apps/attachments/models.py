@@ -17,4 +17,4 @@ class Attachment(baseModel, SoftDeleteModel):
         verbose_name_plural = "Attachments"
 
     def __str__(self):
-        return f"{self.file_type} - {self.file_url.name} - {self.entry.pk} - {self.deleted_at}"
+        return f"{self.file_type} - {self.file_url.name} - {self.entry.description} - {self.deleted_at}"

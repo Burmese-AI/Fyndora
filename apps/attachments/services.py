@@ -61,6 +61,7 @@ def replace_or_append_attachments(
         existing_attachments = list(entry.attachments.all())
         # Soft delete all existing attachments
         entry.attachments.all().delete()
+        print("Soft Deleted Attachments")
 
         # Log bulk attachment removal if user is provided
         if user and existing_attachments:
@@ -112,7 +113,7 @@ def create_attachments(*, entry, attachments, user=None, request=None):
         )
         for attachment in attachments
     ]
-
+    print(f"prepared attachments => {prepared_attachments}")
     # Bulk Create the Attachments
     Attachment.objects.bulk_create(prepared_attachments)
 

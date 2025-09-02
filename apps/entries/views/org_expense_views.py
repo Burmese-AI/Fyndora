@@ -50,7 +50,8 @@ class OrganizationExpenseListView(
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
+    optional_htmx_template_name = "entries/partials/table.html"
     template_name = "entries/index.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -79,7 +80,7 @@ class OrganizationExpenseListView(
                 self.request.user, self.organization
             ),
         }
-
+        print(f"\n\n{context}\n\n")
         return context
 
 
@@ -88,6 +89,7 @@ class OrganizationExpenseCreateView(
     OrganizationLevelEntryView,
     BaseGetModalFormView,
     EntryFormMixin,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseCreateView,
 ):
@@ -95,7 +97,7 @@ class OrganizationExpenseCreateView(
     form_class = CreateOrganizationExpenseEntryForm
     modal_template_name = "entries/components/create_modal.html"
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
 
     def dispatch(self, request, *args, **kwargs):
         if not can_add_org_expense(request.user, self.organization):
@@ -190,7 +192,7 @@ class OrganizationExpenseUpdateView(
                 description=form.cleaned_data["description"],
                 currency=form.cleaned_data["currency"],
                 attachments=form.cleaned_data["attachment_files"],
-                replace_attachments=True,
+                replace_attachments=form.cleaned_data["replace_attachments"],
                 user=self.request.user,
                 request=self.request,
             )
@@ -209,12 +211,13 @@ class OrganizationExpenseDeleteView(
     OrganizationRequiredMixin,
     EntryRequiredMixin,
     OrganizationLevelEntryView,
+    StatusFilteringMixin,
     HtmxTableServiceMixin,
     BaseDeleteView,
 ):
     model = Entry
     context_object_name = CONTEXT_OBJECT_NAME
-    table_template_name = "entries/partials/table.html"
+    table_template_name = "entries/layouts/base_entry_content_layout.html"
 
     def dispatch(self, request, *args, **kwargs):
         if not can_delete_org_expense(request.user, self.organization):

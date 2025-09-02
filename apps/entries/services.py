@@ -180,6 +180,7 @@ def update_entry_user_inputs(
 
     # If new attachments were provided, replace existing ones or append the new ones
     if attachments:
+        print(f"Attachments were provided | {replace_attachments}")
         replace_or_append_attachments(
             entry=entry,
             attachments=attachments,

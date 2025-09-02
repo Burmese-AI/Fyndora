@@ -2,7 +2,7 @@ from typing import List
 from decimal import Decimal
 
 from django.db.models import Q, Count, QuerySet, F, Sum, DecimalField, ExpressionWrapper
-
+from django.shortcuts import get_object_or_404
 
 from apps.organizations.models import (
     Organization,
@@ -13,7 +13,6 @@ from apps.workspaces.models import Workspace, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
-
 
 # Selectors for Services and Views
 def get_entries(
@@ -76,7 +75,12 @@ def get_entries(
 
     queryset = Entry.objects.filter(filters)
     if annotate_attachment_count:
-        queryset = queryset.annotate(attachment_count=Count("attachments"))
+        queryset = queryset.annotate(
+            attachment_count=Count(
+            "attachments",
+            filter=Q(attachments__deleted_at__isnull=True)
+        )
+    )
 
     # Apply additional filters
     if statuses:
@@ -143,76 +147,13 @@ def get_total_amount_of_entries(
     return total or Decimal("0.00")
 
 
-# Selectors for Tests
-def get_workspace_entries(*, workspace: Workspace):
-    """
-    Get all entries for a specific workspace.
-    """
-    return Entry.objects.filter(workspace=workspace)
-
-
-def get_workspace_entries_by_status(*, workspace: Workspace, status):
-    """
-    Get entries for a specific workspace filtered by status.
-    """
-    return Entry.objects.filter(workspace=workspace, status=status)
-
-
-def get_workspace_entries_by_type(*, workspace: Workspace, entry_type):
-    """
-    Get entries for a specific workspace filtered by entry type.
-    """
-    return Entry.objects.filter(workspace=workspace, entry_type=entry_type)
-
-
-def get_workspace_entries_by_date_range(*, workspace: Workspace, start_date, end_date):
-    """
-    Get entries for a specific workspace created within a date range.
-    """
-    return Entry.objects.filter(
-        workspace=workspace,
-        created_at__date__gte=start_date,
-        created_at__date__lte=end_date,
+def get_entry(pk, required_attachment_count=False):
+    queryset = Entry.objects.all()
+    if required_attachment_count:
+        queryset = queryset.annotate(
+            attachment_count=Count(
+            "attachments",
+            filter=Q(attachments__deleted_at__isnull=True)
+        )
     )
-
-
-def get_user_workspace_entries(*, user, workspace: Workspace, status=None):
-    """
-    Get entries submitted by a specific user in a specific workspace.
-    """
-    # Get organization memberships for the user
-    org_member_ids = OrganizationMember.objects.filter(user=user).values_list(
-        "pk", flat=True
-    )
-
-    # Get team memberships for the user through organization memberships
-    team_member_ids = TeamMember.objects.filter(
-        organization_member__user=user
-    ).values_list("pk", flat=True)
-
-    # Base queryset filtering by the user's memberships as submitters and workspace
-    queryset = Entry.objects.filter(
-        Q(submitted_by_org_member__in=org_member_ids)
-        | Q(submitted_by_team_member__in=team_member_ids),
-        workspace=workspace,
-    )
-
-    if status:
-        queryset = queryset.filter(status=status)
-
-    return queryset
-
-
-def get_workspace_team_entries(*, workspace_team, status=None, entry_type=None):
-    """
-    Get entries for a specific workspace team.
-    """
-    queryset = Entry.objects.filter(workspace_team=workspace_team)
-
-    if status:
-        queryset = queryset.filter(status=status)
-
-    if entry_type:
-        queryset = queryset.filter(entry_type=entry_type)
-
-    return queryset
+    return get_object_or_404(queryset, pk=pk)

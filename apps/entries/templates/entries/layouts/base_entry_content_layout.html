@@ -1,8 +1,14 @@
-<div class="max-w-7xl mx-auto space-y-6 px-6">
+<div 
+  {% if is_oob %}hx-swap-oob="true"{% endif %} 
+  id="entry-layout-container"
+  class="max-w-7xl mx-auto space-y-6 px-6"
+>
 
-    <!-- Entries Section -->
-    <div id="content-container" class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
-      {% include "entries/partials/table.html" %}
-    </div>
+  {% include "entries/components/entry_filter.html" with status_options=status_options type_options=type_options team_options=team_options workspace_options=workspace_options %}
+
+  <!-- Entries Section -->
+  <div id="content-container" class="bg-base-100 border border-base-200 rounded-xl p-5 shadow-sm">
+    {% include "entries/partials/table.html" %}
+  </div>
 
 </div>

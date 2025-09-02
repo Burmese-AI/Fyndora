@@ -1,3 +1,4 @@
+from apps.currencies.services import createCurrency
 from apps.organizations.models import Organization
 from .models import Currency
 from apps.workspaces.models import WorkspaceExchangeRate
@@ -6,6 +7,12 @@ from apps.organizations.models import OrganizationExchangeRate
 
 def get_currency_by_code(code: str) -> Currency:
     return Currency.objects.get(code=code)
+
+def get_or_create_currency_by_code(code: str) -> Currency:
+    currency = get_currency_by_code(code)
+    if not currency:
+        currency = createCurrency(code)
+    return currency
 
 
 def get_org_defined_currencies(organization: Organization):

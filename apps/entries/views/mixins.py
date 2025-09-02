@@ -2,6 +2,8 @@ from typing import Any
 
 from django.shortcuts import get_object_or_404
 
+from apps.entries.selectors import get_entry
+
 from ..models import Entry
 from ..constants import EntryStatus, EntryType
 
@@ -14,10 +16,10 @@ class EntryRequiredMixin:
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         entry_id = kwargs.get("pk")
-        self.entry = get_object_or_404(Entry, pk=entry_id)
+        self.entry = get_entry(pk=entry_id, required_attachment_count=True)
         self.instance = self.entry
         self.attachments = self.entry.attachments.all()
-
+        
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["entry"] = self.entry

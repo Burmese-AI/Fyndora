@@ -10,7 +10,7 @@
         href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
         hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}"
-        hx-target="#content-container"
+        hx-target="{{ pagination_target|default:'#content-container' }}"
         hx-swap="innerHTML"
       >
         « Previous
@@ -27,7 +27,7 @@
           href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}" 
           class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
           hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}"
-          hx-target="#content-container"
+          hx-target="{{ pagination_target|default:'#content-container' }}"
           hx-swap="innerHTML"
         >
           {{ num }}
@@ -40,7 +40,7 @@
         href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
         hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}"
-        hx-target="#content-container"
+        hx-target="{{ pagination_target|default:'#content-container' }}"
         hx-swap="innerHTML"
       >
         Next »

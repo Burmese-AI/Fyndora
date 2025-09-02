@@ -25,9 +25,14 @@ def get_org_members_without_owner(organization):
     Return organization members without the owner.
     """
     try:
-        return OrganizationMember.objects.filter(organization=organization).exclude(
-            user=organization.owner.user
-        )
+        qs = OrganizationMember.objects.filter(organization=organization)
+        # If the organization has an owner, exclude them; otherwise return all members
+        # actually every org has its owner ... i just added this for testing edge cases
+        owner = getattr(organization, "owner", None)
+        if owner and getattr(owner, "user", None):
+            return qs.exclude(user=owner.user)
+        print("review code to check if owner is working")
+        return qs
     except Exception as e:
         print(f"Error in get_org_members_without_owner: {str(e)}")
         return None

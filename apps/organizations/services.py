@@ -23,7 +23,6 @@ from .utils import (
     extract_organization_member_context,
     extract_request_metadata,
 )
-from apps.currencies.services import createCurrency
 
 logger = logging.getLogger(__name__)
 

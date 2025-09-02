@@ -1,9 +1,7 @@
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import date
 from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.exceptions import ValidationError
-from django.db import transaction
 
 from apps.entries.forms import (
     BaseEntryForm,
@@ -16,10 +14,8 @@ from apps.entries.constants import EntryType, EntryStatus
 from apps.teams.constants import TeamMemberRole
 from apps.currencies.models import Currency
 from tests.factories.entry_factories import (
-    EntryFactory,
     PendingEntryFactory,
     ApprovedEntryFactory,
-    OrganizationExpenseEntryFactory,
 )
 from tests.factories.organization_factories import (
     OrganizationFactory,
@@ -243,7 +239,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
     def test_workspace_team_form_team_coordinator_access(self):
         """Test that team coordinators can create entries with all types."""
         # Create a team member with team coordinator role
-        team_member = TeamMemberFactory(
+        TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=self.org_member,
             role=TeamMemberRole.TEAM_COORDINATOR
@@ -272,7 +268,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         """Test that submitters can create income and disbursement entries."""
         # Create a different organization member for submitter role to avoid unique constraint
         submitter_org_member = OrganizationMemberFactory(organization=self.organization)
-        team_member = TeamMemberFactory(
+        TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
             role=TeamMemberRole.SUBMITTER
@@ -301,7 +297,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
         """Test that submitters cannot create remittance entries."""
         # Create a different organization member for submitter role to avoid unique constraint
         submitter_org_member = OrganizationMemberFactory(organization=self.organization)
-        team_member = TeamMemberFactory(
+        TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
             role=TeamMemberRole.SUBMITTER
@@ -330,7 +326,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
     def test_workspace_team_form_entry_type_choices_filtering(self):
         """Test that entry type choices are filtered based on role."""
         # Create a team member with team coordinator role
-        team_coordinator = TeamMemberFactory(
+        TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=self.org_member,
             role=TeamMemberRole.TEAM_COORDINATOR
@@ -355,7 +351,7 @@ class TestCreateWorkspaceTeamEntryForm(TestCase):
 
         # Create a different organization member for submitter role to avoid unique constraint
         submitter_org_member = OrganizationMemberFactory(organization=self.organization)
-        submitter = TeamMemberFactory(
+        TeamMemberFactory(
             team=self.workspace_team.team,
             organization_member=submitter_org_member,
             role=TeamMemberRole.SUBMITTER

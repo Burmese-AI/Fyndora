@@ -5,23 +5,16 @@ Tests the selector functions that provide data access for entries.
 """
 
 from decimal import Decimal
-from typing import List
 
 import pytest
-from django.core.exceptions import ValidationError
-from django.db.models import Q
-from django.test import TestCase
 
 from apps.currencies.models import Currency
 from apps.entries.constants import EntryStatus, EntryType
-from apps.entries.models import Entry
 from apps.entries.selectors import get_entries, get_total_amount_of_entries, get_entry
 from tests.factories import (
     EntryFactory,
     IncomeEntryFactory,
     DisbursementEntryFactory,
-    RemittanceEntryFactory,
-    OrganizationMemberFactory,
     TeamMemberFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
@@ -160,7 +153,7 @@ class TestGetEntries:
             currency=self.usd_currency,
             status=EntryStatus.PENDING,
         )
-        approved_entry = IncomeEntryFactory(
+        IncomeEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
             organization=self.organization,
@@ -186,7 +179,7 @@ class TestGetEntries:
             organization=self.organization,
             currency=self.usd_currency,
         )
-        disbursement_entry = DisbursementEntryFactory(
+        DisbursementEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
             organization=self.organization,
@@ -260,7 +253,7 @@ class TestGetEntries:
             currency=self.usd_currency,
             description="Special donation for campaign",
         )
-        non_matching_entry = IncomeEntryFactory(
+        IncomeEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
             organization=self.organization,
@@ -279,7 +272,7 @@ class TestGetEntries:
 
     def test_get_entries_with_prefetch_attachments(self):
         """Test get_entries prefetches attachments when requested."""
-        entry = IncomeEntryFactory(
+        IncomeEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
             organization=self.organization,
@@ -297,7 +290,7 @@ class TestGetEntries:
 
     def test_get_entries_with_annotate_attachment_count(self):
         """Test get_entries annotates attachment count when requested."""
-        entry = IncomeEntryFactory(
+        IncomeEntryFactory(
             workspace_team=self.workspace_team,
             workspace=self.workspace,
             organization=self.organization,

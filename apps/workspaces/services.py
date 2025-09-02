@@ -6,7 +6,6 @@ from django.db.utils import IntegrityError
 
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.utils import model_update
-from apps.currencies.models import Currency
 from apps.currencies.selectors import get_or_create_currency_by_code
 from apps.workspaces.exceptions import WorkspaceCreationError, WorkspaceUpdateError
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam

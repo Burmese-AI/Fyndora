@@ -6,7 +6,7 @@ from django.views.generic import (
     UpdateView,
     DetailView,
 )
-from django.http import HttpResponse, request
+from django.http import HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from apps.core.constants import PAGINATION_SIZE
 from .mixins import HtmxInvalidResponseMixin, HtmxOobResponseMixin

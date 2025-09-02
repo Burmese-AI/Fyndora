@@ -4,13 +4,12 @@ Unit tests for Entry services.
 Tests the service functions that handle business logic for entries.
 """
 
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.utils import timezone
 
 from apps.currencies.models import Currency
@@ -36,7 +35,6 @@ from apps.entries.services import (
 )
 from tests.factories import (
     EntryFactory,
-    IncomeEntryFactory,
     OrganizationMemberFactory,
     OrganizationWithOwnerFactory,
     TeamMemberFactory,
@@ -300,7 +298,7 @@ class TestUpdateEntryStatus:
     @patch('apps.entries.services.BusinessAuditLogger.log_status_change')
     def test_update_entry_status_success(self, mock_logger):
         """Test successful status update."""
-        old_status = self.entry.status
+        
         
         update_entry_status(
             entry=self.entry,
@@ -395,7 +393,7 @@ class TestBulkDeleteEntries:
     def test_bulk_delete_entries(self):
         """Test bulk entry deletion."""
         entries = [EntryFactory(status=EntryStatus.PENDING) for _ in range(3)]
-        entry_ids = [entry.entry_id for entry in entries]
+        
 
         # The function tries to call .delete() on the list, which will fail
         # This test documents the current behavior (which has a bug)

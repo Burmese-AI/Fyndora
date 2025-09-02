@@ -6,9 +6,7 @@ from django.shortcuts import get_object_or_404
 
 from apps.organizations.models import (
     Organization,
-    OrganizationMember,
 )
-from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType

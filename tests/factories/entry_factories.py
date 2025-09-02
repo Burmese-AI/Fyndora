@@ -15,12 +15,10 @@ from apps.entries.constants import EntryType
 from apps.currencies.models import Currency
 from tests.factories.organization_factories import (
     OrganizationFactory,
-    OrganizationExchangeRateFactory,
 )
 from tests.factories.workspace_factories import (
     WorkspaceFactory,
     WorkspaceTeamFactory,
-    WorkspaceExchangeRateFactory,
 )
 
 

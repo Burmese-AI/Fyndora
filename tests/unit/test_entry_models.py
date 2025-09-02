@@ -24,7 +24,6 @@ from tests.factories import (
     OrganizationMemberFactory,
     PendingEntryFactory,
     RejectedEntryFactory,
-    RemittanceEntryFactory,
     ReviewedEntryFactory,
     TeamMemberFactory,
     WorkspaceFactory,

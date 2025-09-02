@@ -1,10 +1,8 @@
 from typing import Any
 
-from django.shortcuts import get_object_or_404
 
 from apps.entries.selectors import get_entry
 
-from ..models import Entry
 from ..constants import EntryStatus, EntryType
 
 

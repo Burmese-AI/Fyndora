@@ -5,11 +5,9 @@ Tests the signal handlers that manage remittance updates when entries are create
 """
 
 from decimal import Decimal
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
-from django.db.models.signals import post_delete, post_save
-from django.test import TestCase
 
 from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
@@ -20,8 +18,6 @@ from apps.entries.signals import (
 from tests.factories import (
     EntryFactory,
     IncomeEntryFactory,
-    DisbursementEntryFactory,
-    RemittanceEntryFactory,
     WorkspaceTeamFactory,
 )
 
@@ -483,7 +479,7 @@ class TestEntrySignalIntegration:
         mock_calculate_due.return_value = Decimal("100.00")
         
         # Create an entry - this should trigger the post_save signal
-        entry = IncomeEntryFactory(
+        IncomeEntryFactory(
             workspace_team=self.workspace_team,
             status=EntryStatus.APPROVED
         )
@@ -543,14 +539,14 @@ class TestEntrySignalIntegration:
         mock_calculate_due.return_value = Decimal("100.00")
         
         # Test with income entry
-        income_entry = EntryFactory(
+        EntryFactory(
             entry_type=EntryType.INCOME,
             workspace_team=self.workspace_team,
             status=EntryStatus.APPROVED
         )
         
         # Test with disbursement entry
-        disbursement_entry = EntryFactory(
+        EntryFactory(
             entry_type=EntryType.DISBURSEMENT,
             workspace_team=self.workspace_team,
             status=EntryStatus.APPROVED
@@ -564,14 +560,14 @@ class TestEntrySignalIntegration:
         """Test that expense entries do not trigger remittance updates."""
         with patch('apps.entries.signals.update_remittance') as mock_update_remittance:
             # Create workspace expense entry
-            workspace_exp_entry = EntryFactory(
+            EntryFactory(
                 entry_type=EntryType.WORKSPACE_EXP,
                 workspace_team=self.workspace_team,
                 status=EntryStatus.APPROVED
             )
             
             # Create organization expense entry
-            org_exp_entry = EntryFactory(
+            EntryFactory(
                 entry_type=EntryType.ORG_EXP,
                 workspace_team=self.workspace_team,
                 status=EntryStatus.APPROVED

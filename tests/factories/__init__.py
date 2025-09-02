@@ -18,6 +18,7 @@ from .auditlog_factories import (
     AuditWithComplexMetadataFactory,
     BulkAuditTrailFactory,
     EntryCreatedAuditFactory,
+    EntryUpdatedAuditFactory,
     FileUploadedAuditFactory,
     FlaggedAuditFactory,
     StatusChangedAuditFactory,
@@ -147,9 +148,10 @@ __all__ = [
     "OtherAttachmentFactory",
     "AttachmentWithEntryFactory",
     "MultipleAttachmentsFactory",
-    # Auditlog factories
+    # Audit log factories
     "AuditTrailFactory",
     "EntryCreatedAuditFactory",
+    "EntryUpdatedAuditFactory",
     "StatusChangedAuditFactory",
     "FlaggedAuditFactory",
     "FileUploadedAuditFactory",

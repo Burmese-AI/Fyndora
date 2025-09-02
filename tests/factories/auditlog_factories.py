@@ -80,6 +80,23 @@ class StatusChangedAuditFactory(AuditTrailFactory):
     )
 
 
+class EntryUpdatedAuditFactory(AuditTrailFactory):
+    """Factory for entry update audit logs."""
+
+    action_type = AuditActionType.ENTRY_UPDATED
+    target_entity_type = factory.LazyAttribute(
+        lambda obj: ContentType.objects.get(model="entry")
+    )
+    metadata = factory.LazyAttribute(
+        lambda obj: {
+            "old_values": {"amount": "1000.00", "description": "Old description"},
+            "new_values": {"amount": "1500.00", "description": "Updated description"},
+            "updated_by": obj.user.username if obj.user else "System",
+            "reason": "Data correction",
+        }
+    )
+
+
 class FlaggedAuditFactory(AuditTrailFactory):
     """Factory for flagged entity audit logs."""
 

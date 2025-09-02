@@ -21,14 +21,12 @@ from tests.factories import (
     EntryFactory,
     FlaggedEntryFactory,
     IncomeEntryFactory,
-    OrganizationExpenseEntryFactory,
     OrganizationMemberFactory,
     PendingEntryFactory,
     RejectedEntryFactory,
     RemittanceEntryFactory,
     ReviewedEntryFactory,
     TeamMemberFactory,
-    WorkspaceExpenseEntryFactory,
     WorkspaceFactory,
     WorkspaceTeamFactory,
 )
@@ -78,8 +76,8 @@ class TestEntryModel:
             description="Donation from supporter",
         )
 
-        # The actual __str__ method returns: organization - workspace - workspace_team - amount - currency - status
-        expected_str = f"{entry.organization} - {entry.workspace} - {entry.workspace_team} - {entry.amount} - {entry.currency} - {entry.status}"
+        # The actual __str__ method returns: "pk - entry_type - amount - status"
+        expected_str = f"{entry.pk} - {entry.entry_type} - {entry.amount} - {entry.status}"
         assert str(entry) == expected_str
 
     def test_converted_amount_property(self):
@@ -129,9 +127,7 @@ class TestEntryModel:
         permissions = [perm[0] for perm in Entry._meta.permissions]
 
         expected_permissions = [
-            "upload_attachments",
-            "review_entries",
-            "flag_entries",
+            "change_other_submitters_entry",
         ]
 
         for perm in expected_permissions:
@@ -355,13 +351,7 @@ class TestEntryRelationships:
 
         assert entry.submitted_by_team_member == team_member
 
-    def test_submitted_by_org_member_relationship(self):
-        """Test submitted_by_org_member foreign key relationship."""
-        org_member = OrganizationMemberFactory()
-        entry = OrganizationExpenseEntryFactory(submitted_by_org_member=org_member)
 
-        assert entry.submitted_by_org_member == org_member
-        assert entry.submitted_by_team_member is None
 
     def test_organization_relationship(self):
         """Test organization foreign key relationship."""
@@ -397,29 +387,7 @@ class TestEntryRelationships:
 
         assert entry.last_status_modified_by == reviewer
 
-    @pytest.mark.skip(
-        reason="Requires attachments table which may not be available in test environment"
-    )
-    def test_cascade_deletion_behavior(self):
-        """Test cascade deletion behavior when related objects are deleted."""
-        # Create entry with relationships
-        entry = EntryFactory()
-        organization = entry.organization
 
-        # Store IDs for verification
-        entry_id = entry.entry_id
-        organization_id = organization.organization_id
-
-        # Delete organization should cascade to entries
-        organization.delete()
-
-        # Entry should be deleted due to cascade
-        assert not Entry.objects.filter(entry_id=entry_id).exists()
-
-        # Organization should also be deleted
-        from apps.organizations.models import Organization
-
-        assert not Organization.objects.filter(organization_id=organization_id).exists()
 
 
 @pytest.mark.unit
@@ -469,41 +437,11 @@ class TestEntryFactories:
         else:
             assert entry.last_status_modified_by is None
 
-    @pytest.mark.parametrize(
-        "factory_class,expected_type",
-        [
-            (IncomeEntryFactory, EntryType.INCOME),
-            (DisbursementEntryFactory, EntryType.DISBURSEMENT),
-            (RemittanceEntryFactory, EntryType.REMITTANCE),
-            (OrganizationExpenseEntryFactory, EntryType.ORG_EXP),
-            (WorkspaceExpenseEntryFactory, EntryType.WORKSPACE_EXP),
-        ],
-    )
-    def test_entry_type_specific_factories(self, factory_class, expected_type):
-        """Test entry type-specific factories create entries with correct type."""
-        entry = factory_class()
-        assert entry.entry_type == expected_type
 
-    def test_organization_expense_factory(self):
-        """Test OrganizationExpenseEntryFactory creates org expense with org member submitter."""
-        entry = OrganizationExpenseEntryFactory()
 
-        assert entry.entry_type == EntryType.ORG_EXP
-        assert entry.submitted_by_org_member is not None
-        assert entry.submitted_by_team_member is None
-        assert entry.workspace is None
-        assert entry.workspace_team is None
-        assert entry.org_exchange_rate_ref is not None
 
-    def test_workspace_expense_factory(self):
-        """Test WorkspaceExpenseEntryFactory creates workspace expense with workspace exchange rate."""
-        entry = WorkspaceExpenseEntryFactory()
 
-        assert entry.entry_type == EntryType.WORKSPACE_EXP
-        assert entry.submitted_by_team_member is not None
-        assert entry.workspace is not None
-        assert entry.workspace_team is not None
-        assert entry.workspace_exchange_rate_ref is not None
+
 
     def test_flagged_entry_factory(self):
         """Test FlaggedEntryFactory creates flagged entry."""

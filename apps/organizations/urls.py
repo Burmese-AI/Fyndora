@@ -9,6 +9,7 @@ from apps.organizations.views import (
     settings_view,
     edit_organization_view,
     delete_organization_view,
+    SettingView,
     OrganizationExchangeRateCreateView,
     OrganizationExchangeRateUpdateView,
     OrganizationExchangeRateDetailView,
@@ -42,7 +43,11 @@ urlpatterns = [
         InvitationListView.as_view(),
         name="invitation_list",
     ),
-    path("<uuid:organization_id>/settings/", settings_view, name="settings"),
+    path(
+        "<uuid:organization_id>/settings/", 
+        SettingView.as_view(), 
+        name="settings"
+    ),
     path(
         "<uuid:organization_id>/settings/edit/",
         edit_organization_view,

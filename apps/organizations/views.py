@@ -253,20 +253,16 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         return super().render_to_response(context, **response_kwargs)
 
 
-class SettingView(
-    OrganizationRequiredMixin,
-    BaseListView
-):
+class SettingView(OrganizationRequiredMixin, BaseListView):
     model = OrganizationExchangeRate
     context_object_name = EXCHANGE_RATE_CONTEXT_OBJECT_NAME
     template_name = "organizations/settings.html"
     table_template_name = "currencies/partials/table.html"
-    optional_htmx_template_name = None
     paginate_by = PAGINATION_SIZE
-    
+
     def setup(self, request, *args, **kwargs):
         return super().setup(request, *args, **kwargs)
-    
+
     def dispatch(self, request, *args, **kwargs):
         if not can_manage_organization(request.user, self.organization):
             return permission_denied_view(
@@ -300,54 +296,6 @@ class SettingView(
             ),
         }
         return context
-    
-
-@login_required
-def settings_view(request, organization_id):
-    try:
-        organization = get_object_or_404(Organization, pk=organization_id)
-
-        owner = organization.owner.user if organization.owner else None
-        context = {
-            "organization": organization,
-            "owner": owner,
-        }
-        if not can_manage_organization(request.user, organization):
-            return permission_denied_view(
-                request,
-                "You do not have permission to access this organization.",
-            )
-
-        org_exchanage_rates = get_org_exchange_rates(organization=organization)
-        context = get_paginated_context(
-            queryset=org_exchanage_rates,
-            context=context,
-            object_name=EXCHANGE_RATE_CONTEXT_OBJECT_NAME,
-        )
-        context["url_identifier"] = "organization"
-        context["permissions"] = {
-            "can_add_org_exchange_rate": request.user.has_perm(
-                OrganizationPermissions.ADD_ORG_CURRENCY, organization
-            ),
-            "can_change_org_exchange_rate": request.user.has_perm(
-                OrganizationPermissions.CHANGE_ORG_CURRENCY, organization
-            ),
-            "can_delete_org_exchange_rate": request.user.has_perm(
-                OrganizationPermissions.DELETE_ORG_CURRENCY, organization
-            ),
-            "can_change_organization": request.user.has_perm(
-                OrganizationPermissions.CHANGE_ORGANIZATION, organization
-            ),
-            "can_delete_organization": request.user.has_perm(
-                OrganizationPermissions.DELETE_ORGANIZATION, organization
-            ),
-        }
-        return render(request, "organizations/settings.html", context)
-    except Exception:
-        messages.error(
-            request, "An error occurred while loading settings. Please try again later."
-        )
-        return render(request, "organizations/settings.html", {"organization": None})
 
 
 @login_required

@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 
+from apps.entries.forms import BaseImportEntryForm
 from apps.workspaces.models import WorkspaceTeam
 
 from ..models import Entry
@@ -58,7 +59,9 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
 
 
 class BaseEntryBulkActionView(
-    HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
+    HtmxInvalidResponseMixin, 
+    HtmxOobResponseMixin, 
+    TemplateView
 ):
     table_template_name = "entries/layouts/base_entry_content_layout.html"
     context_object_name = CONTEXT_OBJECT_NAME
@@ -123,14 +126,6 @@ class BaseEntryBulkActionView(
 
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
-
-            # List existing entry ids
-            # existing_ids = set(entries.values_list("pk", flat=True))
-
-            # List missing or inaccessible entries
-            # requested_set = set(entry_ids)
-            # commented out for ruff fix because it is not used (THA)
-            # missing_ids = requested_set - existing_ids
 
             # Validate each entry
             success, message = self.perform_action(request, entries)
@@ -300,3 +295,26 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
                     workspace_team=workspace_team
                 )
             update_remittance(remittance=remittance)
+
+
+class BaseEntryBulkCreateView(BaseEntryBulkActionView):
+    modal_template_name = "entries/components/bulk_create_modal.html"
+    
+    def get_form_kwargs(self) -> dict:
+        kwargs = {}
+        return kwargs
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            
+            messages.error(self.request, message)
+            return self._render_htmx_error_response()
+
+            messages.success(self.request, message)
+            return self._render_htmx_success_response()
+
+        except Exception as e:
+            traceback.print_exc()
+            messages.error(self.request, str(e))
+            return self._render_htmx_error_response()
+ 

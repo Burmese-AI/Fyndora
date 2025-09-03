@@ -264,3 +264,36 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
             raise forms.ValidationError(e)
 
         return cleaned_data
+
+
+class BaseImportEntryForm(forms.Form):
+    file = forms.FileField(
+        label="Import File",
+        widget=forms.ClearableFileInput(attrs={
+            "class": "file-input file-input-bordered file-input-sm w-full"
+        }),
+    )
+    currency = forms.ModelChoiceField(
+        queryset=Currency.objects.all(),
+        required=True,
+        widget=forms.Select(attrs={
+            "class": "select select-bordered w-full",
+            "placeholder": "Select Currency",
+        }),
+    )
+    status = forms.ChoiceField(
+        choices=EntryStatus.choices,
+        required=True,
+        widget=forms.Select(attrs={
+            "class": "select select-bordered w-full",
+            "placeholder": "Select Status",
+        }),
+    )
+    backup_description = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={
+            "class": "input input-bordered w-full",
+            "placeholder": "Brief description of the expense",
+        }),
+    )

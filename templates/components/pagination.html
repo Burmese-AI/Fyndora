@@ -7,7 +7,6 @@
   <div class="join">
     {% if page_obj.has_previous %}
       <a 
-        href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
         hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}"
         hx-target="{{ pagination_target|default:'#content-container' }}"
@@ -24,7 +23,6 @@
         <button class="join-item btn btn-sm bg-neutral text-neutral-content border-lemonade-600">{{ num }}</button>
       {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
         <a 
-          href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}" 
           class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
           hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ num }}"
           hx-target="{{ pagination_target|default:'#content-container' }}"
@@ -37,7 +35,6 @@
 
     {% if page_obj.has_next %}
       <a 
-        href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}" 
         class="join-item btn btn-sm bg-lemonade-100 hover:bg-lemonade-300 text-lemonade-800 border-lemonade-300"
         hx-get="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}"
         hx-target="{{ pagination_target|default:'#content-container' }}"

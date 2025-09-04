@@ -29,15 +29,13 @@
     <!-- Expense Card -->
     <div class="bg-base-200 p-4 rounded-lg space-y-3">
       <h3 class="text-sm font-semibold text-base-content uppercase tracking-wide mb-2">Expense</h3>
-      <p class="text-sm text-base-content/70 italic truncate" title="{{ entry.description }}">
-        {{ entry.description }}
-      </p>
+     
       <div class="text-sm space-y-1">
-        <div><span class="font-medium">Amount:</span> ${{ entry.amount|floatformat:2|intcomma }}</div>
-        <div><span class="font-medium">Currency:</span> {{ entry.currency.code }}</div>
+        <div><span class="font-medium">Description:</span> {{ entry.description }}</div>
+        <div><span class="font-medium">Amount:</span> {{ entry.currency.code }} {{ entry.amount|floatformat:2|intcomma }}</div>
         <div><span class="font-medium">Exchange Rate:</span> {{ entry.exchange_rate_used|floatformat:2 }}</div>
-        <div><span class="font-medium">Converted:</span> ${{ entry.converted_amount|floatformat:2|intcomma }}</div>
-        <div><span class="font-medium">Occurred On:</span> {{ entry.occurred_at|date:"M d, Y" }}</div>
+        <div><span class="font-medium">Converted:</span> MMK {{ entry.converted_amount|floatformat:2|intcomma }}</div>
+        <div><span class="font-medium">Occurred On:</span> {{ entry.occurred_at|date:"j.n.Y" }}</div>
         <div><span class="font-medium">Type:</span> {{ entry.get_entry_type_display }}</div>
       </div>
     </div>

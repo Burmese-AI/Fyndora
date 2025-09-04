@@ -331,22 +331,29 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
         )
         return kwargs
 
-
-    
     
     def post(self, request, *args, **kwargs):
         try:
-            
-            print(f">>> {request.POST}")
-                        
-            self.form = self.form_class(request.POST)
+            print(f">>> POST: {request.POST}")
+            print(f">>> FILES: {request.FILES}")
+
+            # Collect kwargs from parent method
+            form_kwargs = self.get_form_kwargs()
+            form_kwargs.update({
+                "data": request.POST,
+                "files": request.FILES,
+            })
+
+            # Bind form with both request data and extra kwargs
+            self.form = self.form_class(**form_kwargs)
+
             message = "Valid"
-            
+
             if not self.form.is_valid():
                 message = "Invalid"
                 messages.error(self.request, message)
                 return self._render_htmx_error_response(form=self.form)
-            
+
             messages.success(self.request, message)
             return self._render_htmx_success_response()
 
@@ -354,4 +361,4 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
             traceback.print_exc()
             messages.error(self.request, str(e))
             return self._render_htmx_error_response(form=self.form)
- 
+

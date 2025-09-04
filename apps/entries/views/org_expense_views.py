@@ -82,7 +82,6 @@ class OrganizationExpenseListView(
                 self.request.user, self.organization
             ),
         }
-        print(f"\n\n{context}\n\n")
         return context
 
 

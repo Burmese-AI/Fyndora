@@ -297,3 +297,39 @@ class BaseImportEntryForm(forms.Form):
             "placeholder": "Brief description of the expense",
         }),
     )
+    
+    def __init__(self, *args, **kwargs):
+        self.org_member = kwargs.pop("org_member", None)
+        self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        self.workspace_team = kwargs.pop("workspace_team", None)
+        self.workspace_team_role = kwargs.pop("workspace_team_role", None)
+        self.workspace_team_member = kwargs.pop("workspace_team_member", None)
+        self.is_org_admin = kwargs.pop("is_org_admin", None)
+        self.is_workspace_admin = kwargs.pop("is_workspace_admin", None)
+        self.is_operation_reviewer = kwargs.pop("is_operation_reviewer", None)
+        self.is_team_coordinator = kwargs.pop("is_team_coordinator", None)
+        super().__init__(*args, **kwargs)
+        self.fields["currency"].queryset = get_org_defined_currencies(self.organization)
+        self.fields["status"].choices = self.get_allowed_statuses()
+
+    def get_allowed_statuses(self):
+        # OA, WA, OR => ALL STATUSES
+        print(self.is_org_admin, self.is_workspace_admin, self.is_operation_reviewer)
+        if self.is_org_admin or self.is_workspace_admin or self.is_operation_reviewer:
+            allowed_statuses = EntryStatus.values
+        # TC => PENDING, REVIEWED, REJECTED
+        elif self.is_team_coordinator:
+            allowed_statuses = [
+                EntryStatus.PENDING,
+                EntryStatus.REVIEWED,
+                EntryStatus.REJECTED,
+            ]
+        # Others => None
+        else:
+            allowed_statuses = []
+
+        # Convert codes into (value, label) tuples using EntryStatus.labels
+        return [
+            (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
+        ]

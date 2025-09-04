@@ -16,6 +16,7 @@ from apps.workspaces.models import WorkspaceTeam
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME, EntryStatus
 from .mixins import (
+    EntryFormMixin,
     EntryRequiredMixin,
     EntryUrlIdentifierMixin,
 )
@@ -302,19 +303,55 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
     
     def get_form_kwargs(self) -> dict:
         kwargs = {}
+        kwargs["org_member"] = self.org_member
+        kwargs["organization"] = self.organization
+        kwargs["is_org_admin"] = self.is_org_admin
+        kwargs["is_workspace_admin"] = (
+            self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
+        )
+        kwargs["is_operation_reviewer"] = (
+            self.is_operation_reviewer
+            if hasattr(self, "is_operation_reviewer")
+            else None
+        )
+        kwargs["is_team_coordinator"] = (
+            self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
+        )
+        kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        kwargs["workspace_team"] = (
+            self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        kwargs["workspace_team_member"] = (
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
+        )
+        kwargs["workspace_team_role"] = (
+            self.workspace_team_role if hasattr(self, "workspace_team_role") else None
+        )
         return kwargs
+
+
+    
     
     def post(self, request, *args, **kwargs):
         try:
             
-            messages.error(self.request, message)
-            return self._render_htmx_error_response()
-
+            print(f">>> {request.POST}")
+                        
+            self.form = self.form_class(request.POST)
+            message = "Valid"
+            
+            if not self.form.is_valid():
+                message = "Invalid"
+                messages.error(self.request, message)
+                return self._render_htmx_error_response(form=self.form)
+            
             messages.success(self.request, message)
             return self._render_htmx_success_response()
 
         except Exception as e:
             traceback.print_exc()
             messages.error(self.request, str(e))
-            return self._render_htmx_error_response()
+            return self._render_htmx_error_response(form=self.form)
  

@@ -83,7 +83,13 @@
       </div>
   
       <!-- CLEAR BUTTON -->
-      <a href="{{ request.path }}" class="btn btn-sm bg-red-200 text-red-600 hover:bg-red-300 w-full sm:w-auto">Clear all</a>
+      <a 
+        href="#" 
+        onclick="window.location.href = window.location.pathname; return false;"
+        class="btn btn-sm bg-red-200 text-red-600 hover:bg-red-300 w-full sm:w-auto"
+      >
+        Clear all
+      </a>
   
       
       {% else %}

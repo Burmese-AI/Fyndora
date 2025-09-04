@@ -1,3 +1,4 @@
+import os
 from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
@@ -298,6 +299,7 @@ class BaseImportEntryForm(forms.Form):
         }),
     )
     
+    # TODO: Refactoring Required 
     def __init__(self, *args, **kwargs):
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
@@ -313,6 +315,7 @@ class BaseImportEntryForm(forms.Form):
         self.fields["currency"].queryset = get_org_defined_currencies(self.organization)
         self.fields["status"].choices = self.get_allowed_statuses()
 
+    # TODO: Refactoring Required
     def get_allowed_statuses(self):
         # OA, WA, OR => ALL STATUSES
         print(self.is_org_admin, self.is_workspace_admin, self.is_operation_reviewer)
@@ -333,3 +336,14 @@ class BaseImportEntryForm(forms.Form):
         return [
             (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
         ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        #Validate File type (Allow only CSV)
+        uploaded_file = self.cleaned_data.get("file")
+        if uploaded_file:
+            file_name, file_extension = os.path.splitext(uploaded_file.name)
+            if file_extension.lower() not in [".csv"]:
+                raise forms.ValidationError("Only CSV file is allowed.")
+        
+        return cleaned_data

@@ -15,24 +15,9 @@
     </label>
   </td>
 
-  <!-- Description + attachments -->
-  <td class="max-w-[200px]">
-    <div class="font-medium truncate" title="{{ entry.description }}">
-      {{ entry.description }}
-    </div>
-    {% if entry.attachment_count > 0 %}
-      <div class="text-xs text-neutral flex items-center gap-1 mt-1">
-        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32" />
-        </svg>
-        <span>{{ entry.attachment_count }} attachment{{ entry.attachment_count|pluralize }}</span>
-      </div>
-    {% endif %}
-  </td>
-
   <!-- Amount (Currency) -->
   <td class="text-right">
-    <div class="font-semibold">${{ entry.amount|floatformat:2|intcomma }}</div>
+    <div class="font-semibold">{{ entry.amount|floatformat:2|intcomma }}</div>
     <div class="text-xs text-neutral uppercase">{{ entry.currency.code }}</div>
   </td>
 
@@ -43,7 +28,8 @@
 
   <!-- Converted Amount -->
   <td class="text-right">
-    ${{ entry.converted_amount|floatformat:2|intcomma }}
+    {{ entry.converted_amount|floatformat:2|intcomma }}
+    <div class="text-xs text-neutral uppercase">MMK</div>
   </td>
 
   <!-- Type -->
@@ -101,7 +87,7 @@
 
   <!-- Date -->
   <td>
-    {{ entry.occurred_at|date:"M d, Y" }}
+    {{ entry.occurred_at|date:"j.n.Y" }}
   </td>
 
 

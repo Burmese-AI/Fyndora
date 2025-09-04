@@ -39,15 +39,15 @@ class TestGetCurrencyByCode:
 
     def test_get_currency_by_code_not_found(self):
         """Test getting currency by code when not found."""
-        with pytest.raises(ObjectDoesNotExist):
-            get_currency_by_code("INVALID")
+        result = get_currency_by_code("INVALID")
+        assert result is None
 
     def test_get_currency_by_code_case_sensitive(self):
         """Test that currency code lookup is case sensitive."""
         CurrencyFactory(code="USD")
 
-        with pytest.raises(ObjectDoesNotExist):
-            get_currency_by_code("usd")
+        result = get_currency_by_code("usd")
+        assert result is None
 
 
 @pytest.mark.unit

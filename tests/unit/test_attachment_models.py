@@ -58,7 +58,7 @@ class TestAttachmentModel(TestCase):
     def test_attachment_str_representation(self):
         """Test attachment string representation."""
         attachment = AttachmentFactory()
-        expected_str = f"{attachment.file_type} - {attachment.file_url.name} - {attachment.entry.pk} - {attachment.deleted_at}"
+        expected_str = f"{attachment.file_type} - {attachment.file_url.name} - {attachment.entry.description} - {attachment.deleted_at}"
 
         assert str(attachment) == expected_str
 
@@ -689,7 +689,7 @@ class TestAttachmentValidation(TestCase):
         str_repr = str(attachment)
         assert attachment.file_type in str_repr
         assert attachment.file_url.name in str_repr
-        assert str(attachment.entry.pk) in str_repr
+        assert attachment.entry.description in str_repr
 
     def test_attachment_queryset_annotations(self):
         """Test queryset annotations and aggregations."""

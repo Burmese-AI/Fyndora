@@ -27,7 +27,7 @@
   </td>
 
   <!-- Converted Amount -->
-  <td class="text-right">
+  <td class="text-right w-24">
     {{ entry.converted_amount|floatformat:2|intcomma }}
     <div class="text-xs text-neutral uppercase">MMK</div>
   </td>
@@ -51,7 +51,11 @@
         {% endif %}
       "
     >
-      {{ entry.get_entry_type_display }}
+      {% if entry.entry_type == 'org_exp' %}
+        Org Expense
+      {% else %}
+        {{ entry.get_entry_type_display }}
+      {% endif %}
     </span>
   </td>
 

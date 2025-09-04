@@ -17,17 +17,13 @@
             />
           </label>
         </th>
-        <th>Submitted By</th>
         <th>Description</th>
-        <th class="text-center">Status</th>
-        <th class="text-center">Type</th>
-        <th>Amount</th>
-        <th>Currency</th>
+        <th>Amount (Currency)</th>
         <th>Exchange Rate</th>
         <th>Converted Amount</th>
-        <th>Occurred On</th>
-        <th>Last Reviewed By</th>
-        <th class="text-center">Created At</th>
+        <th class="text-center">Type</th>
+        <th class="text-center">Status</th>
+        <th>Date</th>
         <th class="text-center">Actions</th>
       </tr>
     </thead>
@@ -37,7 +33,7 @@
         {% include "entries/partials/row.html" with entry=entry %}
       {% empty %}
         <tr>
-          <td colspan="8" class="text-center p-4 text-sm text-neutral">
+          <td colspan="9" class="text-center p-4 text-sm text-neutral">
             No Expense Entries found
           </td>
         </tr>

@@ -14,11 +14,6 @@
       />
     </label>
   </td>
-  
-  <!-- Submitted By -->
-  <td class="capitalize">
-    {{ entry.submitter }}
-  </td>
 
   <!-- Description + attachments -->
   <td class="max-w-[200px]">
@@ -35,7 +30,46 @@
     {% endif %}
   </td>
 
-    <!-- Status -->
+  <!-- Amount (Currency) -->
+  <td class="text-right">
+    <div class="font-semibold">${{ entry.amount|floatformat:2|intcomma }}</div>
+    <div class="text-xs text-neutral uppercase">{{ entry.currency.code }}</div>
+  </td>
+
+  <!-- Exchange Rate -->
+  <td class="text-center">
+    {{ entry.exchange_rate_used|floatformat:2 }}
+  </td>
+
+  <!-- Converted Amount -->
+  <td class="text-right">
+    ${{ entry.converted_amount|floatformat:2|intcomma }}
+  </td>
+
+  <!-- Type -->
+  <td class="text-center">
+    <span
+      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm font-semibold rounded-full capitalize
+        {% if entry.entry_type == 'income' %}
+          bg-lime-100 text-lime-800
+        {% elif entry.entry_type == 'disbursement' %}
+          bg-rose-100 text-rose-800
+        {% elif entry.entry_type == 'remittance' %}
+          bg-cyan-100 text-cyan-800
+        {% elif entry.entry_type == 'workspace_exp' %}
+          bg-amber-100 text-amber-800
+        {% elif entry.entry_type == 'org_exp' %}
+          bg-violet-100 text-violet-800
+        {% else %}
+          bg-gray-100 text-gray-800
+        {% endif %}
+      "
+    >
+      {{ entry.get_entry_type_display }}
+    </span>
+  </td>
+
+  <!-- Status -->
   <td class="text-center">
     <span
       class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm rounded-full capitalize
@@ -65,61 +99,9 @@
     {% endif %}
   </td>
 
-  <td class="text-center">
-    <span
-      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm font-semibold rounded-full capitalize
-        {% if entry.entry_type == 'income' %}
-          bg-lime-100 text-lime-800
-        {% elif entry.entry_type == 'disbursement' %}
-          bg-rose-100 text-rose-800
-        {% elif entry.entry_type == 'remittance' %}
-          bg-cyan-100 text-cyan-800
-        {% elif entry.entry_type == 'workspace_exp' %}
-          bg-amber-100 text-amber-800
-        {% elif entry.entry_type == 'org_exp' %}
-          bg-violet-100 text-violet-800
-        {% else %}
-          bg-gray-100 text-gray-800
-        {% endif %}
-      "
-    >
-      {{ entry.get_entry_type_display }}
-    </span>
-  </td>
-
-  <!-- Amount -->
-  <td class="text-right">
-    ${{ entry.amount|floatformat:2|intcomma }}
-  </td>
-
-  <!-- Currency -->
-  <td class="text-center uppercase">
-    {{ entry.currency.code }}
-  </td>
-
-  <!-- Exchange Rate -->
-  <td class="text-center">
-    {{ entry.exchange_rate_used|floatformat:2 }}
-  </td>
-
-  <!-- Converted Amount -->
-  <td class="text-right">
-    ${{ entry.converted_amount|floatformat:2|intcomma }}
-  </td>
-
-  <!-- Occurred On -->
+  <!-- Date -->
   <td>
     {{ entry.occurred_at|date:"M d, Y" }}
-  </td>
-
-  <!-- Last Reviewed By -->
-  <td class="text-center capitalize">
-    {{ entry.last_status_modified_by.user.username|default:"-" }}
-  </td>
-
-  <!-- Created At -->
-  <td class="whitespace-nowrap text-sm text-neutral text-center">
-    {{ entry.created_at|date:"M d, Y, P" }}
   </td>
 
 

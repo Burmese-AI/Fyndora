@@ -465,3 +465,157 @@ class TestDeleteOrganizationExchangeRate(TestCase):
         )
 
         self.assertTrue(result)
+
+
+class TestExceptionHandlingCoverage(TestCase):
+    """Test exception handling for coverage gaps."""
+
+    def setUp(self):
+        self.user = CustomUserFactory()
+        self.organization = OrganizationFactory()
+        self.organization_member = OrganizationMemberFactory(
+            organization=self.organization
+        )
+        self.exchange_rate = OrganizationExchangeRateFactory(
+            organization=self.organization
+        )
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_create_organization_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+        """Test audit logging failure in the exception handler of create_organization_with_owner."""
+        # Mock form that will raise an exception
+        mock_form = MagicMock()
+        mock_form.save.side_effect = Exception("Form save error")
+        
+        # Mock audit logging to fail in the exception handler
+        mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+        with self.assertRaises(OrganizationCreationError):
+            create_organization_with_owner(form=mock_form, user=self.user)
+
+        # Verify audit logging was attempted and failed
+        mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_update_organization_audit_logging_failure_in_success_handler(self, mock_audit_logger):
+        """Test audit logging failure in the success handler of update_organization_from_form."""
+        # Mock form
+        mock_form = MagicMock()
+        mock_form.is_valid.return_value = True
+        mock_form.cleaned_data = {"title": "Updated Organization"}
+        
+        # Mock audit logging to fail
+        mock_audit_logger.log_organization_action.side_effect = Exception("Audit error")
+
+        # Should still update even if audit logging fails
+        result = update_organization_from_form(
+            form=mock_form, organization=self.organization, user=self.user
+        )
+
+        self.assertEqual(result, self.organization)
+        mock_audit_logger.log_organization_action.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_update_organization_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+        """Test audit logging failure in the exception handler of update_organization_from_form."""
+        # Mock form that will raise an exception
+        mock_form = MagicMock()
+        mock_form.is_valid.side_effect = Exception("Form validation error")
+        
+        # Mock audit logging to fail in the exception handler
+        mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+        with self.assertRaises(OrganizationUpdateError):
+            update_organization_from_form(
+                form=mock_form, organization=self.organization, user=self.user
+            )
+
+        # Verify audit logging was attempted and failed
+        mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_create_exchange_rate_audit_logging_failure_in_integrity_error_handler(self, mock_audit_logger):
+        """Test audit logging failure in the IntegrityError handler of create_organization_exchange_rate."""
+        # Mock IntegrityError
+        with patch("apps.organizations.services.OrganizationExchangeRate.objects.create") as mock_create:
+            mock_create.side_effect = IntegrityError("Duplicate key")
+            
+            # Mock audit logging to fail in the exception handler
+            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+            with self.assertRaises(ValidationError):
+                create_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    currency_code="USD",
+                    rate=Decimal("1.00"),
+                    note="Test rate",
+                    effective_date=date.today(),
+                )
+
+            # Verify audit logging was attempted and failed
+            mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_create_exchange_rate_audit_logging_failure_in_general_error_handler(self, mock_audit_logger):
+        """Test audit logging failure in the general exception handler of create_organization_exchange_rate."""
+        # Mock general exception
+        with patch("apps.organizations.services.OrganizationExchangeRate.objects.create") as mock_create:
+            mock_create.side_effect = Exception("General error")
+            
+            # Mock audit logging to fail in the exception handler
+            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+            with self.assertRaises(ValidationError):
+                create_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    currency_code="USD",
+                    rate=Decimal("1.00"),
+                    note="Test rate",
+                    effective_date=date.today(),
+                )
+
+            # Verify audit logging was attempted and failed
+            mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_update_exchange_rate_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+        """Test audit logging failure in the exception handler of update_organization_exchange_rate."""
+        # Mock update failure
+        with patch("apps.organizations.services.model_update") as mock_update:
+            mock_update.side_effect = Exception("Update error")
+            
+            # Mock audit logging to fail in the exception handler
+            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+            with self.assertRaises(ValidationError):
+                update_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    org_exchange_rate=self.exchange_rate,
+                    note="Updated note",
+                )
+
+            # Verify audit logging was attempted and failed
+            mock_audit_logger.log_operation_failure.assert_called()
+
+    @patch("apps.organizations.services.BusinessAuditLogger")
+    def test_delete_exchange_rate_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+        """Test audit logging failure in the exception handler of delete_organization_exchange_rate."""
+        # Mock deletion failure
+        with patch.object(self.exchange_rate, "delete") as mock_delete:
+            mock_delete.side_effect = Exception("Delete error")
+            
+            # Mock audit logging to fail in the exception handler
+            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+
+            with self.assertRaises(ValidationError):
+                delete_organization_exchange_rate(
+                    organization=self.organization,
+                    organization_member=self.organization_member,
+                    org_exchange_rate=self.exchange_rate,
+                )
+
+            # Verify audit logging was attempted and failed
+            mock_audit_logger.log_operation_failure.assert_called()

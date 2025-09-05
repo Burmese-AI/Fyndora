@@ -927,15 +927,15 @@ class TestServiceEdgeCases(TestCase):
             result = create_workspace_exchange_rate(
                 workspace=self.workspace,
                 organization_member=org_member,
-                currency_code="XYZ",  # New currency
+                currency_code="JPY",  # Valid currency code that might not exist in test DB
                 rate=Decimal("2.00"),
                 note="Test rate",
                 effective_date=date.today(),
             )
 
             self.assertIsInstance(result, WorkspaceExchangeRate)
-            self.assertEqual(result.currency.code, "XYZ")
+            self.assertEqual(result.currency.code, "JPY")
 
             # Verify currency was created
-            currency = Currency.objects.get(code="XYZ")
+            currency = Currency.objects.get(code="JPY")
             self.assertIsNotNone(currency)

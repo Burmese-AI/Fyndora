@@ -964,7 +964,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
         ) as mock_log_failure:
             mock_log_failure.side_effect = Exception("Logging failure")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 with self.assertRaises(WorkspaceCreationError):
                     create_workspace_from_form(
@@ -992,7 +992,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(WorkspaceUpdateError):
                         update_workspace_from_form(
@@ -1019,7 +1019,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(ValidationError):
                         remove_team_from_workspace(
@@ -1043,7 +1043,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(Exception):
                         add_team_to_workspace(
@@ -1078,7 +1078,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(Exception):
                         update_workspace_team_remittance_rate_from_form(
@@ -1101,7 +1101,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(ValidationError):
                         create_workspace_exchange_rate(
@@ -1126,7 +1126,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(ValidationError):
                         create_workspace_exchange_rate(
@@ -1158,7 +1158,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(ValidationError):
                         update_workspace_exchange_rate(
@@ -1187,7 +1187,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
             ) as mock_log_failure:
                 mock_log_failure.side_effect = Exception("Logging failure")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     with self.assertRaises(ValidationError):
                         delete_workspace_exchange_rate(
@@ -1216,7 +1216,7 @@ class TestServiceErrorHandling(TestCase):
                 "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
             ) as mock_log:
                 mock_log.side_effect = Exception("Logging error")
-                
+
                 with patch("apps.workspaces.services.logger") as mock_logger:
                     result = update_workspace_from_form(
                         form=mock_form,
@@ -1241,7 +1241,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 result = remove_team_from_workspace(
                     workspace_team=workspace_team,
@@ -1262,7 +1262,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 result = add_team_to_workspace(
                     workspace_id=self.workspace.workspace_id,
@@ -1294,7 +1294,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 result = update_workspace_team_remittance_rate_from_form(
                     form=mock_form,
@@ -1314,7 +1314,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 result = create_workspace_exchange_rate(
                     workspace=self.workspace,
@@ -1343,7 +1343,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 result = update_workspace_exchange_rate(
                     workspace_exchange_rate=exchange_rate,
@@ -1369,7 +1369,7 @@ class TestServiceErrorHandling(TestCase):
             "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
         ) as mock_log:
             mock_log.side_effect = Exception("Logging error")
-            
+
             with patch("apps.workspaces.services.logger") as mock_logger:
                 delete_workspace_exchange_rate(
                     workspace_exchange_rate=exchange_rate,
@@ -1379,6 +1379,6 @@ class TestServiceErrorHandling(TestCase):
                 # Verify it was deleted
                 with self.assertRaises(WorkspaceExchangeRate.DoesNotExist):
                     WorkspaceExchangeRate.objects.get(pk=exchange_rate.pk)
-                
+
                 # Verify logger.error was called for logging failure
                 mock_logger.error.assert_called()

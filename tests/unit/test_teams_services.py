@@ -489,9 +489,14 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
             organization_member=self.org_member, team=self.team
         )
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_team_action", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_team_action",
+        side_effect=Exception("Audit error"),
+    )
     @patch("apps.teams.services.assign_team_permissions")
-    def test_create_team_audit_logging_failure(self, mock_assign_permissions, mock_audit_log):
+    def test_create_team_audit_logging_failure(
+        self, mock_assign_permissions, mock_audit_log
+    ):
         """Test team creation when audit logging fails."""
         mock_form = MagicMock()
         mock_form.cleaned_data = {
@@ -509,7 +514,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         self.assertEqual(team.created_by, self.org_member)
         mock_assign_permissions.assert_called_once()
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_operation_failure",
+        side_effect=Exception("Audit error"),
+    )
     def test_create_team_failure_audit_logging_failure(self, mock_audit_log):
         """Test team creation failure when audit logging fails."""
         mock_form = MagicMock()
@@ -519,7 +527,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         with self.assertRaises(TeamCreationError):
             create_team_from_form(mock_form, self.organization, self.org_member)
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_team_member_action",
+        side_effect=Exception("Audit error"),
+    )
     def test_create_team_member_audit_logging_failure(self, mock_audit_log):
         """Test team member creation when audit logging fails."""
         mock_form = MagicMock()
@@ -538,7 +549,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         self.assertEqual(team_member.team, self.team)
         self.assertEqual(team_member.organization, self.organization)
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_operation_failure",
+        side_effect=Exception("Audit error"),
+    )
     def test_create_team_member_failure_audit_logging_failure(self, mock_audit_log):
         """Test team member creation failure when audit logging fails."""
         mock_form = MagicMock()
@@ -548,7 +562,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         with self.assertRaises(TeamMemberCreationError):
             create_team_member_from_form(mock_form, self.team, self.organization)
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_team_member_action",
+        side_effect=Exception("Audit error"),
+    )
     @patch("apps.teams.services.update_team_coordinator_group")
     @patch("apps.teams.services.model_update")
     def test_update_team_member_role_audit_logging_failure(
@@ -570,13 +587,20 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         self.assertEqual(team_member, self.team_member)
         mock_model_update.assert_called_once()
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure", side_effect=Exception("Audit error"))
-    def test_update_team_member_role_failure_audit_logging_failure(self, mock_audit_log):
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_operation_failure",
+        side_effect=Exception("Audit error"),
+    )
+    def test_update_team_member_role_failure_audit_logging_failure(
+        self, mock_audit_log
+    ):
         """Test team member role update failure when audit logging fails."""
         mock_form = MagicMock()
         mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
 
-        with patch("apps.teams.services.model_update", side_effect=Exception("Update error")):
+        with patch(
+            "apps.teams.services.model_update", side_effect=Exception("Update error")
+        ):
             with self.assertRaises(TeamMemberUpdateError):
                 update_team_member_role(
                     form=mock_form,
@@ -585,7 +609,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
                     team=self.team,
                 )
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_team_action", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_team_action",
+        side_effect=Exception("Audit error"),
+    )
     @patch("apps.teams.services.model_update")
     def test_update_team_audit_logging_failure(self, mock_model_update, mock_audit_log):
         """Test team update when audit logging fails."""
@@ -598,19 +625,29 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         # Should still succeed despite audit logging failure
         self.assertEqual(team, self.team)
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_operation_failure",
+        side_effect=Exception("Audit error"),
+    )
     def test_update_team_failure_audit_logging_failure(self, mock_audit_log):
         """Test team update failure when audit logging fails."""
         mock_form = MagicMock()
         mock_form.cleaned_data = {"title": "Updated Team"}
 
-        with patch("apps.teams.services.model_update", side_effect=Exception("Update error")):
+        with patch(
+            "apps.teams.services.model_update", side_effect=Exception("Update error")
+        ):
             with self.assertRaises(TeamUpdateError):
                 update_team_from_form(mock_form, self.team, self.organization, None)
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_team_member_action",
+        side_effect=Exception("Audit error"),
+    )
     @patch("apps.teams.services.update_team_coordinator_group")
-    def test_remove_team_member_audit_logging_failure(self, mock_update_group, mock_audit_log):
+    def test_remove_team_member_audit_logging_failure(
+        self, mock_update_group, mock_audit_log
+    ):
         """Test team member removal when audit logging fails."""
         with patch.object(TeamMember, "delete"):
             with patch.object(Team, "save"):
@@ -619,7 +656,10 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         # Should still succeed despite audit logging failure
         mock_update_group.assert_called_once()
 
-    @patch("apps.teams.services.BusinessAuditLogger.log_operation_failure", side_effect=Exception("Audit error"))
+    @patch(
+        "apps.teams.services.BusinessAuditLogger.log_operation_failure",
+        side_effect=Exception("Audit error"),
+    )
     def test_remove_team_member_failure_audit_logging_failure(self, mock_audit_log):
         """Test team member removal failure when audit logging fails."""
         with patch.object(TeamMember, "delete", side_effect=Exception("Delete error")):
@@ -652,7 +692,7 @@ class TeamServicesComprehensiveTest(TestCase):
             "description": "Test Description",
             "team_coordinator": self.org_member,
         }
-        
+
         # Create a mock team with coordinator set
         mock_team = MagicMock()
         mock_team.team_coordinator = self.org_member
@@ -703,7 +743,11 @@ class TeamServicesComprehensiveTest(TestCase):
     @patch("apps.teams.services.update_team_coordinator_group")
     @patch("apps.teams.services.model_update")
     def test_remove_team_member_coordinator_clearing(
-        self, mock_model_update, mock_update_group, mock_team_audit, mock_team_member_audit
+        self,
+        mock_model_update,
+        mock_update_group,
+        mock_team_audit,
+        mock_team_member_audit,
     ):
         """Test remove_team_member when member is coordinator (was_coordinator=True)."""
         # Set up team member as coordinator
@@ -742,8 +786,14 @@ class TeamUpdateCoordinatorTest(TestCase):
     @patch("apps.teams.services.WorkspaceTeam.objects.filter")
     @patch("apps.teams.services.Group.objects.get_or_create")
     def test_update_team_coordinator_removal(
-        self, mock_group_get_or_create, mock_workspace_filter, mock_team_member_get,
-        mock_model_update, mock_update_group, mock_team_member_audit, mock_team_audit
+        self,
+        mock_group_get_or_create,
+        mock_workspace_filter,
+        mock_team_member_get,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test update_team_from_form when coordinator is removed (new_team_coordinator is None)."""
         # Set up previous coordinator
@@ -754,7 +804,7 @@ class TeamUpdateCoordinatorTest(TestCase):
         # Mock form data with no coordinator
         mock_form = MagicMock()
         mock_form.cleaned_data = {"title": "Updated Team", "team_coordinator": None}
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = None
@@ -792,17 +842,23 @@ class TeamUpdateCoordinatorTest(TestCase):
     @patch("apps.teams.services.WorkspaceTeam.objects.filter")
     @patch("apps.teams.services.assign_perm")
     def test_update_team_coordinator_assignment(
-        self, mock_assign_perm, mock_workspace_filter, mock_create_team_member,
-        mock_model_update, mock_update_group, mock_team_member_audit, mock_team_audit
+        self,
+        mock_assign_perm,
+        mock_workspace_filter,
+        mock_create_team_member,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test update_team_from_form when new coordinator is assigned."""
         # Mock form data with new coordinator
         mock_form = MagicMock()
         mock_form.cleaned_data = {
             "title": "Updated Team",
-            "team_coordinator": self.new_org_member
+            "team_coordinator": self.new_org_member,
         }
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = self.new_org_member
@@ -818,9 +874,7 @@ class TeamUpdateCoordinatorTest(TestCase):
         mock_team_member = MagicMock()
         mock_create_team_member.return_value = mock_team_member
 
-        team = update_team_from_form(
-            mock_form, self.team, self.organization, None
-        )
+        team = update_team_from_form(mock_form, self.team, self.organization, None)
 
         # Verify new coordinator was assigned
         self.assertEqual(team.team_coordinator, self.new_org_member)
@@ -838,9 +892,17 @@ class TeamUpdateCoordinatorTest(TestCase):
     @patch("apps.teams.services.remove_perm")
     @patch("apps.teams.services.Group.objects.get_or_create")
     def test_update_team_coordinator_replacement(
-        self, mock_group_get_or_create, mock_remove_perm, mock_assign_perm,
-        mock_workspace_filter, mock_team_member_get, mock_create_team_member,
-        mock_model_update, mock_update_group, mock_team_member_audit, mock_team_audit
+        self,
+        mock_group_get_or_create,
+        mock_remove_perm,
+        mock_assign_perm,
+        mock_workspace_filter,
+        mock_team_member_get,
+        mock_create_team_member,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test update_team_from_form when coordinator is replaced with new one."""
         # Set up previous coordinator
@@ -852,9 +914,9 @@ class TeamUpdateCoordinatorTest(TestCase):
         mock_form = MagicMock()
         mock_form.cleaned_data = {
             "title": "Updated Team",
-            "team_coordinator": self.new_org_member
+            "team_coordinator": self.new_org_member,
         }
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = self.new_org_member
@@ -898,18 +960,24 @@ class TeamUpdateCoordinatorTest(TestCase):
     @patch("apps.teams.services.assign_perm")
     @patch("apps.teams.services.Group.objects.get_or_create")
     def test_update_team_coordinator_assignment_without_previous(
-        self, mock_group_get_or_create, mock_assign_perm, mock_workspace_filter,
-        mock_create_team_member, mock_model_update, mock_update_group,
-        mock_team_member_audit, mock_team_audit
+        self,
+        mock_group_get_or_create,
+        mock_assign_perm,
+        mock_workspace_filter,
+        mock_create_team_member,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test update_team_from_form when new coordinator is assigned without previous coordinator."""
         # Mock form data with new coordinator
         mock_form = MagicMock()
         mock_form.cleaned_data = {
             "title": "Updated Team",
-            "team_coordinator": self.new_org_member
+            "team_coordinator": self.new_org_member,
         }
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = self.new_org_member
@@ -929,9 +997,7 @@ class TeamUpdateCoordinatorTest(TestCase):
         mock_group = MagicMock()
         mock_group_get_or_create.return_value = (mock_group, True)
 
-        team = update_team_from_form(
-            mock_form, self.team, self.organization, None
-        )
+        team = update_team_from_form(mock_form, self.team, self.organization, None)
 
         # Verify new coordinator was assigned
         self.assertEqual(team.team_coordinator, self.new_org_member)
@@ -990,7 +1056,7 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         mock_form.cleaned_data = {"role": TeamMemberRole.AUDITOR}
         mock_model_update.return_value = self.team_member
 
-        team_member = update_team_member_role(
+        update_team_member_role(
             form=mock_form,
             team_member=self.team_member,
             previous_role=TeamMemberRole.SUBMITTER,  # Not team_coordinator
@@ -1010,8 +1076,14 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
     @patch("apps.teams.services.WorkspaceTeam.objects.filter")
     @patch("apps.teams.services.Group.objects.get_or_create")
     def test_update_team_coordinator_removal_audit_logging_failure(
-        self, mock_group_get_or_create, mock_workspace_filter, mock_team_member_get,
-        mock_model_update, mock_update_group, mock_team_member_audit, mock_team_audit
+        self,
+        mock_group_get_or_create,
+        mock_workspace_filter,
+        mock_team_member_get,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test coordinator removal when audit logging fails."""
         # Set up previous coordinator
@@ -1022,7 +1094,7 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         # Mock form data with no coordinator
         mock_form = MagicMock()
         mock_form.cleaned_data = {"title": "Updated Team", "team_coordinator": None}
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = None
@@ -1061,8 +1133,14 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
     @patch("apps.teams.services.WorkspaceTeam.objects.filter")
     @patch("apps.teams.services.assign_perm")
     def test_update_team_coordinator_assignment_audit_logging_failure(
-        self, mock_assign_perm, mock_workspace_filter, mock_create_team_member,
-        mock_model_update, mock_update_group, mock_team_member_audit, mock_team_audit
+        self,
+        mock_assign_perm,
+        mock_workspace_filter,
+        mock_create_team_member,
+        mock_model_update,
+        mock_update_group,
+        mock_team_member_audit,
+        mock_team_audit,
     ):
         """Test coordinator assignment when audit logging fails."""
         new_org_member = OrganizationMemberFactory(organization=self.organization)
@@ -1071,9 +1149,9 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         mock_form = MagicMock()
         mock_form.cleaned_data = {
             "title": "Updated Team",
-            "team_coordinator": new_org_member
+            "team_coordinator": new_org_member,
         }
-        
+
         # Create a mock team with updated coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = new_org_member
@@ -1092,9 +1170,7 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         # Make audit logging fail
         mock_team_member_audit.side_effect = Exception("Audit error")
 
-        team = update_team_from_form(
-            mock_form, self.team, self.organization, None
-        )
+        team = update_team_from_form(mock_form, self.team, self.organization, None)
 
         # Should still succeed despite audit logging failure
         self.assertEqual(team.team_coordinator, new_org_member)
@@ -1102,7 +1178,9 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
 
     @patch("apps.teams.services.BusinessAuditLogger.log_team_member_action")
     @patch("apps.teams.services.update_team_coordinator_group")
-    def test_remove_team_member_non_coordinator(self, mock_update_group, mock_audit_log):
+    def test_remove_team_member_non_coordinator(
+        self, mock_update_group, mock_audit_log
+    ):
         """Test remove_team_member when member is not coordinator."""
         # Ensure member is not coordinator
         self.team_member.role = TeamMemberRole.SUBMITTER
@@ -1167,9 +1245,9 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         mock_form = MagicMock()
         mock_form.cleaned_data = {
             "title": "Updated Team",
-            "team_coordinator": previous_coordinator  # Same coordinator
+            "team_coordinator": previous_coordinator,  # Same coordinator
         }
-        
+
         # Create a mock team with same coordinator
         mock_updated_team = MagicMock()
         mock_updated_team.team_coordinator = previous_coordinator

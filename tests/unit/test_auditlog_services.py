@@ -253,7 +253,6 @@ class TestAuditCreateService(TestCase):
     @pytest.mark.django_db
     def test_audit_create_workspace_detection_via_workspace_team(self):
         """Test workspace detection via workspace_team relationship."""
-        from apps.workspaces.models import WorkspaceTeam
         from tests.factories.team_factories import TeamFactory
         from tests.factories.workspace_factories import WorkspaceTeamFactory
 
@@ -271,9 +270,13 @@ class TestAuditCreateService(TestCase):
         mock_entity = MockEntityWithWorkspaceTeam(workspace_team)
 
         # Mock the ContentType.objects.get_for_model to avoid the _meta issue
-        with patch('django.contrib.contenttypes.models.ContentType.objects.get_for_model') as mock_get_for_model:
-            mock_get_for_model.return_value = None  # Return None to avoid the _meta issue
-            
+        with patch(
+            "django.contrib.contenttypes.models.ContentType.objects.get_for_model"
+        ) as mock_get_for_model:
+            mock_get_for_model.return_value = (
+                None  # Return None to avoid the _meta issue
+            )
+
             audit = audit_create(
                 user=user,
                 action_type=AuditActionType.ENTRY_CREATED,
@@ -816,9 +819,7 @@ class TestAuditServicesIntegration(TestCase):
 
         # Verify all audits were persisted to database
         for audit in created_audits:
-            self.assertTrue(
-                AuditTrail.objects.filter(audit_id=audit.audit_id).exists()
-            )
+            self.assertTrue(AuditTrail.objects.filter(audit_id=audit.audit_id).exists())
 
     @pytest.mark.django_db
     def test_bulk_audit_creation_performance(self):

@@ -486,7 +486,7 @@ class TestAuditTrailEdgeCases(TestCase):
         # Verify results
         self.assertEqual(len(results), 5)
         self.assertEqual(len(set(results)), 5)  # All UUIDs should be unique
-        
+
         # Verify all audits were created successfully
         for i, audit_id in enumerate(results):
             audit = AuditTrail.objects.get(audit_id=audit_id)
@@ -532,7 +532,9 @@ class TestAuditTrailEdgeCases(TestCase):
 
         # Test whether null characters are handled gracefully or raise an exception
         try:
-            audit_with_nulls = AuditTrailFactory(metadata=null_metadata, target_entity=entry)
+            audit_with_nulls = AuditTrailFactory(
+                metadata=null_metadata, target_entity=entry
+            )
             # If no exception is raised, verify the data is stored correctly
             audit_with_nulls.refresh_from_db()
             # The null characters might be escaped or handled by the database
@@ -546,8 +548,11 @@ class TestAuditTrailEdgeCases(TestCase):
             # If an exception is raised, verify it's related to null characters
             error_message = str(e).lower()
             self.assertTrue(
-                any(keyword in error_message for keyword in ["null", "\\u0000", "unicode", "invalid"]),
-                f"Unexpected error message: {error_message}"
+                any(
+                    keyword in error_message
+                    for keyword in ["null", "\\u0000", "unicode", "invalid"]
+                ),
+                f"Unexpected error message: {error_message}",
             )
 
     @pytest.mark.django_db
@@ -738,11 +743,11 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _parse_metadata with invalid JSON string."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         # Mock metadata as invalid JSON string
         audit.metadata = "invalid json {"
         result = audit._parse_metadata()
-        
+
         self.assertEqual(result, {"raw_data": "invalid json {"})
 
     @pytest.mark.django_db
@@ -750,11 +755,11 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _parse_metadata with non-dict, non-string types."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         # Mock metadata as non-dict, non-string type
         audit.metadata = 12345
         result = audit._parse_metadata()
-        
+
         self.assertEqual(result, {"value": "12345"})
 
     @pytest.mark.django_db
@@ -764,9 +769,9 @@ class TestAuditTrailCoverageGaps(TestCase):
         audit = AuditTrailFactory(
             action_type=AuditActionType.LOGIN_SUCCESS,
             target_entity=entry,
-            metadata={"login_method": "email"}
+            metadata={"login_method": "email"},
         )
-        
+
         result = audit._format_authentication_event(audit.metadata)
         self.assertEqual(result, "Successful login via email")
 
@@ -779,23 +784,23 @@ class TestAuditTrailCoverageGaps(TestCase):
             target_entity=entry,
             metadata={
                 "attempted_username": "testuser",
-                "failure_reason": "invalid_password"
-            }
+                "failure_reason": "invalid_password",
+            },
         )
-        
+
         result = audit._format_authentication_event(audit.metadata)
-        self.assertEqual(result, "Failed login attempt for 'testuser' - invalid_password")
+        self.assertEqual(
+            result, "Failed login attempt for 'testuser' - invalid_password"
+        )
 
     @pytest.mark.django_db
     def test_format_authentication_event_logout(self):
         """Test _format_authentication_event for LOGOUT."""
         entry = EntryFactory()
         audit = AuditTrailFactory(
-            action_type=AuditActionType.LOGOUT,
-            target_entity=entry,
-            metadata={}
+            action_type=AuditActionType.LOGOUT, target_entity=entry, metadata={}
         )
-        
+
         result = audit._format_authentication_event(audit.metadata)
         self.assertEqual(result, "User logged out")
 
@@ -806,9 +811,9 @@ class TestAuditTrailCoverageGaps(TestCase):
         audit = AuditTrailFactory(
             action_type="unknown_auth_action",
             target_entity=entry,
-            metadata={"some_field": "some_value"}
+            metadata={"some_field": "some_value"},
         )
-        
+
         result = audit._format_authentication_event(audit.metadata)
         # Should fall back to generic formatting
         self.assertIn("Some Field: some_value", result)
@@ -818,7 +823,7 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_crud_operation with entity_type."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {"entity_type": "Entry"}
         result = audit._format_crud_operation(metadata)
         self.assertIn("Entity: Entry", result)
@@ -828,7 +833,7 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_crud_operation with workspace_id."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {"workspace_id": "123e4567-e89b-12d3-a456-426614174000"}
         result = audit._format_crud_operation(metadata)
         self.assertIn("Workspace: 123e4567-e89b-12d3-a456-426614174000", result)
@@ -838,7 +843,7 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_crud_operation with changed_fields."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {"changed_fields": ["title", "amount", "status"]}
         result = audit._format_crud_operation(metadata)
         self.assertIn("Changed fields: title, amount, status", result)
@@ -848,10 +853,10 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_crud_operation with old_values and new_values."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {
             "old_values": {"title": "Old Title", "amount": "100.00"},
-            "new_values": {"title": "New Title", "amount": "200.00"}
+            "new_values": {"title": "New Title", "amount": "200.00"},
         }
         result = audit._format_crud_operation(metadata)
         self.assertIn("title: 'Old Title' → 'New Title'", result)
@@ -862,11 +867,11 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_bulk_operation."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {
             "operation_type": "delete",
             "affected_count": 5,
-            "object_types": ["Entry", "User"]
+            "object_types": ["Entry", "User"],
         }
         result = audit._format_bulk_operation(metadata)
         self.assertIn("Bulk delete operation", result)
@@ -878,13 +883,13 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_workflow_action."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {
             "previous_status": "draft",
             "new_status": "submitted",
             "reviewer": "admin@example.com",
             "comments": "Looks good",
-            "reason": "Ready for review"
+            "reason": "Ready for review",
         }
         result = audit._format_workflow_action(metadata)
         self.assertIn("Status: draft → submitted", result)
@@ -897,7 +902,7 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_generic with empty metadata."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         result = audit._format_generic({})
         self.assertEqual(result, "No additional details")
 
@@ -906,12 +911,12 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_generic with fields that get filtered out."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {
             "_internal_field": "value1",
             "automatic_logging": "value2",
             "timestamp": "value3",
-            "valid_field": "value4"
+            "valid_field": "value4",
         }
         result = audit._format_generic(metadata)
         self.assertIn("Valid Field: value4", result)
@@ -924,11 +929,11 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test _format_generic when all fields get filtered out."""
         entry = EntryFactory()
         audit = AuditTrailFactory(target_entity=entry)
-        
+
         metadata = {
             "_internal_field": "value1",
             "automatic_logging": "value2",
-            "timestamp": "value3"
+            "timestamp": "value3",
         }
         result = audit._format_generic(metadata)
         self.assertEqual(result, "No additional details")
@@ -938,19 +943,18 @@ class TestAuditTrailCoverageGaps(TestCase):
         """Test is_expired method."""
         from datetime import timedelta
         from django.utils import timezone
-        
+
         entry = EntryFactory()
-        
+
         # Create an old audit trail
         old_timestamp = timezone.now() - timedelta(days=400)  # Very old
         audit = AuditTrailFactory(
-            target_entity=entry,
-            action_type=AuditActionType.ENTRY_CREATED
+            target_entity=entry, action_type=AuditActionType.ENTRY_CREATED
         )
         # Manually set old timestamp
         audit.timestamp = old_timestamp
         audit.save()
-        
+
         # Test is_expired
         self.assertTrue(audit.is_expired())
 
@@ -958,12 +962,12 @@ class TestAuditTrailCoverageGaps(TestCase):
     def test_details_property_with_authentication_events(self):
         """Test details property with authentication events."""
         entry = EntryFactory()
-        
+
         # Test LOGIN_SUCCESS
         audit = AuditTrailFactory(
             action_type=AuditActionType.LOGIN_SUCCESS,
             target_entity=entry,
-            metadata={"login_method": "oauth"}
+            metadata={"login_method": "oauth"},
         )
         details = audit.details
         self.assertIn("Successful login via oauth", details)
@@ -972,12 +976,12 @@ class TestAuditTrailCoverageGaps(TestCase):
     def test_details_property_with_status_changes(self):
         """Test details property with status change events."""
         entry = EntryFactory()
-        
+
         # Test ORGANIZATION_STATUS_CHANGED
         audit = AuditTrailFactory(
             action_type=AuditActionType.ORGANIZATION_STATUS_CHANGED,
             target_entity=entry,
-            metadata={"old_status": "active", "new_status": "suspended"}
+            metadata={"old_status": "active", "new_status": "suspended"},
         )
         details = audit.details
         self.assertIn("Status changed from 'active' to 'suspended'", details)
@@ -986,7 +990,7 @@ class TestAuditTrailCoverageGaps(TestCase):
     def test_details_property_with_workflow_actions(self):
         """Test details property with workflow actions."""
         entry = EntryFactory()
-        
+
         # Test ENTRY_SUBMITTED
         audit = AuditTrailFactory(
             action_type=AuditActionType.ENTRY_SUBMITTED,
@@ -994,8 +998,8 @@ class TestAuditTrailCoverageGaps(TestCase):
             metadata={
                 "previous_status": "draft",
                 "new_status": "submitted",
-                "reviewer": "reviewer@example.com"
-            }
+                "reviewer": "reviewer@example.com",
+            },
         )
         details = audit.details
         self.assertIn("Status: draft → submitted", details)
@@ -1005,7 +1009,7 @@ class TestAuditTrailCoverageGaps(TestCase):
     def test_details_property_with_bulk_operations(self):
         """Test details property with bulk operations."""
         entry = EntryFactory()
-        
+
         # Test BULK_OPERATION
         audit = AuditTrailFactory(
             action_type=AuditActionType.BULK_OPERATION,
@@ -1013,8 +1017,8 @@ class TestAuditTrailCoverageGaps(TestCase):
             metadata={
                 "operation_type": "update",
                 "affected_count": 10,
-                "object_types": ["Entry", "User"]
-            }
+                "object_types": ["Entry", "User"],
+            },
         )
         details = audit.details
         self.assertIn("Bulk update operation", details)
@@ -1025,7 +1029,7 @@ class TestAuditTrailCoverageGaps(TestCase):
     def test_details_property_with_crud_operations(self):
         """Test details property with CRUD operations."""
         entry = EntryFactory()
-        
+
         # Test ENTRY_CREATED
         audit = AuditTrailFactory(
             action_type=AuditActionType.ENTRY_CREATED,
@@ -1033,8 +1037,8 @@ class TestAuditTrailCoverageGaps(TestCase):
             metadata={
                 "entity_type": "Entry",
                 "workspace_id": "123e4567-e89b-12d3-a456-426614174000",
-                "changed_fields": ["title", "amount"]
-            }
+                "changed_fields": ["title", "amount"],
+            },
         )
         details = audit.details
         self.assertIn("Entity: Entry", details)

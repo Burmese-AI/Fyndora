@@ -132,7 +132,9 @@ class TestAuditCreateAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create")
-    def test_audit_create_async_target_entity_dictionary_format(self, mock_audit_create):
+    def test_audit_create_async_target_entity_dictionary_format(
+        self, mock_audit_create
+    ):
         """Test async audit creation with target entity in dictionary format."""
         from apps.auditlog.tasks import audit_create_async
 
@@ -214,7 +216,7 @@ class TestAuditCreateAsync(TestCase):
 
         # Should return audit ID despite workspace validation error
         self.assertIsNotNone(result)
-        
+
         # Should log the warning
         self.assertIn("WARNING", log.output[0])
         self.assertIn("Workspace not found", log.output[0])
@@ -422,34 +424,33 @@ class TestAuditCreateAsync(TestCase):
         self.assertIn("ERROR", log.output[0])
         self.assertIn("Database error", log.output[0])
 
+    # @pytest.mark.unit
+    # class TestAuditCreateAuthenticationEventAsync(TestCase):
+    #     """Test audit_create_authentication_event_async Celery task."""
 
-@pytest.mark.unit
-class TestAuditCreateAuthenticationEventAsync(TestCase):
-    """Test audit_create_authentication_event_async Celery task."""
+    #     @pytest.mark.django_db
+    #     @patch("apps.auditlog.tasks.audit_create_authentication_event")
+    #     def test_authentication_event_async_login_success(self, mock_auth_event):
+    #         """Test async authentication event for successful login."""
+    #         from apps.auditlog.tasks import audit_create_authentication_event_async
 
-    @pytest.mark.django_db
-    @patch("apps.auditlog.tasks.audit_create_authentication_event")
-    def test_authentication_event_async_login_success(self, mock_auth_event):
-        """Test async authentication event for successful login."""
-        from apps.auditlog.tasks import audit_create_authentication_event_async
+    #         user = CustomUserFactory()
+    #         mock_audit = AuditTrailFactory.build()
+    #         mock_auth_event.return_value = mock_audit
 
-        user = CustomUserFactory()
-        mock_audit = AuditTrailFactory.build()
-        mock_auth_event.return_value = mock_audit
+    #         result = audit_create_authentication_event_async(
+    #             user_id=user.user_id,
+    #             action_type=AuditActionType.LOGIN_SUCCESS,
+    #             metadata={"ip_address": "192.168.1.1", "user_agent": "Mozilla/5.0"},
+    #         )
 
-        result = audit_create_authentication_event_async(
-            user_id=user.user_id,
-            action_type=AuditActionType.LOGIN_SUCCESS,
-            metadata={"ip_address": "192.168.1.1", "user_agent": "Mozilla/5.0"},
-        )
+    #         mock_auth_event.assert_called_once_with(
+    #             user=user,
+    #             action_type=AuditActionType.LOGIN_SUCCESS,
+    #             metadata={"ip_address": "192.168.1.1", "user_agent": "Mozilla/5.0"},
+    #         )
 
-        mock_auth_event.assert_called_once_with(
-            user=user,
-            action_type=AuditActionType.LOGIN_SUCCESS,
-            metadata={"ip_address": "192.168.1.1", "user_agent": "Mozilla/5.0"},
-        )
-
-        self.assertEqual(result, str(mock_audit.audit_id))
+    #         self.assertEqual(result, str(mock_audit.audit_id))
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_authentication_event")
@@ -502,7 +503,9 @@ class TestAuditCreateAuthenticationEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_authentication_event")
-    def test_authentication_event_async_audit_creation_returns_none(self, mock_auth_event):
+    def test_authentication_event_async_audit_creation_returns_none(
+        self, mock_auth_event
+    ):
         """Test async authentication event when audit creation returns None."""
         from apps.auditlog.tasks import audit_create_authentication_event_async
 
@@ -613,7 +616,9 @@ class TestAuditCreateSecurityEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_security_event")
-    def test_security_event_async_target_entity_dictionary_format(self, mock_security_event):
+    def test_security_event_async_target_entity_dictionary_format(
+        self, mock_security_event
+    ):
         """Test async security event with target entity in dictionary format."""
         from apps.auditlog.tasks import audit_create_security_event_async
 
@@ -697,7 +702,9 @@ class TestAuditCreateSecurityEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_security_event")
-    def test_security_event_async_audit_creation_returns_none(self, mock_security_event):
+    def test_security_event_async_audit_creation_returns_none(
+        self, mock_security_event
+    ):
         """Test async security event when audit creation returns None."""
         from apps.auditlog.tasks import audit_create_security_event_async
 
@@ -745,7 +752,9 @@ class TestAuditCreateSecurityEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_security_event")
-    def test_security_event_async_target_entity_attribute_error(self, mock_security_event):
+    def test_security_event_async_target_entity_attribute_error(
+        self, mock_security_event
+    ):
         """Test async security event with target entity AttributeError."""
         from apps.auditlog.tasks import audit_create_security_event_async
 
@@ -826,7 +835,9 @@ class TestAuditCreateAuthenticationEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_authentication_event")
-    def test_authentication_event_async_audit_creation_returns_none(self, mock_auth_event):
+    def test_authentication_event_async_audit_creation_returns_none(
+        self, mock_auth_event
+    ):
         """Test async authentication event when audit creation returns None."""
         from apps.auditlog.tasks import audit_create_authentication_event_async
 
@@ -846,7 +857,9 @@ class TestAuditCreateAuthenticationEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_authentication_event")
-    def test_authentication_event_async_target_entity_lookup_error(self, mock_auth_event):
+    def test_authentication_event_async_target_entity_lookup_error(
+        self, mock_auth_event
+    ):
         """Test async authentication event with target entity LookupError."""
         from apps.auditlog.tasks import audit_create_authentication_event_async
 
@@ -869,7 +882,9 @@ class TestAuditCreateAuthenticationEventAsync(TestCase):
 
     @pytest.mark.django_db
     @patch("apps.auditlog.tasks.audit_create_authentication_event")
-    def test_authentication_event_async_target_entity_attribute_error(self, mock_auth_event):
+    def test_authentication_event_async_target_entity_attribute_error(
+        self, mock_auth_event
+    ):
         """Test async authentication event with target entity AttributeError."""
         from apps.auditlog.tasks import audit_create_authentication_event_async
 
@@ -1037,9 +1052,11 @@ class TestAuditCreateBulkAsync(TestCase):
         from apps.auditlog.tasks import audit_create_bulk_async
 
         # Mock mixed results - first call succeeds, second fails
-        mock_result1 = type("MockResult", (), {"get": lambda *args, **kwargs: "audit-id-1"})()
+        mock_result1 = type(
+            "MockResult", (), {"get": lambda *args, **kwargs: "audit-id-1"}
+        )()
         mock_result2 = type("MockResult", (), {"get": lambda *args, **kwargs: None})()
-        
+
         mock_apply_async.side_effect = [mock_result1, mock_result2]
 
         audit_entries = [
@@ -1155,12 +1172,14 @@ class TestAuditCreateBulkAsync(TestCase):
         # Create large batch of audit entries
         audit_entries = []
         for i in range(100):
-            audit_entries.append({
-                "user_id": f"user-{i}",
-                "action_type": AuditActionType.ENTRY_CREATED,
-                "target_entity": None,
-                "metadata": {"batch_index": i},
-            })
+            audit_entries.append(
+                {
+                    "user_id": f"user-{i}",
+                    "action_type": AuditActionType.ENTRY_CREATED,
+                    "target_entity": None,
+                    "metadata": {"batch_index": i},
+                }
+            )
 
         result = audit_create_bulk_async(audit_entries)
 

@@ -818,9 +818,13 @@ class TestGetOrganizationMemberById(TestCase):
     def test_get_organization_member_by_id_exception_handling(self):
         """Test exception handling in get_organization_member_by_id."""
         # Mock the queryset to raise an exception
-        with patch('apps.organizations.selectors.OrganizationMember.objects.get') as mock_get:
+        with patch(
+            "apps.organizations.selectors.OrganizationMember.objects.get"
+        ) as mock_get:
             mock_get.side_effect = Exception("Database error")
-            result = get_organization_member_by_id(self.org_member.organization_member_id)
+            result = get_organization_member_by_id(
+                self.org_member.organization_member_id
+            )
             self.assertIsNone(result)
 
 
@@ -849,7 +853,7 @@ class TestExceptionHandlingCoverage(TestCase):
     def test_get_teams_count_exception_handling(self):
         """Test exception handling in get_teams_count."""
         # Mock the Team.objects.filter to raise an exception
-        with patch('apps.organizations.selectors.Team.objects.filter') as mock_filter:
+        with patch("apps.organizations.selectors.Team.objects.filter") as mock_filter:
             mock_filter.side_effect = Exception("Database error")
             result = get_teams_count(self.organization)
             self.assertEqual(result, 0)

@@ -481,12 +481,14 @@ class TestExceptionHandlingCoverage(TestCase):
         )
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_create_organization_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+    def test_create_organization_audit_logging_failure_in_exception_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the exception handler of create_organization_with_owner."""
         # Mock form that will raise an exception
         mock_form = MagicMock()
         mock_form.save.side_effect = Exception("Form save error")
-        
+
         # Mock audit logging to fail in the exception handler
         mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
 
@@ -497,13 +499,15 @@ class TestExceptionHandlingCoverage(TestCase):
         mock_audit_logger.log_operation_failure.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_update_organization_audit_logging_failure_in_success_handler(self, mock_audit_logger):
+    def test_update_organization_audit_logging_failure_in_success_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the success handler of update_organization_from_form."""
         # Mock form
         mock_form = MagicMock()
         mock_form.is_valid.return_value = True
         mock_form.cleaned_data = {"title": "Updated Organization"}
-        
+
         # Mock audit logging to fail
         mock_audit_logger.log_organization_action.side_effect = Exception("Audit error")
 
@@ -516,12 +520,14 @@ class TestExceptionHandlingCoverage(TestCase):
         mock_audit_logger.log_organization_action.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_update_organization_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+    def test_update_organization_audit_logging_failure_in_exception_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the exception handler of update_organization_from_form."""
         # Mock form that will raise an exception
         mock_form = MagicMock()
         mock_form.is_valid.side_effect = Exception("Form validation error")
-        
+
         # Mock audit logging to fail in the exception handler
         mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
 
@@ -534,14 +540,20 @@ class TestExceptionHandlingCoverage(TestCase):
         mock_audit_logger.log_operation_failure.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_create_exchange_rate_audit_logging_failure_in_integrity_error_handler(self, mock_audit_logger):
+    def test_create_exchange_rate_audit_logging_failure_in_integrity_error_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the IntegrityError handler of create_organization_exchange_rate."""
         # Mock IntegrityError
-        with patch("apps.organizations.services.OrganizationExchangeRate.objects.create") as mock_create:
+        with patch(
+            "apps.organizations.services.OrganizationExchangeRate.objects.create"
+        ) as mock_create:
             mock_create.side_effect = IntegrityError("Duplicate key")
-            
+
             # Mock audit logging to fail in the exception handler
-            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+            mock_audit_logger.log_operation_failure.side_effect = Exception(
+                "Audit error"
+            )
 
             with self.assertRaises(ValidationError):
                 create_organization_exchange_rate(
@@ -557,14 +569,20 @@ class TestExceptionHandlingCoverage(TestCase):
             mock_audit_logger.log_operation_failure.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_create_exchange_rate_audit_logging_failure_in_general_error_handler(self, mock_audit_logger):
+    def test_create_exchange_rate_audit_logging_failure_in_general_error_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the general exception handler of create_organization_exchange_rate."""
         # Mock general exception
-        with patch("apps.organizations.services.OrganizationExchangeRate.objects.create") as mock_create:
+        with patch(
+            "apps.organizations.services.OrganizationExchangeRate.objects.create"
+        ) as mock_create:
             mock_create.side_effect = Exception("General error")
-            
+
             # Mock audit logging to fail in the exception handler
-            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+            mock_audit_logger.log_operation_failure.side_effect = Exception(
+                "Audit error"
+            )
 
             with self.assertRaises(ValidationError):
                 create_organization_exchange_rate(
@@ -580,14 +598,18 @@ class TestExceptionHandlingCoverage(TestCase):
             mock_audit_logger.log_operation_failure.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_update_exchange_rate_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+    def test_update_exchange_rate_audit_logging_failure_in_exception_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the exception handler of update_organization_exchange_rate."""
         # Mock update failure
         with patch("apps.organizations.services.model_update") as mock_update:
             mock_update.side_effect = Exception("Update error")
-            
+
             # Mock audit logging to fail in the exception handler
-            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+            mock_audit_logger.log_operation_failure.side_effect = Exception(
+                "Audit error"
+            )
 
             with self.assertRaises(ValidationError):
                 update_organization_exchange_rate(
@@ -601,14 +623,18 @@ class TestExceptionHandlingCoverage(TestCase):
             mock_audit_logger.log_operation_failure.assert_called()
 
     @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_delete_exchange_rate_audit_logging_failure_in_exception_handler(self, mock_audit_logger):
+    def test_delete_exchange_rate_audit_logging_failure_in_exception_handler(
+        self, mock_audit_logger
+    ):
         """Test audit logging failure in the exception handler of delete_organization_exchange_rate."""
         # Mock deletion failure
         with patch.object(self.exchange_rate, "delete") as mock_delete:
             mock_delete.side_effect = Exception("Delete error")
-            
+
             # Mock audit logging to fail in the exception handler
-            mock_audit_logger.log_operation_failure.side_effect = Exception("Audit error")
+            mock_audit_logger.log_operation_failure.side_effect = Exception(
+                "Audit error"
+            )
 
             with self.assertRaises(ValidationError):
                 delete_organization_exchange_rate(

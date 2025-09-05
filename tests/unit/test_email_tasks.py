@@ -274,18 +274,22 @@ class TestEmailTasksConfiguration(TestCase):
         ]
     )
     @patch("apps.emails.tasks.yagmail.SMTP")
-    def test_send_email_task_large_account_pool(self, mock_yagmail_smtp):
+    @patch("apps.emails.tasks.cache")
+    def test_send_email_task_large_account_pool(self, mock_cache, mock_yagmail_smtp):
         """Test round-robin with larger pool of accounts."""
         mock_yag = Mock()
         mock_yagmail_smtp.return_value = mock_yag
 
+        # Mock cache.incr() to return specific values for round-robin testing
+        mock_cache.incr.side_effect = [1, 2, 3, 4, 5, 6]  # Will be called 6 times
+
         expected_accounts = [
-            "test1@gmail.com",
-            "test2@gmail.com",
-            "test3@gmail.com",
-            "test4@gmail.com",
-            "test5@gmail.com",
-            "test1@gmail.com",  # Wraps around
+            "test1@gmail.com",  # (1-1) % 5 = 0
+            "test2@gmail.com",  # (2-1) % 5 = 1
+            "test3@gmail.com",  # (3-1) % 5 = 2
+            "test4@gmail.com",  # (4-1) % 5 = 3
+            "test5@gmail.com",  # (5-1) % 5 = 4
+            "test1@gmail.com",  # (6-1) % 5 = 0 (wraps around)
         ]
 
         for i, expected_account in enumerate(expected_accounts):

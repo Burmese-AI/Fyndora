@@ -512,11 +512,12 @@ class TestAuditLogSelectors(TestCase):
             EntryCreatedAuditFactory(target_entity=entry, user=user)
 
             from apps.auditlog.selectors import AuditLogSelector
-            from datetime import datetime, timedelta
+            from datetime import timedelta
+            from django.utils import timezone
 
             # Test date range with action type
-            start_date = datetime.now() - timedelta(days=1)
-            end_date = datetime.now() + timedelta(days=1)
+            start_date = timezone.now() - timedelta(days=1)
+            end_date = timezone.now() + timedelta(days=1)
 
             result = AuditLogSelector.get_audit_logs_with_filters(
                 action_type=AuditActionType.ENTRY_CREATED,
@@ -527,8 +528,8 @@ class TestAuditLogSelectors(TestCase):
             self.assertGreater(result.count(), 0)
 
             # Test date range that excludes the audit
-            old_start_date = datetime.now() - timedelta(days=10)
-            old_end_date = datetime.now() - timedelta(days=5)
+            old_start_date = timezone.now() - timedelta(days=10)
+            old_end_date = timezone.now() - timedelta(days=5)
 
             result = AuditLogSelector.get_audit_logs_with_filters(
                 action_type=AuditActionType.ENTRY_CREATED,

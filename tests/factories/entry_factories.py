@@ -140,7 +140,7 @@ class ApprovedEntryFactory(EntryFactory):
     description = factory.Sequence(lambda n: f"Approved financial transaction {n}")
     last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
     status_note = "This entry has been approved."
-    status_last_updated_at = factory.LazyFunction(lambda: date.today())
+    status_last_updated_at = factory.LazyFunction(timezone.now)
 
 
 class RejectedEntryFactory(EntryFactory):
@@ -150,7 +150,8 @@ class RejectedEntryFactory(EntryFactory):
     last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
     status_note = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Rejected financial transaction {n}")
-    status_last_updated_at = factory.LazyFunction(lambda: date.today())
+    #forem time.today() to timezone.now()
+    status_last_updated_at = factory.LazyFunction(timezone.now)
 
 
 class FlaggedEntryFactory(EntryFactory):
@@ -160,7 +161,8 @@ class FlaggedEntryFactory(EntryFactory):
     last_status_modified_by = factory.SubFactory(OrganizationMemberFactory)
     status_note = factory.Faker("sentence", nb_words=10)
     description = factory.Sequence(lambda n: f"Flagged financial transaction {n}")
-    status_last_updated_at = factory.LazyFunction(lambda: date.today())
+    #forem time.today() to timezone.now()
+    status_last_updated_at = factory.LazyFunction(timezone.now)
 
 
 class LargeAmountEntryFactory(EntryFactory):
@@ -245,7 +247,8 @@ class EntryWithReviewFactory(EntryFactory):
         ):
             # Use OrganizationMember instead of TeamMember
             self.last_status_modified_by = OrganizationMemberFactory()
-            self.status_last_updated_at = date.today()
+            #from time.today() to timezone.now()
+            self.status_last_updated_at = timezone.now()
             if self.is_flagged:
                 self.status_note = "Financial transaction has been flagged for review."
             else:

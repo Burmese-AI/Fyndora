@@ -146,24 +146,32 @@ class TestEmailTasks(TestCase):
         ]
     )
     @patch("apps.emails.tasks.yagmail.SMTP")
-    def test_send_email_task_round_robin_selection(self, mock_yagmail_smtp):
+    @patch("apps.emails.tasks.cache")
+    def test_send_email_task_round_robin_selection(self, mock_cache, mock_yagmail_smtp):
         """Test round-robin account selection."""
         mock_yag = Mock()
         mock_yagmail_smtp.return_value = mock_yag
 
-        # First call should use first account
+        # Mock cache.incr() to return specific values for round-robin testing
+        mock_cache.incr.side_effect = [1, 2, 3, 4]  # Will be called 4 times
+
+        # First call should use first account (index 0)
+        # cache.incr() returns 1, then (1-1) % 3 = 0
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         first_call = mock_yagmail_smtp.call_args
 
-        # Second call should use second account
+        # Second call should use second account (index 1)
+        # cache.incr() returns 2, then (2-1) % 3 = 1
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         second_call = mock_yagmail_smtp.call_args
 
-        # Third call should use third account
+        # Third call should use third account (index 2)
+        # cache.incr() returns 3, then (3-1) % 3 = 2
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         third_call = mock_yagmail_smtp.call_args
 
-        # Fourth call should wrap around to first account
+        # Fourth call should wrap around to first account (index 0)
+        # cache.incr() returns 4, then (4-1) % 3 = 0
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         fourth_call = mock_yagmail_smtp.call_args
 
@@ -220,17 +228,18 @@ class TestEmailTasks(TestCase):
         ]
     )
     @patch("apps.emails.tasks.yagmail.SMTP")
-    def test_send_email_task_with_existing_cache_value(self, mock_yagmail_smtp):
+    @patch("apps.emails.tasks.cache")
+    def test_send_email_task_with_existing_cache_value(self, mock_cache, mock_yagmail_smtp):
         """Test email task with existing cache value."""
         mock_yag = Mock()
         mock_yagmail_smtp.return_value = mock_yag
 
-        # Set cache to specific value
-        cache.set("last_gmail_account_index", 5)
+        # Mock cache.incr() to return 2, which will result in (2-1) % 2 = 1 (second account)
+        mock_cache.incr.return_value = 2
 
         send_email_task(self.test_email, self.test_subject, self.test_contents)
 
-        # Should use second account (5 % 2 = 1, which is index 1)
+        # The cache.incr() returns 2, then (2-1) % 2 = 1, which is index 1 (second account)
         mock_yagmail_smtp.assert_called_once_with(
             "test2@gmail.com", oauth2_file="/path/to/oauth2.json"
         )

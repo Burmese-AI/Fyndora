@@ -1,8 +1,6 @@
 from django.urls import path
-from .views import AuditLogListView
-
-app_name = "auditlog"
+from .views import auditlog_list_view
 
 urlpatterns = [
-    path("", AuditLogListView.as_view(), name="auditlog_list"),
+    path("", auditlog_list_view, name="auditlog_list"),
 ]

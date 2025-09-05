@@ -23,7 +23,7 @@ urlpatterns = [
     path("", include("apps.organizations.urls")),
     path("", include("apps.core.urls")),
     path("accounts/", include("allauth.urls")),
-    path("auditlog/", include("apps.auditlog.urls")),
+    path("<uuid:organization_id>/auditlog/", include("apps.auditlog.urls")),
     path("<uuid:organization_id>/workspaces/", include("apps.workspaces.urls")),
     path("<uuid:organization_id>/", include("apps.workspaces.custom_urls")),
     path("invitations/", include("apps.invitations.urls")),

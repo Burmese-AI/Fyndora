@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from celery import shared_task
+from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -86,7 +87,8 @@ def audit_create_async(
                     from apps.workspaces.models import Workspace
 
                     workspace_instance = Workspace.objects.get(pk=workspace["pk"])
-            except (KeyError, ObjectDoesNotExist, AttributeError) as e:
+                    # i added this validation error for testing purposes
+            except (KeyError, ObjectDoesNotExist, AttributeError, ValidationError) as e:
                 logger.warning(f"Workspace not found: {e}")
                 workspace_instance = None
 

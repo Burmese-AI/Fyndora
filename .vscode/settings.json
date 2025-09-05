@@ -7,5 +7,6 @@
     "files.defaultLanguage": "python",
     "python.autoComplete.extraPaths": [
         
-    ]
+    ],
+    "python.analysis.extraPaths": []
 }

@@ -146,24 +146,32 @@ class TestEmailTasks(TestCase):
         ]
     )
     @patch("apps.emails.tasks.yagmail.SMTP")
-    def test_send_email_task_round_robin_selection(self, mock_yagmail_smtp):
+    @patch("apps.emails.tasks.cache")
+    def test_send_email_task_round_robin_selection(self, mock_cache, mock_yagmail_smtp):
         """Test round-robin account selection."""
         mock_yag = Mock()
         mock_yagmail_smtp.return_value = mock_yag
 
-        # First call should use first account
+        # Mock cache.incr() to return specific values for round-robin testing
+        mock_cache.incr.side_effect = [1, 2, 3, 4]  # Will be called 4 times
+
+        # First call should use first account (index 0)
+        # cache.incr() returns 1, then (1-1) % 3 = 0
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         first_call = mock_yagmail_smtp.call_args
 
-        # Second call should use second account
+        # Second call should use second account (index 1)
+        # cache.incr() returns 2, then (2-1) % 3 = 1
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         second_call = mock_yagmail_smtp.call_args
 
-        # Third call should use third account
+        # Third call should use third account (index 2)
+        # cache.incr() returns 3, then (3-1) % 3 = 2
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         third_call = mock_yagmail_smtp.call_args
 
-        # Fourth call should wrap around to first account
+        # Fourth call should wrap around to first account (index 0)
+        # cache.incr() returns 4, then (4-1) % 3 = 0
         send_email_task(self.test_email, self.test_subject, self.test_contents)
         fourth_call = mock_yagmail_smtp.call_args
 
@@ -220,19 +228,324 @@ class TestEmailTasks(TestCase):
         ]
     )
     @patch("apps.emails.tasks.yagmail.SMTP")
-    def test_send_email_task_with_existing_cache_value(self, mock_yagmail_smtp):
+    @patch("apps.emails.tasks.cache")
+    def test_send_email_task_with_existing_cache_value(
+        self, mock_cache, mock_yagmail_smtp
+    ):
         """Test email task with existing cache value."""
         mock_yag = Mock()
         mock_yagmail_smtp.return_value = mock_yag
 
-        # Set cache to specific value
-        cache.set("last_gmail_account_index", 5)
+        # Mock cache.incr() to return 2, which will result in (2-1) % 2 = 1 (second account)
+        mock_cache.incr.return_value = 2
 
         send_email_task(self.test_email, self.test_subject, self.test_contents)
 
-        # Should use second account (5 % 2 = 1, which is index 1)
+        # The cache.incr() returns 2, then (2-1) % 2 = 1, which is index 1 (second account)
         mock_yagmail_smtp.assert_called_once_with(
             "test2@gmail.com", oauth2_file="/path/to/oauth2.json"
+        )
+
+
+@pytest.mark.unit
+class TestSendInvitationEmail(TestCase):
+    """Test send_invitation_email service function."""
+
+    def setUp(self):
+        """Set up test data."""
+        from tests.factories.organization_factories import (
+            OrganizationFactory,
+            OrganizationMemberFactory,
+        )
+        from unittest.mock import Mock
+
+        self.organization = OrganizationFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+
+        # Create a mock invitation object to avoid triggering signals
+        self.invitation = Mock()
+        self.invitation.organization = self.organization
+        self.invitation.invited_by = self.org_member
+        self.invitation.email = "invited@example.com"
+        self.invitation.pk = "123"
+        self.invitation.get_acceptance_url = Mock(
+            return_value="/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @override_settings(DEBUG=True)
+    def test_send_invitation_email_debug_mode(
+        self, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email in DEBUG mode (covers lines 43-44)."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with localhost:8000 domain
+        mock_send_email_task.assert_called_once()
+        call_args = mock_send_email_task.call_args
+        self.assertEqual(call_args[1]["to"], "invited@example.com")
+        self.assertEqual(
+            call_args[1]["subject"], "You're invited to join Test Organization"
+        )
+        self.assertEqual(
+            call_args[1]["contents"], "<html><body>Invitation HTML</body></html>"
+        )
+
+        # Verify context was passed correctly
+        render_calls = mock_render_to_string.call_args_list
+        self.assertEqual(len(render_calls), 2)
+
+        # Check subject template call
+        subject_call = render_calls[0]
+        self.assertEqual(subject_call[0][0], "account/email/invitation_subject.txt")
+        context = subject_call[0][1]
+        self.assertEqual(context["invitation"], self.invitation)
+        self.assertEqual(context["organization"], self.organization)
+        self.assertEqual(context["invited_by"], self.org_member)
+        self.assertEqual(
+            context["acceptance_url"], "http://localhost:8000/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("django.contrib.sites.models.Site.objects.get_current")
+    @override_settings(DEBUG=False)
+    def test_send_invitation_email_production_sites_framework(
+        self, mock_get_current, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email in production with Sites framework (covers lines 47-55)."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock Site.objects.get_current()
+        mock_site = Mock()
+        mock_site.domain = "example.com"
+        mock_get_current.return_value = mock_site
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with HTTPS protocol
+        mock_send_email_task.assert_called_once()
+        # call_args = mock_send_email_task.call_args
+
+        # Check context for HTTPS URL
+        render_calls = mock_render_to_string.call_args_list
+        context = render_calls[0][0][1]
+        self.assertEqual(
+            context["acceptance_url"], "https://example.com/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("django.contrib.sites.models.Site.objects.get_current")
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=["example.com", "localhost"])
+    def test_send_invitation_email_sites_framework_fallback(
+        self, mock_get_current, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email with Sites framework fallback (covers lines 56-60)."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock Site.objects.get_current() to raise exception
+        mock_get_current.side_effect = Exception("Site not found")
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with ALLOWED_HOSTS fallback
+        mock_send_email_task.assert_called_once()
+
+        # Check context for HTTPS URL (first ALLOWED_HOST)
+        render_calls = mock_render_to_string.call_args_list
+        context = render_calls[0][0][1]
+        self.assertEqual(
+            context["acceptance_url"], "https://example.com/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("django.contrib.sites.models.Site.objects.get_current")
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=["localhost"])
+    def test_send_invitation_email_localhost_fallback(
+        self, mock_get_current, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email with localhost fallback (covers lines 56-64)."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock Site.objects.get_current() to raise exception
+        mock_get_current.side_effect = Exception("Site not found")
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with HTTP protocol for localhost
+        mock_send_email_task.assert_called_once()
+
+        # Check context for HTTP URL (localhost should use HTTP)
+        render_calls = mock_render_to_string.call_args_list
+        context = render_calls[0][0][1]
+        self.assertEqual(
+            context["acceptance_url"], "http://localhost/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("django.contrib.sites.models.Site.objects.get_current")
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=[])
+    def test_send_invitation_email_empty_allowed_hosts_fallback(
+        self, mock_get_current, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email with empty ALLOWED_HOSTS fallback."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock Site.objects.get_current() to raise exception
+        mock_get_current.side_effect = Exception("Site not found")
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with localhost fallback
+        mock_send_email_task.assert_called_once()
+
+        # Check context for localhost fallback
+        render_calls = mock_render_to_string.call_args_list
+        context = render_calls[0][0][1]
+        self.assertEqual(
+            context["acceptance_url"], "http://localhost/invitations/accept/123/"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("apps.emails.services.logger")
+    @override_settings(DEBUG=True)
+    def test_send_invitation_email_html_template_fallback(
+        self, mock_logger, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email with HTML template fallback to text (covers lines 85-92)."""
+        from apps.emails.services import send_invitation_email
+        from django.template import TemplateDoesNotExist
+
+        # Mock template rendering - HTML template doesn't exist, fallback to text
+        def side_effect(template_name, context):
+            if template_name == "account/email/invitation_subject.txt":
+                return "You're invited to join Test Organization\n"
+            elif template_name == "account/email/invitation_message.html":
+                raise TemplateDoesNotExist(template_name)
+            elif template_name == "account/email/invitation_message.txt":
+                return "Plain text invitation message"
+
+        mock_render_to_string.side_effect = side_effect
+
+        send_invitation_email(self.invitation)
+
+        # Verify email task was called with text content
+        mock_send_email_task.assert_called_once()
+        call_args = mock_send_email_task.call_args
+        self.assertEqual(call_args[1]["contents"], "Plain text invitation message")
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("apps.emails.services.logger")
+    @override_settings(DEBUG=True)
+    def test_send_invitation_email_no_templates_found(
+        self, mock_logger, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email when no templates are found (covers lines 88-92)."""
+        from apps.emails.services import send_invitation_email
+        from django.template import TemplateDoesNotExist
+
+        # Mock template rendering - both HTML and text templates don't exist
+        def side_effect(template_name, context):
+            if template_name == "account/email/invitation_subject.txt":
+                return "You're invited to join Test Organization\n"
+            elif template_name == "account/email/invitation_message.html":
+                raise TemplateDoesNotExist(template_name)
+            elif template_name == "account/email/invitation_message.txt":
+                raise TemplateDoesNotExist(template_name)
+
+        mock_render_to_string.side_effect = side_effect
+
+        send_invitation_email(self.invitation)
+
+        # Verify error was logged and no email was sent
+        mock_logger.error.assert_called_once_with(
+            f"No invitation email templates found for invitation {self.invitation.pk}"
+        )
+        mock_send_email_task.assert_not_called()
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @patch("apps.emails.services.logger")
+    @override_settings(DEBUG=True)
+    def test_send_invitation_email_success_logging(
+        self, mock_logger, mock_render_to_string, mock_send_email_task
+    ):
+        """Test send_invitation_email success logging."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock template rendering
+        mock_render_to_string.side_effect = [
+            "You're invited to join Test Organization\n",  # subject
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify success was logged
+        mock_logger.info.assert_called_once_with(
+            f"Invitation email queued for {self.invitation.email} to join {self.invitation.organization.title}"
+        )
+
+    @patch("apps.emails.services.send_email_task.delay")
+    @patch("apps.emails.services.render_to_string")
+    @override_settings(DEBUG=True)
+    def test_send_invitation_email_subject_newline_removal(
+        self, mock_render_to_string, mock_send_email_task
+    ):
+        """Test that newlines are removed from email subject."""
+        from apps.emails.services import send_invitation_email
+
+        # Mock template rendering with multiline subject
+        mock_render_to_string.side_effect = [
+            "You're invited to join\nTest Organization\n\n",  # subject with newlines
+            "<html><body>Invitation HTML</body></html>",  # html template
+        ]
+
+        send_invitation_email(self.invitation)
+
+        # Verify subject has newlines removed
+        mock_send_email_task.assert_called_once()
+        call_args = mock_send_email_task.call_args
+        self.assertEqual(
+            call_args[1]["subject"], "You're invited to joinTest Organization"
         )
 
 

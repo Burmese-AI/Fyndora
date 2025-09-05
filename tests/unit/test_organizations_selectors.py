@@ -4,6 +4,7 @@ Tests data retrieval functions with various scenarios and edge cases.
 """
 
 import uuid
+from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -15,6 +16,7 @@ from apps.organizations.selectors import (
     get_org_members,
     get_organization_by_id,
     get_organization_members_count,
+    get_organization_member_by_id,
     get_orgMember_by_user_id_and_organization_id,
     get_teams_count,
     get_user_org_membership,
@@ -794,3 +796,64 @@ class TestGetOrgMemberByUserIdAndOrganizationId(TestCase):
             self.user.user_id, self.organization.organization_id
         )
         self.assertIsNone(result)
+
+
+class TestGetOrganizationMemberById(TestCase):
+    """Test get_organization_member_by_id selector."""
+
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+
+    def test_get_organization_member_by_id_existing(self):
+        """Test getting existing organization member by ID."""
+        result = get_organization_member_by_id(self.org_member.organization_member_id)
+        self.assertEqual(result, self.org_member)
+
+    def test_get_organization_member_by_id_non_existent(self):
+        """Test getting non-existent organization member by ID."""
+        result = get_organization_member_by_id(uuid.uuid4())
+        self.assertIsNone(result)
+
+    def test_get_organization_member_by_id_exception_handling(self):
+        """Test exception handling in get_organization_member_by_id."""
+        # Mock the queryset to raise an exception
+        with patch(
+            "apps.organizations.selectors.OrganizationMember.objects.get"
+        ) as mock_get:
+            mock_get.side_effect = Exception("Database error")
+            result = get_organization_member_by_id(
+                self.org_member.organization_member_id
+            )
+            self.assertIsNone(result)
+
+
+class TestExceptionHandlingCoverage(TestCase):
+    """Test exception handling for coverage gaps."""
+
+    def setUp(self):
+        self.organization = OrganizationFactory()
+
+    def test_get_organization_members_count_exception_handling(self):
+        """Test exception handling in get_organization_members_count."""
+        # Create a mock organization that will raise an exception
+        mock_org = Mock()
+        mock_org.members.filter.side_effect = Exception("Database error")
+        result = get_organization_members_count(mock_org)
+        self.assertEqual(result, 0)
+
+    def test_get_workspaces_count_exception_handling(self):
+        """Test exception handling in get_workspaces_count."""
+        # Create a mock organization that will raise an exception
+        mock_org = Mock()
+        mock_org.workspaces.count.side_effect = Exception("Database error")
+        result = get_workspaces_count(mock_org)
+        self.assertEqual(result, 0)
+
+    def test_get_teams_count_exception_handling(self):
+        """Test exception handling in get_teams_count."""
+        # Mock the Team.objects.filter to raise an exception
+        with patch("apps.organizations.selectors.Team.objects.filter") as mock_filter:
+            mock_filter.side_effect = Exception("Database error")
+            result = get_teams_count(self.organization)
+            self.assertEqual(result, 0)

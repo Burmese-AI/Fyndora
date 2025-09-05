@@ -927,15 +927,458 @@ class TestServiceEdgeCases(TestCase):
             result = create_workspace_exchange_rate(
                 workspace=self.workspace,
                 organization_member=org_member,
-                currency_code="XYZ",  # New currency
+                currency_code="JPY",  # Valid currency code that might not exist in test DB
                 rate=Decimal("2.00"),
                 note="Test rate",
                 effective_date=date.today(),
             )
 
             self.assertIsInstance(result, WorkspaceExchangeRate)
-            self.assertEqual(result.currency.code, "XYZ")
+            self.assertEqual(result.currency.code, "JPY")
 
             # Verify currency was created
-            currency = Currency.objects.get(code="XYZ")
+            currency = Currency.objects.get(code="JPY")
             self.assertIsNotNone(currency)
+
+
+@pytest.mark.unit
+class TestServiceErrorHandling(TestCase):
+    """Test error handling paths in services for 100% coverage."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.organization = OrganizationWithOwnerFactory()
+        self.workspace = WorkspaceFactory(organization=self.organization)
+        self.org_member = OrganizationMemberFactory(organization=self.organization)
+        self.user = self.org_member.user
+
+    @pytest.mark.django_db
+    def test_create_workspace_failure_logging_error(self):
+        """Test workspace creation failure when logging also fails."""
+        # Mock form that fails during save
+        mock_form = Mock()
+        mock_form.save.side_effect = Exception("Save error")
+        mock_form.cleaned_data = {"title": "Test Workspace"}
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+        ) as mock_log_failure:
+            mock_log_failure.side_effect = Exception("Logging failure")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                with self.assertRaises(WorkspaceCreationError):
+                    create_workspace_from_form(
+                        form=mock_form,
+                        orgMember=self.org_member,
+                        organization=self.organization,
+                    )
+
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_workspace_failure_logging_error(self):
+        """Test workspace update failure when logging also fails."""
+        # Mock form
+        mock_form = Mock()
+        mock_form.cleaned_data = {"title": "Updated Workspace"}
+
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
+            mock_update.side_effect = Exception("Update error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(WorkspaceUpdateError):
+                        update_workspace_from_form(
+                            form=mock_form,
+                            workspace=self.workspace,
+                            previous_workspace_admin=None,
+                            previous_operations_reviewer=None,
+                            user=self.user,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_remove_team_failure_logging_error(self):
+        """Test team removal failure when logging also fails."""
+        team = TeamFactory(organization=self.organization)
+        workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=team)
+
+        with patch.object(workspace_team, "delete") as mock_delete:
+            mock_delete.side_effect = Exception("Delete error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(ValidationError):
+                        remove_team_from_workspace(
+                            workspace_team=workspace_team,
+                            user=self.user,
+                            team=team,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_add_team_failure_logging_error(self):
+        """Test team addition failure when logging also fails."""
+        team = TeamFactory(organization=self.organization)
+
+        with patch.object(WorkspaceTeam.objects, "create") as mock_create:
+            mock_create.side_effect = Exception("Create error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(Exception):
+                        add_team_to_workspace(
+                            workspace_id=self.workspace.workspace_id,
+                            team_id=team.team_id,
+                            custom_remittance_rate=Decimal("80.00"),
+                            workspace=self.workspace,
+                            user=self.user,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_remittance_rate_failure_logging_error(self):
+        """Test remittance rate update failure when logging also fails."""
+        team = TeamFactory(organization=self.organization)
+        workspace_team = WorkspaceTeamFactory(
+            workspace=self.workspace,
+            team=team,
+            custom_remittance_rate=Decimal("85.00"),
+        )
+
+        # Mock form
+        mock_form = Mock()
+        mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
+
+        with patch.object(workspace_team, "save") as mock_save:
+            mock_save.side_effect = Exception("Save error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(Exception):
+                        update_workspace_team_remittance_rate_from_form(
+                            form=mock_form,
+                            workspace_team=workspace_team,
+                            workspace=self.workspace,
+                            user=self.user,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_create_exchange_rate_integrity_error_logging_failure(self):
+        """Test exchange rate creation integrity error when logging also fails."""
+        with patch.object(WorkspaceExchangeRate.objects, "create") as mock_create:
+            mock_create.side_effect = IntegrityError("Duplicate key")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(ValidationError):
+                        create_workspace_exchange_rate(
+                            workspace=self.workspace,
+                            organization_member=self.org_member,
+                            currency_code="EUR",
+                            rate=Decimal("1.25"),
+                            note="Test rate",
+                            effective_date=date.today(),
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_create_exchange_rate_general_error_logging_failure(self):
+        """Test exchange rate creation general error when logging also fails."""
+        with patch.object(WorkspaceExchangeRate.objects, "create") as mock_create:
+            mock_create.side_effect = Exception("General error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(ValidationError):
+                        create_workspace_exchange_rate(
+                            workspace=self.workspace,
+                            organization_member=self.org_member,
+                            currency_code="EUR",
+                            rate=Decimal("1.25"),
+                            note="Test rate",
+                            effective_date=date.today(),
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_exchange_rate_failure_logging_error(self):
+        """Test exchange rate update failure when logging also fails."""
+        exchange_rate = WorkspaceExchangeRateFactory(
+            workspace=self.workspace,
+            note="Original note",
+            is_approved=False,
+            approved_by=None,
+        )
+
+        with patch("apps.workspaces.services.model_update") as mock_update:
+            mock_update.side_effect = Exception("Update error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(ValidationError):
+                        update_workspace_exchange_rate(
+                            workspace_exchange_rate=exchange_rate,
+                            note="Updated note",
+                            is_approved=True,
+                            org_member=self.org_member,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_delete_exchange_rate_failure_logging_error(self):
+        """Test exchange rate deletion failure when logging also fails."""
+        exchange_rate = WorkspaceExchangeRateFactory(
+            workspace=self.workspace,
+            currency__code="EUR",
+            rate=Decimal("1.25"),
+        )
+
+        with patch.object(exchange_rate, "delete") as mock_delete:
+            mock_delete.side_effect = Exception("Delete error")
+
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
+            ) as mock_log_failure:
+                mock_log_failure.side_effect = Exception("Logging failure")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    with self.assertRaises(ValidationError):
+                        delete_workspace_exchange_rate(
+                            workspace_exchange_rate=exchange_rate,
+                            user=self.user,
+                        )
+
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_workspace_success_logging_failure(self):
+        """Test workspace update success when logging fails."""
+        # Mock form
+        mock_form = Mock()
+        mock_form.cleaned_data = {
+            "workspace_admin": self.org_member,
+            "operations_reviewer": self.org_member,
+            "created_by": self.org_member,
+        }
+
+        with patch(
+            "apps.workspaces.services.update_workspace_admin_group"
+        ) as mock_update:
+            with patch(
+                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
+            ) as mock_log:
+                mock_log.side_effect = Exception("Logging error")
+
+                with patch("apps.workspaces.services.logger") as mock_logger:
+                    result = update_workspace_from_form(
+                        form=mock_form,
+                        workspace=self.workspace,
+                        previous_workspace_admin=None,
+                        previous_operations_reviewer=None,
+                        user=self.user,
+                    )
+
+                    self.assertEqual(result, self.workspace)
+                    mock_update.assert_called_once()
+                    # Verify logger.error was called for logging failure
+                    mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_remove_team_success_logging_failure(self):
+        """Test team removal success when logging fails."""
+        team = TeamFactory(organization=self.organization)
+        workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=team)
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                result = remove_team_from_workspace(
+                    workspace_team=workspace_team,
+                    user=self.user,
+                    team=team,
+                )
+
+                self.assertEqual(result, workspace_team)
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_add_team_success_logging_failure(self):
+        """Test team addition success when logging fails."""
+        team = TeamFactory(organization=self.organization)
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                result = add_team_to_workspace(
+                    workspace_id=self.workspace.workspace_id,
+                    team_id=team.team_id,
+                    custom_remittance_rate=Decimal("80.00"),
+                    workspace=self.workspace,
+                    user=self.user,
+                )
+
+                self.assertIsInstance(result, WorkspaceTeam)
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_remittance_rate_success_logging_failure(self):
+        """Test remittance rate update success when logging fails."""
+        team = TeamFactory(organization=self.organization)
+        workspace_team = WorkspaceTeamFactory(
+            workspace=self.workspace,
+            team=team,
+            custom_remittance_rate=Decimal("85.00"),
+        )
+
+        # Mock form
+        mock_form = Mock()
+        mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                result = update_workspace_team_remittance_rate_from_form(
+                    form=mock_form,
+                    workspace_team=workspace_team,
+                    workspace=self.workspace,
+                    user=self.user,
+                )
+
+                self.assertEqual(result, workspace_team)
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_create_exchange_rate_success_logging_failure(self):
+        """Test exchange rate creation success when logging fails."""
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                result = create_workspace_exchange_rate(
+                    workspace=self.workspace,
+                    organization_member=self.org_member,
+                    currency_code="EUR",
+                    rate=Decimal("1.25"),
+                    note="Test rate",
+                    effective_date=date.today(),
+                )
+
+                self.assertIsInstance(result, WorkspaceExchangeRate)
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_update_exchange_rate_success_logging_failure(self):
+        """Test exchange rate update success when logging fails."""
+        exchange_rate = WorkspaceExchangeRateFactory(
+            workspace=self.workspace,
+            note="Original note",
+            is_approved=False,
+            approved_by=None,
+        )
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                result = update_workspace_exchange_rate(
+                    workspace_exchange_rate=exchange_rate,
+                    note="Updated note",
+                    is_approved=True,
+                    org_member=self.org_member,
+                )
+
+                self.assertEqual(result, exchange_rate)
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()
+
+    @pytest.mark.django_db
+    def test_delete_exchange_rate_success_logging_failure(self):
+        """Test exchange rate deletion success when logging fails."""
+        exchange_rate = WorkspaceExchangeRateFactory(
+            workspace=self.workspace,
+            currency__code="EUR",
+            rate=Decimal("1.25"),
+        )
+
+        with patch(
+            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_exchange_rate_action"
+        ) as mock_log:
+            mock_log.side_effect = Exception("Logging error")
+
+            with patch("apps.workspaces.services.logger") as mock_logger:
+                delete_workspace_exchange_rate(
+                    workspace_exchange_rate=exchange_rate,
+                    user=self.user,
+                )
+
+                # Verify it was deleted
+                with self.assertRaises(WorkspaceExchangeRate.DoesNotExist):
+                    WorkspaceExchangeRate.objects.get(pk=exchange_rate.pk)
+
+                # Verify logger.error was called for logging failure
+                mock_logger.error.assert_called()

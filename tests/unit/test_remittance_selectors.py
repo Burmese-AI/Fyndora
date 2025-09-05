@@ -342,3 +342,18 @@ class TestRemittanceSelectorsEdgeCases:
 
         assert result is not None
         assert len(result) >= 1
+
+    def test_exception_handling_returns_none(self):
+        """Test that the selector returns None when an exception occurs."""
+        from unittest.mock import patch
+        
+        # Mock the Remittance.objects.filter to raise an exception
+        with patch('apps.remittance.selectors.Remittance.objects.filter') as mock_filter:
+            mock_filter.side_effect = Exception("Database error")
+            
+            result = get_remittances_under_organization(
+                organization_id="some-id"
+            )
+            
+            # Should return None when exception occurs
+            assert result is None

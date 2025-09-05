@@ -1,20 +1,15 @@
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render
-from django.views.generic import ListView
 from apps.core.services.organizations import (
     get_organization_by_id,
 )
 from .constants import AuditActionType
-from .models import AuditTrail
 from .selectors import AuditLogSelector
 
 User = get_user_model()
-
-
 
 
 # class AuditLogListView(LoginRequiredMixin, ListView):
@@ -58,11 +53,12 @@ User = get_user_model()
 
 #         return context
 
+
 def auditlog_list_view(request, organization_id):
     try:
         # Get organization
         organization = get_organization_by_id(organization_id)
-        
+
         # Get filter parameters from request
         user_id = request.GET.get("user")
         action_type = request.GET.get("action_type")
@@ -74,7 +70,7 @@ def auditlog_list_view(request, organization_id):
         security_related_only = request.GET.get("security_related") == "on"
         critical_actions_only = request.GET.get("critical_actions") == "on"
         exclude_system_actions = request.GET.get("exclude_system") == "on"
-        
+
         # Convert date strings to datetime objects if provided
         start_date_obj = None
         end_date_obj = None
@@ -88,10 +84,10 @@ def auditlog_list_view(request, organization_id):
                 end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
             except ValueError:
                 pass
-        
+
         # Get audit logs using the selector
         audit_logs = AuditLogSelector.get_audit_logs_with_filters(
-            organization_id=organization_id,    # Using organization_id as organization_id
+           # we shoul use org id 
             user_id=user_id,
             action_type=action_type,
             start_date=start_date_obj,
@@ -103,23 +99,24 @@ def auditlog_list_view(request, organization_id):
             critical_actions_only=critical_actions_only,
             exclude_system_actions=exclude_system_actions,
         )
-        
+
         # Pagination
         from django.core.paginator import Paginator
+
         paginator = Paginator(audit_logs, 20)  # 20 items per page
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        
+
         # Get filter options for dropdowns
         users = User.objects.all().order_by("username")
         action_types = AuditActionType.choices
         entity_types = ContentType.objects.all().order_by("model")
-        
+
         # Create a copy of the GET parameters to preserve filters in pagination
         filters = request.GET.copy()
         if "page" in filters:
             filters.pop("page")
-        
+
         context = {
             "organization": organization,
             "audit_logs": page_obj,
@@ -132,9 +129,9 @@ def auditlog_list_view(request, organization_id):
             "critical_actions": critical_actions_only,
             "exclude_system": exclude_system_actions,
         }
-        
+
         return render(request, "auditlog/index.html", context)
-        
+
     except Exception as e:
         # Handle any errors gracefully
         context = {

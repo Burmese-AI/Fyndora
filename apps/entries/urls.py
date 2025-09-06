@@ -6,6 +6,7 @@ from .views.org_expense_views import (
     OrganizationExpenseDeleteView,
     OrganizationExpenseBulkDeleteView,
     OrganizationExpenseBulkUpdateView,
+    OrganizationExpenseBulkCreateView,
 )
 from .views.workspace_expense_views import (
     WorkspaceExpenseListView,
@@ -48,6 +49,11 @@ urlpatterns = [
         "expenses/<uuid:pk>/delete",
         OrganizationExpenseDeleteView.as_view(),
         name="organization_expense_delete",
+    ),
+    path(
+        "expenses/bulk-create/",
+        OrganizationExpenseBulkCreateView.as_view(),
+        name="organization_expense_bulk_create"
     ),
     path(
         "expenses/bulk-delete/",

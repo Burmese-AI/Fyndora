@@ -77,7 +77,10 @@ class EntryService:
         return entry
 
     @staticmethod
-    def bulk_create_entry(*, entries: list[Entry]):
+    def bulk_create_entry(
+        *, 
+        entries: list[Entry]
+    ):
         try:
             Entry.objects.bulk_create(entries)
         except:

@@ -40,17 +40,6 @@
       {% include "components/field_error.html" with field=form.file %}
     </div>
 
-    <!-- Currency Field -->
-    <div>
-      <label for="{{ form.currency.id_for_label }}" class="block text-sm font-medium text-base-content">
-        Currency
-      </label>
-      <div class="mt-2">
-        {{ form.currency }}
-      </div>
-      {% include "components/field_error.html" with field=form.currency %}
-    </div>
-
     <!-- Status Field -->
     <div>
       <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-base-content">
@@ -71,6 +60,17 @@
         {{ form.backup_description }}
       </div>
       {% include "components/field_error.html" with field=form.backup_description %}
+    </div>
+    
+    <!-- Status Note Field -->
+    <div>
+      <label for="{{ form.status_note.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Status Note (This will be applied only if entry is not "pending".)
+      </label>
+      <div class="mt-2">
+        {{ form.status_note }}
+      </div>
+      {% include "components/field_error.html" with field=form.status_note %}
     </div>
 
     <!-- Form Actions -->

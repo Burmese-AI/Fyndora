@@ -305,6 +305,8 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
 
 class BaseEntryBulkCreateView(BaseEntryBulkActionView):
     modal_template_name = "entries/components/bulk_create_modal.html"
+    #specify entry type if entry type is not specified in the file
+    entry_type_to_create = None
     
     def get_form_kwargs(self) -> dict:
         kwargs = {}
@@ -353,12 +355,16 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                     currency_code=row["Currency"],
                     amount=row["Amount"],
                     occurred_at=row["Occurred At"],
-                    description=row["Description"],
-                    entry_type=EntryType.ORG_EXP,
+                    description=row["Description"].strip() or self.form.cleaned_data.get("description").strip(),
+                    entry_type=self.entry_type_to_create or row["Type"],
                     organization=self.organization,
+                    workspace=getattr(self, "workspace", None),
+                    workspace_team=getattr(self, "workspace_team", None),
                     currency=row["Currency"],
                     submitted_by_org_member=self.org_member,
+                    submitted_by_team_member=getattr(self, "workspace_team_member", None),
                     status=self.form.cleaned_data.get("status"),
+                    status_note=self.form.cleaned_data.get("status_note").strip()
                 )
                 if entry:
                     valid_entries.append(entry)

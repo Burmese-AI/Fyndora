@@ -274,14 +274,6 @@ class BaseImportEntryForm(forms.Form):
             "class": "file-input file-input-bordered file-input-sm w-full"
         }),
     )
-    currency = forms.ModelChoiceField(
-        queryset=Currency.objects.all(),
-        required=True,
-        widget=forms.Select(attrs={
-            "class": "select select-bordered w-full",
-            "placeholder": "Select Currency",
-        }),
-    )
     status = forms.ChoiceField(
         choices=EntryStatus.choices,
         required=True,
@@ -298,6 +290,16 @@ class BaseImportEntryForm(forms.Form):
             "placeholder": "Brief description of the expense",
         }),
     )
+    status_note = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            "class": "textarea textarea-bordered w-full",
+            "placeholder": "Leave notes for the status update",
+            "rows": 3,
+        }),
+        label="Status Notes",  # Optional
+        help_text="Optional notes about this status update."  # Optional
+    )
     
     # TODO: Refactoring Required 
     def __init__(self, *args, **kwargs):
@@ -312,7 +314,6 @@ class BaseImportEntryForm(forms.Form):
         self.is_operation_reviewer = kwargs.pop("is_operation_reviewer", None)
         self.is_team_coordinator = kwargs.pop("is_team_coordinator", None)
         super().__init__(*args, **kwargs)
-        self.fields["currency"].queryset = get_org_defined_currencies(self.organization)
         self.fields["status"].choices = self.get_allowed_statuses()
 
     # TODO: Refactoring Required

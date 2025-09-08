@@ -13,9 +13,14 @@ class UserActionMetadataBuilder:
         user: User, action_type: str, timestamp_key: Optional[str] = None
     ) -> Dict[str, Any]:
         """Build metadata for user actions (create/update/delete)."""
+        # Use better naming conventions for clarity
+        action_suffix = "by" if action_type in ["create", "update", "delete"] else ""
+        id_key = f"{action_type}{'_' + action_suffix if action_suffix else ''}_id"
+        email_key = f"{action_type}{'_' + action_suffix if action_suffix else ''}_email"
+        
         metadata = {
-            f"{action_type}_id": str(user.user_id),
-            f"{action_type}_email": user.email,
+            id_key: str(user.user_id),
+            email_key: user.email,
         }
 
         if timestamp_key:

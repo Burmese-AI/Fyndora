@@ -87,7 +87,7 @@ def auditlog_list_view(request, organization_id):
 
         # Get audit logs using the selector
         audit_logs = AuditLogSelector.get_audit_logs_with_filters(
-           # we shoul use org id 
+            # we shoul use org id
             user_id=user_id,
             action_type=action_type,
             start_date=start_date_obj,

@@ -17,8 +17,8 @@ from .constants import EntryStatus, EntryType
 from .models import Entry
 from .stats import EntryStats
 
+
 class EntryService:
-    
     @staticmethod
     def build_entry(
         *,
@@ -33,24 +33,24 @@ class EntryService:
         currency,
         submitted_by_org_member=None,
         submitted_by_team_member=None,
-        status: EntryStatus=EntryStatus.PENDING, 
-        status_note="", 
+        status: EntryStatus = EntryStatus.PENDING,
+        status_note="",
         status_last_modified_at=timezone.now(),
     ):
-        #Get Currency by code
+        # Get Currency by code
         currency = get_currency_by_code(currency_code)
         if not currency:
             return None
-        #Get the closest exchange rate
+        # Get the closest exchange rate
         exchange_rate_used = get_closest_exchanged_rate(
             currency=currency,
             occurred_at=occurred_at,
             organization=organization,
-            workspace=workspace
+            workspace=workspace,
         )
         if not exchange_rate_used:
             return None
-        #Prepare entry object
+        # Prepare entry object
         entry = Entry(
             entry_type=entry_type,
             organization=organization,
@@ -61,30 +61,32 @@ class EntryService:
             occurred_at=occurred_at,
             currency=currency,
             exchange_rate_used=exchange_rate_used.rate,
-            org_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, OrganizationExchangeRate) else None,
-            workspace_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, WorkspaceExchangeRate) else None,
+            org_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, OrganizationExchangeRate)
+            else None,
+            workspace_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+            else None,
             submitted_by_org_member=submitted_by_org_member,
             submitted_by_team_member=submitted_by_team_member,
             status=status,
             is_flagged=True,
         )
-        #Add status related metadata if not pending
+        # Add status related metadata if not pending
         if status != EntryStatus.PENDING:
-            entry.status_note=status_note
-            entry.status_last_updated_at=status_last_modified_at
-            entry.last_status_modified_by=submitted_by_org_member
+            entry.status_note = status_note
+            entry.status_last_updated_at = status_last_modified_at
+            entry.last_status_modified_by = submitted_by_org_member
 
         return entry
 
     @staticmethod
-    def bulk_create_entry(
-        *, 
-        entries: list[Entry]
-    ):
+    def bulk_create_entry(*, entries: list[Entry]):
         try:
             Entry.objects.bulk_create(entries)
         except:
             raise Exception("An error occurred during entry bulk create operation.")
+
 
 def _extract_user_from_actor(actor):
     """
@@ -279,12 +281,7 @@ def update_entry_user_inputs(
 
 
 def update_entry_status(
-    *, 
-    entry: Entry, 
-    status, 
-    status_note, 
-    last_status_modified_by, 
-    request=None
+    *, entry: Entry, status, status_note, last_status_modified_by, request=None
 ):
     old_status = entry.status
     entry.status = status

@@ -1,8 +1,6 @@
 import json
 from typing import Any
 import traceback
-import csv
-import io
 
 from django.db.models import QuerySet
 from django.http import HttpResponse
@@ -12,16 +10,12 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 
-from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
-from apps.entries.forms import BaseImportEntryForm
 from apps.entries.validators import EntryCSVValidator
-from apps.organizations.models import OrganizationExchangeRate
-from apps.workspaces.models import WorkspaceExchangeRate, WorkspaceTeam
+from apps.workspaces.models import WorkspaceTeam
 
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME, EntryStatus
 from .mixins import (
-    EntryFormMixin,
     EntryRequiredMixin,
     EntryUrlIdentifierMixin,
 )
@@ -32,7 +26,11 @@ from apps.core.views.mixins import (
     HtmxOobResponseMixin,
     HtmxInvalidResponseMixin,
 )
-from apps.entries.services import EntryService, bulk_delete_entries, bulk_update_entry_status
+from apps.entries.services import (
+    EntryService,
+    bulk_delete_entries,
+    bulk_update_entry_status,
+)
 from apps.remittance.services import (
     calculate_due_amount,
     calculate_paid_amount,
@@ -65,9 +63,7 @@ class EntryDetailView(OrganizationRequiredMixin, EntryRequiredMixin, BaseDetailV
 
 
 class BaseEntryBulkActionView(
-    HtmxInvalidResponseMixin, 
-    HtmxOobResponseMixin, 
-    TemplateView
+    HtmxInvalidResponseMixin, HtmxOobResponseMixin, TemplateView
 ):
     table_template_name = "entries/layouts/base_entry_content_layout.html"
     context_object_name = CONTEXT_OBJECT_NAME
@@ -305,9 +301,9 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
 
 class BaseEntryBulkCreateView(BaseEntryBulkActionView):
     modal_template_name = "entries/components/bulk_create_modal.html"
-    #specify entry type if entry type is not specified in the file
+    # specify entry type if entry type is not specified in the file
     entry_type_to_create = None
-    
+
     def get_form_kwargs(self) -> dict:
         kwargs = {}
         kwargs["org_member"] = self.org_member
@@ -338,15 +334,18 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
         )
         return kwargs
 
-    
     def post(self, request, *args, **kwargs):
         try:
-            self.form = self.form_class(data=request.POST, files=request.FILES, **self.get_form_kwargs())
+            self.form = self.form_class(
+                data=request.POST, files=request.FILES, **self.get_form_kwargs()
+            )
             if not self.form.is_valid():
                 return self._render_htmx_error_response(form=self.form)
 
             validator = EntryCSVValidator(request.FILES["file"])
-            valid_rows, errors = validator.validate(verify_team_level_type=False if self.entry_type_to_create else True)
+            valid_rows, errors = validator.validate(
+                verify_team_level_type=False if self.entry_type_to_create else True
+            )
 
             valid_entries = []
             for row in valid_rows:
@@ -354,28 +353,31 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                     currency_code=row["Currency"],
                     amount=row["Amount"],
                     occurred_at=row["Occurred At"],
-                    description=row["Description"].strip() or self.form.cleaned_data.get("description").strip(),
+                    description=row["Description"].strip()
+                    or self.form.cleaned_data.get("description").strip(),
                     entry_type=self.entry_type_to_create or row["Type"],
                     organization=self.organization,
                     workspace=getattr(self, "workspace", None),
                     workspace_team=getattr(self, "workspace_team", None),
                     currency=row["Currency"],
                     submitted_by_org_member=self.org_member,
-                    submitted_by_team_member=getattr(self, "workspace_team_member", None),
+                    submitted_by_team_member=getattr(
+                        self, "workspace_team_member", None
+                    ),
                     status=self.form.cleaned_data.get("status"),
-                    status_note=self.form.cleaned_data.get("status_note").strip()
+                    status_note=self.form.cleaned_data.get("status_note").strip(),
                 )
                 if entry:
                     valid_entries.append(entry)
-                            
+
             # Validate each entry
             success, message = self.perform_action(request, valid_entries)
-            
+
             if not success:
                 messages.error(self.request, message)
                 return self._render_htmx_error_response(form=self.form)
 
-            messages.success(request, f"{ message }")
+            messages.success(request, f"{message}")
             return self._render_htmx_success_response()
 
         except Exception as e:
@@ -383,15 +385,12 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
             messages.error(request, str(e))
             return self._render_htmx_error_response(form=self.form)
 
-
     def perform_action(self, request, entries: list[Entry]) -> tuple[bool, str | None]:
-        
         try:
-        
             with transaction.atomic():
                 EntryService.bulk_create_entry(entries=entries)
-                self.perform_post_action(entries)   
+                self.perform_post_action(entries)
             return True, f"Successfully imported {len(entries)} entry/ies"
-        
+
         except Exception as e:
             return False, f"An Error occurred during bulk create: {e}"

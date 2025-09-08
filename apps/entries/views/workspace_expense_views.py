@@ -343,9 +343,8 @@ class WorkspaceExpenseBulkCreateView(
     WorkspaceLevelEntryView,
     StatusFilteringMixin,
     BaseGetModalFormView,
-    BaseEntryBulkCreateView
+    BaseEntryBulkCreateView,
 ):
-    
     form_class = BaseImportEntryForm
     modal_template_name = "entries/components/bulk_create_modal.html"
     entry_type_to_create = EntryType.WORKSPACE_EXP
@@ -369,7 +368,7 @@ class WorkspaceExpenseBulkCreateView(
         return reverse(
             "workspace_expense_bulk_create",
             kwargs={
-                "organization_id": self.organization.pk, 
-                "workspace_id": self.workspace.pk
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
             },
         )

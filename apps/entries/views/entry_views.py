@@ -20,7 +20,11 @@ from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin,
     HtmxTableServiceMixin,
 )
-from apps.remittance.services import calculate_due_amount, calculate_paid_amount, update_remittance
+from apps.remittance.services import (
+    calculate_due_amount,
+    calculate_paid_amount,
+    update_remittance,
+)
 from apps.teams.constants import TeamMemberRole
 
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
@@ -602,12 +606,13 @@ class WorkspaceTeamEntryBulkUpdateView(
     def get_modal_title(self) -> str:
         return ""
 
+
 class WorkspaceTeamEntryBulkCreateView(
     WorkspaceTeamRequiredMixin,
     TeamLevelEntryView,
     TeamLevelEntryFiltering,
     BaseGetModalFormView,
-    BaseEntryBulkCreateView
+    BaseEntryBulkCreateView,
 ):
     form_class = BaseImportEntryForm
     modal_template_name = "entries/components/bulk_create_modal.html"
@@ -631,15 +636,17 @@ class WorkspaceTeamEntryBulkCreateView(
         return reverse(
             "workspace_team_entry_bulk_create",
             kwargs={
-                "organization_id": self.organization.pk, 
+                "organization_id": self.organization.pk,
                 "workspace_id": self.workspace.pk,
                 "workspace_team_id": self.workspace_team.pk,
             },
         )
-        
+
     def perform_post_action(self, entries: list[Entry]):
         remittance = self.workspace_team.remittance
         # After delete, both due/paid amounts might change
         remittance.due_amount = calculate_due_amount(workspace_team=self.workspace_team)
-        remittance.paid_amount = calculate_paid_amount(workspace_team=self.workspace_team)
+        remittance.paid_amount = calculate_paid_amount(
+            workspace_team=self.workspace_team
+        )
         update_remittance(remittance=remittance)

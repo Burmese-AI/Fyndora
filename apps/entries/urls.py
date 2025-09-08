@@ -55,7 +55,7 @@ urlpatterns = [
     path(
         "expenses/bulk-create/",
         OrganizationExpenseBulkCreateView.as_view(),
-        name="organization_expense_bulk_create"
+        name="organization_expense_bulk_create",
     ),
     path(
         "expenses/bulk-delete/",
@@ -100,7 +100,7 @@ urlpatterns = [
     path(
         "workspaces/<uuid:workspace_id>/expenses/bulk-create/",
         WorkspaceExpenseBulkCreateView.as_view(),
-        name="workspace_expense_bulk_create"
+        name="workspace_expense_bulk_create",
     ),
     path(
         "workspaces/<uuid:workspace_id>/entries",

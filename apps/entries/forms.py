@@ -270,38 +270,44 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
 class BaseImportEntryForm(forms.Form):
     file = forms.FileField(
         label="Import File",
-        widget=forms.ClearableFileInput(attrs={
-            "class": "file-input file-input-bordered file-input-sm w-full"
-        }),
+        widget=forms.ClearableFileInput(
+            attrs={"class": "file-input file-input-bordered file-input-sm w-full"}
+        ),
     )
     status = forms.ChoiceField(
         choices=EntryStatus.choices,
         required=True,
-        widget=forms.Select(attrs={
-            "class": "select select-bordered w-full",
-            "placeholder": "Select Status",
-        }),
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full",
+                "placeholder": "Select Status",
+            }
+        ),
     )
     backup_description = forms.CharField(
         max_length=255,
         required=False,
-        widget=forms.TextInput(attrs={
-            "class": "input input-bordered w-full",
-            "placeholder": "Brief description of the expense",
-        }),
+        widget=forms.TextInput(
+            attrs={
+                "class": "input input-bordered w-full",
+                "placeholder": "Brief description of the expense",
+            }
+        ),
     )
     status_note = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={
-            "class": "textarea textarea-bordered w-full",
-            "placeholder": "Leave notes for the status update",
-            "rows": 3,
-        }),
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea textarea-bordered w-full",
+                "placeholder": "Leave notes for the status update",
+                "rows": 3,
+            }
+        ),
         label="Status Notes",  # Optional
-        help_text="Optional notes about this status update."  # Optional
+        help_text="Optional notes about this status update.",  # Optional
     )
-    
-    # TODO: Refactoring Required 
+
+    # TODO: Refactoring Required
     def __init__(self, *args, **kwargs):
         self.org_member = kwargs.pop("org_member", None)
         self.organization = kwargs.pop("organization", None)
@@ -339,12 +345,11 @@ class BaseImportEntryForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        #Validate File type (Allow only CSV)
+        # Validate File type (Allow only CSV)
         uploaded_file = self.cleaned_data.get("file")
         if uploaded_file:
             file_name, file_extension = os.path.splitext(uploaded_file.name)
             if file_extension.lower() not in [".csv"]:
                 raise forms.ValidationError("Only CSV file is allowed.")
-        
+
         return cleaned_data
-        

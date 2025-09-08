@@ -1,7 +1,7 @@
 {% load humanize %}
 {% load entry_url_identifier %}
 
-<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.entry_id }}">
+<tr {% if is_oob %}hx-swap-oob="true"{% endif %} id="row-{{ entry.entry_id }}" class="font-mono">
   <!-- Checkbox -->
   <td>
     <label>

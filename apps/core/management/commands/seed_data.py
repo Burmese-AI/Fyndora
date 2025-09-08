@@ -883,12 +883,22 @@ class Command(BaseCommand):
         """Create entries for each workspace with proper role separation."""
         try:
             # faker = Faker()
-            currencies = list(Currency.objects.all())
             entry_statuses = [choice[0] for choice in EntryStatus.choices]
 
             for workspace in workspaces:
                 # Get workspace teams for this workspace
                 ws_teams = [wt for wt in workspace_teams if wt.workspace == workspace]
+
+                # Choose currencies only from those that have org exchange rates for this org
+                org_currency_qs = Currency.objects.filter(
+                    organizations_organizationexchangerate__organization=workspace.organization,
+                    organizations_organizationexchangerate__deleted_at__isnull=True,
+                ).distinct()
+                if org_currency_qs.exists():
+                    currencies = list(org_currency_qs)
+                else:
+                    # Fallback to all currencies if none are configured for the org
+                    currencies = list(Currency.objects.all())
 
                 # Create entries with proper role separation
                 workspace_exp_count = entries_per_workspace // 4

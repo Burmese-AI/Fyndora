@@ -161,7 +161,7 @@
           <div class="flex-1">
             <span class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Submitted By</span>
             <p class="text-sm font-semibold text-base-content mt-1 capitalize">
-              {{ entry.submitted_by_team_member.user.username|default:entry.submitted_by_org_member.user.username|default:"-" }}
+              {{ entry.submitter }}
             </p>
           </div>
         </div>
@@ -265,15 +265,23 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% if entry.org_exchange_rate_ref %}
         <div class="p-3 bg-base-100 rounded-lg">
-          <span class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Organization Reference</span>
-          <p class="text-sm font-mono text-base-content mt-1">{{ entry.org_exchange_rate_ref.organization_exchange_rate_id }}</p>
+          <span class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Organization Defined Rate</span>
+          <div class="mt-1 text-sm text-base-content">
+            <div class="font-mono">Currency: {{ entry.org_exchange_rate_ref.currency.code }}</div>
+            <div class="font-mono">Rate: {{ entry.org_exchange_rate_ref.rate|floatformat:2 }}</div>
+            <div class="font-mono">Effective: {{ entry.org_exchange_rate_ref.effective_date|date:"j M Y" }}</div>
+          </div>
         </div>
         {% endif %}
         
         {% if entry.workspace_exchange_rate_ref %}
         <div class="p-3 bg-base-100 rounded-lg">
           <span class="text-xs font-medium text-base-content/60 uppercase tracking-wide">Workspace Reference</span>
-          <p class="text-sm font-mono text-base-content mt-1">{{ entry.workspace_exchange_rate_ref.workspace_exchange_rate_id }}</p>
+          <div class="mt-1 text-sm text-base-content">
+            <div class="font-mono">Currency: {{ entry.workspace_exchange_rate_ref.currency.code }}</div>
+            <div class="font-mono">Rate: {{ entry.workspace_exchange_rate_ref.rate|floatformat:2 }}</div>
+            <div class="font-mono">Effective: {{ entry.workspace_exchange_rate_ref.effective_date|date:"j M Y" }}</div>
+          </div>
         </div>
         {% endif %}
       </div>

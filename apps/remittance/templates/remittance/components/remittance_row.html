@@ -3,7 +3,7 @@
 
 <tr 
     {% if is_oob %}hx-swap-oob="true"{% endif %}
-    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-yellow-100 {% elif not remittance.paid_within_deadlines %}bg-red-100{% endif %}" 
+    class="hover:bg-base-100 transition-colors {% if remittance.is_overpaid %}bg-yellow-100 {% elif not remittance.paid_within_deadlines %}bg-red-100{% endif %} " 
     id="remittance_row-{{ remittance.remittance_id }}"
 >
     <!-- Member Info -->
@@ -30,36 +30,60 @@
     
     <!-- Due Amount -->
     <td>
-        <div class="text-sm">
+        <div class="text-sm font-mono">
             {{ remittance.due_amount|intcomma }}
         </div>
     </td>
     
     <!-- Paid Amount -->
     <td>
-        {{ remittance.paid_amount|intcomma }}
+        <div class="text-sm font-mono">
+            {{ remittance.paid_amount|intcomma }}
+        </div>
     </td>
 
     <!-- Remaining Amount -->
     <td>
         {% if remittance.is_overpaid %}
-            <span class="text-red-500">
+            <span class="text-red-500 font-mono">
                 {{ remittance.remaining_amount|intcomma }} (Overpaid)
             </span>
         {% else %}
+            <div class="text-sm font-mono">
             {{ remittance.remaining_amount|intcomma }} 
+            </div>
         {% endif %}
     </td>
     
     <!-- Status of the remittance -->
     <td>
-        <div class="text-sm opacity-70">
-            {{ remittance.status }}
+        <div class="text-sm opacity-70 font-mono">
+            <span
+      class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm rounded-full capitalize
+        {% if remittance.status == 'paid' %}
+          bg-green-500 text-white
+        {% elif remittance.status == 'pending' %}
+          bg-amber-400 text-black
+        {% elif remittance.status == 'partial' %}
+          bg-sky-500 text-white
+        {% elif remittance.status == 'overpaid' %}
+          bg-purple-500 text-white
+        {% elif remittance.status == 'overdue' %}
+          bg-red-500 text-white
+        {% elif remittance.status == 'canceled' %}
+          bg-neutral text-white
+        {% else %}
+          bg-neutral text-white
+        {% endif %}
+      "
+    >
+            {{ remittance.get_status_display }}
+        </span>
         </div>
     </td>
     <!-- End Date of the workspace -->
     <td>
-        <div class="text-sm opacity-70">
+        <div class="text-sm opacity-70 font-mono">
             {{ remittance.workspace_team.workspace.end_date }}
         </div>
     </td>

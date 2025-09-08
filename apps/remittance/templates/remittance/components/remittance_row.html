@@ -60,14 +60,18 @@
         <div class="text-sm opacity-70 font-mono">
             <span
       class="inline-block whitespace-nowrap shadow px-3 py-1 text-sm rounded-full capitalize
-        {% if remittance.status == 'approved' %}
+        {% if remittance.status == 'paid' %}
           bg-green-500 text-white
         {% elif remittance.status == 'pending' %}
           bg-amber-400 text-black
-        {% elif remittance.status == 'rejected' %}
+        {% elif remittance.status == 'partial' %}
+          bg-sky-500 text-white
+        {% elif remittance.status == 'overpaid' %}
+          bg-purple-500 text-white
+        {% elif remittance.status == 'overdue' %}
           bg-red-500 text-white
-        {% elif remittance.status == 'flagged' %}
-          bg-orange-500 text-white
+        {% elif remittance.status == 'canceled' %}
+          bg-neutral text-white
         {% else %}
           bg-neutral text-white
         {% endif %}

@@ -188,7 +188,7 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMember:
+def update_team_member_role(*, form, team_member, previous_role, team, user=None) -> TeamMember:
     """
     Updates a team member role from a form.
     """
@@ -203,12 +203,12 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
             team.save()
             update_team_coordinator_group(team, team_member.organization_member, None)
         # Set audit context to prevent duplicate logging from signal handlers
-        team_member._audit_user = team_member.organization_member.user
+        current_user = user if user else team_member.organization_member.user
+        team_member._audit_user = current_user
         team_member = model_update(team_member, {"role": form.cleaned_data["role"]})
 
         # Business logic logging: Log role changes
         try:
-            current_user = team_member.organization_member.user
             BusinessAuditLogger.log_team_member_action(
                 user=current_user,
                 team_member=team_member,
@@ -230,7 +230,6 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
     except Exception as e:
         # Audit logging: Log team member role update failure
         try:
-            current_user = team_member.organization_member.user
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_member_role_update",
@@ -250,13 +249,13 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
 
 
-def update_team_from_form(form, team, organization, previous_team_coordinator) -> Team:
+def update_team_from_form(form, team, organization, previous_team_coordinator, user=None) -> Team:
     """
     Updates a team from a form.
     """
     try:
         # Set audit context to prevent duplicate logging from signal handlers
-        current_user = team.created_by.user
+        current_user = user if user else team.created_by.user
         team._audit_user = current_user
         team = model_update(team, form.cleaned_data)
         new_team_coordinator = team.team_coordinator
@@ -425,7 +424,6 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     except Exception as e:
         # Audit logging: Log team update failure
         try:
-            current_user = team.created_by.user
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_form_update",
@@ -445,7 +443,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
         raise TeamUpdateError(f"Failed to update team: {str(e)}")
 
 
-def remove_team_member(team_member: TeamMember, team: Team) -> None:
+def remove_team_member(team_member: TeamMember, team: Team, user=None) -> None:
     """
     Removes a team member.
     """
@@ -457,9 +455,8 @@ def remove_team_member(team_member: TeamMember, team: Team) -> None:
 
         # Audit logging: Log team member removal
         try:
-            # Note: This function doesn't have access to the current user,
-            # so we use the team member's user for audit logging
-            current_user = team_member.organization_member.user
+            # Use the actual user performing the removal, fallback to team member's user
+            current_user = user if user else team_member.organization_member.user
             BusinessAuditLogger.log_team_member_action(
                 user=current_user,
                 team_member=team_member,
@@ -505,7 +502,7 @@ def remove_team_member(team_member: TeamMember, team: Team) -> None:
     except Exception as e:
         # Audit logging: Log team member removal failure
         try:
-            current_user = team_member.organization_member.user
+            # Use the current_user variable already set at the beginning of the function
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_member_removal",

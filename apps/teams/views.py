@@ -188,6 +188,7 @@ def edit_team_view(request, organization_id, team_id):
                     team=team,
                     organization=organization,
                     previous_team_coordinator=previous_team_coordinator,
+                    user=request.user,
                 )
 
                 messages.success(request, "Team updated successfully.")
@@ -437,7 +438,7 @@ def remove_team_member_view(request, organization_id, team_id, team_member_id):
                     remove_user_from_workspace_team_group(
                         joined_workspace_teams, team_member
                     )
-                remove_team_member(team_member, team)
+                remove_team_member(team_member, team, user=request.user)
                 messages.success(request, "Team member removed successfully.")
 
                 permissions = {
@@ -520,6 +521,7 @@ def edit_team_member_role_view(request, organization_id, team_id, team_member_id
                     team_member=team_member,
                     previous_role=previous_role,
                     team=team,
+                    user=request.user,
                 )
                 messages.success(request, "Team member role updated successfully.")
                 permissions = {

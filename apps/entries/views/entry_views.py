@@ -20,10 +20,16 @@ from apps.core.views.service_layer_mixins import (
     HtmxRowResponseMixin,
     HtmxTableServiceMixin,
 )
+from apps.remittance.services import (
+    calculate_due_amount,
+    calculate_paid_amount,
+    update_remittance,
+)
 from apps.teams.constants import TeamMemberRole
 
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..forms import (
+    BaseImportEntryForm,
     CreateWorkspaceTeamEntryForm,
     UpdateWorkspaceTeamEntryForm,
 )
@@ -37,6 +43,7 @@ from ..utils import (
     can_update_other_submitters_entry,
 )
 from .base_views import (
+    BaseEntryBulkCreateView,
     TeamLevelEntryView,
     BaseEntryBulkDeleteView,
     BaseEntryBulkUpdateView,
@@ -598,3 +605,48 @@ class WorkspaceTeamEntryBulkUpdateView(
 
     def get_modal_title(self) -> str:
         return ""
+
+
+class WorkspaceTeamEntryBulkCreateView(
+    WorkspaceTeamRequiredMixin,
+    TeamLevelEntryView,
+    TeamLevelEntryFiltering,
+    BaseGetModalFormView,
+    BaseEntryBulkCreateView,
+):
+    form_class = BaseImportEntryForm
+    modal_template_name = "entries/components/bulk_create_modal.html"
+    entry_type_to_create = None
+
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            workspace=self.workspace,
+            workspace_team=self.workspace_team,
+            entry_types=[
+                EntryType.INCOME,
+                EntryType.DISBURSEMENT,
+                EntryType.REMITTANCE,
+            ],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_team_entry_bulk_create",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+                "workspace_team_id": self.workspace_team.pk,
+            },
+        )
+
+    def perform_post_action(self, entries: list[Entry]):
+        remittance = self.workspace_team.remittance
+        # After delete, both due/paid amounts might change
+        remittance.due_amount = calculate_due_amount(workspace_team=self.workspace_team)
+        remittance.paid_amount = calculate_paid_amount(
+            workspace_team=self.workspace_team
+        )
+        update_remittance(remittance=remittance)

@@ -851,7 +851,6 @@ class WorkspaceExchangeRateDeleteView(
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print(f"\n\n\nDeleting exchange rate: {self.exchange_rate}")
         from .services import delete_workspace_exchange_rate
 
         try:

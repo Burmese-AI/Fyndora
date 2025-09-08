@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 
+from apps.entries.validators import EntryCSVValidator
 from apps.workspaces.models import WorkspaceTeam
 
 from ..models import Entry
@@ -25,7 +26,11 @@ from apps.core.views.mixins import (
     HtmxOobResponseMixin,
     HtmxInvalidResponseMixin,
 )
-from apps.entries.services import bulk_delete_entries, bulk_update_entry_status
+from apps.entries.services import (
+    EntryService,
+    bulk_delete_entries,
+    bulk_update_entry_status,
+)
 from apps.remittance.services import (
     calculate_due_amount,
     calculate_paid_amount,
@@ -123,14 +128,6 @@ class BaseEntryBulkActionView(
 
             # Filter out the entries
             entries = base_qs.filter(pk__in=entry_ids)
-
-            # List existing entry ids
-            # existing_ids = set(entries.values_list("pk", flat=True))
-
-            # List missing or inaccessible entries
-            # requested_set = set(entry_ids)
-            # commented out for ruff fix because it is not used (THA)
-            # missing_ids = requested_set - existing_ids
 
             # Validate each entry
             success, message = self.perform_action(request, entries)
@@ -300,3 +297,103 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
                     workspace_team=workspace_team
                 )
             update_remittance(remittance=remittance)
+
+
+class BaseEntryBulkCreateView(BaseEntryBulkActionView):
+    modal_template_name = "entries/components/bulk_create_modal.html"
+    # specify entry type if entry type is not specified in the file
+    entry_type_to_create = None
+
+    def get_form_kwargs(self) -> dict:
+        kwargs = {}
+        kwargs["org_member"] = self.org_member
+        kwargs["organization"] = self.organization
+        kwargs["is_org_admin"] = self.is_org_admin
+        kwargs["is_workspace_admin"] = (
+            self.is_workspace_admin if hasattr(self, "is_workspace_admin") else None
+        )
+        kwargs["is_operation_reviewer"] = (
+            self.is_operation_reviewer
+            if hasattr(self, "is_operation_reviewer")
+            else None
+        )
+        kwargs["is_team_coordinator"] = (
+            self.is_team_coordinator if hasattr(self, "is_team_coordinator") else None
+        )
+        kwargs["workspace"] = self.workspace if hasattr(self, "workspace") else None
+        kwargs["workspace_team"] = (
+            self.workspace_team if hasattr(self, "workspace_team") else None
+        )
+        kwargs["workspace_team_member"] = (
+            self.workspace_team_member
+            if hasattr(self, "workspace_team_member")
+            else None
+        )
+        kwargs["workspace_team_role"] = (
+            self.workspace_team_role if hasattr(self, "workspace_team_role") else None
+        )
+        return kwargs
+
+    def post(self, request, *args, **kwargs):
+        try:
+            self.form = self.form_class(
+                data=request.POST, files=request.FILES, **self.get_form_kwargs()
+            )
+            if not self.form.is_valid():
+                return self._render_htmx_error_response(form=self.form)
+
+            validator = EntryCSVValidator(request.FILES["file"])
+            valid_rows, errors = validator.validate(
+                verify_team_level_type=False if self.entry_type_to_create else True
+            )
+
+            valid_entries = []
+            for row in valid_rows:
+                entry = EntryService.build_entry(
+                    currency_code=row["Currency"],
+                    amount=row["Amount"],
+                    occurred_at=row["Occurred At"],
+                    description=row["Description"].strip()
+                    or self.form.cleaned_data.get("description").strip(),
+                    entry_type=self.entry_type_to_create or row["Type"],
+                    organization=self.organization,
+                    workspace=getattr(self, "workspace", None),
+                    workspace_team=getattr(self, "workspace_team", None),
+                    currency=row["Currency"],
+                    submitted_by_org_member=self.org_member,
+                    submitted_by_team_member=getattr(
+                        self, "workspace_team_member", None
+                    ),
+                    status=self.form.cleaned_data.get("status"),
+                    status_note=self.form.cleaned_data.get("status_note").strip(),
+                )
+                if entry:
+                    valid_entries.append(entry)
+
+            # Validate each entry
+            success, message = self.perform_action(request, valid_entries)
+
+            if not success:
+                messages.error(self.request, message)
+                return self._render_htmx_error_response(form=self.form)
+
+            messages.success(request, f"{message}")
+            return self._render_htmx_success_response()
+
+        except Exception as e:
+            traceback.print_exc()
+            messages.error(request, str(e))
+            return self._render_htmx_error_response(form=self.form)
+
+    def perform_action(self, request, entries: list[Entry]) -> tuple[bool, str | None]:
+        try:
+            if not entries:
+                return False, f"No valid entry found"
+            
+            with transaction.atomic():
+                EntryService.bulk_create_entry(entries=entries)
+                self.perform_post_action(entries)
+            return True, f"Successfully imported {len(entries)} entry/ies"
+
+        except Exception as e:
+            return False, f"An Error occurred during bulk create: {e}"

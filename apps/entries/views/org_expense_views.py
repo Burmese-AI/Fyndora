@@ -22,6 +22,7 @@ from apps.core.views.service_layer_mixins import (
 
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
 from ..forms import (
+    BaseImportEntryForm,
     BaseUpdateEntryForm,
     CreateOrganizationExpenseEntryForm,
 )
@@ -35,6 +36,7 @@ from ..utils import (
     can_view_org_expense,
 )
 from .base_views import (
+    BaseEntryBulkCreateView,
     OrganizationLevelEntryView,
     BaseEntryBulkDeleteView,
     BaseEntryBulkUpdateView,
@@ -80,7 +82,6 @@ class OrganizationExpenseListView(
                 self.request.user, self.organization
             ),
         }
-        print(f"\n\n{context}\n\n")
         return context
 
 
@@ -278,10 +279,48 @@ class OrganizationExpenseBulkDeleteView(
 class OrganizationExpenseBulkUpdateView(
     OrganizationRequiredMixin,
     OrganizationLevelEntryView,
-    BaseGetModalView,
     StatusFilteringMixin,
     BaseEntryBulkUpdateView,
+    BaseGetModalView,
 ):
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+        )
+
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.ORG_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def validate_entry(self, entry):
+        return True
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "organization_expense_bulk_update",
+            kwargs={"organization_id": self.organization.pk},
+        )
+
+    def get_modal_title(self) -> str:
+        return ""
+
+
+class OrganizationExpenseBulkCreateView(
+    OrganizationRequiredMixin,
+    OrganizationLevelEntryView,
+    StatusFilteringMixin,
+    BaseGetModalFormView,
+    BaseEntryBulkCreateView,
+):
+    form_class = BaseImportEntryForm
+    modal_template_name = "entries/components/bulk_create_modal.html"
+    entry_type_to_create = EntryType.ORG_EXP
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -301,7 +340,7 @@ class OrganizationExpenseBulkUpdateView(
 
     def get_post_url(self) -> str:
         return reverse(
-            "organization_expense_bulk_update",
+            "organization_expense_bulk_create",
             kwargs={"organization_id": self.organization.pk},
         )
 

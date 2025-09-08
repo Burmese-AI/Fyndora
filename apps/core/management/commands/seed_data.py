@@ -890,13 +890,10 @@ class Command(BaseCommand):
                 ws_teams = [wt for wt in workspace_teams if wt.workspace == workspace]
 
                 # Choose currencies only from those that have org exchange rates for this org
-                org_currency_qs = (
-                    Currency.objects.filter(
-                        organizations_organizationexchangerate__organization=workspace.organization,
-                        organizations_organizationexchangerate__deleted_at__isnull=True,
-                    )
-                    .distinct()
-                )
+                org_currency_qs = Currency.objects.filter(
+                    organizations_organizationexchangerate__organization=workspace.organization,
+                    organizations_organizationexchangerate__deleted_at__isnull=True,
+                ).distinct()
                 if org_currency_qs.exists():
                     currencies = list(org_currency_qs)
                 else:

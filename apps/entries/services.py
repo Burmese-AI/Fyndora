@@ -76,6 +76,12 @@ class EntryService:
 
         return entry
 
+    @staticmethod
+    def bulk_create_entry(*, entries: list[Entry]):
+        try:
+            Entry.objects.bulk_create(entries)
+        except:
+            raise Exception("An error occurred during entry bulk create operation.")
 
 def _extract_user_from_actor(actor):
     """

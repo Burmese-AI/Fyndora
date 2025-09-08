@@ -365,8 +365,8 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                     
             print(f"valid entries => {valid_entries}")
 
-            # Bulk create, or save as needed
-            # Entry.objects.bulk_create(valid_entries)
+            with transaction.atomic():
+                EntryService.bulk_create_entry(entries=valid_entries)
 
             messages.success(request, f"Imported {len(valid_entries)} entries, {len(errors)} errors")
             return self._render_htmx_success_response()

@@ -319,7 +319,6 @@ class BaseImportEntryForm(forms.Form):
     # TODO: Refactoring Required
     def get_allowed_statuses(self):
         # OA, WA, OR => ALL STATUSES
-        print(self.is_org_admin, self.is_workspace_admin, self.is_operation_reviewer)
         if self.is_org_admin or self.is_workspace_admin or self.is_operation_reviewer:
             allowed_statuses = EntryStatus.values
         # TC => PENDING, REVIEWED, REJECTED

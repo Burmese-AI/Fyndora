@@ -28,7 +28,6 @@ class OrganizationRequiredMixin:
             OrganizationMember, user=request.user, organization=self.organization
         )
         self.is_org_admin = self.org_member == self.organization.owner
-        print(f"{self.organization} | {self.org_member} | {self.is_org_admin}")
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)

@@ -336,7 +336,6 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
         kwargs["workspace_team_role"] = (
             self.workspace_team_role if hasattr(self, "workspace_team_role") else None
         )
-        print(kwargs)
         return kwargs
 
     
@@ -347,7 +346,7 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                 return self._render_htmx_error_response(form=self.form)
 
             validator = EntryCSVValidator(request.FILES["file"])
-            valid_rows, errors = validator.validate()
+            valid_rows, errors = validator.validate(verify_team_level_type=False if self.entry_type_to_create else True)
 
             valid_entries = []
             for row in valid_rows:
@@ -368,16 +367,31 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                 )
                 if entry:
                     valid_entries.append(entry)
-                    
-            print(f"valid entries => {valid_entries}")
+                            
+            # Validate each entry
+            success, message = self.perform_action(request, valid_entries)
+            
+            if not success:
+                messages.error(self.request, message)
+                return self._render_htmx_error_response(form=self.form)
 
-            with transaction.atomic():
-                EntryService.bulk_create_entry(entries=valid_entries)
-
-            messages.success(request, f"Imported {len(valid_entries)} entries, {len(errors)} errors")
+            messages.success(request, f"{ message }")
             return self._render_htmx_success_response()
 
         except Exception as e:
             traceback.print_exc()
             messages.error(request, str(e))
             return self._render_htmx_error_response(form=self.form)
+
+
+    def perform_action(self, request, entries: list[Entry]) -> tuple[bool, str | None]:
+        
+        try:
+        
+            with transaction.atomic():
+                EntryService.bulk_create_entry(entries=entries)
+                self.perform_post_action(entries)   
+            return True, f"Successfully imported {len(entries)} entry/ies"
+        
+        except Exception as e:
+            return False, f"An Error occurred during bulk create: {e}"

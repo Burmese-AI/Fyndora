@@ -14,7 +14,7 @@ class EntryCSVValidator:
     def __init__(self, file):
         self.file = file
 
-    def validate(self):
+    def validate(self, verify_team_level_type:bool = False):
         data = io.TextIOWrapper(self.file.file, encoding="utf-8")
         reader = csv.DictReader(data)
 
@@ -23,6 +23,16 @@ class EntryCSVValidator:
             try:
                 # Normalize
                 row["Amount"] = Decimal(row["Amount"])
+                # Validate Entry Type
+                if verify_team_level_type:
+                    row["Type"] = row["Type"].strip().lower()
+                    if row["Type"] not in {
+                        EntryType.INCOME.value,
+                        EntryType.DISBURSEMENT.value,
+                        EntryType.REMITTANCE.value,
+                    }:
+                        continue
+                
                 valid_rows.append(row)
             except Exception as e:
                 errors.append((i, str(e)))

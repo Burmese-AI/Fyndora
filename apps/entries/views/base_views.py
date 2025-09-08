@@ -14,6 +14,7 @@ from django.db import transaction
 
 from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
 from apps.entries.forms import BaseImportEntryForm
+from apps.entries.validators import EntryCSVValidator
 from apps.organizations.models import OrganizationExchangeRate
 from apps.workspaces.models import WorkspaceExchangeRate, WorkspaceTeam
 
@@ -31,7 +32,7 @@ from apps.core.views.mixins import (
     HtmxOobResponseMixin,
     HtmxInvalidResponseMixin,
 )
-from apps.entries.services import bulk_delete_entries, bulk_update_entry_status
+from apps.entries.services import EntryService, bulk_delete_entries, bulk_update_entry_status
 from apps.remittance.services import (
     calculate_due_amount,
     calculate_paid_amount,
@@ -339,89 +340,38 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
     
     def post(self, request, *args, **kwargs):
         try:
-            print(f">>> POST: {request.POST}")
-            print(f">>> FILES: {request.FILES}")
-
-            # Collect kwargs from parent method
-            form_kwargs = self.get_form_kwargs()
-            form_kwargs.update({
-                "data": request.POST,
-                "files": request.FILES,
-            })
-
-            # Bind form with both request data and extra kwargs
-            self.form = self.form_class(**form_kwargs)
-
+            self.form = self.form_class(data=request.POST, files=request.FILES, **self.get_form_kwargs())
             if not self.form.is_valid():
-                messages.error(self.request, "Invalid Form Submission")
                 return self._render_htmx_error_response(form=self.form)
-            
-            #Extract valid values from form
-            status = self.form.cleaned_data['status']
-            backup_description = self.form.cleaned_data['backup_description']
-            #Add it to the list of valid ones
-            #Open CSV 
-            uploaded_file = request.FILES["file"]
-            data = io.TextIOWrapper(uploaded_file.file, encoding="utf-8")
-            reader = csv.DictReader(data)
+
+            validator = EntryCSVValidator(request.FILES["file"])
+            valid_rows, errors = validator.validate()
+
             valid_entries = []
-            #Values
-            organization = getattr(self, "organization", None)
-            workspace = getattr(self, "workspace", None)
-            workspace_team = getattr(self, "workspace_team", None)
-            #Iterate
-            for row in reader:
-                # {'Description': 'Taxi', 'Amount': '836.84', 'Occurred At': '2025-08-19', 'Currency': 'USD'}
-                print(row)
-                description = row["Description"]
-                amount = row["Amount"]
-                currency = row["Currency"]
-                occurred_at = row["Occurred At"]
-                #Validate Amount
-                #Get closest exchange rate on each row based on the occurred at
-                currency = get_currency_by_code(code=currency)
-                print(f"Currency => {currency}")
-                exchange_rate_used = get_closest_exchanged_rate(
-                    currency=currency,
-                    occurred_at=occurred_at,
-                    organization=organization,
-                    workspace=workspace
-                )
-                print(f"exchange rate => {exchange_rate_used}")
-                #If not found, skip
-                if not exchange_rate_used:
-                    print("Skipped")
-                    continue
-                #If found, prepare data (exchange rate, its source, status, submitter, backup description)
-                entry = Entry(
+            for row in valid_rows:
+                entry = EntryService.build_entry(
+                    currency_code=row["Currency"],
+                    amount=row["Amount"],
+                    occurred_at=row["Occurred At"],
+                    description=row["Description"],
                     entry_type=EntryType.ORG_EXP,
-                    description=description or backup_description,
-                    amount=amount,
-                    occurred_at=occurred_at,
-                    currency=currency,
-                    exchange_rate_used=exchange_rate_used.rate,
-                    org_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, OrganizationExchangeRate) else None,
-                    workspace_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, WorkspaceExchangeRate) else None,
+                    organization=self.organization,
+                    currency=row["Currency"],
                     submitted_by_org_member=self.org_member,
-                    submitted_by_team_member=getattr(self, "workspace_team_member", None),
-                    status=status,
-                    status_last_updated_at=timezone.now(),
-                    last_status_modified_by=self.org_member,
-                    status_note="",
-                    is_flagged=True,
-                    organization=organization,
-                    workspace=workspace,
-                    workspace_team=workspace_team,
+                    status=self.form.cleaned_data.get("status"),
                 )
-                valid_entries.append(entry)
-                print(entry, "\n")
-            
-            print(len(valid_entries))
-            messages.success(self.request, "Success")
+                if entry:
+                    valid_entries.append(entry)
+                    
+            print(f"valid entries => {valid_entries}")
+
+            # Bulk create, or save as needed
+            # Entry.objects.bulk_create(valid_entries)
+
+            messages.success(request, f"Imported {len(valid_entries)} entries, {len(errors)} errors")
             return self._render_htmx_success_response()
 
         except Exception as e:
             traceback.print_exc()
-            messages.error(self.request, str(e))
+            messages.error(request, str(e))
             return self._render_htmx_error_response(form=self.form)
-

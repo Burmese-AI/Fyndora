@@ -1,3 +1,6 @@
+import csv
+from decimal import Decimal
+import io
 from django.core.exceptions import ValidationError
 
 from apps.teams.constants import TeamMemberRole
@@ -5,6 +8,26 @@ from .constants import EntryStatus, EntryType
 from .models import Entry
 from datetime import date
 
+class EntryCSVValidator:
+    required_fields = ["Description", "Amount", "Occurred At", "Currency"]
+
+    def __init__(self, file):
+        self.file = file
+
+    def validate(self):
+        data = io.TextIOWrapper(self.file.file, encoding="utf-8")
+        reader = csv.DictReader(data)
+
+        valid_rows, errors = [], []
+        for i, row in enumerate(reader, start=1):
+            try:
+                # Normalize
+                row["Amount"] = Decimal(row["Amount"])
+                valid_rows.append(row)
+            except Exception as e:
+                errors.append((i, str(e)))
+        return valid_rows, errors
+ 
 
 class TeamEntryValidator:
     def __init__(
@@ -99,3 +122,4 @@ class TeamEntryValidator:
     def validate_entry_create(self, entry_type: EntryType, occurred_at):
         self.validate_workspace_period(occurred_at)
         self.validate_entry_create_authorization(entry_type)
+

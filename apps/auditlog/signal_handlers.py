@@ -79,6 +79,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.ORGANIZATION_CREATED,
                     "updated": AuditActionType.ORGANIZATION_UPDATED,
                     "deleted": AuditActionType.ORGANIZATION_DELETED,
+                    "status_changed": AuditActionType.ORGANIZATION_STATUS_CHANGED,
                 },
                 "tracked_fields": ["title", "status", "description"],
             },
@@ -87,6 +88,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.WORKSPACE_CREATED,
                     "updated": AuditActionType.WORKSPACE_UPDATED,
                     "deleted": AuditActionType.WORKSPACE_DELETED,
+                    "status_changed": AuditActionType.WORKSPACE_STATUS_CHANGED,
                 },
                 "tracked_fields": ["title", "description", "status"],
             },
@@ -95,6 +97,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.ENTRY_CREATED,
                     "updated": AuditActionType.ENTRY_UPDATED,
                     "deleted": AuditActionType.ENTRY_DELETED,
+                    "status_changed": AuditActionType.ENTRY_STATUS_CHANGED,
                 },
                 "tracked_fields": ["type", "amount", "status"],
             },
@@ -111,6 +114,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.REMITTANCE_CREATED,
                     "updated": AuditActionType.REMITTANCE_UPDATED,
                     "deleted": AuditActionType.REMITTANCE_DELETED,
+                    "status_changed": AuditActionType.REMITTANCE_STATUS_CHANGED,
                 },
                 "tracked_fields": ["amount", "status", "type"],
             },
@@ -305,9 +309,29 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 )
 
                     if changes:
+                        # Check if status field was changed to use specific action type
+                        status_changed = any(change["field"] == "status" for change in changes)
+                        
+                        if status_changed and "status_changed" in action_types:
+                            # Use specific status changed action type
+                            action_type = action_types["status_changed"]
+                            operation_type = "status_change"
+                            
+                            # Add status change specific metadata
+                            status_change = next(change for change in changes if change["field"] == "status")
+                            extra_metadata = {
+                                "old_status": status_change["old_value"],
+                                "new_status": status_change["new_value"],
+                            }
+                        else:
+                            # Use generic update action type
+                            action_type = action_types["updated"]
+                            operation_type = "update"
+                            extra_metadata = {}
+                        
                         metadata = cls.build_metadata(
                             instance,
-                            operation_type="update",
+                            operation_type=operation_type,
                             user=audit_context["user"],
                             changes=changes,
                             **{
@@ -317,16 +341,17 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 for field in tracked_fields
                                 if hasattr(instance, field)
                             },
+                            **extra_metadata,
                             **audit_context["context"],
                         )
                         audit_create(
                             user=audit_context["user"],
-                            action_type=action_types["updated"],
+                            action_type=action_type,
                             target_entity=instance,
                             metadata=metadata,
                         )
                         logger.debug(
-                            f"Logged update of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
+                            f"Logged {operation_type} of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
                         )
 
         @receiver(pre_delete, sender=model_class)

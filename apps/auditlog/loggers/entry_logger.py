@@ -199,10 +199,8 @@ class EntryAuditLogger(BaseAuditLogger):
             "entity_id": str(getattr(entity, entity._meta.pk.name)),
             "old_status": old_status,
             "new_status": new_status,
-            "status_change_reason": self._get_request_param(request, "reason")
-            or kwargs.get("reason", ""),
+            "status_change_reason": kwargs.get("reason", ""),
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 

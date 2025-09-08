@@ -1,6 +1,8 @@
 import json
 from typing import Any
 import traceback
+import csv
+import io
 
 from django.db.models import QuerySet
 from django.http import HttpResponse
@@ -10,8 +12,10 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db import transaction
 
+from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
 from apps.entries.forms import BaseImportEntryForm
-from apps.workspaces.models import WorkspaceTeam
+from apps.organizations.models import OrganizationExchangeRate
+from apps.workspaces.models import WorkspaceExchangeRate, WorkspaceTeam
 
 from ..models import Entry
 from ..constants import CONTEXT_OBJECT_NAME, DETAIL_CONTEXT_OBJECT_NAME, EntryStatus
@@ -329,6 +333,7 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
         kwargs["workspace_team_role"] = (
             self.workspace_team_role if hasattr(self, "workspace_team_role") else None
         )
+        print(kwargs)
         return kwargs
 
     
@@ -347,14 +352,72 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
             # Bind form with both request data and extra kwargs
             self.form = self.form_class(**form_kwargs)
 
-            message = "Valid"
-
             if not self.form.is_valid():
-                message = "Invalid"
-                messages.error(self.request, message)
+                messages.error(self.request, "Invalid Form Submission")
                 return self._render_htmx_error_response(form=self.form)
-
-            messages.success(self.request, message)
+            
+            #Extract valid values from form
+            status = self.form.cleaned_data['status']
+            backup_description = self.form.cleaned_data['backup_description']
+            #Add it to the list of valid ones
+            #Open CSV 
+            uploaded_file = request.FILES["file"]
+            data = io.TextIOWrapper(uploaded_file.file, encoding="utf-8")
+            reader = csv.DictReader(data)
+            valid_entries = []
+            #Values
+            organization = getattr(self, "organization", None)
+            workspace = getattr(self, "workspace", None)
+            workspace_team = getattr(self, "workspace_team", None)
+            #Iterate
+            for row in reader:
+                # {'Description': 'Taxi', 'Amount': '836.84', 'Occurred At': '2025-08-19', 'Currency': 'USD'}
+                print(row)
+                description = row["Description"]
+                amount = row["Amount"]
+                currency = row["Currency"]
+                occurred_at = row["Occurred At"]
+                #Validate Amount
+                #Get closest exchange rate on each row based on the occurred at
+                currency = get_currency_by_code(code=currency)
+                print(f"Currency => {currency}")
+                exchange_rate_used = get_closest_exchanged_rate(
+                    currency=currency,
+                    occurred_at=occurred_at,
+                    organization=organization,
+                    workspace=workspace
+                )
+                print(f"exchange rate => {exchange_rate_used}")
+                #If not found, skip
+                if not exchange_rate_used:
+                    print("Skipped")
+                    continue
+                #If found, prepare data (exchange rate, its source, status, submitter, backup description)
+                entry = Entry(
+                    entry_type=EntryType.ORG_EXP,
+                    description=description or backup_description,
+                    amount=amount,
+                    occurred_at=occurred_at,
+                    currency=currency,
+                    exchange_rate_used=exchange_rate_used.rate,
+                    org_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, OrganizationExchangeRate) else None,
+                    workspace_exchange_rate_ref=exchange_rate_used if isinstance(exchange_rate_used, WorkspaceExchangeRate) else None,
+                    submitted_by_org_member=self.org_member,
+                    submitted_by_team_member=getattr(self, "workspace_team_member", None),
+                    status=status,
+                    status_last_updated_at=timezone.now(),
+                    last_status_modified_by=self.org_member,
+                    status_note="",
+                    is_flagged=True,
+                    organization=organization,
+                    workspace=workspace,
+                    workspace_team=workspace_team,
+                )
+                valid_entries.append(entry)
+                print(entry, "\n")
+            
+            print(len(valid_entries))
+            messages.success(self.request, "Success")
             return self._render_htmx_success_response()
 
         except Exception as e:

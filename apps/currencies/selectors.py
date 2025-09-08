@@ -27,6 +27,8 @@ def get_org_defined_currencies(organization: Organization):
 
 
 def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace=None):
+    print(f"{currency} == | == {occurred_at}")
+    
     # Get the workspace lvl exchange rate whose effective date is closest to the occurred_at date
     if workspace:
         workspace_exchange_rate = (
@@ -39,6 +41,7 @@ def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace
             .order_by("-effective_date")
             .first()
         )
+        print(f"Workspace Ex rate => {workspace_exchange_rate}")
         if workspace_exchange_rate:
             return workspace_exchange_rate
 
@@ -52,8 +55,10 @@ def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace
         .order_by("-effective_date")
         .first()
     )
+    
+    print(f"Org Ex rate => {organization_exchange_rate}")
 
     if organization_exchange_rate:
         return organization_exchange_rate
-
+    print("Ex None")
     return None

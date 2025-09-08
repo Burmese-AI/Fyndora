@@ -320,6 +320,10 @@ class OrganizationExpenseBulkCreateView(
     form_class = BaseImportEntryForm
     modal_template_name = "entries/components/bulk_create_modal.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        print("OG => ", self.organization)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,

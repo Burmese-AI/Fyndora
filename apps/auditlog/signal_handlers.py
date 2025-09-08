@@ -15,6 +15,10 @@ from django.dispatch import receiver
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
+from apps.auditlog.loggers.metadata_builders import (
+    EntityMetadataBuilder,
+    UserActionMetadataBuilder,
+)
 
 from .config import AuditConfig
 from .utils import safe_audit_log, should_log_model
@@ -180,12 +184,36 @@ class BaseAuditHandler:
             return value
 
     @staticmethod
-    def build_metadata(instance, changes=None, **extra_metadata):
-        """Build metadata dictionary for audit logging."""
+    def build_metadata(instance, changes=None, operation_type=None, user=None, **extra_metadata):
+        """Build enhanced metadata dictionary for audit logging with rich context."""
         metadata = {"automatic_logging": True, **extra_metadata}
 
         if changes:
             metadata["changed_fields"] = changes
+
+        # Add user action metadata if user is available
+        if user and operation_type:
+            try:
+                user_metadata = UserActionMetadataBuilder.build_user_action_metadata(
+                    user, operation_type
+                )
+                metadata.update(user_metadata)
+            except Exception as e:
+                logger.warning(f"Failed to build user metadata: {e}")
+
+        # Add entity-specific metadata based on model type
+        try:
+            model_name = instance._meta.model_name.lower()
+            if hasattr(EntityMetadataBuilder, f'build_{model_name}_metadata'):
+                entity_metadata_method = getattr(EntityMetadataBuilder, f'build_{model_name}_metadata')
+                entity_metadata = entity_metadata_method(instance)
+                metadata.update(entity_metadata)
+            else:
+                # Fallback to general entity metadata
+                general_metadata = EntityMetadataBuilder.build_entity_metadata(instance)
+                metadata.update(general_metadata)
+        except Exception as e:
+            logger.warning(f"Failed to build entity metadata for {instance._meta.model_name}: {e}")
 
         return metadata
 
@@ -236,6 +264,7 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                 metadata = cls.build_metadata(
                     instance,
                     operation_type="create",
+                    user=audit_context["user"],
                     **{
                         field: cls._serialize_field_value(
                             getattr(instance, field, None)
@@ -279,6 +308,7 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                         metadata = cls.build_metadata(
                             instance,
                             operation_type="update",
+                            user=audit_context["user"],
                             changes=changes,
                             **{
                                 field: cls._serialize_field_value(
@@ -311,6 +341,7 @@ class GenericAuditSignalHandler(BaseAuditHandler):
             metadata = cls.build_metadata(
                 instance,
                 operation_type="delete",
+                user=audit_context["user"],
                 **{
                     field: cls._serialize_field_value(getattr(instance, field, None))
                     for field in tracked_fields

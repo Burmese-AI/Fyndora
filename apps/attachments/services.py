@@ -25,12 +25,16 @@ def delete_attachment(attachment_id, request):
     business_context = extract_attachment_business_context(attachment)
 
     try:
+        # Set audit context to prevent duplicate logging from signal handlers
+        if request and hasattr(request, "user") and request.user.is_authenticated:
+            attachment._audit_user = request.user
+        
         attachment.delete()
         messages.success(
             request, f"Attachment, {attachment.file_url}, deleted successfully"
         )
 
-        # Log the attachment deletion
+        # Business logic logging: Log file operations with business context
         if request and hasattr(request, "user") and request.user.is_authenticated:
             BusinessAuditLogger.log_file_operation(
                 user=request.user,
@@ -39,6 +43,7 @@ def delete_attachment(attachment_id, request):
                 request=request,
                 **business_context,
             )
+        # General CRUD logging handled by signal handlers
 
     except Exception:
         messages.error(request, "Failed to delete attachment.")
@@ -59,11 +64,15 @@ def replace_or_append_attachments(
     existing_attachments = []
     if replace_attachments:
         existing_attachments = list(entry.attachments.all())
+            # Set audit context for bulk deletion
+        if user:
+            for att in existing_attachments:
+                att._audit_user = user
         # Soft delete all existing attachments
         entry.attachments.all().delete()
         print("Soft Deleted Attachments")
 
-        # Log bulk attachment removal if user is provided
+        # Business logic logging: Log bulk attachment removal
         if user and existing_attachments:
             entry_context = extract_entry_business_context(entry)
             BusinessAuditLogger.log_bulk_operation(
@@ -74,6 +83,7 @@ def replace_or_append_attachments(
                 replaced_count=len(existing_attachments),
                 **entry_context,
             )
+        # General CRUD logging handled by signal handlers
 
     # Create New Attachments linked to the Entry
     created_attachments = []
@@ -84,9 +94,12 @@ def replace_or_append_attachments(
             file_url=file,
             file_type=file_type or AttachmentType.OTHER,
         )
+        # Set audit context to prevent duplicate logging from signal handlers
+        if user:
+            attachment._audit_user = user
         created_attachments.append(attachment)
 
-        # Log individual attachment creation
+        # Business logic logging: Log file operations with context
         if user:
             attachment_context = extract_attachment_business_context(attachment)
             BusinessAuditLogger.log_file_operation(
@@ -98,6 +111,7 @@ def replace_or_append_attachments(
                 is_replacement=replace_attachments,
                 **attachment_context,
             )
+    # General CRUD logging handled by signal handlers
 
     return created_attachments
 
@@ -114,10 +128,15 @@ def create_attachments(*, entry, attachments, user=None, request=None):
         for attachment in attachments
     ]
     print(f"prepared attachments => {prepared_attachments}")
+    # Set audit context for bulk creation
+    if user:
+        for attachment_obj in prepared_attachments:
+            attachment_obj._audit_user = user
+    
     # Bulk Create the Attachments
     Attachment.objects.bulk_create(prepared_attachments)
 
-    # Log each attachment creation for audit trail
+    # Business logic logging: Log bulk file operations
     if user:
         entry_context = extract_entry_business_context(entry)
         for attachment_obj in prepared_attachments:

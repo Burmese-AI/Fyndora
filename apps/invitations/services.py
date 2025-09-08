@@ -33,6 +33,9 @@ def create_invitation(
         organization=organization,
         invited_by=invited_by,
     )
+    # Set audit context to prevent duplicate logging from signal handlers
+    if invited_by and invited_by.user:
+        invitation._audit_user = invited_by.user
     return invitation
 
 
@@ -58,11 +61,14 @@ def accept_invitation(user: User, invitation: Invitation):
         return False
 
     # Add user to organization
-    OrganizationMember.objects.create(user=user, organization=invitation.organization)
+    member = OrganizationMember.objects.create(user=user, organization=invitation.organization)
+    # Set audit context
+    member._audit_user = user
 
     # Update invitation status
     invitation.is_used = True
     invitation.is_active = False
+    invitation._audit_user = user
     invitation.save()
 
     return invitation

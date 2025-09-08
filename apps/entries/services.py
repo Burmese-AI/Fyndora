@@ -67,8 +67,8 @@ def create_entry_with_attachments(
     # unless its similar object has been created
 
     with transaction.atomic():
-        # Create the Entry
-        entry = Entry.objects.create(
+        # Create the Entry with audit context
+        entry = Entry(
             entry_type=entry_type,
             amount=amount,
             occurred_at=occurred_at,
@@ -89,6 +89,10 @@ def create_entry_with_attachments(
             submitted_by_team_member=submitted_by_team_member,
             is_flagged=not is_attachment_provided,
         )
+        # Set audit context to prevent duplicate logging from signal handlers
+        if user:
+            entry._audit_user = user
+        entry.save()
 
         # Create the Attachments if any were provided
         if is_attachment_provided:
@@ -99,7 +103,7 @@ def create_entry_with_attachments(
                 request=request,
             )
 
-        # Log entry creation with rich context
+        # Business logic logging: Log entry submission with rich context
         if user:
             BusinessAuditLogger.log_entry_action(
                 user=user,
@@ -115,6 +119,7 @@ def create_entry_with_attachments(
                 if submitted_by_org_member
                 else "team_member",
             )
+        # General CRUD logging handled by signal handlers
 
     return entry
 
@@ -176,6 +181,9 @@ def update_entry_user_inputs(
             else None
         )
 
+    # Set audit context to prevent duplicate logging from signal handlers
+    if user:
+        entry._audit_user = user
     entry.save()
 
     # If new attachments were provided, replace existing ones or append the new ones
@@ -194,14 +202,13 @@ def update_entry_user_inputs(
             entry.is_flagged = False
             entry.save(update_fields=["is_flagged"])
 
-    # Log entry update with rich context
-    if user:
+    # Business logic logging: Log significant field changes
+    if user and (is_currency_changed or is_occurred_at_changed or new_exchange_rate_used):
         BusinessAuditLogger.log_entry_action(
             user=user,
             entry=entry,
-            action="update",
+            action="field_update",
             request=request,
-            updated_fields=["amount", "currency", "occurred_at", "description"],
             currency_changed=is_currency_changed,
             occurred_at_changed=is_occurred_at_changed,
             exchange_rate_updated=new_exchange_rate_used is not None,
@@ -219,11 +226,13 @@ def update_entry_status(
     entry.status_note = status_note
     entry.last_status_modified_by = last_status_modified_by
     entry.status_last_updated_at = timezone.now()
+    # Set audit context to prevent duplicate logging from signal handlers
+    user = _extract_user_from_actor(last_status_modified_by)
+    if user:
+        entry._audit_user = user
     entry.save()
 
-    # Log status change with rich context
-    user = _extract_user_from_actor(last_status_modified_by)
-
+    # Business logic logging: Log status changes with rich context
     BusinessAuditLogger.log_status_change(
         user=user,
         entity=entry,
@@ -235,6 +244,7 @@ def update_entry_status(
         if hasattr(last_status_modified_by, "organization")
         else "team_member",
     )
+    # General CRUD logging handled by signal handlers
 
 
 def bulk_update_entry_status(*, entries: list[Entry], request=None):

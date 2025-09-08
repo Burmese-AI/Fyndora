@@ -348,3 +348,4 @@ class BaseImportEntryForm(forms.Form):
                 raise forms.ValidationError("Only CSV file is allowed.")
         
         return cleaned_data
+        

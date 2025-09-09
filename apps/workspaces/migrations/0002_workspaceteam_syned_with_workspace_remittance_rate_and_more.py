@@ -6,20 +6,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workspaces', '0001_initial'),
+        ("workspaces", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workspaceteam',
-            name='syned_with_workspace_remittance_rate',
+            model_name="workspaceteam",
+            name="syned_with_workspace_remittance_rate",
             field=models.BooleanField(default=True),
         ),
         migrations.AlterField(
-            model_name='workspaceteam',
-            name='custom_remittance_rate',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='the custom remittance rate will ignore the workspace default remittance rate', max_digits=5, null=True, validators=[django.core.validators.MinValueValidator(Decimal('0.00')), django.core.validators.MaxValueValidator(Decimal('100.00'))]),
+            model_name="workspaceteam",
+            name="custom_remittance_rate",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="the custom remittance rate will ignore the workspace default remittance rate",
+                max_digits=5,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(Decimal("0.00")),
+                    django.core.validators.MaxValueValidator(Decimal("100.00")),
+                ],
+            ),
         ),
     ]

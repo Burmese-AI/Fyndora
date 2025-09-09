@@ -219,15 +219,15 @@ def add_team_to_workspace(
     user=None,
 ):
     try:
-        
-        #edge error #must be checkee first
+        # edge error #must be checkee first
         if custom_remittance_rate is not None and syned_with_workspace_remittance_rate:
-            raise ValidationError("Custom remittance rate cannot be set when syned with workspace remittance rate")
+            raise ValidationError(
+                "Custom remittance rate cannot be set when syned with workspace remittance rate"
+            )
 
         # if syned_with_workspace_remittance_rate is True, the custom remittance rate will be the workspace default remittance rate
         if syned_with_workspace_remittance_rate:
-            custom_remittance_rate = None;
-        
+            custom_remittance_rate = None
 
         workspace_team = WorkspaceTeam.objects.create(
             workspace_id=workspace_id,
@@ -286,16 +286,25 @@ def add_team_to_workspace(
 
 
 def update_workspace_team_remittance_rate_from_form(
-    *, form, workspace_team, workspace, user=None, syned_with_workspace_remittance_rate, custom_remittance_rate
+    *,
+    form,
+    workspace_team,
+    workspace,
+    user=None,
+    syned_with_workspace_remittance_rate,
+    custom_remittance_rate,
 ) -> WorkspaceTeam:
     try:
         # Store previous rate for logging
         previous_rate = workspace_team.custom_remittance_rate
 
-        workspace_team = model_update(workspace_team, {
-            "custom_remittance_rate": custom_remittance_rate,
-            "syned_with_workspace_remittance_rate": syned_with_workspace_remittance_rate,
-        })
+        workspace_team = model_update(
+            workspace_team,
+            {
+                "custom_remittance_rate": custom_remittance_rate,
+                "syned_with_workspace_remittance_rate": syned_with_workspace_remittance_rate,
+            },
+        )
         # Log successful remittance rate update
         try:
             if user:

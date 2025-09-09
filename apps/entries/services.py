@@ -84,7 +84,8 @@ class EntryService:
     def bulk_create_entry(*, entries: list[Entry]):
         try:
             Entry.objects.bulk_create(entries)
-        except:
+            # E722 Do not use bare `except` (add that due to ruff format:THA)
+        except Exception:
             raise Exception("An error occurred during entry bulk create operation.")
 
 

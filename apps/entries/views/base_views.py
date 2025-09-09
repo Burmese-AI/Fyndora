@@ -388,8 +388,8 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
     def perform_action(self, request, entries: list[Entry]) -> tuple[bool, str | None]:
         try:
             if not entries:
-                return False, f"No valid entry found"
-            
+                return False, "No valid entry found"
+
             with transaction.atomic():
                 EntryService.bulk_create_entry(entries=entries)
                 self.perform_post_action(entries)

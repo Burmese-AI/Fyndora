@@ -136,7 +136,9 @@ class WorkspaceTeam(baseModel):
     workspace = models.ForeignKey(
         Workspace, on_delete=models.CASCADE, related_name="joined_teams"
     )
-    syned_with_workspace_remittance_rate = models.BooleanField(default=True)# if True, the custom remittance rate will be ignored
+    syned_with_workspace_remittance_rate = models.BooleanField(
+        default=True
+    )  # if True, the custom remittance rate will be ignored
     custom_remittance_rate = models.DecimalField(
         max_digits=5,  # 0.00 - 100.00
         decimal_places=2,

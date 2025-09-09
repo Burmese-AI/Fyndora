@@ -212,7 +212,6 @@ def edit_workspace_view(request, organization_id, workspace_id):
                 form_data, instance=workspace, organization=organization
             )
             try:
-                old_remittance_rate = workspace.remittance_rate
                 if form.is_valid():
                     update_workspace_from_form(
                         form=form,

@@ -208,6 +208,16 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
         if team_exists:
             raise ValidationError("Team already exists in this workspace.")
         return team
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        custom_remittance_rate = cleaned_data.get("custom_remittance_rate")
+        syned_with_workspace_remittance_rate = cleaned_data.get("syned_with_workspace_remittance_rate")
+        if custom_remittance_rate is not None and syned_with_workspace_remittance_rate:
+            raise ValidationError("Custom remittance rate cannot be set when you want to syned with workspace remittance rate.")
+        if custom_remittance_rate is None and not syned_with_workspace_remittance_rate:
+            raise ValidationError("You must set a custom remittance rate or want to syned with workspace remittance rate.")
+        return cleaned_data
 
 
 class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):

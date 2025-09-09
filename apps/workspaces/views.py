@@ -366,6 +366,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     workspace_team = add_team_to_workspace(
                         workspace_id=workspace_id,
                         team_id=form.cleaned_data["team"].team_id,
+                        syned_with_workspace_remittance_rate=form.cleaned_data[
+                            "syned_with_workspace_remittance_rate"
+                        ],
                         custom_remittance_rate=form.cleaned_data[
                             "custom_remittance_rate"
                         ],

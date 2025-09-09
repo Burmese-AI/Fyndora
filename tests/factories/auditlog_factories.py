@@ -13,6 +13,12 @@ from apps.auditlog.constants import AuditActionType
 from apps.auditlog.models import AuditTrail
 
 from .user_factories import CustomUserFactory
+from .organization_factories import OrganizationFactory
+from .team_factories import TeamMemberFactory
+from .workspace_factories import WorkspaceFactory
+
+# Module-level cache for shared team member instances
+_team_member_cache = {}
 
 
 class AuditTrailFactory(DjangoModelFactory):
@@ -145,51 +151,212 @@ class OrganizationCreatedAuditFactory(AuditTrailFactory):
     """Factory for organization creation audit logs."""
 
     action_type = AuditActionType.ORGANIZATION_CREATED
-    target_entity_type = factory.LazyAttribute(
-        lambda obj: ContentType.objects.get(
-            app_label="organizations", model="organization"
-        )
-    )
-    metadata = factory.LazyAttribute(
-        lambda obj: {
-            "organization_name": "Test Organization",
-            "created_by": obj.user.username if obj.user else "System",
-            "initial_status": "active",
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return OrganizationFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "organization_title": self.target_entity.title,
+            "organization_id": str(self.target_entity.organization_id),
+            "created_by": self.user.username if self.user else "System",
+            "initial_status": self.target_entity.status,
+            "organization_type": getattr(self.target_entity, "organization_type", "standard"),
         }
-    )
+
+
+class OrganizationUpdatedAuditFactory(AuditTrailFactory):
+    """Factory for organization update audit logs."""
+
+    action_type = AuditActionType.ORGANIZATION_UPDATED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return OrganizationFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "organization_title": self.target_entity.title,
+            "organization_id": str(self.target_entity.organization_id),
+            "updated_by": self.user.username if self.user else "System",
+            "old_values": {"title": "Old Organization Title", "status": "active"},
+            "new_values": {"title": self.target_entity.title, "status": self.target_entity.status},
+            "reason": "Organization information updated",
+        }
+
+
+class OrganizationDeletedAuditFactory(AuditTrailFactory):
+    """Factory for organization deletion audit logs."""
+
+    action_type = AuditActionType.ORGANIZATION_DELETED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return OrganizationFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "organization_title": self.target_entity.title,
+            "organization_id": str(self.target_entity.organization_id),
+            "deleted_by": self.user.username if self.user else "System",
+            "deletion_reason": "Organization no longer needed",
+            "final_status": self.target_entity.status,
+        }
 
 
 class WorkspaceCreatedAuditFactory(AuditTrailFactory):
     """Factory for workspace creation audit logs."""
 
     action_type = AuditActionType.WORKSPACE_CREATED
-    target_entity_type = factory.LazyAttribute(
-        lambda obj: ContentType.objects.get(app_label="workspaces", model="workspace")
-    )
-    metadata = factory.LazyAttribute(
-        lambda obj: {
-            "workspace_name": "Test Workspace",
-            "created_by": obj.user.username if obj.user else "System",
-            "organization_id": str(uuid.uuid4()),
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return WorkspaceFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "workspace_title": self.target_entity.title,
+            "workspace_id": str(self.target_entity.workspace_id),
+            "created_by": self.user.username if self.user else "System",
+            "organization_id": str(self.target_entity.organization.organization_id),
+            "organization_title": self.target_entity.organization.title,
+            "workspace_status": self.target_entity.status,
         }
-    )
+
+
+class WorkspaceUpdatedAuditFactory(AuditTrailFactory):
+    """Factory for workspace update audit logs."""
+
+    action_type = AuditActionType.WORKSPACE_UPDATED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return WorkspaceFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "workspace_title": self.target_entity.title,
+            "workspace_id": str(self.target_entity.workspace_id),
+            "updated_by": self.user.username if self.user else "System",
+            "organization_id": str(self.target_entity.organization.organization_id),
+            "organization_title": self.target_entity.organization.title,
+            "workspace_status": self.target_entity.status,
+            "old_values": {"title": "Old Workspace Title", "status": "active"},
+            "new_values": {"title": self.target_entity.title, "status": self.target_entity.status},
+            "updated_fields": ["title", "status"],
+        }
+
+
+class WorkspaceDeletedAuditFactory(AuditTrailFactory):
+    """Factory for workspace deletion audit logs."""
+
+    action_type = AuditActionType.WORKSPACE_DELETED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return WorkspaceFactory()
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "workspace_title": self.target_entity.title,
+            "workspace_id": str(self.target_entity.workspace_id),
+            "deleted_by": self.user.username if self.user else "System",
+            "organization_id": str(self.target_entity.organization.organization_id),
+            "organization_title": self.target_entity.organization.title,
+            "workspace_status": self.target_entity.status,
+            "soft_delete": True,
+        }
 
 
 class TeamMemberAddedAuditFactory(AuditTrailFactory):
     """Factory for team member addition audit logs."""
 
     action_type = AuditActionType.TEAM_MEMBER_ADDED
-    target_entity_type = factory.LazyAttribute(
-        lambda obj: ContentType.objects.get(app_label="teams", model="team")
-    )
-    metadata = factory.LazyAttribute(
-        lambda obj: {
-            "member_username": "new_member",
-            "added_by": obj.user.username if obj.user else "System",
-            "role": "member",
-            "team_id": str(uuid.uuid4()),
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        # Use module-level cache for shared team member
+        cache_key = "TeamMemberAddedAuditFactory"
+        if cache_key not in _team_member_cache:
+            _team_member_cache[cache_key] = TeamMemberFactory()
+        return _team_member_cache[cache_key]
+
+    @factory.lazy_attribute
+    def metadata(self):
+        team_member = self.target_entity
+        return {
+            "member_username": team_member.organization_member.user.username,
+            "member_email": team_member.organization_member.user.email,
+            "added_by": self.user.username if self.user else "System",
+            "role": team_member.role,
+            "team_id": str(team_member.team.team_id),
+            "team_name": team_member.team.title,
+            "organization_id": str(team_member.team.organization.organization_id),
         }
-    )
+
+
+class TeamMemberRemovedAuditFactory(AuditTrailFactory):
+    """Factory for team member removal audit logs."""
+
+    action_type = AuditActionType.TEAM_MEMBER_REMOVED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        # Use module-level cache for shared team member
+        cache_key = "TeamMemberRemovedAuditFactory"
+        if cache_key not in _team_member_cache:
+            _team_member_cache[cache_key] = TeamMemberFactory()
+        return _team_member_cache[cache_key]
+
+    @factory.lazy_attribute
+    def metadata(self):
+        team_member = self.target_entity
+        return {
+            "member_username": team_member.organization_member.user.username,
+            "member_email": team_member.organization_member.user.email,
+            "removed_by": self.user.username if self.user else "System",
+            "role": team_member.role,
+            "team_id": str(team_member.team.team_id),
+            "team_name": team_member.team.title,
+            "organization_id": str(team_member.team.organization.organization_id),
+            "removal_reason": "Team restructuring",
+        }
+
+
+class TeamMemberRoleChangedAuditFactory(AuditTrailFactory):
+    """Factory for team member role change audit logs."""
+
+    action_type = AuditActionType.TEAM_MEMBER_ROLE_CHANGED
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        # Use module-level cache for shared team member
+        cache_key = "TeamMemberRoleChangedAuditFactory"
+        if cache_key not in _team_member_cache:
+            _team_member_cache[cache_key] = TeamMemberFactory()
+        return _team_member_cache[cache_key]
+
+    @factory.lazy_attribute
+    def metadata(self):
+        team_member = self.target_entity
+        return {
+            "member_username": team_member.organization_member.user.username,
+            "member_email": team_member.organization_member.user.email,
+            "changed_by": self.user.username if self.user else "System",
+            "old_role": "submitter",
+            "new_role": team_member.role,
+            "team_id": str(team_member.team.team_id),
+            "team_name": team_member.team.title,
+            "organization_id": str(team_member.team.organization.organization_id),
+            "change_reason": "Performance promotion",
+        }
 
 
 class AuthenticationAuditFactory(AuditTrailFactory):

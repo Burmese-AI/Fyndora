@@ -126,6 +126,69 @@ class AuditModelRegistry:
                 },
                 "tracked_fields": ["email", "status", "role"],
             },
+            "teams.TeamMember": {
+                "action_types": {
+                    "created": AuditActionType.TEAM_MEMBER_ADDED,
+                    "updated": AuditActionType.TEAM_MEMBER_ROLE_CHANGED,
+                    "deleted": AuditActionType.TEAM_MEMBER_REMOVED,
+                },
+                "tracked_fields": ["role"],
+            },
+            "accounts.CustomUser": {
+                "action_types": {
+                    "created": AuditActionType.USER_CREATED,
+                    "updated": AuditActionType.USER_PROFILE_UPDATED,
+                    "deleted": AuditActionType.USER_DELETED,
+                },
+                "tracked_fields": ["email", "username", "status", "is_active", "is_staff"],
+            },
+            "organizations.OrganizationMember": {
+                "action_types": {
+                    "created": AuditActionType.ORGANIZATION_MEMBER_ADDED,
+                    "updated": AuditActionType.ORGANIZATION_MEMBER_UPDATED,
+                    "deleted": AuditActionType.ORGANIZATION_MEMBER_REMOVED,
+                },
+                "tracked_fields": ["is_active"],
+            },
+            "workspaces.WorkspaceTeam": {
+                "action_types": {
+                    "created": AuditActionType.WORKSPACE_TEAM_ADDED,
+                    "updated": AuditActionType.WORKSPACE_TEAM_UPDATED,
+                    "deleted": AuditActionType.WORKSPACE_TEAM_REMOVED,
+                },
+                "tracked_fields": ["custom_remittance_rate"],
+            },
+            "attachments.Attachment": {
+                "action_types": {
+                    "created": AuditActionType.FILE_UPLOADED,
+                    "deleted": AuditActionType.FILE_DELETED,
+                },
+                "tracked_fields": ["file_url", "file_type"],
+            },
+            "currencies.Currency": {
+                "action_types": {
+                    "created": AuditActionType.CURRENCY_ADDED,
+                    "updated": AuditActionType.CURRENCY_UPDATED,
+                    "deleted": AuditActionType.CURRENCY_REMOVED,
+                },
+                "tracked_fields": ["code", "name"],
+            },
+            "organizations.OrganizationExchangeRate": {
+                "action_types": {
+                    "created": AuditActionType.ORGANIZATION_EXCHANGE_RATE_CREATED,
+                    "updated": AuditActionType.ORGANIZATION_EXCHANGE_RATE_UPDATED,
+                    "deleted": AuditActionType.ORGANIZATION_EXCHANGE_RATE_DELETED,
+                },
+                "tracked_fields": ["rate", "effective_date", "note"],
+            },
+            "workspaces.WorkspaceExchangeRate": {
+                "action_types": {
+                    "created": AuditActionType.WORKSPACE_EXCHANGE_RATE_CREATED,
+                    "updated": AuditActionType.WORKSPACE_EXCHANGE_RATE_UPDATED,
+                    "deleted": AuditActionType.WORKSPACE_EXCHANGE_RATE_DELETED,
+                },
+                "tracked_fields": ["rate", "effective_date", "note", "is_approved"],
+            },
         }
 
         model_key = f"{app_label}.{model_name}"

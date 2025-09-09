@@ -55,9 +55,13 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         {% if workspace_team.custom_remittance_rate %}
-          Remittance Rate: {{ workspace_team.custom_remittance_rate }}%
+          <span class="inline-flex items-center px-2 py-1 rounded bg-yellow-100 text-yellow-800 font-semibold">
+            Custom Remittance Rate: {{ workspace_team.custom_remittance_rate }}%
+          </span>
         {% else %}
-          Remittance Rate: Default ({{ workspace.remittance_rate }}%)
+          <span class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800 font-semibold">
+            Synced Remittance Rate: {{ workspace.remittance_rate }}%
+          </span>
         {% endif %}
       </div>
     </div>

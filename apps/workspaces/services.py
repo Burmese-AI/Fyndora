@@ -222,11 +222,11 @@ def add_team_to_workspace(
         
         #edge error #must be checkee first
         if custom_remittance_rate is not None and syned_with_workspace_remittance_rate:
-            raise ValidationError("Custom remittance rate cannot be set when syned with workspace remittance rate is True")
+            raise ValidationError("Custom remittance rate cannot be set when syned with workspace remittance rate")
 
         # if syned_with_workspace_remittance_rate is True, the custom remittance rate will be the workspace default remittance rate
         if syned_with_workspace_remittance_rate:
-            custom_remittance_rate = workspace.remittance_rate
+            custom_remittance_rate = None;
         
 
         workspace_team = WorkspaceTeam.objects.create(

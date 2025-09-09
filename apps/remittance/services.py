@@ -67,6 +67,14 @@ def update_remittance(*, remittance: Remittance):
     )
 
 
+def bulk_update_remittance(*, remittances: list[Remittance]):
+    Remittance.objects.bulk_update(
+        remittances,
+        ["due_amount", "paid_amount", "status", "paid_within_deadlines", "is_overpaid"],
+    )
+    return remittances
+
+
 def remittance_confirm_payment(*, remittance, user, organization_id):
     """
     Confirms a remittance payment.

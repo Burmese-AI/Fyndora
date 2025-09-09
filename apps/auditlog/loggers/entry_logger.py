@@ -119,10 +119,8 @@ class EntryAuditLogger(BaseAuditLogger):
                 {
                     "approver_id": str(user.user_id),
                     "approver_email": user.email,
-                    "approval_notes": self._get_request_param(request, "notes")
-                    or kwargs.get("notes", ""),
-                    "approval_level": self._get_request_param(request, "level")
-                    or kwargs.get("level", "standard"),
+                    "approval_notes": kwargs.get("notes", ""),
+                    "approval_level": kwargs.get("level", "standard"),
                     "approval_timestamp": timezone.now().isoformat(),
                 }
             )
@@ -131,24 +129,18 @@ class EntryAuditLogger(BaseAuditLogger):
                 {
                     "rejector_id": str(user.user_id),
                     "rejector_email": user.email,
-                    "rejection_reason": self._get_request_param(request, "reason")
-                    or kwargs.get("reason", ""),
-                    "rejection_notes": self._get_request_param(request, "notes")
-                    or kwargs.get("notes", ""),
-                    "can_resubmit": self._get_request_param(request, "can_resubmit")
-                    or kwargs.get("can_resubmit", True),
+                    "rejection_reason": kwargs.get("reason", ""),
+                    "rejection_notes": kwargs.get("notes", ""),
+                    "can_resubmit": kwargs.get("can_resubmit", True),
                     "rejection_timestamp": timezone.now().isoformat(),
                 }
             )
         elif action in ["flag", "unflag"]:
             metadata.update(
                 {
-                    "flag_reason": self._get_request_param(request, "reason")
-                    or kwargs.get("reason", ""),
-                    "flag_notes": self._get_request_param(request, "notes")
-                    or kwargs.get("notes", ""),
-                    "flag_severity": self._get_request_param(request, "severity")
-                    or kwargs.get("severity", "medium"),
+                    "flag_reason": kwargs.get("reason", ""),
+                    "flag_notes": kwargs.get("notes", ""),
+                    "flag_severity": kwargs.get("severity", "medium"),
                 }
             )
         elif action == "update":
@@ -159,8 +151,7 @@ class EntryAuditLogger(BaseAuditLogger):
                     "updated_fields": kwargs.get("updated_fields", []),
                     "original_values": kwargs.get("original_values", {}),
                     "new_values": kwargs.get("new_values", {}),
-                    "update_reason": self._get_request_param(request, "reason")
-                    or kwargs.get("reason", ""),
+                    "update_reason": kwargs.get("reason", ""),
                     "update_timestamp": timezone.now().isoformat(),
                 }
             )
@@ -169,8 +160,7 @@ class EntryAuditLogger(BaseAuditLogger):
                 {
                     "deleter_id": str(user.user_id),
                     "deleter_email": user.email,
-                    "deletion_reason": self._get_request_param(request, "reason")
-                    or kwargs.get("reason", ""),
+                    "deletion_reason": kwargs.get("reason", ""),
                     "soft_delete": kwargs.get("soft_delete", False),
                     "deletion_timestamp": timezone.now().isoformat(),
                     "entry_status_at_deletion": kwargs.get("entry_status", "unknown"),

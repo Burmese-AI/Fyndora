@@ -1,3 +1,4 @@
+from os import sync
 from typing import Any
 from django.db import transaction
 from django.urls import reverse_lazy
@@ -69,6 +70,7 @@ from .mixins.workspace_exchange_rate.required_mixins import (
 )
 from apps.core.utils import can_manage_organization
 from apps.remittance.services import (
+    bulk_update_remittance,
     calculate_due_amount,
     update_remittance,
 )
@@ -211,30 +213,30 @@ def edit_workspace_view(request, organization_id, workspace_id):
             form = WorkspaceForm(
                 form_data, instance=workspace, organization=organization
             )
+            old_remittance_rate = workspace.remittance_rate
             try:
                 if form.is_valid():
-                    update_workspace_from_form(
-                        form=form,
-                        workspace=workspace,
-                        previous_workspace_admin=previous_workspace_admin,
-                        previous_operations_reviewer=previous_operations_reviewer,
-                    )
+                    
+                    with transaction.atomic():
+                        # Update Workspace
+                        update_workspace_from_form(
+                            form=form,
+                            workspace=workspace,
+                            previous_workspace_admin=previous_workspace_admin,
+                            previous_operations_reviewer=previous_operations_reviewer,
+                        )
 
-                    # Temporarity disable due to wrong logic, and KO MIN SIK will continue remittance upating part
-                    # # If remittance rate is changed, update all due amounts of workspace teams' remitances
-                    # if old_remittance_rate != form.cleaned_data["remittance_rate"]:
-                    #     print("Remittance Rate Changed")
-                    #     # Get All Workspace Teams
-                    #     workspace_teams = workspace.joined_teams.all()
-                    #     print(f"Workspace Teams: {workspace_teams}")
-                    #     # Update Remittance Due Amount of Each Team's Remittance
-                    #     for workspace_team in workspace_teams:
-                    #         remittance = workspace_team.remittance
-                    #         remittance.new_due_amount = calculate_due_amount(
-                    #             workspace_team=workspace_team
-                    #         )
-                    #         update_remittance(remittance=remittance)
-
+                        # Update Remittance Due Amount
+                        if old_remittance_rate != form.cleaned_data["remittance_rate"]:
+                            print("Triggered due to the rate changes")
+                            synced_workspace_teams = workspace.joined_teams.filter(syned_with_workspace_remittance_rate=True)
+                            remittances_to_update = []
+                            for workspace_team in synced_workspace_teams:
+                                remittance = workspace_team.remittance
+                                remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
+                                remittances_to_update.append(remittance)
+                            bulk_update_remittance(remittances=remittances_to_update)                        
+                        
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
                         "workspace": workspace,

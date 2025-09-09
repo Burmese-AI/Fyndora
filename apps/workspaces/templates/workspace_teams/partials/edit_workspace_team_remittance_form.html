@@ -41,17 +41,13 @@
             id="toggle-custom-rate" 
             class="btn btn-outline btn-sm text-primary hover:bg-primary hover:text-white"
             onclick="toggleCustomRate()">
-            <span id="toggle-text">Add Custom Rate</span>
+            <span id="toggle-text">{% if workspace_team.custom_remittance_rate %}Hide Custom Rate{% else %}Add Custom Rate{% endif %}</span>
         </button>
     </div>
     
-    <div id="custom-rate-section" class="hidden mt-4">
+    <div id="custom-rate-section" class="mt-4{% if not workspace_team.custom_remittance_rate %} hidden{% endif %}">
         <label for="id_custom_remittance_rate" class="block text-sm font-medium text-gray-700 mb-2">Custom Remittance Rate</label>
-        {% if workspace_team.custom_remittance_rate %}
-            {{ form.custom_remittance_rate }}
-        {% else %}
-            <input type="number" name="custom_remittance_rate" value="{{ workspace.remittance_rate }}" class="input input-bordered w-full rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base" min="0" max="100" step="0.01" required>
-        {% endif %}
+        {{ form.custom_remittance_rate }}
         <p class="text-xs text-gray-500 mt-1">
             Enter a specific remittance rate for this team (0-100%). This will ignore the workspace default rate.
         </p>
@@ -60,7 +56,9 @@
         </div>
     </div>
    </div>
-
+   {% if not workspace_team.syned_with_workspace_remittance_rate %}
+   <span class="text-sm font-medium text-red-700">Currently Not Syned with Workspace Remittance Rate</span>
+   {% endif %}
    <div class="mb-6">
     <div class="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div class="flex items-center h-5">
@@ -111,67 +109,37 @@ function toggleCustomRate() {
     const syncCheckbox = document.getElementById('id_syned_with_workspace_remittance_rate');
     
     if (customRateSection.classList.contains('hidden')) {
-        // Show custom rate section
         customRateSection.classList.remove('hidden');
         toggleText.textContent = 'Hide Custom Rate';
-        
-        // Uncheck sync checkbox when showing custom rate
-        if (syncCheckbox) {
-            syncCheckbox.checked = false;
-        }
+        if (syncCheckbox) syncCheckbox.checked = false;
     } else {
-        // Hide custom rate section
         customRateSection.classList.add('hidden');
         toggleText.textContent = 'Add Custom Rate';
-        
-        // Clear the custom rate input
+        if (syncCheckbox) syncCheckbox.checked = true;
         const customRateInput = document.getElementById('id_custom_remittance_rate');
-        if (customRateInput) {
-            customRateInput.value = '';
-        }
+        if (customRateInput) customRateInput.value = '';
     }
 }
 
-// Initialize the form state based on current values
 document.addEventListener('DOMContentLoaded', function() {
     const syncCheckbox = document.getElementById('id_syned_with_workspace_remittance_rate');
     const customRateSection = document.getElementById('custom-rate-section');
     const toggleText = document.getElementById('toggle-text');
-    const customRateInput = document.getElementById('id_custom_remittance_rate');
-    
-    // Check if team currently has a custom rate
-    const hasCustomRate = customRateInput && customRateInput.value && customRateInput.value.trim() !== '';
-    
-    if (hasCustomRate) {
-        // Show custom rate section if there's already a custom rate
-        customRateSection.classList.remove('hidden');
-        toggleText.textContent = 'Hide Custom Rate';
-        if (syncCheckbox) {
-            syncCheckbox.checked = false;
-        }
-    } else {
-        // Hide custom rate section and check sync by default
-        customRateSection.classList.add('hidden');
-        toggleText.textContent = 'Add Custom Rate';
-        if (syncCheckbox) {
-            syncCheckbox.checked = true;
-        }
+    const hasCustomInitially = !customRateSection.classList.contains('hidden');
+
+    // Reflect initial server-side state in sync checkbox if needed
+    if (syncCheckbox && hasCustomInitially) {
+        syncCheckbox.checked = false;
     }
-    
-    // Add event listener for sync checkbox
+
     if (syncCheckbox) {
         syncCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                // Hide custom rate section when sync is enabled
                 customRateSection.classList.add('hidden');
                 toggleText.textContent = 'Add Custom Rate';
-                
-                // Clear the custom rate input
-                if (customRateInput) {
-                    customRateInput.value = '';
-                }
+                const customRateInput = document.getElementById('id_custom_remittance_rate');
+                if (customRateInput) customRateInput.value = '';
             } else {
-                // Show custom rate section when sync is unchecked
                 customRateSection.classList.remove('hidden');
                 toggleText.textContent = 'Hide Custom Rate';
             }

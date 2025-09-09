@@ -1,4 +1,3 @@
-from os import sync
 from typing import Any
 from django.db import transaction
 from django.urls import reverse_lazy
@@ -216,7 +215,6 @@ def edit_workspace_view(request, organization_id, workspace_id):
             old_remittance_rate = workspace.remittance_rate
             try:
                 if form.is_valid():
-                    
                     with transaction.atomic():
                         # Update Workspace
                         update_workspace_from_form(
@@ -229,14 +227,18 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         # Update Remittance Due Amount
                         if old_remittance_rate != form.cleaned_data["remittance_rate"]:
                             print("Triggered due to the rate changes")
-                            synced_workspace_teams = workspace.joined_teams.filter(syned_with_workspace_remittance_rate=True)
+                            synced_workspace_teams = workspace.joined_teams.filter(
+                                syned_with_workspace_remittance_rate=True
+                            )
                             remittances_to_update = []
                             for workspace_team in synced_workspace_teams:
                                 remittance = workspace_team.remittance
-                                remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
+                                remittance.due_amount = calculate_due_amount(
+                                    workspace_team=workspace_team
+                                )
                                 remittances_to_update.append(remittance)
-                            bulk_update_remittance(remittances=remittances_to_update)                        
-                        
+                            bulk_update_remittance(remittances=remittances_to_update)
+
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
                         "workspace": workspace,

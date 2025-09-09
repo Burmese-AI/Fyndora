@@ -70,13 +70,7 @@ def update_remittance(*, remittance: Remittance):
 def bulk_update_remittance(*, remittances: list[Remittance]):
     Remittance.objects.bulk_update(
         remittances,
-        [
-            "due_amount", 
-            "paid_amount", 
-            "status", 
-            "paid_within_deadlines", 
-            "is_overpaid"
-        ],
+        ["due_amount", "paid_amount", "status", "paid_within_deadlines", "is_overpaid"],
     )
     return remittances
 

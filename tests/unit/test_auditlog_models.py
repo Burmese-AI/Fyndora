@@ -24,6 +24,7 @@ from tests.factories import (
     EntryFactory,
     FileUploadedAuditFactory,
     FlaggedAuditFactory,
+    OrganizationFactory,
     StatusChangedAuditFactory,
     SystemAuditFactory,
 )
@@ -732,6 +733,408 @@ class TestAuditTrailQueryOptimization(TestCase):
         # Verify results
         self.assertGreater(len(user_audits), 0)
         self.assertGreater(len(action_audits), 0)
+
+
+@pytest.mark.unit
+class TestAuditTrailOrganizationField(TestCase):
+    """Test organization field functionality in AuditTrail model."""
+
+    @pytest.mark.django_db
+    def test_audit_trail_with_organization_field(self):
+        """Test audit trail creation with organization field set."""
+        organization = OrganizationFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=organization,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.organization, organization)
+        self.assertEqual(audit.organization.pk, organization.pk)
+        self.assertIsNotNone(audit.organization.title)
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_field_null_allowed(self):
+        """Test that organization field can be null."""
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertIsNone(audit.organization)
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_foreign_key_relationship(self):
+        """Test organization foreign key relationship integrity."""
+        organization = OrganizationFactory()
+        entry = EntryFactory()
+
+        # Create audit with organization
+        audit = AuditTrailFactory(
+            organization=organization,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        # Verify relationship works both ways
+        self.assertEqual(audit.organization, organization)
+
+        # Test reverse relationship (organization should have audit trails)
+        organization_audits = AuditTrail.objects.filter(organization=organization)
+        self.assertIn(audit, organization_audits)
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_cascade_behavior(self):
+        """Test behavior when organization is deleted."""
+        organization = OrganizationFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=organization,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        audit_id = audit.audit_id
+
+        # Hard delete organization to trigger CASCADE behavior
+        organization.hard_delete()
+
+        # With CASCADE, audit trail should be deleted when organization is deleted
+        self.assertFalse(AuditTrail.objects.filter(audit_id=audit_id).exists())
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_filtering(self):
+        """Test filtering audit trails by organization."""
+        org1 = OrganizationFactory()
+        org2 = OrganizationFactory()
+        entry = EntryFactory()
+
+        # Create audits for different organizations
+        audit1 = AuditTrailFactory(
+            organization=org1,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+        audit2 = AuditTrailFactory(
+            organization=org2,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_UPDATED,
+        )
+        audit3 = AuditTrailFactory(
+            organization=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_FLAGGED,
+        )
+
+        # Test filtering by organization
+        org1_audits = AuditTrail.objects.filter(organization=org1)
+        org2_audits = AuditTrail.objects.filter(organization=org2)
+        null_org_audits = AuditTrail.objects.filter(organization__isnull=True)
+
+        self.assertIn(audit1, org1_audits)
+        self.assertNotIn(audit2, org1_audits)
+        self.assertNotIn(audit3, org1_audits)
+
+        self.assertIn(audit2, org2_audits)
+        self.assertNotIn(audit1, org2_audits)
+        self.assertNotIn(audit3, org2_audits)
+
+        self.assertIn(audit3, null_org_audits)
+        self.assertNotIn(audit1, null_org_audits)
+        self.assertNotIn(audit2, null_org_audits)
+
+
+@pytest.mark.unit
+class TestAuditTrailWorkspaceField(TestCase):
+    """Test workspace field functionality in AuditTrail model."""
+
+    @pytest.mark.django_db
+    def test_audit_trail_with_workspace_field(self):
+        """Test audit trail creation with workspace field set."""
+        workspace = WorkspaceFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.workspace, workspace)
+        self.assertEqual(audit.workspace.pk, workspace.pk)
+        self.assertIsNotNone(audit.workspace.title)
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_field_null_allowed(self):
+        """Test that workspace field can be null."""
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            workspace=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertIsNone(audit.workspace)
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_foreign_key_relationship(self):
+        """Test workspace foreign key relationship integrity."""
+        workspace = WorkspaceFactory()
+        entry = EntryFactory()
+
+        # Create audit with workspace
+        audit = AuditTrailFactory(
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        # Verify relationship works both ways
+        self.assertEqual(audit.workspace, workspace)
+
+        # Test reverse relationship (workspace should have audit trails)
+        workspace_audits = AuditTrail.objects.filter(workspace=workspace)
+        self.assertIn(audit, workspace_audits)
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_cascade_behavior(self):
+        """Test behavior when workspace is deleted."""
+        workspace = WorkspaceFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        audit_id = audit.audit_id
+
+        # Delete workspace to trigger CASCADE behavior
+        workspace.delete()
+
+        # With CASCADE, audit trail should be deleted when workspace is deleted
+        self.assertFalse(AuditTrail.objects.filter(audit_id=audit_id).exists())
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_filtering(self):
+        """Test filtering audit trails by workspace."""
+        workspace1 = WorkspaceFactory()
+        workspace2 = WorkspaceFactory()
+        entry = EntryFactory()
+
+        # Create audits for different workspaces
+        audit1 = AuditTrailFactory(
+            workspace=workspace1,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+        audit2 = AuditTrailFactory(
+            workspace=workspace2,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_UPDATED,
+        )
+        audit3 = AuditTrailFactory(
+            workspace=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_FLAGGED,
+        )
+
+        # Test filtering by workspace
+        ws1_audits = AuditTrail.objects.filter(workspace=workspace1)
+        ws2_audits = AuditTrail.objects.filter(workspace=workspace2)
+        null_ws_audits = AuditTrail.objects.filter(workspace__isnull=True)
+
+        self.assertIn(audit1, ws1_audits)
+        self.assertNotIn(audit2, ws1_audits)
+        self.assertNotIn(audit3, ws1_audits)
+
+        self.assertIn(audit2, ws2_audits)
+        self.assertNotIn(audit1, ws2_audits)
+        self.assertNotIn(audit3, ws2_audits)
+
+        self.assertIn(audit3, null_ws_audits)
+        self.assertNotIn(audit1, null_ws_audits)
+        self.assertNotIn(audit2, null_ws_audits)
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_with_organization_context(self):
+        """Test workspace field in context of organization relationship."""
+        organization = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=organization)
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.workspace, workspace)
+        self.assertEqual(audit.workspace.organization, organization)
+        # Verify we can access organization through workspace
+        self.assertIsNotNone(audit.workspace.organization.title)
+
+
+@pytest.mark.unit
+class TestAuditTrailOrganizationWorkspaceRelationships(TestCase):
+    """Test organization and workspace field relationships in AuditTrail model."""
+
+    @pytest.mark.django_db
+    def test_audit_trail_with_both_organization_and_workspace(self):
+        """Test audit trail with both organization and workspace fields set."""
+        organization = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=organization)
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=organization,
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.organization, organization)
+        self.assertEqual(audit.workspace, workspace)
+        self.assertEqual(audit.workspace.organization, organization)
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_without_workspace(self):
+        """Test audit trail with organization but no workspace."""
+        organization = OrganizationFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=organization,
+            workspace=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.organization, organization)
+        self.assertIsNone(audit.workspace)
+
+    @pytest.mark.django_db
+    def test_audit_trail_workspace_without_organization(self):
+        """Test audit trail with workspace but no organization."""
+        workspace = WorkspaceFactory()
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=None,
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertIsNone(audit.organization)
+        self.assertEqual(audit.workspace, workspace)
+
+    @pytest.mark.django_db
+    def test_audit_trail_mismatched_organization_workspace(self):
+        """Test audit trail with mismatched organization and workspace."""
+        org1 = OrganizationFactory()
+        org2 = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=org2)
+        entry = EntryFactory()
+
+        # This should be allowed - audit can have different org than workspace's org
+        audit = AuditTrailFactory(
+            organization=org1,
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        self.assertEqual(audit.organization, org1)
+        self.assertEqual(audit.workspace, workspace)
+        self.assertEqual(audit.workspace.organization, org2)
+        self.assertNotEqual(audit.organization, audit.workspace.organization)
+
+    @pytest.mark.django_db
+    def test_audit_trail_filtering_by_organization_and_workspace(self):
+        """Test complex filtering by both organization and workspace."""
+        org1 = OrganizationFactory()
+        org2 = OrganizationFactory()
+        ws1 = WorkspaceFactory(organization=org1)
+        ws2 = WorkspaceFactory(organization=org2)
+        entry = EntryFactory()
+
+        # Create various audit combinations
+        audit1 = AuditTrailFactory(
+            organization=org1,
+            workspace=ws1,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+        audit2 = AuditTrailFactory(
+            organization=org2,
+            workspace=ws2,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_UPDATED,
+        )
+        audit3 = AuditTrailFactory(
+            organization=org1,
+            workspace=None,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_FLAGGED,
+        )
+        audit4 = AuditTrailFactory(
+            organization=None,
+            workspace=ws1,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_DELETED,
+        )
+
+        # Test filtering by organization
+        org1_audits = AuditTrail.objects.filter(organization=org1)
+        self.assertIn(audit1, org1_audits)
+        self.assertIn(audit3, org1_audits)
+        self.assertNotIn(audit2, org1_audits)
+        self.assertNotIn(audit4, org1_audits)
+
+        # Test filtering by workspace
+        ws1_audits = AuditTrail.objects.filter(workspace=ws1)
+        self.assertIn(audit1, ws1_audits)
+        self.assertIn(audit4, ws1_audits)
+        self.assertNotIn(audit2, ws1_audits)
+        self.assertNotIn(audit3, ws1_audits)
+
+        # Test filtering by both organization and workspace
+        org1_ws1_audits = AuditTrail.objects.filter(organization=org1, workspace=ws1)
+        self.assertIn(audit1, org1_ws1_audits)
+        self.assertNotIn(audit2, org1_ws1_audits)
+        self.assertNotIn(audit3, org1_ws1_audits)
+        self.assertNotIn(audit4, org1_ws1_audits)
+
+    @pytest.mark.django_db
+    def test_audit_trail_organization_workspace_cascade_scenarios(self):
+        """Test cascade behavior with organization and workspace deletions."""
+        organization = OrganizationFactory()
+        workspace = WorkspaceFactory(organization=organization)
+        entry = EntryFactory()
+
+        audit = AuditTrailFactory(
+            organization=organization,
+            workspace=workspace,
+            target_entity=entry,
+            action_type=AuditActionType.ENTRY_CREATED,
+        )
+
+        audit_id = audit.audit_id
+
+        # Delete workspace first to trigger CASCADE behavior
+        workspace.delete()
+
+        # With CASCADE, audit trail should be deleted when workspace is deleted
+        self.assertFalse(AuditTrail.objects.filter(audit_id=audit_id).exists())
 
 
 @pytest.mark.unit

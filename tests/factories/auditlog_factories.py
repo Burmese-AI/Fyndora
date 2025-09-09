@@ -163,7 +163,9 @@ class OrganizationCreatedAuditFactory(AuditTrailFactory):
             "organization_id": str(self.target_entity.organization_id),
             "created_by": self.user.username if self.user else "System",
             "initial_status": self.target_entity.status,
-            "organization_type": getattr(self.target_entity, "organization_type", "standard"),
+            "organization_type": getattr(
+                self.target_entity, "organization_type", "standard"
+            ),
         }
 
 
@@ -183,7 +185,10 @@ class OrganizationUpdatedAuditFactory(AuditTrailFactory):
             "organization_id": str(self.target_entity.organization_id),
             "updated_by": self.user.username if self.user else "System",
             "old_values": {"title": "Old Organization Title", "status": "active"},
-            "new_values": {"title": self.target_entity.title, "status": self.target_entity.status},
+            "new_values": {
+                "title": self.target_entity.title,
+                "status": self.target_entity.status,
+            },
             "reason": "Organization information updated",
         }
 
@@ -248,7 +253,10 @@ class WorkspaceUpdatedAuditFactory(AuditTrailFactory):
             "organization_title": self.target_entity.organization.title,
             "workspace_status": self.target_entity.status,
             "old_values": {"title": "Old Workspace Title", "status": "active"},
-            "new_values": {"title": self.target_entity.title, "status": self.target_entity.status},
+            "new_values": {
+                "title": self.target_entity.title,
+                "status": self.target_entity.status,
+            },
             "updated_fields": ["title", "status"],
         }
 
@@ -404,8 +412,87 @@ class AuditWithComplexMetadataFactory(AuditTrailFactory):
     )
 
 
+class AuditTrailWithOrganizationFactory(AuditTrailFactory):
+    """Factory for creating AuditTrail instances with organization field."""
+
+    organization = SubFactory(OrganizationFactory)
+
+
+class AuditTrailWithWorkspaceFactory(AuditTrailFactory):
+    """Factory for creating AuditTrail instances with workspace field."""
+
+    workspace = SubFactory(WorkspaceFactory)
+
+
+class AuditTrailWithOrganizationAndWorkspaceFactory(AuditTrailFactory):
+    """Factory for creating AuditTrail instances with both organization and workspace fields."""
+
+    organization = SubFactory(OrganizationFactory)
+    workspace = SubFactory(WorkspaceFactory)
+
+
+class OrganizationAuditTrailFactory(AuditTrailFactory):
+    """Factory for organization-specific audit trails."""
+
+    organization = SubFactory(OrganizationFactory)
+    action_type = factory.Iterator(
+        [
+            AuditActionType.ORGANIZATION_CREATED,
+            AuditActionType.ORGANIZATION_UPDATED,
+            AuditActionType.ORGANIZATION_DELETED,
+        ]
+    )
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return self.organization
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "organization_name": self.organization.name,
+            "organization_id": str(self.organization.pk),
+            "action_by": self.user.username if self.user else "System",
+            "timestamp": str(self.timestamp) if hasattr(self, "timestamp") else None,
+        }
+
+
+class WorkspaceAuditTrailFactory(AuditTrailFactory):
+    """Factory for workspace-specific audit trails."""
+
+    workspace = SubFactory(WorkspaceFactory)
+    action_type = factory.Iterator(
+        [
+            AuditActionType.WORKSPACE_CREATED,
+            AuditActionType.WORKSPACE_UPDATED,
+            AuditActionType.WORKSPACE_DELETED,
+        ]
+    )
+
+    @factory.lazy_attribute
+    def target_entity(self):
+        return self.workspace
+
+    @factory.lazy_attribute
+    def organization(self):
+        """Set organization to match workspace's organization."""
+        return self.workspace.organization if self.workspace else None
+
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            "workspace_name": self.workspace.name,
+            "workspace_id": str(self.workspace.pk),
+            "organization_id": str(self.workspace.organization.pk)
+            if self.workspace.organization
+            else None,
+            "action_by": self.user.username if self.user else "System",
+            "timestamp": str(self.timestamp) if hasattr(self, "timestamp") else None,
+        }
+
+
 class BulkAuditTrailFactory(AuditTrailFactory):
-    """Factory for creating multiple audit trail entries efficiently."""
+    """Factory for creating multiple audit trails efficiently."""
 
     @classmethod
     def create_batch_for_entity(cls, entity, count=5, **kwargs):

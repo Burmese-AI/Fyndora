@@ -212,8 +212,6 @@ def edit_workspace_view(request, organization_id, workspace_id):
                 form_data, instance=workspace, organization=organization
             )
             try:
-                print(f"Workspace before updating => {workspace.remittance_rate}")
-                old_remittance_rate = workspace.remittance_rate
                 if form.is_valid():
                     update_workspace_from_form(
                         form=form,
@@ -221,21 +219,21 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         previous_workspace_admin=previous_workspace_admin,
                         previous_operations_reviewer=previous_operations_reviewer,
                     )
-                    print(form.cleaned_data["remittance_rate"])
 
-                    # If remittance rate is changed, update all due amounts of workspace teams' remitances
-                    if old_remittance_rate != form.cleaned_data["remittance_rate"]:
-                        print("Remittance Rate Changed")
-                        # Get All Workspace Teams
-                        workspace_teams = workspace.joined_teams.all()
-                        print(f"Workspace Teams: {workspace_teams}")
-                        # Update Remittance Due Amount of Each Team's Remittance
-                        for workspace_team in workspace_teams:
-                            remittance = workspace_team.remittance
-                            remittance.new_due_amount = calculate_due_amount(
-                                workspace_team=workspace_team
-                            )
-                            update_remittance(remittance=remittance)
+                    # Temporarity disable due to wrong logic, and KO MIN SIK will continue remittance upating part
+                    # # If remittance rate is changed, update all due amounts of workspace teams' remitances
+                    # if old_remittance_rate != form.cleaned_data["remittance_rate"]:
+                    #     print("Remittance Rate Changed")
+                    #     # Get All Workspace Teams
+                    #     workspace_teams = workspace.joined_teams.all()
+                    #     print(f"Workspace Teams: {workspace_teams}")
+                    #     # Update Remittance Due Amount of Each Team's Remittance
+                    #     for workspace_team in workspace_teams:
+                    #         remittance = workspace_team.remittance
+                    #         remittance.new_due_amount = calculate_due_amount(
+                    #             workspace_team=workspace_team
+                    #         )
+                    #         update_remittance(remittance=remittance)
 
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
@@ -366,6 +364,9 @@ def add_team_to_workspace_view(request, organization_id, workspace_id):
                     workspace_team = add_team_to_workspace(
                         workspace_id=workspace_id,
                         team_id=form.cleaned_data["team"].team_id,
+                        syned_with_workspace_remittance_rate=form.cleaned_data[
+                            "syned_with_workspace_remittance_rate"
+                        ],
                         custom_remittance_rate=form.cleaned_data[
                             "custom_remittance_rate"
                         ],
@@ -527,6 +528,12 @@ def change_workspace_team_remittance_rate_view(
                         workspace_team=workspace_team,
                         workspace=workspace,
                         user=request.user,
+                        syned_with_workspace_remittance_rate=form.cleaned_data[
+                            "syned_with_workspace_remittance_rate"
+                        ],
+                        custom_remittance_rate=form.cleaned_data[
+                            "custom_remittance_rate"
+                        ],
                     )
                     # Updating due amount of remittance
                     remittance = workspace_team.remittance

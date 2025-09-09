@@ -171,7 +171,11 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceTeam
-        fields = ["team", "custom_remittance_rate"]
+        fields = [
+            "team",
+            "custom_remittance_rate",
+            "syned_with_workspace_remittance_rate",
+        ]
         widgets = {
             "custom_remittance_rate": forms.NumberInput(
                 attrs={
@@ -180,6 +184,11 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
                     "min": "0",
                     "max": "100",
                     "step": "0.01",
+                }
+            ),
+            "syned_with_workspace_remittance_rate": forms.CheckboxInput(
+                attrs={
+                    "class": "checkbox checkbox-bordered rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
                 }
             ),
         }
@@ -204,11 +213,27 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
             raise ValidationError("Team already exists in this workspace.")
         return team
 
+    def clean(self):
+        cleaned_data = super().clean()
+        custom_remittance_rate = cleaned_data.get("custom_remittance_rate")
+        syned_with_workspace_remittance_rate = cleaned_data.get(
+            "syned_with_workspace_remittance_rate"
+        )
+        if custom_remittance_rate is not None and syned_with_workspace_remittance_rate:
+            raise ValidationError(
+                "Custom remittance rate cannot be set when you want to syned with workspace remittance rate."
+            )
+        if custom_remittance_rate is None and not syned_with_workspace_remittance_rate:
+            raise ValidationError(
+                "You must set a custom remittance rate or want to syned with workspace remittance rate."
+            )
+        return cleaned_data
+
 
 class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
     class Meta:
         model = WorkspaceTeam
-        fields = ["custom_remittance_rate"]
+        fields = ["custom_remittance_rate", "syned_with_workspace_remittance_rate"]
         widgets = {
             "custom_remittance_rate": forms.NumberInput(
                 attrs={
@@ -217,6 +242,11 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
                     "min": "0",
                     "max": "100",
                     "step": "0.01",
+                }
+            ),
+            "syned_with_workspace_remittance_rate": forms.CheckboxInput(
+                attrs={
+                    "class": "checkbox checkbox-bordered rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
                 }
             ),
         }
@@ -234,13 +264,29 @@ class ChangeWorkspaceTeamRemittanceRateForm(forms.ModelForm):
         return custom_remittance_rate
 
     def clean(self):
+        cleaned_data = super().clean()
+        custom_remittance_rate = cleaned_data.get("custom_remittance_rate")
+        syned_with_workspace_remittance_rate = cleaned_data.get(
+            "syned_with_workspace_remittance_rate"
+        )
+        if custom_remittance_rate is not None and syned_with_workspace_remittance_rate:
+            raise ValidationError(
+                "Custom remittance rate cannot be set when you want to syned with workspace remittance rate."
+            )
+        if custom_remittance_rate is None and not syned_with_workspace_remittance_rate:
+            raise ValidationError(
+                "You must set a custom remittance rate or want to syned with workspace remittance rate."
+            )
+
         # to make sure the remittance rate is not changed after the workspace has ended
+
         now = datetime.now().date()
         workspace_end_date = self.workspace.end_date
         if workspace_end_date and workspace_end_date < now:
             raise forms.ValidationError(
                 "You cannot change the remittance rate of a workspace that has ended."
             )
+
         return self.cleaned_data
 
 

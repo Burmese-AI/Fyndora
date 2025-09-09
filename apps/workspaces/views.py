@@ -530,6 +530,12 @@ def change_workspace_team_remittance_rate_view(
                         workspace_team=workspace_team,
                         workspace=workspace,
                         user=request.user,
+                        syned_with_workspace_remittance_rate=form.cleaned_data[
+                            "syned_with_workspace_remittance_rate"
+                        ],
+                        custom_remittance_rate=form.cleaned_data[
+                            "custom_remittance_rate"
+                        ],
                     )
                     # Updating due amount of remittance
                     remittance = workspace_team.remittance

@@ -20,6 +20,7 @@
 <div>
     {% include "components/field_error.html" with field=form.team %}
 </div>
+
 <div>
     <label for="id_custom_remittance_rate" class="block text-lg font-medium text-gray-700 mb-4">{{ form.custom_remittance_rate.label }}</label>
     {{ form.custom_remittance_rate }}
@@ -32,6 +33,14 @@
         {% endif %}
         <span class="text-gray-500">(applied if custom rate is not specified)</span>
     </div>
+</div>
+
+<div>
+    <label for="id_syned_with_workspace_remittance_rate" class="block text-lg font-medium text-gray-700 mb-4">{{ form.syned_with_workspace_remittance_rate.label }}</label>
+    {{ form.syned_with_workspace_remittance_rate }}
+</div>
+<div>
+    {% include "components/field_error.html" with field=form.syned_with_workspace_remittance_rate %}
 </div>
 
 

@@ -136,6 +136,7 @@ class WorkspaceTeam(baseModel):
     workspace = models.ForeignKey(
         Workspace, on_delete=models.CASCADE, related_name="joined_teams"
     )
+    syned_with_workspace_remittance_rate = models.BooleanField(default=True)# if True, the custom remittance rate will be ignored
     custom_remittance_rate = models.DecimalField(
         max_digits=5,  # 0.00 - 100.00
         decimal_places=2,
@@ -145,7 +146,7 @@ class WorkspaceTeam(baseModel):
             MinValueValidator(Decimal("0.00")),
             MaxValueValidator(Decimal("100.00")),
         ],
-        help_text="Overrides workspace default if set (percentage value between 0 and 100)",
+        help_text="the custom remittance rate will ignore the workspace default remittance rate",
     )
 
     class Meta:

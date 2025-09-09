@@ -171,7 +171,7 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
 
     class Meta:
         model = WorkspaceTeam
-        fields = ["team", "custom_remittance_rate"]
+        fields = ["team", "custom_remittance_rate", "syned_with_workspace_remittance_rate"]
         widgets = {
             "custom_remittance_rate": forms.NumberInput(
                 attrs={
@@ -180,6 +180,11 @@ class AddTeamToWorkspaceForm(forms.ModelForm):
                     "min": "0",
                     "max": "100",
                     "step": "0.01",
+                }
+            ),
+            "syned_with_workspace_remittance_rate": forms.CheckboxInput(
+                attrs={
+                    "class": "checkbox checkbox-bordered rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-primary text-base",
                 }
             ),
         }

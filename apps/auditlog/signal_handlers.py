@@ -258,6 +258,10 @@ class BaseAuditHandler:
         if changes:
             metadata["changed_fields"] = changes
 
+        # Add operation_type to metadata if provided
+        if operation_type:
+            metadata["operation_type"] = operation_type
+
         # Add user action metadata if user is available
         if user and operation_type:
             try:

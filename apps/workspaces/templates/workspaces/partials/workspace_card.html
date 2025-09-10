@@ -1,82 +1,172 @@
 <div 
     {% if is_oob %}hx-swap-oob="true"{% endif %} 
     id="workspace-card-{{ workspace.workspace_id }}" 
-    class="card bg-base-100 border border-base-200 shadow-md hover:shadow-xl rounded-xl transition-all duration-200 group flex flex-col"
+    class="group relative bg-base-100 border border-base-200 shadow-lg hover:shadow-2xl rounded-2xl transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1"
 >
-    <div class="card-body p-6 space-y-4 flex flex-col h-full">
-        <!-- Header -->
+    <!-- Status Indicator Bar -->
+    <div class="h-1 w-full 
+        {% if workspace.status == 'active' %}
+            bg-gradient-to-r from-success to-success/70
+        {% elif workspace.status == 'archived' %}
+            bg-gradient-to-r from-warning to-warning/70
+        {% elif workspace.status == 'closed' %}
+            bg-gradient-to-r from-error to-error/70
+        {% else %}
+            bg-gradient-to-r from-neutral to-neutral/70
+        {% endif %}">
+    </div>
+
+    <div class="p-6 space-y-5 flex flex-col h-full">
+        <!-- Header Section -->
         <div class="flex justify-between items-start">
-            <div>
-                <h2 class="text-lg font-bold mb-1">{{ workspace.title }}</h2>
-                <span class="badge badge-sm 
-                    {% if workspace.status == 'active' %}
-                        badge-success
-                    {% elif workspace.status == 'archived' %}
-                        badge-warning
-                    {% elif workspace.status == 'closed' %}
-                        badge-error
-                    {% else %}
-                        badge-neutral
-                    {% endif %}">
-                    {{ workspace.status|title }}
-                </span>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-base-content truncate group-hover:text-primary transition-colors duration-200">
+                        {{ workspace.title }}
+                    </h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-sm 
+                        {% if workspace.status == 'active' %}
+                            badge-success badge-outline
+                        {% elif workspace.status == 'archived' %}
+                            badge-warning badge-outline
+                        {% elif workspace.status == 'closed' %}
+                            badge-error badge-outline
+                        {% else %}
+                            badge-neutral badge-outline
+                        {% endif %}">
+                        {{ workspace.status|title }}
+                    </span>
+                    <span class="text-xs text-base-content/60">
+                        Created {{ workspace.created_at|date:"M d, Y" }}
+                    </span>
+                </div>
             </div>
-            <div class="flex gap-1">
+            <div class="flex gap-1 ml-2">
                 {% include "workspaces/components/edit_dropdown_workspace.html" %}
             </div>
         </div>
 
         <!-- Description -->
-        <p class="text-sm text-base-content/70 line-clamp-3">
-            {{ workspace.description|default:"No description provided" }}
-        </p>
-
-        <!-- Metadata -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-base-content/70">
-            <div><span class="font-semibold">Start:</span> {{ workspace.start_date|date:"M d, Y" }}</div>
-            <div><span class="font-semibold">End:</span> {% if workspace.end_date %}{{ workspace.end_date|date:"M d, Y" }}{% else %}Ongoing{% endif %}</div>
-            <div><span class="font-semibold">Teams:</span> {{ workspace.teams_count }}</div>
-            <div><span class="font-semibold">Admin:</span> 
-                {% if workspace.workspace_admin %}
-                    {{ workspace.workspace_admin.user.username }}
-                {% else %}
-                    Not Assigned
-                {% endif %}
-            </div>
-            <div><span class="font-semibold">Remittance Rate:</span> 
-                {% if workspace.remittance_rate %}
-                    {{ workspace.remittance_rate }}%
-                {% else %}
-                    Default
-                {% endif %}
-            </div>
-            <div><span class="font-semibold">Operations Reviewer:</span> 
-                {% if workspace.operations_reviewer %}
-                    {{ workspace.operations_reviewer.user.username }}
-                {% else %}
-                    Not Assigned
-                {% endif %}
-            </div>
-            
+        <div class="flex-1">
+            <p class="text-sm text-base-content/70 line-clamp-3 leading-relaxed">
+                {{ workspace.description|default:"No description provided" }}
+            </p>
         </div>
 
-        <!-- Actions -->
-        <div class="mt-auto pt-4 flex flex-col sm:flex-row gap-3">
-            <a 
-                href="{% url 'get_workspace_teams' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" 
-                class="btn btn-soft btn-secondary shadow hover:text-white btn-sm w-full sm:w-1/2">
-                Manage
-            </a>
-            <a 
-                hx-get="{% url 'add_team_to_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" 
-                hx-target="#modal-placeholder" 
-                hx-swap="innerHTML"
-                class="btn btn-soft btn-secondary shadow hover:text-white btn-sm w-full sm:w-1/2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Teams
-            </a>
+        <!-- Enhanced Metadata Grid -->
+        <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-center gap-2 text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                        <div class="font-semibold text-base-content/80">Start Date</div>
+                        <div class="text-base-content/60">{{ workspace.start_date|date:"M d, Y" }}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                        <div class="font-semibold text-base-content/80">End Date</div>
+                        <div class="text-base-content/60">
+                            {% if workspace.end_date %}{{ workspace.end_date|date:"M d, Y" }}{% else %}Ongoing{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-center gap-2 text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <div>
+                        <div class="font-semibold text-base-content/80">Teams</div>
+                        <div class="text-base-content/60">{{ workspace.teams_count }} teams</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <div class="font-semibold text-base-content/80">Remittance Rate</div>
+                        <div class="text-base-content/60">
+                            {% if workspace.remittance_rate %}{{ workspace.remittance_rate }}%{% else %}Default{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin and Reviewer Info -->
+            <div class="pt-2 border-t border-base-200">
+                <div class="grid grid-cols-1 gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <div class="flex-1">
+                            <span class="font-semibold text-base-content/80">Admin:</span>
+                            <span class="text-base-content/60 ml-1">
+                                {% if workspace.workspace_admin %}
+                                    {{ workspace.workspace_admin.user.username }}
+                                {% else %}
+                                    Not Assigned
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <div class="flex-1">
+                            <span class="font-semibold text-base-content/80">Reviewer:</span>
+                            <span class="text-base-content/60 ml-1">
+                                {% if workspace.operations_reviewer %}
+                                    {{ workspace.operations_reviewer.user.username }}
+                                {% else %}
+                                    Not Assigned
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Actions -->
+        <div class="mt-6 pt-4 border-t border-base-200">
+            <div class="flex flex-col gap-3">
+                <a 
+                    href="{% url 'get_workspace_teams' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" 
+                    class="btn btn-primary btn-sm w-full group/btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    </svg>
+                    Manage Workspace
+                </a>
+                <a 
+                    hx-get="{% url 'add_team_to_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" 
+                    hx-target="#modal-placeholder" 
+                    hx-swap="innerHTML"
+                    class="btn btn-outline btn-sm w-full group/btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 group-hover/btn:rotate-90 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Teams
+                </a>
+            </div>
         </div>        
     </div>
 </div>

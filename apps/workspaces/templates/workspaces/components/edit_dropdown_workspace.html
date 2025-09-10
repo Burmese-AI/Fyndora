@@ -20,7 +20,7 @@
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
         @click.away="showMenu = false" 
-        class="absolute left-0 mt-2 w-48 bg-base-100 shadow-lg rounded-lg py-1 z-10 border border-base-200">
+        class="absolute right-0 mt-2 w-48 bg-base-100 shadow-lg rounded-lg py-1 z-50 border border-base-200">
         <a hx-get="{% url 'edit_workspace' organization_id=organization.organization_id workspace_id=workspace.workspace_id %}" hx-target="#modal-placeholder"
            class="flex items-center px-4 py-2 text-sm text-base-content/80 hover:bg-base-200 transition-colors duration-200">
            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

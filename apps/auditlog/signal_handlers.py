@@ -140,7 +140,13 @@ class AuditModelRegistry:
                     "updated": AuditActionType.USER_PROFILE_UPDATED,
                     "deleted": AuditActionType.USER_DELETED,
                 },
-                "tracked_fields": ["email", "username", "status", "is_active", "is_staff"],
+                "tracked_fields": [
+                    "email",
+                    "username",
+                    "status",
+                    "is_active",
+                    "is_staff",
+                ],
             },
             "organizations.OrganizationMember": {
                 "action_types": {
@@ -179,7 +185,7 @@ class AuditModelRegistry:
                     "updated": AuditActionType.ORGANIZATION_EXCHANGE_RATE_UPDATED,
                     "deleted": AuditActionType.ORGANIZATION_EXCHANGE_RATE_DELETED,
                 },
-                "tracked_fields": ["rate", "effective_date", "note"],
+                "tracked_fields": ["rate", "effective_date", "note", "deleted_at"],
             },
             "workspaces.WorkspaceExchangeRate": {
                 "action_types": {
@@ -187,7 +193,13 @@ class AuditModelRegistry:
                     "updated": AuditActionType.WORKSPACE_EXCHANGE_RATE_UPDATED,
                     "deleted": AuditActionType.WORKSPACE_EXCHANGE_RATE_DELETED,
                 },
-                "tracked_fields": ["rate", "effective_date", "note", "is_approved"],
+                "tracked_fields": [
+                    "rate",
+                    "effective_date",
+                    "note",
+                    "is_approved",
+                    "deleted_at",
+                ],
             },
         }
 
@@ -251,7 +263,9 @@ class BaseAuditHandler:
             return value
 
     @staticmethod
-    def build_metadata(instance, changes=None, operation_type=None, user=None, **extra_metadata):
+    def build_metadata(
+        instance, changes=None, operation_type=None, user=None, **extra_metadata
+    ):
         """Build enhanced metadata dictionary for audit logging with rich context."""
         metadata = {"automatic_logging": True, **extra_metadata}
 
@@ -275,8 +289,10 @@ class BaseAuditHandler:
         # Add entity-specific metadata based on model type
         try:
             model_name = instance._meta.model_name.lower()
-            if hasattr(EntityMetadataBuilder, f'build_{model_name}_metadata'):
-                entity_metadata_method = getattr(EntityMetadataBuilder, f'build_{model_name}_metadata')
+            if hasattr(EntityMetadataBuilder, f"build_{model_name}_metadata"):
+                entity_metadata_method = getattr(
+                    EntityMetadataBuilder, f"build_{model_name}_metadata"
+                )
                 entity_metadata = entity_metadata_method(instance)
                 metadata.update(entity_metadata)
             else:
@@ -284,7 +300,9 @@ class BaseAuditHandler:
                 general_metadata = EntityMetadataBuilder.build_entity_metadata(instance)
                 metadata.update(general_metadata)
         except Exception as e:
-            logger.warning(f"Failed to build entity metadata for {instance._meta.model_name}: {e}")
+            logger.warning(
+                f"Failed to build entity metadata for {instance._meta.model_name}: {e}"
+            )
 
         return metadata
 
@@ -376,26 +394,56 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 )
 
                     if changes:
-                        # Check if status field was changed to use specific action type
-                        status_changed = any(change["field"] == "status" for change in changes)
-                        
-                        if status_changed and "status_changed" in action_types:
-                            # Use specific status changed action type
-                            action_type = action_types["status_changed"]
-                            operation_type = "status_change"
-                            
-                            # Add status change specific metadata
-                            status_change = next(change for change in changes if change["field"] == "status")
+                        # Check if deleted_at field was changed from None to a timestamp (soft deletion)
+                        deleted_at_changed = any(
+                            change["field"] == "deleted_at"
+                            and change["old_value"] is None
+                            and change["new_value"] is not None
+                            for change in changes
+                        )
+
+                        if deleted_at_changed and "deleted" in action_types:
+                            # This is a soft deletion - use deletion action type
+                            action_type = action_types["deleted"]
+                            operation_type = "delete"
+
+                            # Add soft deletion specific metadata
+                            deleted_at_change = next(
+                                change
+                                for change in changes
+                                if change["field"] == "deleted_at"
+                            )
                             extra_metadata = {
-                                "old_status": status_change["old_value"],
-                                "new_status": status_change["new_value"],
+                                "soft_delete": True,
+                                "deletion_timestamp": deleted_at_change["new_value"],
                             }
                         else:
-                            # Use generic update action type
-                            action_type = action_types["updated"]
-                            operation_type = "update"
-                            extra_metadata = {}
-                        
+                            # Check if status field was changed to use specific action type
+                            status_changed = any(
+                                change["field"] == "status" for change in changes
+                            )
+
+                            if status_changed and "status_changed" in action_types:
+                                # Use specific status changed action type
+                                action_type = action_types["status_changed"]
+                                operation_type = "status_change"
+
+                                # Add status change specific metadata
+                                status_change = next(
+                                    change
+                                    for change in changes
+                                    if change["field"] == "status"
+                                )
+                                extra_metadata = {
+                                    "old_status": status_change["old_value"],
+                                    "new_status": status_change["new_value"],
+                                }
+                            else:
+                                # Use generic update action type
+                                action_type = action_types["updated"]
+                                operation_type = "update"
+                                extra_metadata = {}
+
                         metadata = cls.build_metadata(
                             instance,
                             operation_type=operation_type,

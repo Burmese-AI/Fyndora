@@ -1,52 +1,87 @@
 <div 
     {% if is_oob %}hx-swap-oob="true"{% endif %} 
     id="team-card-{{ team.team_id }}" 
-    class="card bg-base-100 border border-base-200 shadow-md hover:shadow-xl rounded-xl transition-all duration-200 flex flex-col group"
+    class="relative bg-base-100 border border-base-200 shadow-md hover:shadow-2xl rounded-2xl transition-all duration-300 flex flex-col overflow-hidden group"
 >
-    <div class="card-body p-6 flex flex-col h-full space-y-4">
+    <!-- Left Accent Bar (Primary themed on Teams per user preference) -->
+    <div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-primary to-primary/70"></div>
+
+    <div class="p-6 flex flex-col h-full space-y-5">
         <!-- Header -->
         <div class="flex justify-between items-start">
-            <h2 class="text-lg font-bold">{{ team.title }}</h2>
-            <div class="flex gap-1">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-base-content truncate group-hover:text-primary transition-colors duration-200">{{ team.title }}</h2>
+            </div>
+            <div class="flex gap-1 ml-2">
                 {% include "teams/components/edit_dropdown_team.html" %}
             </div>
         </div>
 
         <!-- Description -->
-        <p class="text-sm text-base-content/70 line-clamp-3">
+        <p class="text-sm text-base-content/70 leading-relaxed line-clamp-3">
             {{ team.description|default:"No description provided" }}
         </p>
 
-        <!-- Metadata -->
-        <div class="text-sm space-y-2 text-base-content/70">
-            <div>
-                <span class="font-semibold">Workspaces Joined:</span>
-                {% if team.attached_workspaces %}
-                    {% for workspace in team.attached_workspaces %}
-                        <span class="inline-block">{{ workspace.workspace.title }}{% if not forloop.last %}, {% endif %}</span>
-                    {% endfor %}
-                {% else %}
-                    <span class="text-gray-400">None</span>
-                {% endif %}
+        <!-- Metadata (distinct layout vs Workspace) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="flex items-start gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10" />
+                </svg>
+                <div>
+                    <div class="font-semibold text-base-content/80">Workspaces Joined</div>
+                    <div class="text-base-content/60">
+                        {% if team.attached_workspaces %}
+                            {% for workspace in team.attached_workspaces %}
+                                <span class="inline-block">{{ workspace.workspace.title }}{% if not forloop.last %}, {% endif %}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="opacity-60">None</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div>
-                <span class="font-semibold">Coordinator:</span>
-                {% if team.team_coordinator %}
-                    {{ team.team_coordinator.user.username }}
-                {% else %}
-                    <span class="text-gray-400">Not Assigned</span>
-                {% endif %}
+
+            <div class="flex items-start gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <div>
+                    <div class="font-semibold text-base-content/80">Coordinator</div>
+                    <div class="text-base-content/60">
+                        {% if team.team_coordinator %}
+                            {{ team.team_coordinator.user.username }}
+                        {% else %}
+                            <span class="opacity-60">Not Assigned</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div>
-                <span class="font-semibold">Members:</span> {{ team.members.count }}
+
+            <div class="flex items-start gap-2 sm:col-span-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h2l2-2h10l2 2h2v12H3z" />
+                </svg>
+                <div>
+                    <div class="font-semibold text-base-content/80">Members</div>
+                    <div class="text-base-content/60">{{ team.members.count }}</div>
+                </div>
             </div>
         </div>
 
         <!-- Actions -->
-        <div class="mt-auto pt-2 flex">
+        <div class="mt-auto pt-4 border-t border-base-200">
             <a 
                 href="{% url 'team_members' organization_id=organization.organization_id team_id=team.team_id %}" 
-                class="btn btn-soft btn-secondary shadow hover:text-white btn-sm w-full">
+                class="btn btn-primary btn-sm w-full group/btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
                 Manage Team
             </a>
         </div>

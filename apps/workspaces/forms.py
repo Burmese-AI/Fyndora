@@ -126,9 +126,11 @@ class WorkspaceForm(forms.ModelForm):
         operations_reviewer = cleaned_data.get("operations_reviewer")
 
         now = datetime.now().date()
-        #to prevent the user from changing the deadline of a workspace before today
+        # to prevent the user from changing the deadline of a workspace before today
         if end_date and end_date < now:
-            raise forms.ValidationError("You cannot change the deadline of a workspace before today")
+            raise forms.ValidationError(
+                "You cannot change the deadline of a workspace before today"
+            )
 
         # to make sure the workspace admin and operations reviewer are not the same person
         if workspace_admin and operations_reviewer:

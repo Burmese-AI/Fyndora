@@ -1,12 +1,17 @@
+from functools import wraps
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Type, Any, Callable
+
 from django.core.paginator import Paginator
-from .constants import PAGINATION_SIZE
 from django.contrib import messages
 from django.shortcuts import redirect
 from django_htmx.http import HttpResponseClientRedirect
-from apps.core.permissions import OrganizationPermissions
-from decimal import Decimal, ROUND_HALF_UP
 from django.contrib.auth.models import Group
+from django.db import DatabaseError
 
+from .constants import PAGINATION_SIZE
+from .exceptions import BaseServiceError
+from .permissions import OrganizationPermissions
 
 def percent_change(current: float, previous: float) -> str:
     if previous == 0:
@@ -141,3 +146,45 @@ def check_if_member_is_owner(member, organization):
     if member.user == organization.owner.user:
         return True
     return False
+
+
+def handle_service_errors(
+    error_class: type[BaseServiceError] = BaseServiceError,
+    return_value = None,
+    context: dict | None = None,
+):
+    """
+    Decorator to automatically catch exceptions and wrap them into service errors.
+
+    Args:
+        raise_error (bool): If True, raise the error; otherwise return return_value.
+        return_value: Value returned instead of raising when raise_error=False.
+        error_class (type): Base error class to use (default BaseServiceError).
+        context (dict): Static context to always include.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            
+            try:
+            
+                return func(*args, **kwargs)
+            
+            except Exception as err:
+
+                # Build static context
+                final_context = dict(context or {})
+                
+                # Convert into proper service error
+                service_error = error_class.from_exception(
+                    err,
+                    context=final_context,
+                )
+
+                if not return_value:
+                    raise service_error
+                
+                return return_value
+        return wrapper
+    return decorator

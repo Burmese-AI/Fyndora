@@ -6,9 +6,10 @@ from django.utils import timezone
 
 from apps.attachments.services import create_attachments, replace_or_append_attachments
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.core.utils import model_update, percent_change
+from apps.core.utils import handle_service_errors, model_update, percent_change
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
+from apps.entries.exceptions import EntryServiceError
 from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
@@ -83,11 +84,10 @@ class EntryService:
     @staticmethod
     def bulk_create_entry(*, entries: list[Entry]):
         try:
-            Entry.objects.bulk_create(entries)
+            return Entry.objects.bulk_create(entries)
             # E722 Do not use bare `except` (add that due to ruff format:THA)
         except Exception:
             raise Exception("An error occurred during entry bulk create operation.")
-
 
 def _extract_user_from_actor(actor):
     """
@@ -344,9 +344,8 @@ def delete_entry(*, entry: Entry, user=None, request=None):
     entry.delete()
     return entry
 
-
+@handle_service_errors(EntryServiceError)
 def bulk_delete_entries(*, entries: list[Entry], user=None, request=None):
-    # Bulk Delete
     entries.delete()
     return entries
 

@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
 from apps.core.utils import permission_denied_view
@@ -27,7 +28,7 @@ from ..forms import (
     CreateOrganizationExpenseEntryForm,
 )
 from ..models import Entry
-from ..selectors import get_entries
+from ..selectors import get_entries, get_entry
 from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
     can_add_org_expense,
@@ -227,6 +228,11 @@ class OrganizationExpenseDeleteView(
                 "You do not have permission to delete organization expenses.",
             )
         return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        return get_entry(
+            pk=self.kwargs["pk"],
+        )
 
     def get_queryset(self):
         return get_entries(

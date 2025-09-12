@@ -162,29 +162,29 @@ def handle_service_errors(
         error_class (type): Base error class to use (default BaseServiceError).
         context (dict): Static context to always include.
     """
+    
+    # Build static context
+    final_context = dict(context or {})
 
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             
             try:
-            
-                return func(*args, **kwargs)
+                return func(*args, **kwargs)            
+            except BaseServiceError as err:
+                if return_value:
+                    return return_value
+                raise err
             
             except Exception as err:
-
-                # Build static context
-                final_context = dict(context or {})
-                
+                if return_value:
+                    return return_value
                 # Convert into proper service error
-                service_error = error_class.from_exception(
+                raise error_class.from_exception(
                     err,
                     context=final_context,
-                )
-
-                if not return_value:
-                    raise service_error
+                ) 
                 
-                return return_value
         return wrapper
     return decorator

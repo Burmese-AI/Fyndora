@@ -34,7 +34,7 @@ from ..forms import (
     UpdateWorkspaceTeamEntryForm,
 )
 from ..models import Entry
-from ..selectors import get_entries
+from ..selectors import get_entries, get_entry
 from ..services import create_entry_with_attachments, delete_entry
 from ..utils import (
     can_add_workspace_team_entry,
@@ -322,13 +322,9 @@ class WorkspaceTeamEntryDeleteView(
     #
     # we make sure we're *only* trying to delete entries that strictly match
     # It's an indirect fix that just makes things cleaner.
-    def get_object(self, queryset=None):
-        return get_object_or_404(
-            Entry,
-            pk=self.kwargs["pk"],
-            workspace_team=self.workspace_team,
-            workspace=self.workspace,
-            organization=self.organization,
+    def get_object(self):
+        return get_entry(
+            pk=self.kwargs["pk"]
         )
 
     def get_queryset(self):

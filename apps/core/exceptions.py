@@ -1,19 +1,10 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import DatabaseError, IntegrityError
 from requests.exceptions import RequestException
 
 
 class BaseServiceError(Exception):
     """Base exception for all service errors with automatic type detection."""
-
-    EXCEPTION_MAP = {
-        DatabaseError: "BulkOperationError",
-        IntegrityError: "BulkOperationError",
-        ValidationError: "ValidationError",
-        RequestException: "ExternalServiceError",
-        ValueError: "ValidationError",
-        TypeError: "ValidationError",
-    }
 
     default_detail = "An error occurred"
 
@@ -37,19 +28,13 @@ class BaseServiceError(Exception):
             })
 
     def build_detail_message(self):
-        """
-        Automatically generate a readable message using the original exception
-        and optional context metadata.
-        """
         parts = [self.default_detail]
 
-        # Include original exception type/message if available
         if self.original_exception:
             exc_type = type(self.original_exception).__name__
             exc_msg = str(self.original_exception)
             parts.append(f"Cause: {exc_type} - {exc_msg}")
 
-        # Include some context info if available
         if self.context:
             ctx_str = ", ".join(f"{k}={v}" for k, v in self.context.items())
             parts.append(f"Context: {ctx_str}")
@@ -59,17 +44,35 @@ class BaseServiceError(Exception):
     @classmethod
     def from_exception(cls, exception, context=None):
         context = context or {}
-        for builtin_exc, custom_exc_name in cls.EXCEPTION_MAP.items():
+        for builtin_exc, custom_exc_class in cls.EXCEPTION_MAP.items():
             if isinstance(exception, builtin_exc):
-                custom_exc_class = globals().get(custom_exc_name, cls)
                 return custom_exc_class(
                     original_exception=exception,
                     context=context
                 )
-        return cls(
-            original_exception=exception,
-            context=context
-        )
+        return cls(original_exception=exception, context=context)
 
     def __str__(self):
         return self.detail
+
+class ValidationServiceError(BaseServiceError):
+    default_detail = "Validation failed"
+
+
+class BulkOperationError(BaseServiceError):
+    default_detail = "A bulk operation failed"
+
+
+class ExternalServiceError(BaseServiceError):
+    default_detail = "External service request failed"
+
+
+# --- Exception mapping ---
+BaseServiceError.EXCEPTION_MAP = {
+    DatabaseError: BulkOperationError,
+    IntegrityError: BulkOperationError,
+    DjangoValidationError: ValidationServiceError,
+    RequestException: ExternalServiceError,
+    ValueError: ValidationServiceError,
+    TypeError: ValidationServiceError,
+}

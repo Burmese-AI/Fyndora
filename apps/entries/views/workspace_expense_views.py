@@ -2,7 +2,7 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
 from django.urls import reverse
-from ..selectors import get_entries
+from ..selectors import get_entries, get_entry
 
 from apps.core.views.base_views import BaseGetModalFormView, BaseGetModalView
 from ..constants import CONTEXT_OBJECT_NAME, EntryStatus, EntryType
@@ -243,6 +243,11 @@ class WorkspaceExpenseDeleteView(
                 "You do not have permission to delete workspace expenses.",
             )
         return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        return get_entry(
+            pk=self.kwargs["pk"],
+        )
 
     def get_queryset(self):
         return get_entries(

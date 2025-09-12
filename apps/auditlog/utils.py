@@ -288,9 +288,17 @@ def should_log_model(model_class):
         "Workspace",
         "Entry",
         "Team",
+        "TeamMember",
         "User",
         "Invitation",
         "Remittance",
+        "OrganizationMember",
+        "WorkspaceTeam",
+        "Attachment",
+        "Currency",
+        "OrganizationExchangeRate",
+        "WorkspaceExchangeRate",
+        "CustomUser",
     }
 
     return model_class.__name__ in business_models

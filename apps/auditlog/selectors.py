@@ -63,11 +63,13 @@ class AuditLogSelector:
         """
         qs = AuditTrail.objects.select_related("user", "target_entity_type").all()
 
-        # we have to filter by organization_id which is not in the metadata
-        # there is no worksapac id in meta data.
+        # Organization filtering
+        if organization_id:
+            qs = qs.filter(organization_id=organization_id)
+
         # Workspace filtering
         if workspace_id:
-            qs = qs.filter(metadata__workspace_id=workspace_id)
+            qs = qs.filter(workspace_id=workspace_id)
 
         # User filtering
         if user_id:

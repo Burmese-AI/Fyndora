@@ -101,7 +101,6 @@ class TeamAuditLogger(BaseAuditLogger):
         metadata = {
             "action": action,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -128,8 +127,8 @@ class TeamAuditLogger(BaseAuditLogger):
         if member:
             metadata.update(
                 {
-                    "member_id": str(member.organization_member_id),
-                    "member_email": member.user.email,
+                    "member_id": str(member.team_member_id),
+                    "member_email": member.organization_member.user.email,
                     "member_role": getattr(member, "role", ""),
                     "member_status": getattr(member, "status", ""),
                 }

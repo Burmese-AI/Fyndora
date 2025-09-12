@@ -39,30 +39,6 @@ class BusinessAuditLogger:
             raise ValueError("Valid authenticated user required for audit logging")
 
     @staticmethod
-    def _extract_request_metadata(request):
-        """Extract metadata from Django request object"""
-        if request is None:
-            return {
-                "ip_address": "unknown",
-                "user_agent": "unknown",
-                "http_method": "unknown",
-                "request_path": "unknown",
-                "session_key": None,
-                "source": "service_call",
-            }
-
-        return {
-            "ip_address": request.META.get("REMOTE_ADDR", "unknown"),
-            "user_agent": request.META.get("HTTP_USER_AGENT", "unknown"),
-            "http_method": request.method,
-            "request_path": request.path,
-            "session_key": request.session.session_key
-            if hasattr(request, "session")
-            else None,
-            "source": "web_request",
-        }
-
-    @staticmethod
     def _safe_get_related_field(obj, field_path, converter=None):
         """Safely get a related field value with dot notation"""
         try:
@@ -84,7 +60,6 @@ class BusinessAuditLogger:
         metadata = {
             "action": action,
             "manual_logging": True,
-            **BusinessAuditLogger._extract_request_metadata(request),
             **kwargs,
         }
         return metadata

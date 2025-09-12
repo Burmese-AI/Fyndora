@@ -33,6 +33,8 @@ def create_team_from_form(form, organization, orgMember):
         team = form.save(commit=False)
         team.organization = organization
         team.created_by = orgMember
+        # Set audit context to prevent duplicate logging from signal handlers
+        team._audit_user = orgMember.user
         team.save()
 
         if team.team_coordinator:
@@ -44,25 +46,7 @@ def create_team_from_form(form, organization, orgMember):
 
         assign_team_permissions(team)
 
-        # Audit logging: Log team creation
-        try:
-            BusinessAuditLogger.log_team_action(
-                user=orgMember.user,
-                team=team,
-                action="create",
-                request=None,
-                operation_type="team_form_creation",
-                created_fields=list(form.cleaned_data.keys()),
-                has_coordinator=bool(team.team_coordinator),
-                coordinator_email=team.team_coordinator.user.email
-                if team.team_coordinator
-                else None,
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team creation: {audit_error}",
-                exc_info=True,
-            )
+        # CRUD logging handled by signal handlers
 
         return team
     except Exception as e:
@@ -165,25 +149,11 @@ def create_team_member_from_form(form, team, organization):
         team_member = form.save(commit=False)
         team_member.team = team
         team_member.organization = organization
+        # Set audit context to prevent duplicate logging from signal handlers
+        team_member._audit_user = team_member.organization_member.user
         team_member.save()
 
-        # Audit logging: Log team member creation from form
-        try:
-            current_user = team_member.organization_member.user
-            BusinessAuditLogger.log_team_member_action(
-                user=current_user,
-                team_member=team_member,
-                action="add",
-                request=None,
-                operation_type="team_member_form_creation",
-                created_fields=list(form.cleaned_data.keys()),
-                creation_method="form_submission",
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team member form creation: {audit_error}",
-                exc_info=True,
-            )
+        # CRUD logging handled by signal handlers
 
         return team_member
     except Exception as e:
@@ -218,7 +188,7 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMember:
+def update_team_member_role(*, form, team_member, previous_role, team, user=None) -> TeamMember:
     """
     Updates a team member role from a form.
     """
@@ -232,11 +202,13 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
             team.team_coordinator = None
             team.save()
             update_team_coordinator_group(team, team_member.organization_member, None)
+        # Set audit context to prevent duplicate logging from signal handlers
+        current_user = user if user else team_member.organization_member.user
+        team_member._audit_user = current_user
         team_member = model_update(team_member, {"role": form.cleaned_data["role"]})
 
-        # Audit logging: Log team member role change
+        # Business logic logging: Log role changes
         try:
-            current_user = team_member.organization_member.user
             BusinessAuditLogger.log_team_member_action(
                 user=current_user,
                 team_member=team_member,
@@ -245,7 +217,6 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
                 operation_type="team_member_role_update",
                 previous_role=previous_role,
                 new_role=new_role,
-                updated_fields=list(form.cleaned_data.keys()),
                 coordinator_change=previous_role == "team_coordinator",
             )
         except Exception as audit_error:
@@ -253,12 +224,12 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
                 f"Audit logging failed for team member role update: {audit_error}",
                 exc_info=True,
             )
+        # General CRUD logging handled by signal handlers
 
         return team_member
     except Exception as e:
         # Audit logging: Log team member role update failure
         try:
-            current_user = team_member.organization_member.user
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_member_role_update",
@@ -278,38 +249,41 @@ def update_team_member_role(*, form, team_member, previous_role, team) -> TeamMe
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
 
 
-def update_team_from_form(form, team, organization, previous_team_coordinator) -> Team:
+def update_team_from_form(form, team, organization, previous_team_coordinator, user=None) -> Team:
     """
     Updates a team from a form.
     """
     try:
+        # Set audit context to prevent duplicate logging from signal handlers
+        current_user = user if user else team.created_by.user
+        team._audit_user = current_user
         team = model_update(team, form.cleaned_data)
         new_team_coordinator = team.team_coordinator
         coordinator_changed = previous_team_coordinator != new_team_coordinator
 
-        # Audit logging: Log team update
-        try:
-            current_user = team.created_by.user
-            BusinessAuditLogger.log_team_action(
-                user=current_user,
-                team=team,
-                action="update",
-                request=None,
-                operation_type="team_form_update",
-                updated_fields=list(form.cleaned_data.keys()),
-                coordinator_changed=coordinator_changed,
-                previous_coordinator_email=previous_team_coordinator.user.email
-                if previous_team_coordinator
-                else None,
-                new_coordinator_email=new_team_coordinator.user.email
-                if new_team_coordinator
-                else None,
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team update: {audit_error}",
-                exc_info=True,
-            )
+        # Business logic logging: Log coordinator changes if applicable
+        if coordinator_changed:
+            try:
+                BusinessAuditLogger.log_team_action(
+                    user=current_user,
+                    team=team,
+                    action="coordinator_change",
+                    request=None,
+                    operation_type="team_coordinator_update",
+                    coordinator_changed=coordinator_changed,
+                    previous_coordinator_email=previous_team_coordinator.user.email
+                    if previous_team_coordinator
+                    else None,
+                    new_coordinator_email=new_team_coordinator.user.email
+                    if new_team_coordinator
+                    else None,
+                )
+            except Exception as audit_error:
+                logger.error(
+                    f"Audit logging failed for team coordinator change: {audit_error}",
+                    exc_info=True,
+                )
+        # General CRUD logging handled by signal handlers
         # which means the team coordinator is not being changed.. MgMg still MgMg
         if previous_team_coordinator == new_team_coordinator:
             # just return the team and do nothing
@@ -450,7 +424,6 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
     except Exception as e:
         # Audit logging: Log team update failure
         try:
-            current_user = team.created_by.user
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_form_update",
@@ -470,7 +443,7 @@ def update_team_from_form(form, team, organization, previous_team_coordinator) -
         raise TeamUpdateError(f"Failed to update team: {str(e)}")
 
 
-def remove_team_member(team_member: TeamMember, team: Team) -> None:
+def remove_team_member(team_member: TeamMember, team: Team, user=None) -> None:
     """
     Removes a team member.
     """
@@ -482,9 +455,8 @@ def remove_team_member(team_member: TeamMember, team: Team) -> None:
 
         # Audit logging: Log team member removal
         try:
-            # Note: This function doesn't have access to the current user,
-            # so we use the team member's user for audit logging
-            current_user = team_member.organization_member.user
+            # Use the actual user performing the removal, fallback to team member's user
+            current_user = user if user else team_member.organization_member.user
             BusinessAuditLogger.log_team_member_action(
                 user=current_user,
                 team_member=team_member,
@@ -530,7 +502,7 @@ def remove_team_member(team_member: TeamMember, team: Team) -> None:
     except Exception as e:
         # Audit logging: Log team member removal failure
         try:
-            current_user = team_member.organization_member.user
+            # Use the current_user variable already set at the beginning of the function
             BusinessAuditLogger.log_operation_failure(
                 user=current_user,
                 operation_type="team_member_removal",

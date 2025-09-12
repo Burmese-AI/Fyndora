@@ -113,7 +113,6 @@ class WorkspaceAuditLogger(BaseAuditLogger):
         metadata = {
             "action": action,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -204,7 +203,6 @@ class WorkspaceAuditLogger(BaseAuditLogger):
         metadata = {
             "action": action,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 

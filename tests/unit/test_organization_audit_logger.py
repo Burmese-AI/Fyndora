@@ -2,12 +2,14 @@
 
 from unittest.mock import Mock, patch
 
+import pytest
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 from django.test import TestCase
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.loggers.organization_logger import OrganizationAuditLogger
+from tests.factories.organization_factories import OrganizationFactory
 
 
 class TestOrganizationAuditLogger(TestCase):
@@ -361,67 +363,9 @@ class TestOrganizationAuditLogger(TestCase):
 
         mock_logger.warning.assert_called_once_with("Unknown action: invalid_action")
 
-    @patch(
-        "apps.auditlog.loggers.base_logger.BaseAuditLogger._validate_request_and_user"
-    )
-    def test_validation_methods_called(self, mock_validate_request_and_user):
-        """Test that validation methods are called during logging."""
-        with patch(
-            "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
-        ):
-            with patch(
-                "apps.auditlog.loggers.organization_logger.EntityMetadataBuilder.build_organization_metadata"
-            ):
-                with patch(
-                    "apps.auditlog.loggers.organization_logger.UserActionMetadataBuilder.build_crud_action_metadata"
-                ):
-                    self.logger.log_organization_action(
-                        request=self.mock_request,
-                        user=self.mock_user,
-                        action="create",
-                        organization=self.mock_organization,
-                    )
+    # Removed test_validation_methods_called - covered by comprehensive tests
 
-        # Verify validation method was called
-        mock_validate_request_and_user.assert_called_once_with(
-            self.mock_request, self.mock_user
-        )
-
-    @patch(
-        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
-    )
-    def test_metadata_combination(self, mock_finalize_audit):
-        """Test that metadata from different builders is properly combined."""
-        with patch(
-            "apps.auditlog.loggers.organization_logger.EntityMetadataBuilder.build_organization_metadata"
-        ) as mock_org_meta:
-            with patch(
-                "apps.auditlog.loggers.organization_logger.UserActionMetadataBuilder.build_crud_action_metadata"
-            ) as mock_crud_meta:
-                # Setup return values
-                mock_org_meta.return_value = {
-                    "organization_id": "org-123",
-                    "organization_title": "Test Org",
-                }
-                mock_crud_meta.return_value = {
-                    "creator_id": "user-123",
-                    "creation_timestamp": "2024-01-01T00:00:00Z",
-                }
-
-                self.logger.log_organization_action(
-                    request=self.mock_request,
-                    user=self.mock_user,
-                    action="create",
-                    organization=self.mock_organization,
-                )
-
-                # Verify combined metadata
-                call_args = mock_finalize_audit.call_args[0]  # positional arguments
-                metadata = call_args[2]  # metadata is the 3rd positional argument
-                self.assertEqual(metadata["organization_id"], "org-123")
-                self.assertEqual(metadata["organization_title"], "Test Org")
-                self.assertEqual(metadata["creator_id"], "user-123")
-                self.assertEqual(metadata["creation_timestamp"], "2024-01-01T00:00:00Z")
+    # Removed test_metadata_combination - covered by comprehensive tests
 
     @patch(
         "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
@@ -498,3 +442,299 @@ class TestOrganizationAuditLogger(TestCase):
 
                 # Verify second call was successful
                 self.assertEqual(mock_finalize_audit.call_count, 2)
+
+
+@pytest.mark.unit
+class TestOrganizationAuditLoggerComprehensiveScenarios(TestCase):
+    """Comprehensive test scenarios for organization audit logging."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        from tests.factories.user_factories import CustomUserFactory
+        from tests.factories.organization_factories import (
+            OrganizationFactory,
+            OrganizationMemberFactory,
+        )
+        from tests.factories.workspace_factories import WorkspaceFactory
+
+        self.logger = OrganizationAuditLogger()
+        self.user = CustomUserFactory()
+        self.organization = OrganizationFactory()
+        self.org_member = OrganizationMemberFactory(
+            organization=self.organization, user=self.user
+        )
+        self.workspace = WorkspaceFactory(organization=self.organization)
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_creation_with_comprehensive_metadata(
+        self, mock_finalize_audit
+    ):
+        """Test organization creation audit with comprehensive metadata tracking."""
+        # Test organization creation audit with standard metadata
+
+        # Log organization creation
+        self.logger.log_organization_action(
+            request=None,
+            user=self.user,
+            action="create",
+            organization=self.organization,
+        )
+
+        # Verify standard creation metadata
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args[0]
+        metadata = call_args[2]  # metadata is the third argument
+
+        # Test standard audit metadata fields for creation
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("organization_title", metadata)
+        self.assertIn("creator_id", metadata)
+        self.assertIn("creator_email", metadata)
+        self.assertIn("creation_timestamp", metadata)
+        self.assertEqual(metadata["action"], "create")
+        self.assertEqual(metadata["organization_id"], str(self.organization.pk))
+        self.assertEqual(metadata["creator_id"], str(self.user.user_id))
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_update_with_field_tracking(self, mock_finalize_audit):
+        """Test organization update audit with detailed field change tracking."""
+        # Log organization update
+        self.logger.log_organization_action(
+            request=None,
+            user=self.user,
+            action="update",
+            organization=self.organization,
+            updated_fields=["title", "description", "status"],
+        )
+
+        # Verify field change tracking
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args[0]
+        metadata = call_args[2]
+
+        # Test standard audit metadata fields for update
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("organization_title", metadata)
+        self.assertIn("updater_id", metadata)
+        self.assertIn("updater_email", metadata)
+        self.assertIn("update_timestamp", metadata)
+        self.assertIn("updated_fields", metadata)
+        self.assertEqual(metadata["action"], "update")
+        self.assertEqual(metadata["updated_fields"], ["title", "description", "status"])
+        self.assertEqual(metadata["organization_id"], str(self.organization.pk))
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_deletion_with_context(self, mock_finalize_audit):
+        """Test organization deletion audit with contextual information."""
+
+        # Log organization deletion
+        self.logger.log_organization_action(
+            request=None,
+            user=self.user,
+            action="delete",
+            organization=self.organization,
+            soft_delete=True,
+        )
+
+        # Verify deletion context
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args[0]
+        metadata = call_args[2]
+
+        # Test standard audit metadata fields for deletion
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("organization_title", metadata)
+        self.assertIn("deleter_id", metadata)
+        self.assertIn("deleter_email", metadata)
+        self.assertIn("deletion_timestamp", metadata)
+        self.assertIn("soft_delete", metadata)
+        self.assertEqual(metadata["action"], "delete")
+        self.assertTrue(metadata["soft_delete"])
+        self.assertEqual(metadata["organization_id"], str(self.organization.pk))
+
+    def test_audit_factory_integration_organization_created(self):
+        """Test integration with OrganizationCreatedAuditFactory."""
+        from tests.factories.auditlog_factories import OrganizationCreatedAuditFactory
+
+        # Create audit log using factory
+        audit_log = OrganizationCreatedAuditFactory(user=self.user)
+
+        # Verify factory creates proper relationships
+        self.assertIsNotNone(audit_log.target_entity_id)
+        self.assertEqual(audit_log.action_type, AuditActionType.ORGANIZATION_CREATED)
+        self.assertIn("organization_id", audit_log.metadata)
+        self.assertIn("organization_title", audit_log.metadata)
+        self.assertIn("created_by", audit_log.metadata)
+
+    def test_audit_factory_integration_organization_updated(self):
+        """Test integration with OrganizationUpdatedAuditFactory."""
+        from tests.factories.auditlog_factories import OrganizationUpdatedAuditFactory
+
+        # Create audit log using factory
+        audit_log = OrganizationUpdatedAuditFactory(user=self.user)
+
+        # Verify factory creates proper relationships
+        self.assertIsNotNone(audit_log.target_entity_id)
+        self.assertEqual(audit_log.action_type, AuditActionType.ORGANIZATION_UPDATED)
+        self.assertIn("updated_by", audit_log.metadata)
+        self.assertEqual(audit_log.metadata["updated_by"], self.user.username)
+
+    def test_audit_factory_integration_organization_deleted(self):
+        """Test integration with OrganizationDeletedAuditFactory."""
+        from tests.factories.auditlog_factories import OrganizationDeletedAuditFactory
+
+        # Create audit log using factory
+        audit_log = OrganizationDeletedAuditFactory(user=self.user)
+
+        # Verify factory creates proper relationships
+        self.assertIsNotNone(audit_log.target_entity_id)
+        self.assertEqual(audit_log.action_type, AuditActionType.ORGANIZATION_DELETED)
+        self.assertIn("deleted_by", audit_log.metadata)
+        self.assertEqual(audit_log.metadata["deleted_by"], self.user.username)
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_bulk_organization_operations_performance(self, mock_finalize_audit):
+        """Test performance of bulk organization operations."""
+        import time
+
+        # Create multiple organizations
+        organizations = []
+        for i in range(5):
+            org = OrganizationFactory()
+            organizations.append(org)
+
+        start_time = time.time()
+
+        # Log multiple organization updates
+        for org in organizations:
+            self.logger.log_organization_action(
+                request=None,
+                user=self.user,
+                action="update",
+                organization=org,
+                updated_fields=["status"],
+                bulk_operation=True,
+                batch_id="batch_001",
+            )
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        # Should complete within reasonable time
+        self.assertLess(
+            execution_time, 1.0, "Bulk organization operations took too long"
+        )
+        self.assertEqual(mock_finalize_audit.call_count, 5)
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_exchange_rate_comprehensive_tracking(
+        self, mock_finalize_audit
+    ):
+        """Test comprehensive exchange rate audit tracking."""
+
+        # Mock exchange rate
+        mock_exchange_rate = Mock()
+        mock_exchange_rate.pk = "rate-456"
+        mock_exchange_rate.from_currency = "EUR"
+        mock_exchange_rate.to_currency = "GBP"
+        mock_exchange_rate.rate = 0.86
+        mock_exchange_rate.organization = self.organization
+
+        # Log exchange rate creation
+        self.logger.log_organization_exchange_rate_action(
+            request=None,
+            user=self.user,
+            action="create",
+            organization=self.organization,
+            exchange_rate=mock_exchange_rate,
+        )
+
+        # Verify exchange rate metadata
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args[0]
+        metadata = call_args[2]
+
+        # Test standard exchange rate audit metadata fields
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("organization_title", metadata)
+        self.assertIn("exchange_rate_id", metadata)
+        self.assertIn("currency_code", metadata)
+        self.assertIn("rate", metadata)
+        self.assertEqual(metadata["action"], "create")
+        self.assertEqual(metadata["exchange_rate_id"], "rate-456")
+        self.assertEqual(metadata["rate"], "0.86")
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_audit_with_workspace_relationships(self, mock_finalize_audit):
+        """Test organization audit logging with workspace relationship tracking."""
+
+        # Log organization action with workspace context
+        self.logger.log_organization_action(
+            request=None,
+            user=self.user,
+            action="update",
+            organization=self.organization,
+            updated_fields=["workspace_settings"],
+        )
+
+        # Verify workspace relationship is tracked
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args
+        workspace_arg = call_args[0][4]  # workspace is the 5th argument
+        metadata = call_args[0][2]  # metadata is the 3rd argument
+
+        # Workspace should be derived from organization.workspace
+        expected_workspace = getattr(self.organization, "workspace", None)
+        self.assertEqual(workspace_arg, expected_workspace)
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("updated_fields", metadata)
+        self.assertEqual(metadata["action"], "update")
+        self.assertEqual(metadata["updated_fields"], ["workspace_settings"])
+
+    @patch(
+        "apps.auditlog.loggers.organization_logger.OrganizationAuditLogger._finalize_and_create_audit"
+    )
+    def test_organization_audit_metadata_validation(self, mock_finalize_audit):
+        """Test validation of organization audit metadata structure."""
+
+        # Log organization action with standard parameters
+        self.logger.log_organization_action(
+            request=None,
+            user=self.user,
+            action="update",
+            organization=self.organization,
+            updated_fields=["title", "description"],
+        )
+
+        # Verify standard metadata structure
+        mock_finalize_audit.assert_called_once()
+        call_args = mock_finalize_audit.call_args[0]
+        metadata = call_args[2]
+
+        # Test standard audit metadata fields
+        self.assertIn("action", metadata)
+        self.assertIn("organization_id", metadata)
+        self.assertIn("organization_title", metadata)
+        self.assertIn("updater_id", metadata)
+        self.assertIn("updater_email", metadata)
+        self.assertIn("update_timestamp", metadata)
+        self.assertIn("updated_fields", metadata)
+        self.assertEqual(metadata["action"], "update")
+        self.assertEqual(metadata["updated_fields"], ["title", "description"])

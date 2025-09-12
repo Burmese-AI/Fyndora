@@ -309,6 +309,9 @@ def delete_workspace_view(request, organization_id, workspace_id):
             )
 
         if request.method == "POST":
+            # Set audit user for automatic signal-based logging
+            workspace._audit_user = request.user
+            
             group_name = f"Workspace Admins - {workspace_id}"
             group = Group.objects.filter(name=group_name).first()
             group.delete()

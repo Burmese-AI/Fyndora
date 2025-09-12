@@ -45,6 +45,8 @@ def create_organization_with_owner(*, form, user) -> Organization:
     try:
         # Create the organization
         organization = form.save(commit=False)
+        # Set audit context to prevent duplicate logging from signal handlers
+        organization._audit_user = user
         organization.save()
 
         # Create organization member for the owner
@@ -130,6 +132,8 @@ def update_organization_from_form(*, form, organization, user) -> Organization:
         # Capture original status for audit logging
         original_status = getattr(organization, "status", None)
 
+        # Set audit context to prevent duplicate logging from signal handlers
+        organization._audit_user = user
         organization = model_update(organization, form.cleaned_data)
 
         # Audit logging: Log organization update
@@ -152,17 +156,7 @@ def update_organization_from_form(*, form, organization, user) -> Organization:
                         business_context=extract_organization_context(organization),
                     )
 
-                # Log general update operation
-                BusinessAuditLogger.log_organization_action(
-                    user=user,
-                    organization=organization,
-                    action="update",
-                    request=None,
-                    operation_type="organization_form_update",
-                    updated_fields=list(form.cleaned_data.keys()),
-                    business_context=extract_organization_context(organization),
-                    **extract_request_metadata(),
-                )
+                # Note: General CRUD update logging removed - handled by signal handlers
         except Exception as audit_error:
             logger.error(
                 f"Audit logging failed for organization update: {audit_error}",
@@ -200,7 +194,7 @@ def create_organization_exchange_rate(
     """
     try:
         currency = get_or_create_currency_by_code(currency_code)
-        exchange_rate = OrganizationExchangeRate.objects.create(
+        exchange_rate = OrganizationExchangeRate(
             organization=organization,
             currency=currency,
             rate=rate,
@@ -208,31 +202,13 @@ def create_organization_exchange_rate(
             added_by=organization_member,
             note=note,
         )
+        # Set audit context to prevent duplicate logging from signal handlers
+        user = organization_member.user if organization_member else None
+        if user:
+            exchange_rate._audit_user = user
+        exchange_rate.save()
 
-        # Audit logging: Log exchange rate creation
-        try:
-            user = organization_member.user if organization_member else None
-            if user:
-                BusinessAuditLogger.log_organization_exchange_rate_action(
-                    user=user,
-                    exchange_rate=exchange_rate,
-                    action="create",
-                    request=None,
-                    organization_id=str(organization.organization_id),
-                    organization_title=organization.title,
-                    currency_code=currency_code,
-                    rate=str(rate),
-                    effective_date=effective_date.isoformat()
-                    if effective_date
-                    else None,
-                    note=note,
-                    **extract_request_metadata(),
-                )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for exchange rate creation: {audit_error}",
-                exc_info=True,
-            )
+        # Note: CRUD logging removed - handled by signal handlers
         # return the exchange rate (THA)
         return exchange_rate
 
@@ -294,34 +270,17 @@ def update_organization_exchange_rate(
         # Capture original note for audit logging
         original_note = org_exchange_rate.note
 
+        # Set audit context to prevent duplicate logging from signal handlers
+        user = organization_member.user if organization_member else None
+        if user:
+            org_exchange_rate._audit_user = user
         org_exchange_rate = model_update(
             instance=org_exchange_rate,
             data={"note": note},
             update_fields=["note"],
         )
 
-        # Audit logging: Log exchange rate update
-        try:
-            user = organization_member.user if organization_member else None
-            if user:
-                BusinessAuditLogger.log_organization_exchange_rate_action(
-                    user=user,
-                    exchange_rate=org_exchange_rate,
-                    action="update",
-                    request=None,
-                    organization_id=str(organization.organization_id),
-                    organization_title=organization.title,
-                    currency_code=org_exchange_rate.currency.code,
-                    rate=str(org_exchange_rate.rate),
-                    original_note=original_note,
-                    new_note=note,
-                    **extract_request_metadata(),
-                )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for exchange rate update: {audit_error}",
-                exc_info=True,
-            )
+        # Note: CRUD logging removed - handled by signal handlers
 
         return org_exchange_rate
     except Exception as err:
@@ -357,32 +316,13 @@ def delete_organization_exchange_rate(
     *, organization, organization_member, org_exchange_rate
 ):
     try:
-        # Capture exchange rate data for audit logging before deletion
-        exchange_rate_context = extract_organization_exchange_rate_context(
-            org_exchange_rate
-        )
-
+        # Set audit context to prevent duplicate logging from signal handlers
+        user = organization_member.user if organization_member else None
+        if user:
+            org_exchange_rate._audit_user = user
         org_exchange_rate.delete()
 
-        # Audit logging: Log exchange rate deletion
-        try:
-            user = organization_member.user if organization_member else None
-            if user:
-                BusinessAuditLogger.log_organization_exchange_rate_action(
-                    user=user,
-                    exchange_rate=None,  # Entity is deleted
-                    action="delete",
-                    request=None,
-                    organization_id=str(organization.pk),
-                    organization_title=organization.title,
-                    deleted_exchange_rate_context=exchange_rate_context,
-                    **extract_request_metadata(),
-                )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for exchange rate deletion: {audit_error}",
-                exc_info=True,
-            )
+        # Note: CRUD logging removed - handled by signal handlers
 
         return True
     except Exception as err:

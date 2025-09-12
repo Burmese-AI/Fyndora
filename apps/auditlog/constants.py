@@ -127,6 +127,7 @@ class AuditActionType(models.TextChoices):
     REMITTANCE_PARTIALLY_PAID = "remittance_partially_paid", "Remittance Partially Paid"
     REMITTANCE_OVERDUE = "remittance_overdue", "Remittance Overdue"
     REMITTANCE_CANCELED = "remittance_canceled", "Remittance Canceled"
+    REMITTANCE_CONFIRMED = "remittance_confirmed", "Remittance Confirmed"
 
     # Invitation Management
     INVITATION_SENT = "invitation_sent", "Invitation Sent"

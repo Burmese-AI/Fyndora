@@ -55,5 +55,4 @@ def get_closest_exchanged_rate(*, currency, occurred_at, organization, workspace
 
     if organization_exchange_rate:
         return organization_exchange_rate
-
     return None

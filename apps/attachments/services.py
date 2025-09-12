@@ -70,7 +70,6 @@ def replace_or_append_attachments(
                 att._audit_user = user
         # Soft delete all existing attachments
         entry.attachments.all().delete()
-        print("Soft Deleted Attachments")
 
         # Business logic logging: Log bulk attachment removal
         if user and existing_attachments:
@@ -127,6 +126,7 @@ def create_attachments(*, entry, attachments, user=None, request=None):
         )
         for attachment in attachments
     ]
+
     print(f"prepared attachments => {prepared_attachments}")
     # Set audit context for bulk creation
     if user:

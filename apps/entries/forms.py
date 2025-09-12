@@ -1,3 +1,4 @@
+import os
 from django import forms
 from .models import Entry
 from apps.core.forms import MultipleFileField, MultipleFileInput
@@ -262,5 +263,93 @@ class UpdateWorkspaceTeamEntryForm(BaseUpdateEntryForm):
             )
         except Exception as e:
             raise forms.ValidationError(e)
+
+        return cleaned_data
+
+
+class BaseImportEntryForm(forms.Form):
+    file = forms.FileField(
+        label="Import File",
+        widget=forms.ClearableFileInput(
+            attrs={"class": "file-input file-input-bordered file-input-sm w-full"}
+        ),
+    )
+    status = forms.ChoiceField(
+        choices=EntryStatus.choices,
+        required=True,
+        widget=forms.Select(
+            attrs={
+                "class": "select select-bordered w-full",
+                "placeholder": "Select Status",
+            }
+        ),
+    )
+    backup_description = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "input input-bordered w-full",
+                "placeholder": "Brief description of the expense",
+            }
+        ),
+    )
+    status_note = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea textarea-bordered w-full",
+                "placeholder": "Leave notes for the status update",
+                "rows": 3,
+            }
+        ),
+        label="Status Notes",  # Optional
+        help_text="Optional notes about this status update.",  # Optional
+    )
+
+    # TODO: Refactoring Required
+    def __init__(self, *args, **kwargs):
+        self.org_member = kwargs.pop("org_member", None)
+        self.organization = kwargs.pop("organization", None)
+        self.workspace = kwargs.pop("workspace", None)
+        self.workspace_team = kwargs.pop("workspace_team", None)
+        self.workspace_team_role = kwargs.pop("workspace_team_role", None)
+        self.workspace_team_member = kwargs.pop("workspace_team_member", None)
+        self.is_org_admin = kwargs.pop("is_org_admin", None)
+        self.is_workspace_admin = kwargs.pop("is_workspace_admin", None)
+        self.is_operation_reviewer = kwargs.pop("is_operation_reviewer", None)
+        self.is_team_coordinator = kwargs.pop("is_team_coordinator", None)
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = self.get_allowed_statuses()
+
+    # TODO: Refactoring Required
+    def get_allowed_statuses(self):
+        # OA, WA, OR => ALL STATUSES
+        if self.is_org_admin or self.is_workspace_admin or self.is_operation_reviewer:
+            allowed_statuses = EntryStatus.values
+        # TC => PENDING, REVIEWED, REJECTED
+        elif self.is_team_coordinator:
+            allowed_statuses = [
+                EntryStatus.PENDING,
+                EntryStatus.REVIEWED,
+                EntryStatus.REJECTED,
+            ]
+        # Others => None
+        else:
+            allowed_statuses = []
+
+        # Convert codes into (value, label) tuples using EntryStatus.labels
+        return [
+            (status, dict(EntryStatus.choices)[status]) for status in allowed_statuses
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validate File type (Allow only CSV)
+        uploaded_file = self.cleaned_data.get("file")
+        if uploaded_file:
+            file_name, file_extension = os.path.splitext(uploaded_file.name)
+            if file_extension.lower() not in [".csv"]:
+                raise forms.ValidationError("Only CSV file is allowed.")
 
         return cleaned_data

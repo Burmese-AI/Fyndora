@@ -1,9 +1,43 @@
+import csv
+from decimal import Decimal
+import io
 from django.core.exceptions import ValidationError
 
 from apps.teams.constants import TeamMemberRole
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from datetime import date
+
+
+class EntryCSVValidator:
+    required_fields = ["Description", "Amount", "Occurred At", "Currency"]
+
+    def __init__(self, file):
+        self.file = file
+
+    def validate(self, verify_team_level_type: bool = False):
+        data = io.TextIOWrapper(self.file.file, encoding="utf-8")
+        reader = csv.DictReader(data)
+
+        valid_rows, errors = [], []
+        for i, row in enumerate(reader, start=1):
+            try:
+                # Normalize
+                row["Amount"] = Decimal(row["Amount"])
+                # Validate Entry Type
+                if verify_team_level_type:
+                    row["Type"] = row["Type"].strip().lower()
+                    if row["Type"] not in {
+                        EntryType.INCOME.value,
+                        EntryType.DISBURSEMENT.value,
+                        EntryType.REMITTANCE.value,
+                    }:
+                        continue
+
+                valid_rows.append(row)
+            except Exception as e:
+                errors.append((i, str(e)))
+        return valid_rows, errors
 
 
 class TeamEntryValidator:

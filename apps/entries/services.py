@@ -8,7 +8,7 @@ from apps.attachments.services import create_attachments, replace_or_append_atta
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.utils import model_update, percent_change
 from apps.currencies.models import Currency
-from apps.currencies.selectors import get_closest_exchanged_rate
+from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
 from apps.organizations.models import Organization, OrganizationExchangeRate
 from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
@@ -16,6 +16,77 @@ from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTe
 from .constants import EntryStatus, EntryType
 from .models import Entry
 from .stats import EntryStats
+
+
+class EntryService:
+    @staticmethod
+    def build_entry(
+        *,
+        currency_code,
+        amount,
+        occurred_at,
+        description,
+        entry_type: EntryType,
+        organization: Organization,
+        workspace: Workspace = None,
+        workspace_team: WorkspaceTeam = None,
+        currency,
+        submitted_by_org_member=None,
+        submitted_by_team_member=None,
+        status: EntryStatus = EntryStatus.PENDING,
+        status_note="",
+        status_last_modified_at=timezone.now(),
+    ):
+        # Get Currency by code
+        currency = get_currency_by_code(currency_code)
+        if not currency:
+            return None
+        # Get the closest exchange rate
+        exchange_rate_used = get_closest_exchanged_rate(
+            currency=currency,
+            occurred_at=occurred_at,
+            organization=organization,
+            workspace=workspace,
+        )
+        if not exchange_rate_used:
+            return None
+        # Prepare entry object
+        entry = Entry(
+            entry_type=entry_type,
+            organization=organization,
+            workspace=workspace,
+            workspace_team=workspace_team,
+            description=description,
+            amount=amount,
+            occurred_at=occurred_at,
+            currency=currency,
+            exchange_rate_used=exchange_rate_used.rate,
+            org_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, OrganizationExchangeRate)
+            else None,
+            workspace_exchange_rate_ref=exchange_rate_used
+            if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+            else None,
+            submitted_by_org_member=submitted_by_org_member,
+            submitted_by_team_member=submitted_by_team_member,
+            status=status,
+            is_flagged=True,
+        )
+        # Add status related metadata if not pending
+        if status != EntryStatus.PENDING:
+            entry.status_note = status_note
+            entry.status_last_updated_at = status_last_modified_at
+            entry.last_status_modified_by = submitted_by_org_member
+
+        return entry
+
+    @staticmethod
+    def bulk_create_entry(*, entries: list[Entry]):
+        try:
+            Entry.objects.bulk_create(entries)
+            # E722 Do not use bare `except` (add that due to ruff format:THA)
+        except Exception:
+            raise Exception("An error occurred during entry bulk create operation.")
 
 
 def _extract_user_from_actor(actor):
@@ -188,7 +259,6 @@ def update_entry_user_inputs(
 
     # If new attachments were provided, replace existing ones or append the new ones
     if attachments:
-        print(f"Attachments were provided | {replace_attachments}")
         replace_or_append_attachments(
             entry=entry,
             attachments=attachments,

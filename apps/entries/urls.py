@@ -6,6 +6,7 @@ from .views.org_expense_views import (
     OrganizationExpenseDeleteView,
     OrganizationExpenseBulkDeleteView,
     OrganizationExpenseBulkUpdateView,
+    OrganizationExpenseBulkCreateView,
 )
 from .views.workspace_expense_views import (
     WorkspaceExpenseListView,
@@ -14,6 +15,7 @@ from .views.workspace_expense_views import (
     WorkspaceExpenseDeleteView,
     WorkspaceExpenseBulkDeleteView,
     WorkspaceExpenseBulkUpdateView,
+    WorkspaceExpenseBulkCreateView,
 )
 from .views.entry_views import (
     WorkspaceEntryListView,
@@ -25,6 +27,7 @@ from .views.entry_views import (
     WorkspaceTeamEntryDeleteView,
     WorkspaceTeamEntryBulkDeleteView,
     WorkspaceTeamEntryBulkUpdateView,
+    WorkspaceTeamEntryBulkCreateView,
 )
 from .views.base_views import EntryDetailView
 
@@ -48,6 +51,11 @@ urlpatterns = [
         "expenses/<uuid:pk>/delete",
         OrganizationExpenseDeleteView.as_view(),
         name="organization_expense_delete",
+    ),
+    path(
+        "expenses/bulk-create/",
+        OrganizationExpenseBulkCreateView.as_view(),
+        name="organization_expense_bulk_create",
     ),
     path(
         "expenses/bulk-delete/",
@@ -88,6 +96,11 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/expenses/bulk-update/",
         WorkspaceExpenseBulkUpdateView.as_view(),
         name="workspace_expense_bulk_update",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/expenses/bulk-create/",
+        WorkspaceExpenseBulkCreateView.as_view(),
+        name="workspace_expense_bulk_create",
     ),
     path(
         "workspaces/<uuid:workspace_id>/entries",
@@ -133,6 +146,11 @@ urlpatterns = [
         "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-update/",
         WorkspaceTeamEntryBulkUpdateView.as_view(),
         name="workspace_team_entry_bulk_update",
+    ),
+    path(
+        "workspaces/<uuid:workspace_id>/workspace-teams/<uuid:workspace_team_id>/entries/bulk-create/",
+        WorkspaceTeamEntryBulkCreateView.as_view(),
+        name="workspace_team_entry_bulk_create",
     ),
 ]
 

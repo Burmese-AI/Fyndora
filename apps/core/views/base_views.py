@@ -45,7 +45,6 @@ class BaseGetModalFormView(BaseGetModalView, HtmxModalFormInvalidFormResponseMix
         form_kwargs = self.get_form_kwargs()
         if hasattr(self, "instance"):
             form_kwargs["instance"] = self.instance
-            print(f"base instance => {self.instance}")
         form = self.form_class(**form_kwargs)
         context = self.get_context_data()
         context.update(

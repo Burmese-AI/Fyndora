@@ -15,9 +15,11 @@ from .mixins import (
     StatusFilteringMixin,
 )
 from .base_views import (
+    BaseEntryBulkCreateView,
     WorkspaceLevelEntryView,
 )
 from ..forms import (
+    BaseImportEntryForm,
     CreateOrganizationExpenseEntryForm,
     BaseUpdateEntryForm,
 )
@@ -334,3 +336,39 @@ class WorkspaceExpenseBulkUpdateView(
 
     def get_modal_title(self) -> str:
         return ""
+
+
+class WorkspaceExpenseBulkCreateView(
+    WorkspaceRequiredMixin,
+    WorkspaceLevelEntryView,
+    StatusFilteringMixin,
+    BaseGetModalFormView,
+    BaseEntryBulkCreateView,
+):
+    form_class = BaseImportEntryForm
+    modal_template_name = "entries/components/bulk_create_modal.html"
+    entry_type_to_create = EntryType.WORKSPACE_EXP
+
+    def get_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.WORKSPACE_EXP],
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def get_response_queryset(self):
+        return get_entries(
+            organization=self.organization,
+            entry_types=[EntryType.WORKSPACE_EXP],
+            annotate_attachment_count=True,
+            statuses=[EntryStatus.PENDING],
+        )
+
+    def get_post_url(self) -> str:
+        return reverse(
+            "workspace_expense_bulk_create",
+            kwargs={
+                "organization_id": self.organization.pk,
+                "workspace_id": self.workspace.pk,
+            },
+        )

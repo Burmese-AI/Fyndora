@@ -1,0 +1,95 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div 
+  {% if is_oob %}hx-swap-oob="true"{% endif %} 
+  id="modal_content_template" 
+  class="modal-box bg-base-100 rounded-xl shadow-lg w-full max-w-md p-6"
+>
+
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-base-content">
+      Import Entries
+    </h2>
+  </div>
+
+  <!-- Form with File Upload Support -->
+  <form
+    hx-post="{{ post_url }}"
+    hx-encoding="multipart/form-data"
+    hx-swap="outerHTML"
+    hx-on::after-request="if (event.detail.successful) { open = false; }"
+    @click.outside="open = false"
+    class="space-y-6"
+    method="post"
+    enctype="multipart/form-data"
+  >
+    {% csrf_token %}
+
+    <!-- Display non-field errors (e.g., clean() errors) -->
+    {% include "components/non_field_errors.html" %}
+
+    <!-- File Upload Field -->
+    <div>
+      <label for="{{ form.file.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Import File
+      </label>
+      <div class="mt-2">
+        {{ form.file }}
+      </div>
+      {% include "components/field_error.html" with field=form.file %}
+    </div>
+
+    <!-- Status Field -->
+    <div>
+      <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Status
+      </label>
+      <div class="mt-2">
+        {{ form.status }}
+      </div>
+      {% include "components/field_error.html" with field=form.status %}
+    </div>
+
+    <!-- Backup Description Field -->
+    <div>
+      <label for="{{ form.backup_description.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Description (Optional)
+      </label>
+      <div class="mt-2">
+        {{ form.backup_description }}
+      </div>
+      {% include "components/field_error.html" with field=form.backup_description %}
+    </div>
+    
+    <!-- Status Note Field -->
+    <div>
+      <label for="{{ form.status_note.id_for_label }}" class="block text-sm font-medium text-base-content">
+        Status Note (This will be applied only if entry is not "pending".)
+      </label>
+      <div class="mt-2">
+        {{ form.status_note }}
+      </div>
+      {% include "components/field_error.html" with field=form.status_note %}
+    </div>
+
+    <!-- Form Actions -->
+    <div class="flex justify-end space-x-3 pt-4">
+      <button
+        type="button"
+        onclick="this.closest('.modal').removeAttribute('open')"
+        class="px-4 py-2 text-sm font-medium text-base-content bg-base-200 rounded-md hover:scale-105 hover:bg-base-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="px-4 py-2 text-sm font-medium text-base-100 bg-neutral rounded-md hover:scale-105 hover:bg-neutral-focus focus:outline-none focus:ring-2 focus:ring-neutral focus:ring-offset-2 transition"
+      >
+        Import
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock modal_content %}

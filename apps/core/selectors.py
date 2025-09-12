@@ -13,10 +13,8 @@ def get_user_by_email(email: str):
         return None
     except User.MultipleObjectsReturned:
         # this is the error case
-        print(f"Multiple users found for email: {email}")
         return User.objects.filter(email=email).first()
-    except Exception as e:
-        print(f"Error in get_user_by_email: {str(e)}")
+    except Exception:
         return None
 
 
@@ -32,8 +30,7 @@ def get_org_members_without_owner(organization):
         if owner and getattr(owner, "user", None):
             return qs.exclude(user=owner.user)
         return qs
-    except Exception as e:
-        print(f"Error in get_org_members_without_owner: {str(e)}")
+    except Exception:
         return None
 
 
@@ -43,8 +40,7 @@ def get_organization_by_id(organization_id):
     """
     try:
         return Organization.objects.get(pk=organization_id)
-    except Exception as e:
-        print(f"Error in get_organization_by_id: {str(e)}")
+    except Exception:
         return None
 
 
@@ -54,8 +50,7 @@ def get_workspaces_under_organization(organization_id):
     """
     try:
         return Workspace.objects.filter(organization=organization_id)
-    except Exception as e:
-        print(f"Error in get_workspaces_under_organization: {str(e)}")
+    except Exception:
         return None
 
 
@@ -66,6 +61,5 @@ def get_workspace_teams_under_organization(organization_id, workspace_id=None):
     try:
         workspaces = get_workspaces_under_organization(organization_id)
         return WorkspaceTeam.objects.filter(workspace__in=workspaces)
-    except Exception as e:
-        print(f"Error in get_workspace_teams_under_organization: {str(e)}")
+    except Exception:
         return None

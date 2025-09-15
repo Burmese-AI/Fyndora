@@ -54,13 +54,7 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if log.metadata %}
-                    <div class="text-xs max-w-xs truncate" title="{{ log.metadata|default:'' }}">
-                      {{ log.metadata|truncatechars:50 }}
-                    </div>
-                  {% else %}
-                    <span class="text-xs opacity-50">-</span>
-                  {% endif %}
+                  <button class="btn btn-sm  btn-primary" hx-target="#audit-log-detail-modal">View Details</button>
                 </td>
               </tr>
             {% endfor %}

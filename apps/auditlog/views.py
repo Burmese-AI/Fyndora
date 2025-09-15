@@ -7,8 +7,8 @@ from apps.core.services.organizations import (
     get_organization_by_id,
 )
 from .constants import AuditActionType
-from .selectors import AuditLogSelector
-
+from .selectors import AuditLogSelector, get_audit_log_by_id
+from .models import AuditTrail
 User = get_user_model()
 
 
@@ -149,3 +149,11 @@ def auditlog_list_view(request, organization_id):
             return render(request, "auditlog/audit_logs_table.html", context)
         else:
             return render(request, "auditlog/index.html", context)
+
+
+def audit_detail_view(request, organization_id, audit_log_id):
+    try:
+        audit_log = get_audit_log_by_id(audit_log_id)
+    except Exception:
+        return render(request, "auditlog/index.html", {"error": "Audit log not found"})
+    return render(request, "auditlog/audit_log_detail_modal.html", {"audit_log": audit_log})

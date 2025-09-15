@@ -2,7 +2,6 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from apps.core.permissions import EntryPermissions
@@ -35,7 +34,7 @@ from ..forms import (
 )
 from ..models import Entry
 from ..selectors import get_entries, get_entry
-from ..services import create_entry_with_attachments, delete_entry
+from ..services import EntryService
 from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
@@ -196,7 +195,7 @@ class WorkspaceTeamEntryCreateView(
         )
 
     def perform_service(self, form):
-        entry = create_entry_with_attachments(
+        entry = EntryService.create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],
             description=form.cleaned_data["description"],
@@ -269,10 +268,9 @@ class WorkspaceTeamEntryUpdateView(
         )
 
     def perform_service(self, form):
-        from ..services import update_entry_status, update_entry_user_inputs
 
         if self.entry.status == EntryStatus.PENDING:
-            update_entry_user_inputs(
+            EntryService.update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
                 amount=form.cleaned_data["amount"],
@@ -287,7 +285,7 @@ class WorkspaceTeamEntryUpdateView(
 
         # If the status has changed, update the status
         if self.entry.status != form.cleaned_data["status"]:
-            update_entry_status(
+            EntryService.update_entry_status(
                 entry=self.entry,
                 status=form.cleaned_data["status"],
                 last_status_modified_by=self.org_member,
@@ -346,7 +344,7 @@ class WorkspaceTeamEntryDeleteView(
         )
 
     def perform_service(self, form):
-        delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(entry=self.entry, user=self.request.user, request=self.request)
 
 
 class WorkspaceEntryBulkDeleteView(

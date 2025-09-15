@@ -1,13 +1,11 @@
 from functools import wraps
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Type, Any, Callable
 
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.shortcuts import redirect
 from django_htmx.http import HttpResponseClientRedirect
 from django.contrib.auth.models import Group
-from django.db import DatabaseError
 
 from .constants import PAGINATION_SIZE
 from .exceptions import BaseServiceError

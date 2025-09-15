@@ -6,17 +6,15 @@ from django.utils import timezone
 
 from apps.attachments.services import create_attachments, replace_or_append_attachments
 from apps.auditlog.business_logger import BusinessAuditLogger
-from apps.core.utils import handle_service_errors, model_update, percent_change
+from apps.core.utils import handle_service_errors
 from apps.currencies.models import Currency
 from apps.currencies.selectors import get_closest_exchanged_rate, get_currency_by_code
 from apps.entries.exceptions import EntryServiceError
 from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.teams.models import TeamMember
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 
 from .constants import EntryStatus, EntryType
 from .models import Entry
-from .stats import EntryStats
 
 
 class EntryService:
@@ -82,268 +80,280 @@ class EntryService:
         return entry
 
     @staticmethod
-    def bulk_create_entry(*, entries: list[Entry]):
-        try:
-            return Entry.objects.bulk_create(entries)
-            # E722 Do not use bare `except` (add that due to ruff format:THA)
-        except Exception:
-            raise Exception("An error occurred during entry bulk create operation.")
+    @handle_service_errors(EntryServiceError)
+    def bulk_create_entry(
+        *, 
+        entries: list[Entry]
+    ):
+        return Entry.objects.bulk_create(entries)
 
-def _extract_user_from_actor(actor):
-    """
-    Extract user from actor (TeamMember or OrganizationMember).
-    """
-    if isinstance(actor, TeamMember):
-        return actor.organization_member.user
-    elif hasattr(actor, "user"):
-        return actor.user
-    else:
-        return actor
+    @staticmethod        
+    @handle_service_errors(EntryServiceError)
+    def create_entry_with_attachments(
+        *,
+        amount,
+        occurred_at,
+        description,
+        attachments,
+        entry_type: EntryType,
+        organization: Organization,
+        workspace: Workspace = None,
+        workspace_team: WorkspaceTeam = None,
+        currency,
+        submitted_by_org_member=None,
+        submitted_by_team_member=None,
+        user=None,
+        request=None,
+    ) -> Entry:
+        """
+        Service to create a new entry with attachments.
+        """
 
+        is_attachment_provided = True if attachments else False
 
-def create_entry_with_attachments(
-    *,
-    amount,
-    occurred_at,
-    description,
-    attachments,
-    entry_type: EntryType,
-    organization: Organization,
-    workspace: Workspace = None,
-    workspace_team: WorkspaceTeam = None,
-    currency,
-    submitted_by_org_member=None,
-    submitted_by_team_member=None,
-    user=None,
-    request=None,
-) -> Entry:
-    """
-    Service to create a new entry with attachments.
-    """
-
-    is_attachment_provided = True if attachments else False
-
-    # Get the closest exchange rate
-    exchange_rate_used = get_closest_exchanged_rate(
-        currency=currency,
-        occurred_at=occurred_at if occurred_at else date.today(),
-        organization=organization,
-        workspace=workspace,
-    )
-    if not exchange_rate_used:
-        raise ValueError("No exchange rate is defined for the given currency and date.")
-
-    # Potential Error
-    # NOTE: if currency is soft-deleted, currency obj can't be obtained
-    # unless its similar object has been created
-
-    with transaction.atomic():
-        # Create the Entry
-        entry = Entry.objects.create(
-            entry_type=entry_type,
-            amount=amount,
-            occurred_at=occurred_at,
-            description=description,
-            organization=organization,
-            workspace=workspace
-            or (workspace_team.workspace if workspace_team else None),
-            workspace_team=workspace_team,
+        # Get the closest exchange rate
+        exchange_rate_used = get_closest_exchanged_rate(
             currency=currency,
-            exchange_rate_used=exchange_rate_used.rate,
-            org_exchange_rate_ref=exchange_rate_used
-            if isinstance(exchange_rate_used, OrganizationExchangeRate)
-            else None,
-            workspace_exchange_rate_ref=exchange_rate_used
-            if isinstance(exchange_rate_used, WorkspaceExchangeRate)
-            else None,
-            submitted_by_org_member=submitted_by_org_member,
-            submitted_by_team_member=submitted_by_team_member,
-            is_flagged=not is_attachment_provided,
+            occurred_at=occurred_at if occurred_at else date.today(),
+            organization=organization,
+            workspace=workspace,
         )
+        if not exchange_rate_used:
+            raise ValueError("No exchange rate is defined for the given currency and date.")
 
-        # Create the Attachments if any were provided
-        if is_attachment_provided:
-            create_attachments(
+        # Potential Error
+        # NOTE: if currency is soft-deleted, currency obj can't be obtained
+        # unless its similar object has been created
+
+        with transaction.atomic():
+            # Create the Entry
+            entry = Entry.objects.create(
+                entry_type=entry_type,
+                amount=amount,
+                occurred_at=occurred_at,
+                description=description,
+                organization=organization,
+                workspace=workspace
+                or (workspace_team.workspace if workspace_team else None),
+                workspace_team=workspace_team,
+                currency=currency,
+                exchange_rate_used=exchange_rate_used.rate,
+                org_exchange_rate_ref=exchange_rate_used
+                if isinstance(exchange_rate_used, OrganizationExchangeRate)
+                else None,
+                workspace_exchange_rate_ref=exchange_rate_used
+                if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+                else None,
+                submitted_by_org_member=submitted_by_org_member,
+                submitted_by_team_member=submitted_by_team_member,
+                is_flagged=not is_attachment_provided,
+            )
+
+            # Create the Attachments if any were provided
+            if is_attachment_provided:
+                create_attachments(
+                    entry=entry,
+                    attachments=attachments,
+                    user=user,
+                    request=request,
+                )
+
+            # Log entry creation with rich context
+            if user:
+                BusinessAuditLogger.log_entry_action(
+                    user=user,
+                    entry=entry,
+                    action="submit",
+                    request=request,
+                    entry_amount=str(amount),
+                    currency_code=currency.code,
+                    exchange_rate=exchange_rate_used.rate,
+                    has_attachments=is_attachment_provided,
+                    attachment_count=len(attachments) if attachments else 0,
+                    submitter_type="org_member"
+                    if submitted_by_org_member
+                    else "team_member",
+                )
+
+        return entry
+
+    @staticmethod
+    @handle_service_errors(EntryServiceError)
+    def update_entry_user_inputs(
+        *,
+        entry: Entry,
+        organization: Organization,
+        workspace: Workspace = None,
+        amount,
+        occurred_at,
+        description,
+        currency: Currency,
+        attachments,
+        replace_attachments: bool,
+        user=None,
+        request=None,
+    ):
+        if entry.status != EntryStatus.PENDING:
+            raise ValidationError(
+                "User can only update Entry info during the pending stage."
+            )
+
+        # Check if currency or occurred_at values are changed or not
+        is_currency_changed = entry.currency.code != currency.code
+        is_occurred_at_changed = entry.occurred_at != occurred_at
+        # If changed, update exchange_rate_used, org_exchange_rate_ref, workspace_exchange_rate_ref
+        new_exchange_rate_used = None
+        if is_currency_changed or is_occurred_at_changed:
+            new_exchange_rate_used = get_closest_exchanged_rate(
+                currency=currency,
+                occurred_at=occurred_at,
+                organization=organization,
+                workspace=workspace,
+            )
+            if not new_exchange_rate_used:
+                raise ValueError(
+                    "No exchange rate is defined for the given currency and date."
+                )
+
+        # Update Provided Fields
+        entry.amount = amount
+        entry.currency = currency
+        entry.occurred_at = occurred_at
+        entry.description = description
+
+        if new_exchange_rate_used:
+            entry.exchange_rate_used = new_exchange_rate_used.rate
+            # Reset org_exchange_rate_ref
+            entry.org_exchange_rate_ref = (
+                new_exchange_rate_used
+                if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
+                else None
+            )
+            # Reset workspace_exchange_rate_ref
+            entry.workspace_exchange_rate_ref = (
+                new_exchange_rate_used
+                if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
+                else None
+            )
+
+        entry.save()
+
+        # If new attachments were provided, replace existing ones or append the new ones
+        if attachments:
+            replace_or_append_attachments(
                 entry=entry,
                 attachments=attachments,
+                replace_attachments=replace_attachments,
                 user=user,
                 request=request,
             )
 
-        # Log entry creation with rich context
+            # If the entry was flagged, unflag it
+            if entry.is_flagged:
+                entry.is_flagged = False
+                entry.save(update_fields=["is_flagged"])
+
+        # Log entry update with rich context
         if user:
             BusinessAuditLogger.log_entry_action(
                 user=user,
                 entry=entry,
-                action="submit",
+                action="update",
                 request=request,
-                entry_amount=str(amount),
-                currency_code=currency.code,
-                exchange_rate=exchange_rate_used.rate,
-                has_attachments=is_attachment_provided,
-                attachment_count=len(attachments) if attachments else 0,
-                submitter_type="org_member"
-                if submitted_by_org_member
-                else "team_member",
+                updated_fields=["amount", "currency", "occurred_at", "description"],
+                currency_changed=is_currency_changed,
+                occurred_at_changed=is_occurred_at_changed,
+                exchange_rate_updated=new_exchange_rate_used is not None,
+                attachments_updated=bool(attachments),
+                replace_attachments=replace_attachments if attachments else False,
+                was_flagged=entry.is_flagged,
             )
 
-    return entry
+    @staticmethod
+    @handle_service_errors(EntryServiceError)
+    def update_entry_status(
+        *, 
+        entry: Entry, 
+        status, 
+        status_note, 
+        last_status_modified_by, 
+        request=None
+    ):
+        old_status = entry.status
+        entry.status = status
+        entry.status_note = status_note
+        entry.last_status_modified_by = last_status_modified_by
+        entry.status_last_updated_at = timezone.now()
+        entry.save()
 
-
-def update_entry_user_inputs(
-    *,
-    entry: Entry,
-    organization: Organization,
-    workspace: Workspace = None,
-    amount,
-    occurred_at,
-    description,
-    currency: Currency,
-    attachments,
-    replace_attachments: bool,
-    user=None,
-    request=None,
-):
-    if entry.status != EntryStatus.PENDING:
-        raise ValidationError(
-            "User can only update Entry info during the pending stage."
+        # Log status change with rich context
+        BusinessAuditLogger.log_status_change(
+            user=entry.last_modifier,
+            entity=entry,
+            old_status=old_status,
+            new_status=status,
+            request=request,
+            status_note=status_note,
+            modifier_type="org_member"
+            if hasattr(last_status_modified_by, "organization")
+            else "team_member",
         )
 
-    # Check if currency or occurred_at values are changed or not
-    is_currency_changed = entry.currency.code != currency.code
-    is_occurred_at_changed = entry.occurred_at != occurred_at
-    # If changed, update exchange_rate_used, org_exchange_rate_ref, workspace_exchange_rate_ref
-    new_exchange_rate_used = None
-    if is_currency_changed or is_occurred_at_changed:
-        new_exchange_rate_used = get_closest_exchanged_rate(
-            currency=currency,
-            occurred_at=occurred_at,
-            organization=organization,
-            workspace=workspace,
+    @staticmethod
+    @handle_service_errors(EntryServiceError)
+    def bulk_update_entry_status(
+        *, 
+        entries: list[Entry], 
+        request=None
+    ):
+        Entry.objects.bulk_update(
+            entries,
+            ["status", "status_note", "last_status_modified_by", "status_last_updated_at"],
         )
-        if not new_exchange_rate_used:
-            raise ValueError(
-                "No exchange rate is defined for the given currency and date."
+        return entries
+
+    @staticmethod
+    @handle_service_errors(EntryServiceError)
+    def delete_entry(
+        *, 
+        entry: Entry, 
+        user=None, 
+        request=None
+    ):
+        """
+        Service to delete an entry.
+        """
+        if entry.last_status_modified_by:
+            raise EntryServiceError(
+                "Cannot delete an entry when someone has already modified the status."
             )
 
-    # Update Provided Fields
-    entry.amount = amount
-    entry.currency = currency
-    entry.occurred_at = occurred_at
-    entry.description = description
+        if entry.status != EntryStatus.PENDING:
+            raise EntryServiceError("Cannot delete an entry that is not pending review")
 
-    if new_exchange_rate_used:
-        entry.exchange_rate_used = new_exchange_rate_used.rate
-        # Reset org_exchange_rate_ref
-        entry.org_exchange_rate_ref = (
-            new_exchange_rate_used
-            if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
-            else None
-        )
-        # Reset workspace_exchange_rate_ref
-        entry.workspace_exchange_rate_ref = (
-            new_exchange_rate_used
-            if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
-            else None
-        )
+        # Log entry deletion before deleting
+        if user:
+            BusinessAuditLogger.log_entry_action(
+                user=user,
+                entry=entry,
+                action="delete",
+                request=request,
+                entry_amount=str(entry.amount),
+                entry_status=entry.status,
+                had_attachments=entry.attachments.exists(),
+                deletion_reason="user_initiated",
+            )
 
-    entry.save()
+        entry.delete()
+        return entry
 
-    # If new attachments were provided, replace existing ones or append the new ones
-    if attachments:
-        replace_or_append_attachments(
-            entry=entry,
-            attachments=attachments,
-            replace_attachments=replace_attachments,
-            user=user,
-            request=request,
-        )
-
-        # If the entry was flagged, unflag it
-        if entry.is_flagged:
-            entry.is_flagged = False
-            entry.save(update_fields=["is_flagged"])
-
-    # Log entry update with rich context
-    if user:
-        BusinessAuditLogger.log_entry_action(
-            user=user,
-            entry=entry,
-            action="update",
-            request=request,
-            updated_fields=["amount", "currency", "occurred_at", "description"],
-            currency_changed=is_currency_changed,
-            occurred_at_changed=is_occurred_at_changed,
-            exchange_rate_updated=new_exchange_rate_used is not None,
-            attachments_updated=bool(attachments),
-            replace_attachments=replace_attachments if attachments else False,
-            was_flagged=entry.is_flagged,
-        )
-
-
-def update_entry_status(
-    *, entry: Entry, status, status_note, last_status_modified_by, request=None
-):
-    old_status = entry.status
-    entry.status = status
-    entry.status_note = status_note
-    entry.last_status_modified_by = last_status_modified_by
-    entry.status_last_updated_at = timezone.now()
-    entry.save()
-
-    # Log status change with rich context
-    user = _extract_user_from_actor(last_status_modified_by)
-
-    BusinessAuditLogger.log_status_change(
-        user=user,
-        entity=entry,
-        old_status=old_status,
-        new_status=status,
-        request=request,
-        status_note=status_note,
-        modifier_type="org_member"
-        if hasattr(last_status_modified_by, "organization")
-        else "team_member",
-    )
-
-
-def bulk_update_entry_status(*, entries: list[Entry], request=None):
-    Entry.objects.bulk_update(
-        entries,
-        ["status", "status_note", "last_status_modified_by", "status_last_updated_at"],
-    )
-    return entries
-
-@handle_service_errors(EntryServiceError)
-def delete_entry(*, entry: Entry, user=None, request=None):
-    """
-    Service to delete an entry.
-    """
-    if entry.last_status_modified_by:
-        raise EntryServiceError(
-            "Cannot delete an entry when someone has already modified the status."
-        )
-
-    if entry.status != EntryStatus.PENDING:
-        raise EntryServiceError("Cannot delete an entry that is not pending review")
-
-    # Log entry deletion before deleting
-    if user:
-        BusinessAuditLogger.log_entry_action(
-            user=user,
-            entry=entry,
-            action="delete",
-            request=request,
-            entry_amount=str(entry.amount),
-            entry_status=entry.status,
-            had_attachments=entry.attachments.exists(),
-            deletion_reason="user_initiated",
-        )
-
-    entry.delete()
-    return entry
-
-@handle_service_errors(EntryServiceError)
-def bulk_delete_entries(*, entries: list[Entry], user=None, request=None):
-    entries.delete()
-    return entries
+    @staticmethod
+    @handle_service_errors(EntryServiceError)
+    def bulk_delete_entries(
+            *, 
+            entries: list[Entry], 
+            user=None, 
+            request=None
+        ):
+            entries.delete()
+            return entries

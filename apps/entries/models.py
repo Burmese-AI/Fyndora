@@ -77,7 +77,6 @@ class Entry(baseModel, SoftDeleteModel):
         blank=True,
         related_name="entries",
     )
-
     submitted_by_team_member = models.ForeignKey(
         TeamMember,
         on_delete=models.SET_NULL,
@@ -107,8 +106,12 @@ class Entry(baseModel, SoftDeleteModel):
     def submitter(self):
         """Return the submitter (either team member or organization member)."""
         if self.submitted_by_org_member:
-            return self.submitted_by_org_member.user.username
-        return self.submitted_by_team_member.organization_member.user.username
+            return self.submitted_by_org_member.user
+        return self.submitted_by_team_member.organization_member.user
+    
+    @property
+    def last_modifier(self):
+        return self.last_status_modified_by.user
 
     class Meta:
         verbose_name = "entry"

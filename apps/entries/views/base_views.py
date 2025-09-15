@@ -28,8 +28,6 @@ from apps.core.views.mixins import (
 )
 from apps.entries.services import (
     EntryService,
-    bulk_delete_entries,
-    bulk_update_entry_status,
 )
 from apps.remittance.services import (
     calculate_due_amount,
@@ -198,7 +196,7 @@ class BaseEntryBulkDeleteView(BaseEntryBulkActionView):
         with transaction.atomic():
             # Convert list into queryset
             valid_entries = entries.filter(pk__in=[entry.pk for entry in valid_entries])
-            bulk_delete_entries(
+            EntryService.bulk_delete_entries(
                 entries=valid_entries,
                 user=self.request.user,
                 request=self.request,
@@ -251,7 +249,7 @@ class BaseEntryBulkUpdateView(BaseEntryBulkActionView):
             if not valid_entries:
                 return False, "No valid entries"
             # Bulk Update
-            bulk_update_entry_status(entries=valid_entries, request=request)
+            EntryService.bulk_update_entry_status(entries=valid_entries, request=request)
             # If no expense entry is included, perform post action to update remittance
             if not is_expense_entry:
                 self.perform_post_action(

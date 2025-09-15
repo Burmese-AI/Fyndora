@@ -2,7 +2,6 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 
 from apps.core.utils import permission_denied_view
@@ -29,7 +28,7 @@ from ..forms import (
 )
 from ..models import Entry
 from ..selectors import get_entries, get_entry
-from ..services import create_entry_with_attachments, delete_entry
+from ..services import EntryService
 from ..utils import (
     can_add_org_expense,
     can_delete_org_expense,
@@ -130,7 +129,7 @@ class OrganizationExpenseCreateView(
         )
 
     def perform_service(self, form):
-        create_entry_with_attachments(
+        EntryService.create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],
             description=form.cleaned_data["description"],
@@ -183,10 +182,9 @@ class OrganizationExpenseUpdateView(
         )
 
     def perform_service(self, form):
-        from ..services import update_entry_status, update_entry_user_inputs
 
         if self.entry.status == EntryStatus.PENDING:
-            update_entry_user_inputs(
+            EntryService.update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
                 amount=form.cleaned_data["amount"],
@@ -201,7 +199,7 @@ class OrganizationExpenseUpdateView(
 
         # If the status has changed, update the status
         if self.entry.status != form.cleaned_data["status"]:
-            update_entry_status(
+            EntryService.update_entry_status(
                 entry=self.entry,
                 status=form.cleaned_data["status"],
                 last_status_modified_by=self.org_member,
@@ -246,7 +244,7 @@ class OrganizationExpenseDeleteView(
         )
 
     def perform_service(self, form):
-        delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(entry=self.entry, user=self.request.user, request=self.request)
 
 
 class OrganizationExpenseBulkDeleteView(

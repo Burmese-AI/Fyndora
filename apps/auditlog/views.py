@@ -3,12 +3,17 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render
+from django_htmx.http import HttpResponseClientRedirect
 from apps.core.services.organizations import (
     get_organization_by_id,
 )
 from .constants import AuditActionType
 from .selectors import AuditLogSelector, get_audit_log_by_id
 from .models import AuditTrail
+from django.http import HttpResponse
+HttpResponseClientRedirect
+from django.shortcuts import redirect
+
 User = get_user_model()
 
 
@@ -159,14 +164,13 @@ def audit_detail_view(request, organization_id, audit_log_id):
             "organization": organization,
             "audit_log": audit_log,
         }
-        print("i am here")
-        print(context)
         return render(request, "auditlog/audit_log_detail_modal.html", context)
     except Exception as e:
+        print(e)
         context = {
             "organization": organization,
             "error": str(e),
             "audit_log": None,
         }
-        return render(request, "auditlog/index.html", context)
+        return render(request, "auditlog/audit_log_detail_modal.html", context)
   

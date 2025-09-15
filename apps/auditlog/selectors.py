@@ -11,6 +11,7 @@ from .constants import AuditActionType, is_critical_action
 from .models import AuditTrail
 from .utils import is_security_related
 from .models import AuditTrail
+from uuid import UUID
 
 User = get_user_model()
 
@@ -363,12 +364,12 @@ def get_expired_logs_queryset(
             expired_auth | expired_critical | expired_default
         )
 
-def get_audit_log_by_id(audit_log_id: str) -> AuditTrail:
+def get_audit_log_by_id(audit_log_id: UUID) -> AuditTrail:
     """
     Get audit log by id.
     """
     try:
-        return AuditTrail.objects.get(id=audit_log_id)
+        return AuditTrail.objects.get(audit_id=audit_log_id)
     except AuditTrail.DoesNotExist:
         return None
     except Exception:

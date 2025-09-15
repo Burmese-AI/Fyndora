@@ -1,1 +1,10 @@
-<div class="card bg-base-100 shadow-sm">hi there</div>
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div class="modal-box max-w-2xl bg-base-100 rounded-xl p-6 space-y-6">
+
+  <!-- Header -->
+  <h1>Audit Log Detail</h1>
+  <p>{{ audit_log.audit_id }}</p>
+</div>
+{% endblock %}

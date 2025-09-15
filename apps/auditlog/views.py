@@ -153,7 +153,20 @@ def auditlog_list_view(request, organization_id):
 
 def audit_detail_view(request, organization_id, audit_log_id):
     try:
+        organization = get_organization_by_id(organization_id)
         audit_log = get_audit_log_by_id(audit_log_id)
-    except Exception:
-        return render(request, "auditlog/index.html", {"error": "Audit log not found"})
-    return render(request, "auditlog/audit_log_detail_modal.html", {"audit_log": audit_log})
+        print(audit_log.audit_id)
+        context = {
+            "organization": organization,
+            "audit_log": audit_log,
+        }
+        print("i am here")
+        return render(request, "auditlog/audit_log_detail_modal.html", context)
+    except Exception as e:
+        context = {
+            "organization": organization,
+            "error": str(e),
+            "audit_log": None,
+        }
+        return render(request, "auditlog/index.html", context)
+  

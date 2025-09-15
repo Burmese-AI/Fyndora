@@ -54,7 +54,10 @@
                   {% endif %}
                 </td>
                 <td>
-                  <button class="btn btn-sm  btn-primary" hx-target="#audit-log-detail-modal">View Details</button>
+                  <button class="btn btn-sm btn-primary" 
+                          hx-get="{% url 'audit_detail' organization_id=organization.pk audit_log_id=log.audit_id %}" 
+                          hx-target="#modal-placeholder"
+                          hx-swap="innerHTML">View Details</button>
                 </td>
               </tr>
             {% endfor %}

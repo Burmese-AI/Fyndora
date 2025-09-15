@@ -11,6 +11,7 @@ from .constants import PAGINATION_SIZE
 from .exceptions import BaseServiceError
 from .permissions import OrganizationPermissions
 
+
 def percent_change(current: float, previous: float) -> str:
     if previous == 0:
         return "0% change"
@@ -148,7 +149,7 @@ def check_if_member_is_owner(member, organization):
 
 def handle_service_errors(
     error_class: type[BaseServiceError] = BaseServiceError,
-    return_value = None,
+    return_value=None,
     context: dict | None = None,
 ):
     """
@@ -160,21 +161,20 @@ def handle_service_errors(
         error_class (type): Base error class to use (default BaseServiceError).
         context (dict): Static context to always include.
     """
-    
+
     # Build static context
     final_context = dict(context or {})
 
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            
             try:
-                return func(*args, **kwargs)            
+                return func(*args, **kwargs)
             except BaseServiceError as err:
                 if return_value:
                     return return_value
                 raise err
-            
+
             except Exception as err:
                 if return_value:
                     return return_value
@@ -182,7 +182,8 @@ def handle_service_errors(
                 raise error_class.from_exception(
                     err,
                     context=final_context,
-                ) 
-                
+                )
+
         return wrapper
+
     return decorator

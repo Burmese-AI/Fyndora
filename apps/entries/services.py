@@ -81,13 +81,10 @@ class EntryService:
 
     @staticmethod
     @handle_service_errors(EntryServiceError)
-    def bulk_create_entry(
-        *, 
-        entries: list[Entry]
-    ):
+    def bulk_create_entry(*, entries: list[Entry]):
         return Entry.objects.bulk_create(entries)
 
-    @staticmethod        
+    @staticmethod
     @handle_service_errors(EntryServiceError)
     def create_entry_with_attachments(
         *,
@@ -119,7 +116,9 @@ class EntryService:
             workspace=workspace,
         )
         if not exchange_rate_used:
-            raise ValueError("No exchange rate is defined for the given currency and date.")
+            raise ValueError(
+                "No exchange rate is defined for the given currency and date."
+            )
 
         # Potential Error
         # NOTE: if currency is soft-deleted, currency obj can't be obtained
@@ -272,12 +271,7 @@ class EntryService:
     @staticmethod
     @handle_service_errors(EntryServiceError)
     def update_entry_status(
-        *, 
-        entry: Entry, 
-        status, 
-        status_note, 
-        last_status_modified_by, 
-        request=None
+        *, entry: Entry, status, status_note, last_status_modified_by, request=None
     ):
         old_status = entry.status
         entry.status = status
@@ -301,25 +295,21 @@ class EntryService:
 
     @staticmethod
     @handle_service_errors(EntryServiceError)
-    def bulk_update_entry_status(
-        *, 
-        entries: list[Entry], 
-        request=None
-    ):
+    def bulk_update_entry_status(*, entries: list[Entry], request=None):
         Entry.objects.bulk_update(
             entries,
-            ["status", "status_note", "last_status_modified_by", "status_last_updated_at"],
+            [
+                "status",
+                "status_note",
+                "last_status_modified_by",
+                "status_last_updated_at",
+            ],
         )
         return entries
 
     @staticmethod
     @handle_service_errors(EntryServiceError)
-    def delete_entry(
-        *, 
-        entry: Entry, 
-        user=None, 
-        request=None
-    ):
+    def delete_entry(*, entry: Entry, user=None, request=None):
         """
         Service to delete an entry.
         """
@@ -349,11 +339,6 @@ class EntryService:
 
     @staticmethod
     @handle_service_errors(EntryServiceError)
-    def bulk_delete_entries(
-            *, 
-            entries: list[Entry], 
-            user=None, 
-            request=None
-        ):
-            entries.delete()
-            return entries
+    def bulk_delete_entries(*, entries: list[Entry], user=None, request=None):
+        entries.delete()
+        return entries

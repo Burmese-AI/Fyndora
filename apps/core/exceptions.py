@@ -22,10 +22,12 @@ class BaseServiceError(Exception):
 
         # Add original exception info to context
         if original_exception:
-            self.context.update({
-                "original_error_type": type(original_exception).__name__,
-                "original_error_msg": str(original_exception),
-            })
+            self.context.update(
+                {
+                    "original_error_type": type(original_exception).__name__,
+                    "original_error_msg": str(original_exception),
+                }
+            )
 
     def build_detail_message(self):
         parts = [self.default_detail]
@@ -46,14 +48,12 @@ class BaseServiceError(Exception):
         context = context or {}
         for builtin_exc, custom_exc_class in cls.EXCEPTION_MAP.items():
             if isinstance(exception, builtin_exc):
-                return custom_exc_class(
-                    original_exception=exception,
-                    context=context
-                )
+                return custom_exc_class(original_exception=exception, context=context)
         return cls(original_exception=exception, context=context)
 
     def __str__(self):
         return self.detail
+
 
 class ValidationServiceError(BaseServiceError):
     default_detail = "Validation failed"

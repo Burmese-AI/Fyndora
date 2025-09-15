@@ -20,9 +20,7 @@ from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
 )
 from apps.remittance.services import (
-    calculate_due_amount,
-    calculate_paid_amount,
-    update_remittance,
+    RemittanceService,
 )
 from apps.teams.constants import TeamMemberRole
 
@@ -268,7 +266,6 @@ class WorkspaceTeamEntryUpdateView(
         )
 
     def perform_service(self, form):
-
         if self.entry.status == EntryStatus.PENDING:
             EntryService.update_entry_user_inputs(
                 entry=self.entry,
@@ -321,9 +318,7 @@ class WorkspaceTeamEntryDeleteView(
     # we make sure we're *only* trying to delete entries that strictly match
     # It's an indirect fix that just makes things cleaner.
     def get_object(self):
-        return get_entry(
-            pk=self.kwargs["pk"]
-        )
+        return get_entry(pk=self.kwargs["pk"])
 
     def get_queryset(self):
         return get_entries(
@@ -344,7 +339,9 @@ class WorkspaceTeamEntryDeleteView(
         )
 
     def perform_service(self, form):
-        EntryService.delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(
+            entry=self.entry, user=self.request.user, request=self.request
+        )
 
 
 class WorkspaceEntryBulkDeleteView(
@@ -636,11 +633,5 @@ class WorkspaceTeamEntryBulkCreateView(
             },
         )
 
-    def perform_post_action(self, entries: list[Entry]):
-        remittance = self.workspace_team.remittance
-        # After delete, both due/paid amounts might change
-        remittance.due_amount = calculate_due_amount(workspace_team=self.workspace_team)
-        remittance.paid_amount = calculate_paid_amount(
-            workspace_team=self.workspace_team
-        )
-        update_remittance(remittance=remittance)
+    def perform_post_action(self, *args, **kwargs):
+        RemittanceService.sync_remittance(workspace_team=self.workspace_team)

@@ -182,7 +182,6 @@ class OrganizationExpenseUpdateView(
         )
 
     def perform_service(self, form):
-
         if self.entry.status == EntryStatus.PENDING:
             EntryService.update_entry_user_inputs(
                 entry=self.entry,
@@ -244,7 +243,9 @@ class OrganizationExpenseDeleteView(
         )
 
     def perform_service(self, form):
-        EntryService.delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(
+            entry=self.entry, user=self.request.user, request=self.request
+        )
 
 
 class OrganizationExpenseBulkDeleteView(

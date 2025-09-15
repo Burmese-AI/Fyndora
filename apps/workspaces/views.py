@@ -69,9 +69,7 @@ from .mixins.workspace_exchange_rate.required_mixins import (
 )
 from apps.core.utils import can_manage_organization
 from apps.remittance.services import (
-    bulk_update_remittance,
-    calculate_due_amount,
-    update_remittance,
+    RemittanceService,
 )
 from apps.workspaces.permissions import (
     assign_workspace_team_permissions,
@@ -227,17 +225,13 @@ def edit_workspace_view(request, organization_id, workspace_id):
                         # Update Remittance Due Amount
                         if old_remittance_rate != form.cleaned_data["remittance_rate"]:
                             print("Triggered due to the rate changes")
+
                             synced_workspace_teams = workspace.joined_teams.filter(
                                 syned_with_workspace_remittance_rate=True
                             )
-                            remittances_to_update = []
-                            for workspace_team in synced_workspace_teams:
-                                remittance = workspace_team.remittance
-                                remittance.due_amount = calculate_due_amount(
-                                    workspace_team=workspace_team
-                                )
-                                remittances_to_update.append(remittance)
-                            bulk_update_remittance(remittances=remittances_to_update)
+                            RemittanceService.bulk_sync_remittance(
+                                workspace_teams=synced_workspace_teams
+                            )
 
                     workspace = get_single_workspace_with_team_counts(workspace_id)
                     context = {
@@ -540,11 +534,10 @@ def change_workspace_team_remittance_rate_view(
                         ],
                     )
                     # Updating due amount of remittance
-                    remittance = workspace_team.remittance
-                    remittance.due_amount = calculate_due_amount(
-                        workspace_team=workspace_team
+                    RemittanceService.sync_remittance(
+                        workspace_team=workspace_team, calc_paid_amt=False
                     )
-                    update_remittance(remittance=remittance)
+
                 messages.success(request, "Remittance rate updated successfully.")
                 workspace_team = get_workspace_team_by_workspace_team_id(
                     workspace_team_id

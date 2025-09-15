@@ -108,7 +108,7 @@ class Entry(baseModel, SoftDeleteModel):
         if self.submitted_by_org_member:
             return self.submitted_by_org_member.user
         return self.submitted_by_team_member.organization_member.user
-    
+
     @property
     def last_modifier(self):
         return self.last_status_modified_by.user

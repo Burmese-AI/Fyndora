@@ -139,7 +139,6 @@ class WorkspaceExpenseCreateView(
         )
 
     def perform_service(self, form):
-
         EntryService.create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],
@@ -199,7 +198,6 @@ class WorkspaceExpenseUpdateView(
         )
 
     def perform_service(self, form):
-
         if self.entry.status == EntryStatus.PENDING:
             EntryService.update_entry_user_inputs(
                 entry=self.entry,
@@ -262,8 +260,9 @@ class WorkspaceExpenseDeleteView(
         )
 
     def perform_service(self, form):
-
-        EntryService.delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(
+            entry=self.entry, user=self.request.user, request=self.request
+        )
 
 
 class WorkspaceExpenseBulkDeleteView(

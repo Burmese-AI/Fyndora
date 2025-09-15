@@ -3,9 +3,7 @@ from django.dispatch import receiver
 from .models import Entry
 from .constants import EntryType, EntryStatus
 from apps.remittance.services import (
-    calculate_due_amount,
-    calculate_paid_amount,
-    update_remittance,
+    RemittanceService,
 )
 
 
@@ -19,20 +17,11 @@ def keep_remittance_updated_with_entry(sender, instance: Entry, created, **kwarg
     ]:
         return
 
-    workspace_team = instance.workspace_team
-    remittance = workspace_team.remittance
-    required_to_update = False
-
-    # Recalc remittance due amount if entry is income or disbursement
-    if instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]:
-        remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
-        required_to_update = True
-    # Recalc remittance paid amount if entry is remittance
-    if instance.entry_type == EntryType.REMITTANCE:
-        remittance.paid_amount = calculate_paid_amount(workspace_team=workspace_team)
-        required_to_update = True
-    if required_to_update:
-        update_remittance(remittance=remittance)
+    RemittanceService.sync_remittance(
+        workspace_team=instance.workspace_team,
+        calc_due_amt=instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT],
+        calc_paid_amt=instance.entry_type == EntryType.REMITTANCE,
+    )
 
 
 @receiver(post_delete, sender=Entry)
@@ -49,17 +38,8 @@ def revert_remittance_on_entry_delete(sender, instance: Entry, **kwargs):
     if instance.status != EntryStatus.APPROVED:
         return
 
-    workspace_team = instance.workspace_team
-    remittance = workspace_team.remittance
-    required_to_update = False
-
-    # Recalc remittance due amount if entry is income or disbursement
-    if instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT]:
-        remittance.due_amount = calculate_due_amount(workspace_team=workspace_team)
-        required_to_update = True
-    # Recalc remittance paid amount if entry is remittance
-    if instance.entry_type == EntryType.REMITTANCE:
-        remittance.paid_amount = calculate_paid_amount(workspace_team=workspace_team)
-        required_to_update = True
-    if required_to_update:
-        update_remittance(remittance=remittance)
+    RemittanceService.sync_remittance(
+        workspace_team=instance.workspace_team,
+        calc_due_amt=instance.entry_type in [EntryType.INCOME, EntryType.DISBURSEMENT],
+        calc_paid_amt=instance.entry_type == EntryType.REMITTANCE,
+    )

@@ -2,7 +2,6 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.http.response import HttpResponse as HttpResponse
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 from apps.core.permissions import EntryPermissions
@@ -21,9 +20,7 @@ from apps.core.views.service_layer_mixins import (
     HtmxTableServiceMixin,
 )
 from apps.remittance.services import (
-    calculate_due_amount,
-    calculate_paid_amount,
-    update_remittance,
+    RemittanceService,
 )
 from apps.teams.constants import TeamMemberRole
 
@@ -34,8 +31,8 @@ from ..forms import (
     UpdateWorkspaceTeamEntryForm,
 )
 from ..models import Entry
-from ..selectors import get_entries
-from ..services import create_entry_with_attachments, delete_entry
+from ..selectors import get_entries, get_entry
+from ..services import EntryService
 from ..utils import (
     can_add_workspace_team_entry,
     can_delete_workspace_team_entry,
@@ -196,7 +193,7 @@ class WorkspaceTeamEntryCreateView(
         )
 
     def perform_service(self, form):
-        entry = create_entry_with_attachments(
+        entry = EntryService.create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],
             description=form.cleaned_data["description"],
@@ -269,10 +266,8 @@ class WorkspaceTeamEntryUpdateView(
         )
 
     def perform_service(self, form):
-        from ..services import update_entry_status, update_entry_user_inputs
-
         if self.entry.status == EntryStatus.PENDING:
-            update_entry_user_inputs(
+            EntryService.update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
                 amount=form.cleaned_data["amount"],
@@ -287,7 +282,7 @@ class WorkspaceTeamEntryUpdateView(
 
         # If the status has changed, update the status
         if self.entry.status != form.cleaned_data["status"]:
-            update_entry_status(
+            EntryService.update_entry_status(
                 entry=self.entry,
                 status=form.cleaned_data["status"],
                 last_status_modified_by=self.org_member,
@@ -322,14 +317,8 @@ class WorkspaceTeamEntryDeleteView(
     #
     # we make sure we're *only* trying to delete entries that strictly match
     # It's an indirect fix that just makes things cleaner.
-    def get_object(self, queryset=None):
-        return get_object_or_404(
-            Entry,
-            pk=self.kwargs["pk"],
-            workspace_team=self.workspace_team,
-            workspace=self.workspace,
-            organization=self.organization,
-        )
+    def get_object(self):
+        return get_entry(pk=self.kwargs["pk"])
 
     def get_queryset(self):
         return get_entries(
@@ -350,7 +339,9 @@ class WorkspaceTeamEntryDeleteView(
         )
 
     def perform_service(self, form):
-        delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(
+            entry=self.entry, user=self.request.user, request=self.request
+        )
 
 
 class WorkspaceEntryBulkDeleteView(
@@ -642,11 +633,5 @@ class WorkspaceTeamEntryBulkCreateView(
             },
         )
 
-    def perform_post_action(self, entries: list[Entry]):
-        remittance = self.workspace_team.remittance
-        # After delete, both due/paid amounts might change
-        remittance.due_amount = calculate_due_amount(workspace_team=self.workspace_team)
-        remittance.paid_amount = calculate_paid_amount(
-            workspace_team=self.workspace_team
-        )
-        update_remittance(remittance=remittance)
+    def perform_post_action(self, *args, **kwargs):
+        RemittanceService.sync_remittance(workspace_team=self.workspace_team)

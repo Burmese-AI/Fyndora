@@ -10,7 +10,7 @@ from apps.core.selectors import (
 from apps.remittance.selectors import get_remittances_under_organization
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect
-from .services import remittance_confirm_payment
+from .services import RemittanceService
 from .models import Remittance
 from django.contrib import messages
 from .exceptions import RemittanceConfirmPaymentException
@@ -103,7 +103,7 @@ def remittance_confirm_payment_view(request, organization_id, remittance_id):
 
         if request.method == "POST":
             try:
-                updated_remittance = remittance_confirm_payment(
+                updated_remittance = RemittanceService.remittance_confirm_payment(
                     remittance=remittance,
                     user=request.user,
                     organization_id=organization_id,

@@ -27,8 +27,8 @@ from ..forms import (
     CreateOrganizationExpenseEntryForm,
 )
 from ..models import Entry
-from ..selectors import get_entries
-from ..services import create_entry_with_attachments, delete_entry
+from ..selectors import get_entries, get_entry
+from ..services import EntryService
 from ..utils import (
     can_add_org_expense,
     can_delete_org_expense,
@@ -129,7 +129,7 @@ class OrganizationExpenseCreateView(
         )
 
     def perform_service(self, form):
-        create_entry_with_attachments(
+        EntryService.create_entry_with_attachments(
             amount=form.cleaned_data["amount"],
             occurred_at=form.cleaned_data["occurred_at"],
             description=form.cleaned_data["description"],
@@ -182,10 +182,8 @@ class OrganizationExpenseUpdateView(
         )
 
     def perform_service(self, form):
-        from ..services import update_entry_status, update_entry_user_inputs
-
         if self.entry.status == EntryStatus.PENDING:
-            update_entry_user_inputs(
+            EntryService.update_entry_user_inputs(
                 entry=self.entry,
                 organization=self.organization,
                 amount=form.cleaned_data["amount"],
@@ -200,7 +198,7 @@ class OrganizationExpenseUpdateView(
 
         # If the status has changed, update the status
         if self.entry.status != form.cleaned_data["status"]:
-            update_entry_status(
+            EntryService.update_entry_status(
                 entry=self.entry,
                 status=form.cleaned_data["status"],
                 last_status_modified_by=self.org_member,
@@ -228,6 +226,11 @@ class OrganizationExpenseDeleteView(
             )
         return super().dispatch(request, *args, **kwargs)
 
+    def get_object(self):
+        return get_entry(
+            pk=self.kwargs["pk"],
+        )
+
     def get_queryset(self):
         return get_entries(
             organization=self.organization,
@@ -240,7 +243,9 @@ class OrganizationExpenseDeleteView(
         )
 
     def perform_service(self, form):
-        delete_entry(entry=self.entry, user=self.request.user, request=self.request)
+        EntryService.delete_entry(
+            entry=self.entry, user=self.request.user, request=self.request
+        )
 
 
 class OrganizationExpenseBulkDeleteView(

@@ -130,7 +130,11 @@ def auditlog_list_view(request, organization_id):
             "exclude_system": exclude_system_actions,
         }
 
-        return render(request, "auditlog/index.html", context)
+        # Check if this is an HTMX request
+        if request.headers.get('HX-Request'):
+            return render(request, "auditlog/audit_logs_table.html", context)
+        else:
+            return render(request, "auditlog/index.html", context)
 
     except Exception as e:
         # Handle any errors gracefully
@@ -139,4 +143,9 @@ def auditlog_list_view(request, organization_id):
             "error": str(e),
             "audit_logs": [],
         }
-        return render(request, "auditlog/index.html", context)
+        
+        # Check if this is an HTMX request for error handling
+        if request.headers.get('HX-Request'):
+            return render(request, "auditlog/audit_logs_table.html", context)
+        else:
+            return render(request, "auditlog/index.html", context)

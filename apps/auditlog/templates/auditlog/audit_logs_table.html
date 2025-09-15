@@ -1,0 +1,109 @@
+<!-- Audit Logs Table -->
+<div class="card bg-base-100 shadow-sm">
+  <div class="card-body">
+    <h3 class="card-title text-lg">Audit Logs</h3>
+    
+    {% if audit_logs %}
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Entity Type</th>
+              <th>Entity ID</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in audit_logs %}
+              <tr>
+                <td>
+                  <div class="text-sm">
+                    {{ log.timestamp|date:"M d, Y" }}
+                    <br>
+                    <span class="text-xs opacity-70">{{ log.timestamp|time:"H:i:s" }}</span>
+                  </div>
+                </td>
+                <td>
+                  {% if log.user %}
+                    <div class="text-sm">
+                      <div class="font-medium">{{ log.user.username }}</div>
+                      <div class="text-xs opacity-70">{{ log.user.email }}</div>
+                    </div>
+                  {% else %}
+                    <span class="text-xs opacity-50">System</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-outline">{{ log.get_action_type_display }}</span>
+                </td>
+                <td>
+                  {% if log.target_entity_type %}
+                    <span class="text-sm">{{ log.target_entity_type.model|title }}</span>
+                  {% else %}
+                    <span class="text-xs opacity-50">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.target_entity_id %}
+                    <code class="text-xs">{{ log.target_entity_id }}</code>
+                  {% else %}
+                    <span class="text-xs opacity-50">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.metadata %}
+                    <div class="text-xs max-w-xs truncate" title="{{ log.metadata|default:'' }}">
+                      {{ log.metadata|truncatechars:50 }}
+                    </div>
+                  {% else %}
+                    <span class="text-xs opacity-50">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if audit_logs.has_other_pages %}
+        <div class="flex justify-center mt-6">
+          <div class="join">
+            {% if audit_logs.has_previous %}
+              <a href="?{% for key, value in current_filters.items %}{{ key }}={{ value }}&{% endfor %}page={{ audit_logs.previous_page_number }}" 
+                 class="join-item btn btn-sm"
+                 hx-get="{% url 'auditlog_list' organization_id=organization.pk %}"
+                 hx-target="#audit-logs-content"
+                 hx-trigger="click"
+                 hx-push-url="true">«</a>
+            {% endif %}
+            
+            <span class="join-item btn btn-sm btn-active">
+              Page {{ audit_logs.number }} of {{ audit_logs.paginator.num_pages }}
+            </span>
+            
+            {% if audit_logs.has_next %}
+              <a href="?{% for key, value in current_filters.items %}{{ key }}={{ value }}&{% endfor %}page={{ audit_logs.next_page_number }}" 
+                 class="join-item btn btn-sm"
+                 hx-get="{% url 'auditlog_list' organization_id=organization.pk %}"
+                 hx-target="#audit-logs-content"
+                 hx-trigger="click"
+                 hx-push-url="true">»</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="text-center py-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="text-lg font-medium mt-2">No audit logs found</h3>
+        <p class="text-base-content/70">Try adjusting your filters or check back later.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>

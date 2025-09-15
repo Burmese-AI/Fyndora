@@ -155,12 +155,12 @@ def audit_detail_view(request, organization_id, audit_log_id):
     try:
         organization = get_organization_by_id(organization_id)
         audit_log = get_audit_log_by_id(audit_log_id)
-        print(audit_log.audit_id)
         context = {
             "organization": organization,
             "audit_log": audit_log,
         }
         print("i am here")
+        print(context)
         return render(request, "auditlog/audit_log_detail_modal.html", context)
     except Exception as e:
         context = {

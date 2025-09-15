@@ -619,7 +619,9 @@ class Command(BaseCommand):
                         organization_member=coordinator,
                         role=TeamMemberRole.TEAM_COORDINATOR,
                     )
-                    team_member._audit_user = org.owner.user  # Set audit context for seeding
+                    team_member._audit_user = (
+                        org.owner.user
+                    )  # Set audit context for seeding
                     team_member.save()
 
                     # Add other members to team (avoiding coordinators from other teams)
@@ -637,7 +639,9 @@ class Command(BaseCommand):
                             organization_member=member,
                             role=TeamMemberRole.SUBMITTER,
                         )
-                        team_member._audit_user = org.owner.user  # Set audit context for seeding
+                        team_member._audit_user = (
+                            org.owner.user
+                        )  # Set audit context for seeding
                         team_member.save()
 
                     teams.append(team)
@@ -807,7 +811,9 @@ class Command(BaseCommand):
                         start_date=start_date,
                         end_date=end_date,
                     )
-                    workspace._audit_user = org.owner.user  # Set audit context for seeding
+                    workspace._audit_user = (
+                        org.owner.user
+                    )  # Set audit context for seeding
                     workspace.save()
 
                     workspaces.append(workspace)
@@ -862,7 +868,9 @@ class Command(BaseCommand):
                         workspace=workspace,
                         custom_remittance_rate=custom_rate,
                     )
-                    workspace_team._audit_user = workspace.organization.owner.user  # Set audit context for seeding
+                    workspace_team._audit_user = (
+                        workspace.organization.owner.user
+                    )  # Set audit context for seeding
                     workspace_team.save()
 
                     # Assign workspace team permissions
@@ -1002,7 +1010,9 @@ class Command(BaseCommand):
                     status=random.choice(entry_statuses),
                     is_flagged=True,
                 )
-                entry._audit_user = workspace_admin.user  # Set audit context for seeding
+                entry._audit_user = (
+                    workspace_admin.user
+                )  # Set audit context for seeding
                 entry.save()
 
         except Exception as e:
@@ -1210,7 +1220,9 @@ class Command(BaseCommand):
                 )
                 # Set audit context based on who submitted the entry
                 if submitted_by_team_member:
-                    entry._audit_user = submitted_by_team_member.organization_member.user
+                    entry._audit_user = (
+                        submitted_by_team_member.organization_member.user
+                    )
                 elif submitted_by_org_member:
                     entry._audit_user = submitted_by_org_member.user
                 else:
@@ -1246,7 +1258,9 @@ class Command(BaseCommand):
                             added_by=org.owner,
                             note=f"Seed data exchange rate for {currency.code}",
                         )
-                        org_rate._audit_user = org.owner.user  # Set audit context for seeding
+                        org_rate._audit_user = (
+                            org.owner.user
+                        )  # Set audit context for seeding
                         org_rate.save()
 
             # Create workspace exchange rates
@@ -1277,7 +1291,9 @@ class Command(BaseCommand):
                             else None,
                         )
                         # Set audit context based on who added the rate
-                        ws_rate._audit_user = (workspace.workspace_admin or workspace.organization.owner).user
+                        ws_rate._audit_user = (
+                            workspace.workspace_admin or workspace.organization.owner
+                        ).user
                         ws_rate.save()
 
             self.stdout.write(

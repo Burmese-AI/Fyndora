@@ -273,7 +273,9 @@ def update_entry_user_inputs(
             entry.save(update_fields=["is_flagged"])
 
     # Business logic logging: Log significant field changes
-    if user and (is_currency_changed or is_occurred_at_changed or new_exchange_rate_used):
+    if user and (
+        is_currency_changed or is_occurred_at_changed or new_exchange_rate_used
+    ):
         BusinessAuditLogger.log_entry_action(
             user=user,
             entry=entry,

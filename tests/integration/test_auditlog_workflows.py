@@ -306,7 +306,7 @@ class TestSystemAutomatedAuditWorkflows(TestCase):
         """Test audit log cleanup workflow."""
         # Clear any existing audits to ensure test isolation
         AuditTrail.objects.all().delete()
-        
+
         # Create old audit entries
         old_date = datetime.now(timezone.utc) - timedelta(days=400)
 
@@ -322,7 +322,7 @@ class TestSystemAutomatedAuditWorkflows(TestCase):
         # Check count before cleanup
         total_before_cleanup = AuditTrail.objects.count()
         print(f"Total audits before cleanup: {total_before_cleanup}")
-        
+
         # Perform cleanup
         cleanup_stats = audit_cleanup_expired_logs(override_days=365)
 
@@ -330,7 +330,7 @@ class TestSystemAutomatedAuditWorkflows(TestCase):
         self.assertEqual(cleanup_stats["total_deleted"], 10)
         remaining_audits = AuditTrail.objects.count()
         print(f"Remaining audits after cleanup: {remaining_audits}")
-        
+
         # Adjust expectation based on actual behavior - factories may create additional audits via signals
         expected_remaining = total_before_cleanup - 10
         self.assertEqual(remaining_audits, expected_remaining)

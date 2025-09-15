@@ -102,7 +102,10 @@ def update_workspace_from_form(
 
         # Log admin/reviewer changes (business logic)
         try:
-            if user and (previous_workspace_admin != new_workspace_admin or previous_operations_reviewer != new_operations_reviewer):
+            if user and (
+                previous_workspace_admin != new_workspace_admin
+                or previous_operations_reviewer != new_operations_reviewer
+            ):
                 BusinessAuditLogger.log_workspace_action(
                     user=user,
                     workspace=workspace,
@@ -125,8 +128,11 @@ def update_workspace_from_form(
                     else None,
                 )
         except Exception as log_error:
-            logger.error(f"Failed to log workspace admin/reviewer changes: {log_error}", exc_info=True)
-        
+            logger.error(
+                f"Failed to log workspace admin/reviewer changes: {log_error}",
+                exc_info=True,
+            )
+
         # Note: General CRUD update logging removed - handled by signal handlers
 
         return workspace

@@ -28,7 +28,7 @@ def delete_attachment(attachment_id, request):
         # Set audit context to prevent duplicate logging from signal handlers
         if request and hasattr(request, "user") and request.user.is_authenticated:
             attachment._audit_user = request.user
-        
+
         attachment.delete()
         messages.success(
             request, f"Attachment, {attachment.file_url}, deleted successfully"
@@ -64,7 +64,7 @@ def replace_or_append_attachments(
     existing_attachments = []
     if replace_attachments:
         existing_attachments = list(entry.attachments.all())
-            # Set audit context for bulk deletion
+        # Set audit context for bulk deletion
         if user:
             for att in existing_attachments:
                 att._audit_user = user
@@ -132,7 +132,7 @@ def create_attachments(*, entry, attachments, user=None, request=None):
     if user:
         for attachment_obj in prepared_attachments:
             attachment_obj._audit_user = user
-    
+
     # Bulk Create the Attachments
     Attachment.objects.bulk_create(prepared_attachments)
 

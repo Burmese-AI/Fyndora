@@ -9,10 +9,8 @@ from apps.core.services.organizations import (
 )
 from .constants import AuditActionType
 from .selectors import AuditLogSelector, get_audit_log_by_id
-from .models import AuditTrail
-from django.http import HttpResponse
+
 HttpResponseClientRedirect
-from django.shortcuts import redirect
 
 User = get_user_model()
 
@@ -136,7 +134,7 @@ def auditlog_list_view(request, organization_id):
         }
 
         # Check if this is an HTMX request
-        if request.headers.get('HX-Request'):
+        if request.headers.get("HX-Request"):
             return render(request, "auditlog/audit_logs_table.html", context)
         else:
             return render(request, "auditlog/index.html", context)
@@ -148,9 +146,9 @@ def auditlog_list_view(request, organization_id):
             "error": str(e),
             "audit_logs": [],
         }
-        
+
         # Check if this is an HTMX request for error handling
-        if request.headers.get('HX-Request'):
+        if request.headers.get("HX-Request"):
             return render(request, "auditlog/audit_logs_table.html", context)
         else:
             return render(request, "auditlog/index.html", context)
@@ -173,4 +171,3 @@ def audit_detail_view(request, organization_id, audit_log_id):
             "audit_log": None,
         }
         return render(request, "auditlog/audit_log_detail_modal.html", context)
-  

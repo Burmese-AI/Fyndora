@@ -117,13 +117,13 @@
           {% if audit_log.organization %}
             <div>
               <span class="text-base-content/60">Organization:</span>
-              <span class="ml-2 font-medium">{{ audit_log.organization.name }}</span>
+              <span class="ml-2 font-medium">{{ audit_log.organization.title }}</span>
             </div>
           {% endif %}
           {% if audit_log.workspace %}
             <div>
               <span class="text-base-content/60">Workspace:</span>
-              <span class="ml-2 font-medium">{{ audit_log.workspace.name }}</span>
+              <span class="ml-2 font-medium">{{ audit_log.workspace.title }}</span>
             </div>
           {% endif %}
         </div>

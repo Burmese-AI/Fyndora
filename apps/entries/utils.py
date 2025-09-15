@@ -4,6 +4,7 @@ from apps.core.permissions import (
     WorkspaceTeamPermissions,
     EntryPermissions,
 )
+from apps.entries.constants import EntryType
 
 
 def can_view_org_expense(user, organization):
@@ -107,14 +108,19 @@ def extract_entry_business_context(entry):
     """
     if not entry:
         return {}
-
-    return {
-        "entry_id": str(entry.entry_id),
+    
+    context = {
+        "entry_id": str(entry.pk),
         "entry_type": entry.entry_type,
-        "workspace_id": str(entry.workspace.workspace_id),
-        "workspace_name": entry.workspace.title,
-        "organization_id": str(entry.workspace.organization.organization_id),
+        "organization_id": str(entry.organization.pk),
     }
+    
+    if entry.entry_type in [EntryType.WORKSPACE_EXP, EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
+        context["workspace_id"] = str(entry.workspace.pk),
+        context["workspace_name"] = entry.workspace.title,
+
+
+    return context
 
 
 def own_higher_admin_role(user, workspace_team):

@@ -35,28 +35,17 @@ def create_workspace_from_form(*, form, orgMember, organization) -> Workspace:
         workspace = form.save(commit=False)
         workspace.organization = organization
         workspace.created_by = orgMember
+        # Set audit context to prevent duplicate logging from signal handlers
+        user = orgMember.user if orgMember else None
+        if user:
+            workspace._audit_user = user
         workspace.save()
 
         assign_workspace_permissions(
             workspace, request_user=orgMember.user if orgMember else None
         )
 
-        # Log successful workspace creation
-        try:
-            user = orgMember.user if orgMember else None
-            if user:
-                BusinessAuditLogger.log_workspace_action(
-                    user=user,
-                    workspace=workspace,
-                    action="create",
-                    organization_id=str(organization.organization_id),
-                    organization_title=organization.title,
-                    created_by_member_id=str(orgMember.organization_member_id),
-                )
-        except Exception as log_error:
-            logger.error(
-                f"Failed to log workspace creation: {log_error}", exc_info=True
-            )
+        # Note: CRUD logging removed - handled by signal handlers
 
         return workspace
     except Exception as e:
@@ -96,6 +85,9 @@ def update_workspace_from_form(
         # Track what fields are being updated
         updated_fields = list(form.cleaned_data.keys())
         print(f"Updated fields: {updated_fields}")
+        # Set audit context to prevent duplicate logging from signal handlers
+        if user:
+            workspace._audit_user = user
         workspace = model_update(workspace, form.cleaned_data)
         new_workspace_admin = form.cleaned_data.get("workspace_admin")
         new_operations_reviewer = form.cleaned_data.get("operations_reviewer")
@@ -108,14 +100,16 @@ def update_workspace_from_form(
             request_user=user,
         )
 
-        # Log successful workspace update
+        # Log admin/reviewer changes (business logic)
         try:
-            if user:
+            if user and (
+                previous_workspace_admin != new_workspace_admin
+                or previous_operations_reviewer != new_operations_reviewer
+            ):
                 BusinessAuditLogger.log_workspace_action(
                     user=user,
                     workspace=workspace,
-                    action="update",
-                    updated_fields=updated_fields,
+                    action="admin_reviewer_change",
                     previous_admin_id=str(
                         previous_workspace_admin.organization_member_id
                     )
@@ -134,7 +128,12 @@ def update_workspace_from_form(
                     else None,
                 )
         except Exception as log_error:
-            logger.error(f"Failed to log workspace update: {log_error}", exc_info=True)
+            logger.error(
+                f"Failed to log workspace admin/reviewer changes: {log_error}",
+                exc_info=True,
+            )
+
+        # Note: General CRUD update logging removed - handled by signal handlers
 
         return workspace
     except Exception as e:

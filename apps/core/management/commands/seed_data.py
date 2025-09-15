@@ -461,19 +461,24 @@ class Command(BaseCommand):
                     org_name = f"{original_name} {counter}"
                     counter += 1
 
-                org = Organization.objects.create(
+                org = Organization(
                     title=org_name,
                     description=faker.text(max_nb_chars=200),
                     status=OrgStatusChoices.ACTIVE,
                 )
+                org._audit_user = owner_user  # Set audit context for seeding
+                org.save()
 
                 # Create organization member for owner
-                owner_member = OrganizationMember.objects.create(
+                owner_member = OrganizationMember(
                     organization=org, user=owner_user, is_active=True
                 )
+                owner_member._audit_user = owner_user  # Set audit context for seeding
+                owner_member.save()
 
                 # Set owner
                 org.owner = owner_member
+                org._audit_user = owner_user  # Set audit context for seeding
                 org.save()
 
                 # Manually assign organization permissions (similar to create_organization_with_owner)
@@ -513,9 +518,11 @@ class Command(BaseCommand):
                         status=UserStatusChoices.ACTIVE,
                     )
 
-                    OrganizationMember.objects.create(
+                    org_member = OrganizationMember(
                         organization=org, user=member_user, is_active=True
                     )
+                    org_member._audit_user = owner_user  # Set audit context for seeding
+                    org_member.save()
 
                 organizations.append(org)
                 self.stdout.write(f"  - Created organization: {org.title}")
@@ -596,20 +603,26 @@ class Command(BaseCommand):
                     ).exists():
                         team_name = f"{original_name} {counter}"
                         counter += 1
-                    team = Team.objects.create(
+                    team = Team(
                         organization=org,
                         title=team_name,
                         description=faker.text(max_nb_chars=150),
                         team_coordinator=coordinator,
                         created_by=org.owner,
                     )
+                    team._audit_user = org.owner.user  # Set audit context for seeding
+                    team.save()
 
                     # Create team member for coordinator with proper role
-                    TeamMember.objects.create(
+                    team_member = TeamMember(
                         team=team,
                         organization_member=coordinator,
                         role=TeamMemberRole.TEAM_COORDINATOR,
                     )
+                    team_member._audit_user = (
+                        org.owner.user
+                    )  # Set audit context for seeding
+                    team_member.save()
 
                     # Add other members to team (avoiding coordinators from other teams)
                     other_team_coordinators = [t.team_coordinator for t in teams]
@@ -621,11 +634,15 @@ class Command(BaseCommand):
                     ]
 
                     for member in available_team_members:
-                        TeamMember.objects.create(
+                        team_member = TeamMember(
                             team=team,
                             organization_member=member,
                             role=TeamMemberRole.SUBMITTER,
                         )
+                        team_member._audit_user = (
+                            org.owner.user
+                        )  # Set audit context for seeding
+                        team_member.save()
 
                     teams.append(team)
                     self.stdout.write(f"  - Created team: {team.title} in {org.title}")
@@ -782,7 +799,7 @@ class Command(BaseCommand):
                         project_name = f"{original_name} {counter}"
                         counter += 1
 
-                    workspace = Workspace.objects.create(
+                    workspace = Workspace(
                         organization=org,
                         workspace_admin=workspace_admin,
                         operations_reviewer=operations_reviewer,
@@ -794,6 +811,10 @@ class Command(BaseCommand):
                         start_date=start_date,
                         end_date=end_date,
                     )
+                    workspace._audit_user = (
+                        org.owner.user
+                    )  # Set audit context for seeding
+                    workspace.save()
 
                     workspaces.append(workspace)
                     self.stdout.write(
@@ -842,11 +863,15 @@ class Command(BaseCommand):
                     if random.choice([True, False]):
                         custom_rate = Decimal(random.randint(75, 100))
 
-                    workspace_team = WorkspaceTeam.objects.create(
+                    workspace_team = WorkspaceTeam(
                         team=team,
                         workspace=workspace,
                         custom_remittance_rate=custom_rate,
                     )
+                    workspace_team._audit_user = (
+                        workspace.organization.owner.user
+                    )  # Set audit context for seeding
+                    workspace_team.save()
 
                     # Assign workspace team permissions
                     try:
@@ -968,7 +993,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create workspace expense entry - ONLY by workspace admin
-                Entry.objects.create(
+                entry = Entry(
                     entry_type=EntryType.WORKSPACE_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -985,6 +1010,10 @@ class Command(BaseCommand):
                     status=random.choice(entry_statuses),
                     is_flagged=True,
                 )
+                entry._audit_user = (
+                    workspace_admin.user
+                )  # Set audit context for seeding
+                entry.save()
 
         except Exception as e:
             self.stdout.write(
@@ -1035,7 +1064,7 @@ class Command(BaseCommand):
                 entry_description = random.choice(ngo_activities)
 
                 # Create organization expense entry - ONLY by organization owner
-                Entry.objects.create(
+                entry = Entry(
                     entry_type=EntryType.ORG_EXP,
                     description=entry_description,
                     organization=workspace.organization,
@@ -1052,6 +1081,8 @@ class Command(BaseCommand):
                     status=random.choice(entry_statuses),
                     is_flagged=True,
                 )
+                entry._audit_user = org_owner.user  # Set audit context for seeding
+                entry.save()
 
         except Exception as e:
             self.stdout.write(
@@ -1170,7 +1201,7 @@ class Command(BaseCommand):
 
                 entry_description = random.choice(ngo_activities)
 
-                Entry.objects.create(
+                entry = Entry(
                     entry_type=entry_type,
                     description=entry_description,
                     organization=workspace.organization,
@@ -1187,6 +1218,16 @@ class Command(BaseCommand):
                     status=random.choice(entry_statuses),
                     is_flagged=True,
                 )
+                # Set audit context based on who submitted the entry
+                if submitted_by_team_member:
+                    entry._audit_user = (
+                        submitted_by_team_member.organization_member.user
+                    )
+                elif submitted_by_org_member:
+                    entry._audit_user = submitted_by_org_member.user
+                else:
+                    entry._audit_user = workspace.organization.owner.user  # Fallback
+                entry.save()
 
         except Exception as e:
             self.stdout.write(
@@ -1209,7 +1250,7 @@ class Command(BaseCommand):
                         )  # 1-6 months ago
                         rate = Decimal(random.randint(80, 120)) / 100
 
-                        OrganizationExchangeRate.objects.create(
+                        org_rate = OrganizationExchangeRate(
                             organization=org,
                             currency=currency,
                             rate=rate,
@@ -1217,6 +1258,10 @@ class Command(BaseCommand):
                             added_by=org.owner,
                             note=f"Seed data exchange rate for {currency.code}",
                         )
+                        org_rate._audit_user = (
+                            org.owner.user
+                        )  # Set audit context for seeding
+                        org_rate.save()
 
             # Create workspace exchange rates
             for workspace in workspaces:
@@ -1232,7 +1277,7 @@ class Command(BaseCommand):
                         )
                         rate = Decimal(random.randint(80, 120)) / 100
 
-                        WorkspaceExchangeRate.objects.create(
+                        ws_rate = WorkspaceExchangeRate(
                             workspace=workspace,
                             currency=currency,
                             rate=rate,
@@ -1245,6 +1290,11 @@ class Command(BaseCommand):
                             if random.choice([True, False])
                             else None,
                         )
+                        # Set audit context based on who added the rate
+                        ws_rate._audit_user = (
+                            workspace.workspace_admin or workspace.organization.owner
+                        ).user
+                        ws_rate.save()
 
             self.stdout.write(
                 "  - Created exchange rates for organizations and workspaces"

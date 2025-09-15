@@ -15,6 +15,10 @@ from django.dispatch import receiver
 
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
+from apps.auditlog.loggers.metadata_builders import (
+    EntityMetadataBuilder,
+    UserActionMetadataBuilder,
+)
 
 from .config import AuditConfig
 from .utils import safe_audit_log, should_log_model
@@ -75,6 +79,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.ORGANIZATION_CREATED,
                     "updated": AuditActionType.ORGANIZATION_UPDATED,
                     "deleted": AuditActionType.ORGANIZATION_DELETED,
+                    "status_changed": AuditActionType.ORGANIZATION_STATUS_CHANGED,
                 },
                 "tracked_fields": ["title", "status", "description"],
             },
@@ -83,6 +88,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.WORKSPACE_CREATED,
                     "updated": AuditActionType.WORKSPACE_UPDATED,
                     "deleted": AuditActionType.WORKSPACE_DELETED,
+                    "status_changed": AuditActionType.WORKSPACE_STATUS_CHANGED,
                 },
                 "tracked_fields": ["title", "description", "status"],
             },
@@ -91,6 +97,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.ENTRY_CREATED,
                     "updated": AuditActionType.ENTRY_UPDATED,
                     "deleted": AuditActionType.ENTRY_DELETED,
+                    "status_changed": AuditActionType.ENTRY_STATUS_CHANGED,
                 },
                 "tracked_fields": ["type", "amount", "status"],
             },
@@ -107,6 +114,7 @@ class AuditModelRegistry:
                     "created": AuditActionType.REMITTANCE_CREATED,
                     "updated": AuditActionType.REMITTANCE_UPDATED,
                     "deleted": AuditActionType.REMITTANCE_DELETED,
+                    "status_changed": AuditActionType.REMITTANCE_STATUS_CHANGED,
                 },
                 "tracked_fields": ["amount", "status", "type"],
             },
@@ -117,6 +125,81 @@ class AuditModelRegistry:
                     "deleted": AuditActionType.INVITATION_CANCELED,
                 },
                 "tracked_fields": ["email", "status", "role"],
+            },
+            "teams.TeamMember": {
+                "action_types": {
+                    "created": AuditActionType.TEAM_MEMBER_ADDED,
+                    "updated": AuditActionType.TEAM_MEMBER_ROLE_CHANGED,
+                    "deleted": AuditActionType.TEAM_MEMBER_REMOVED,
+                },
+                "tracked_fields": ["role"],
+            },
+            "accounts.CustomUser": {
+                "action_types": {
+                    "created": AuditActionType.USER_CREATED,
+                    "updated": AuditActionType.USER_PROFILE_UPDATED,
+                    "deleted": AuditActionType.USER_DELETED,
+                },
+                "tracked_fields": [
+                    "email",
+                    "username",
+                    "status",
+                    "is_active",
+                    "is_staff",
+                ],
+            },
+            "organizations.OrganizationMember": {
+                "action_types": {
+                    "created": AuditActionType.ORGANIZATION_MEMBER_ADDED,
+                    "updated": AuditActionType.ORGANIZATION_MEMBER_UPDATED,
+                    "deleted": AuditActionType.ORGANIZATION_MEMBER_REMOVED,
+                },
+                "tracked_fields": ["is_active"],
+            },
+            "workspaces.WorkspaceTeam": {
+                "action_types": {
+                    "created": AuditActionType.WORKSPACE_TEAM_ADDED,
+                    "updated": AuditActionType.WORKSPACE_TEAM_UPDATED,
+                    "deleted": AuditActionType.WORKSPACE_TEAM_REMOVED,
+                },
+                "tracked_fields": ["custom_remittance_rate"],
+            },
+            "attachments.Attachment": {
+                "action_types": {
+                    "created": AuditActionType.FILE_UPLOADED,
+                    "deleted": AuditActionType.FILE_DELETED,
+                },
+                "tracked_fields": ["file_url", "file_type"],
+            },
+            "currencies.Currency": {
+                "action_types": {
+                    "created": AuditActionType.CURRENCY_ADDED,
+                    "updated": AuditActionType.CURRENCY_UPDATED,
+                    "deleted": AuditActionType.CURRENCY_REMOVED,
+                },
+                "tracked_fields": ["code", "name"],
+            },
+            "organizations.OrganizationExchangeRate": {
+                "action_types": {
+                    "created": AuditActionType.ORGANIZATION_EXCHANGE_RATE_CREATED,
+                    "updated": AuditActionType.ORGANIZATION_EXCHANGE_RATE_UPDATED,
+                    "deleted": AuditActionType.ORGANIZATION_EXCHANGE_RATE_DELETED,
+                },
+                "tracked_fields": ["rate", "effective_date", "note", "deleted_at"],
+            },
+            "workspaces.WorkspaceExchangeRate": {
+                "action_types": {
+                    "created": AuditActionType.WORKSPACE_EXCHANGE_RATE_CREATED,
+                    "updated": AuditActionType.WORKSPACE_EXCHANGE_RATE_UPDATED,
+                    "deleted": AuditActionType.WORKSPACE_EXCHANGE_RATE_DELETED,
+                },
+                "tracked_fields": [
+                    "rate",
+                    "effective_date",
+                    "note",
+                    "is_approved",
+                    "deleted_at",
+                ],
             },
         }
 
@@ -180,12 +263,46 @@ class BaseAuditHandler:
             return value
 
     @staticmethod
-    def build_metadata(instance, changes=None, **extra_metadata):
-        """Build metadata dictionary for audit logging."""
+    def build_metadata(
+        instance, changes=None, operation_type=None, user=None, **extra_metadata
+    ):
+        """Build enhanced metadata dictionary for audit logging with rich context."""
         metadata = {"automatic_logging": True, **extra_metadata}
 
         if changes:
             metadata["changed_fields"] = changes
+
+        # Add operation_type to metadata if provided
+        if operation_type:
+            metadata["operation_type"] = operation_type
+
+        # Add user action metadata if user is available
+        if user and operation_type:
+            try:
+                user_metadata = UserActionMetadataBuilder.build_user_action_metadata(
+                    user, operation_type
+                )
+                metadata.update(user_metadata)
+            except Exception as e:
+                logger.warning(f"Failed to build user metadata: {e}")
+
+        # Add entity-specific metadata based on model type
+        try:
+            model_name = instance._meta.model_name.lower()
+            if hasattr(EntityMetadataBuilder, f"build_{model_name}_metadata"):
+                entity_metadata_method = getattr(
+                    EntityMetadataBuilder, f"build_{model_name}_metadata"
+                )
+                entity_metadata = entity_metadata_method(instance)
+                metadata.update(entity_metadata)
+            else:
+                # Fallback to general entity metadata
+                general_metadata = EntityMetadataBuilder.build_entity_metadata(instance)
+                metadata.update(general_metadata)
+        except Exception as e:
+            logger.warning(
+                f"Failed to build entity metadata for {instance._meta.model_name}: {e}"
+            )
 
         return metadata
 
@@ -236,6 +353,7 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                 metadata = cls.build_metadata(
                     instance,
                     operation_type="create",
+                    user=audit_context["user"],
                     **{
                         field: cls._serialize_field_value(
                             getattr(instance, field, None)
@@ -276,9 +394,60 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 )
 
                     if changes:
+                        # Check if deleted_at field was changed from None to a timestamp (soft deletion)
+                        deleted_at_changed = any(
+                            change["field"] == "deleted_at"
+                            and change["old_value"] is None
+                            and change["new_value"] is not None
+                            for change in changes
+                        )
+
+                        if deleted_at_changed and "deleted" in action_types:
+                            # This is a soft deletion - use deletion action type
+                            action_type = action_types["deleted"]
+                            operation_type = "delete"
+
+                            # Add soft deletion specific metadata
+                            deleted_at_change = next(
+                                change
+                                for change in changes
+                                if change["field"] == "deleted_at"
+                            )
+                            extra_metadata = {
+                                "soft_delete": True,
+                                "deletion_timestamp": deleted_at_change["new_value"],
+                            }
+                        else:
+                            # Check if status field was changed to use specific action type
+                            status_changed = any(
+                                change["field"] == "status" for change in changes
+                            )
+
+                            if status_changed and "status_changed" in action_types:
+                                # Use specific status changed action type
+                                action_type = action_types["status_changed"]
+                                operation_type = "status_change"
+
+                                # Add status change specific metadata
+                                status_change = next(
+                                    change
+                                    for change in changes
+                                    if change["field"] == "status"
+                                )
+                                extra_metadata = {
+                                    "old_status": status_change["old_value"],
+                                    "new_status": status_change["new_value"],
+                                }
+                            else:
+                                # Use generic update action type
+                                action_type = action_types["updated"]
+                                operation_type = "update"
+                                extra_metadata = {}
+
                         metadata = cls.build_metadata(
                             instance,
-                            operation_type="update",
+                            operation_type=operation_type,
+                            user=audit_context["user"],
                             changes=changes,
                             **{
                                 field: cls._serialize_field_value(
@@ -287,16 +456,17 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                                 for field in tracked_fields
                                 if hasattr(instance, field)
                             },
+                            **extra_metadata,
                             **audit_context["context"],
                         )
                         audit_create(
                             user=audit_context["user"],
-                            action_type=action_types["updated"],
+                            action_type=action_type,
                             target_entity=instance,
                             metadata=metadata,
                         )
                         logger.debug(
-                            f"Logged update of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
+                            f"Logged {operation_type} of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
                         )
 
         @receiver(pre_delete, sender=model_class)
@@ -311,6 +481,7 @@ class GenericAuditSignalHandler(BaseAuditHandler):
             metadata = cls.build_metadata(
                 instance,
                 operation_type="delete",
+                user=audit_context["user"],
                 **{
                     field: cls._serialize_field_value(getattr(instance, field, None))
                     for field in tracked_fields

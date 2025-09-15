@@ -64,52 +64,6 @@ class TestBusinessAuditLoggerValidation(TestCase):
 
         self.assertIn("Valid authenticated user required", str(context.exception))
 
-    def test_extract_request_metadata_with_request(self):
-        """Test extracting metadata from valid request."""
-        request = self.factory.post("/test/path/")
-        request.META = {
-            "REMOTE_ADDR": "192.168.1.100",
-            "HTTP_USER_AGENT": "Mozilla/5.0 Test Browser",
-        }
-        request.session = Mock()
-        request.session.session_key = "test_session_key"
-
-        metadata = BusinessAuditLogger._extract_request_metadata(request)
-
-        self.assertEqual(metadata["ip_address"], "192.168.1.100")
-        self.assertEqual(metadata["user_agent"], "Mozilla/5.0 Test Browser")
-        self.assertEqual(metadata["http_method"], "POST")
-        self.assertEqual(metadata["request_path"], "/test/path/")
-        self.assertEqual(metadata["session_key"], "test_session_key")
-        self.assertEqual(metadata["source"], "web_request")
-
-    def test_extract_request_metadata_none_request(self):
-        """Test extracting metadata from None request."""
-        metadata = BusinessAuditLogger._extract_request_metadata(None)
-
-        self.assertEqual(metadata["ip_address"], "unknown")
-        self.assertEqual(metadata["user_agent"], "unknown")
-        self.assertEqual(metadata["http_method"], "unknown")
-        self.assertEqual(metadata["request_path"], "unknown")
-        self.assertIsNone(metadata["session_key"])
-        self.assertEqual(metadata["source"], "service_call")
-
-    def test_extract_request_metadata_missing_meta(self):
-        """Test extracting metadata from request with missing META fields."""
-        request = self.factory.get("/test/")
-        request.META = {}  # Empty META
-        request.session = Mock()
-        request.session.session_key = None
-
-        metadata = BusinessAuditLogger._extract_request_metadata(request)
-
-        self.assertEqual(metadata["ip_address"], "unknown")
-        self.assertEqual(metadata["user_agent"], "unknown")
-        self.assertEqual(metadata["http_method"], "GET")
-        self.assertEqual(metadata["request_path"], "/test/")
-        self.assertIsNone(metadata["session_key"])
-        self.assertEqual(metadata["source"], "web_request")
-
 
 @pytest.mark.unit
 class TestBusinessAuditLoggerEntryActions(TestCase):

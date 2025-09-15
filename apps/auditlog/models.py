@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 
+from apps.organizations.models import Organization
+from apps.workspaces.models import Workspace
 from .config import AuditConfig
 from .constants import AuditActionType
 
@@ -29,6 +31,20 @@ class AuditTrail(models.Model):
     target_entity = GenericForeignKey("target_entity_type", "target_entity_id")
     timestamp = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(blank=True, null=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="audit_trails",
+    )
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="audit_trails",
+    )
 
     def _parse_metadata(self):
         """Parse metadata ensuring it's a dictionary."""
@@ -271,4 +287,6 @@ class AuditTrail(models.Model):
             models.Index(fields=["action_type"]),
             models.Index(fields=["timestamp"]),
             models.Index(fields=["user"]),
+            models.Index(fields=["organization"]),
+            models.Index(fields=["workspace"]),
         ]

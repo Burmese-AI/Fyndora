@@ -68,7 +68,6 @@ class SystemAuditLogger(BaseAuditLogger):
             "action": action,
             "permission_type": permission_type,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -137,7 +136,6 @@ class SystemAuditLogger(BaseAuditLogger):
             "action": "data_export",
             "export_type": export_type,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -177,7 +175,6 @@ class SystemAuditLogger(BaseAuditLogger):
             "action": "bulk_operation",
             "operation_type": operation_type,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -240,7 +237,6 @@ class SystemAuditLogger(BaseAuditLogger):
         metadata = {
             "action": action,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 
@@ -270,7 +266,6 @@ class SystemAuditLogger(BaseAuditLogger):
             "action": "operation_failure",
             "operation": operation,
             "manual_logging": True,
-            **self._extract_request_metadata(request),
             **kwargs,
         }
 

@@ -102,6 +102,7 @@ Events related to remittance processing:
 - `REMITTANCE_PARTIALLY_PAID` - Remittance partially paid
 - `REMITTANCE_OVERDUE` - Remittance marked as overdue
 - `REMITTANCE_CANCELED` - Remittance canceled
+- `REMITTANCE_CONFIRMED` - Remittance confirmed
 
 ### Invitation Management
 Events related to user invitations:

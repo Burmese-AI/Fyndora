@@ -235,6 +235,32 @@ class EntryService:
                 else None
             )
 
+        with transaction.atomic():
+            # Create the Entry with audit context
+            entry = Entry(
+                entry_type=entry_type,
+                amount=amount,
+                occurred_at=occurred_at,
+                description=description,
+                organization=organization,
+                workspace=workspace
+                or (workspace_team.workspace if workspace_team else None),
+                workspace_team=workspace_team,
+                currency=currency,
+                exchange_rate_used=exchange_rate_used.rate,
+                org_exchange_rate_ref=exchange_rate_used
+                if isinstance(exchange_rate_used, OrganizationExchangeRate)
+                else None,
+                workspace_exchange_rate_ref=exchange_rate_used
+                if isinstance(exchange_rate_used, WorkspaceExchangeRate)
+                else None,
+                submitted_by_org_member=submitted_by_org_member,
+                submitted_by_team_member=submitted_by_team_member,
+                is_flagged=not is_attachment_provided,
+            )
+            # Set audit context to prevent duplicate logging from signal handlers
+            if user:
+                entry._audit_user = user
         entry.save()
 
         # If new attachments were provided, replace existing ones or append the new ones
@@ -252,7 +278,8 @@ class EntryService:
                 entry.is_flagged = False
                 entry.save(update_fields=["is_flagged"])
 
-        # Log entry update with rich context
+
+        # Business logic logging: Log entry submission with rich context
         if user:
             BusinessAuditLogger.log_entry_action(
                 user=user,

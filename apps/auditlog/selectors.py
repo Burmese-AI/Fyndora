@@ -10,6 +10,7 @@ from .config import AuditConfig
 from .constants import AuditActionType, is_critical_action
 from .models import AuditTrail
 from .utils import is_security_related
+from uuid import UUID
 
 User = get_user_model()
 
@@ -63,11 +64,13 @@ class AuditLogSelector:
         """
         qs = AuditTrail.objects.select_related("user", "target_entity_type").all()
 
-        # we have to filter by organization_id which is not in the metadata
-        # there is no worksapac id in meta data.
+        # Organization filtering
+        if organization_id:
+            qs = qs.filter(organization_id=organization_id)
+
         # Workspace filtering
         if workspace_id:
-            qs = qs.filter(metadata__workspace_id=workspace_id)
+            qs = qs.filter(workspace_id=workspace_id)
 
         # User filtering
         if user_id:
@@ -359,3 +362,15 @@ def get_expired_logs_queryset(
         return AuditTrail.objects.filter(
             expired_auth | expired_critical | expired_default
         )
+
+
+def get_audit_log_by_id(audit_log_id: UUID) -> AuditTrail:
+    """
+    Get audit log by id.
+    """
+    try:
+        return AuditTrail.objects.get(audit_id=audit_log_id)
+    except AuditTrail.DoesNotExist:
+        return None
+    except Exception:
+        return None

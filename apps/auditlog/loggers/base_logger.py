@@ -24,47 +24,6 @@ class BaseAuditLogger(ABC):
             raise ValueError("Valid authenticated user required for audit logging")
 
     @staticmethod
-    def _extract_request_metadata(request: Optional[HttpRequest]) -> Dict[str, Any]:
-        """Extract metadata from Django request object."""
-        if request is None:
-            return {
-                "ip_address": "unknown",
-                "user_agent": "unknown",
-                "http_method": "unknown",
-                "request_path": "unknown",
-                "session_key": None,
-                "source": "service_call",
-            }
-
-        return {
-            "ip_address": request.META.get("REMOTE_ADDR", "unknown"),
-            "user_agent": request.META.get("HTTP_USER_AGENT", "unknown"),
-            "http_method": request.method,
-            "request_path": request.path,
-            "session_key": getattr(
-                getattr(request, "session", None), "session_key", None
-            ),
-            "source": "web_request",
-        }
-
-    @staticmethod
-    def _get_request_param(
-        request: Optional[HttpRequest],
-        param_name: str,
-        default: str = "",
-        method: str = "POST",
-    ) -> str:
-        """Extract parameter from request with fallback to kwargs."""
-        if request is None:
-            return default
-
-        if method == "POST":
-            return request.POST.get(param_name, default)
-        elif method == "GET":
-            return request.GET.get(param_name, default)
-        return default
-
-    @staticmethod
     def _build_base_metadata(
         action: str, request: Optional[HttpRequest], **kwargs
     ) -> Dict[str, Any]:
@@ -72,7 +31,6 @@ class BaseAuditLogger(ABC):
         return {
             "action": action,
             "manual_logging": True,
-            **BaseAuditLogger._extract_request_metadata(request),
             **kwargs,
         }
 

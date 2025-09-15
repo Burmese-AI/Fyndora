@@ -3,11 +3,14 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render
+from django_htmx.http import HttpResponseClientRedirect
 from apps.core.services.organizations import (
     get_organization_by_id,
 )
 from .constants import AuditActionType
-from .selectors import AuditLogSelector
+from .selectors import AuditLogSelector, get_audit_log_by_id
+
+HttpResponseClientRedirect
 
 User = get_user_model()
 
@@ -87,7 +90,7 @@ def auditlog_list_view(request, organization_id):
 
         # Get audit logs using the selector
         audit_logs = AuditLogSelector.get_audit_logs_with_filters(
-            # we shoul use org id
+            organization_id=organization_id,
             user_id=user_id,
             action_type=action_type,
             start_date=start_date_obj,
@@ -130,7 +133,11 @@ def auditlog_list_view(request, organization_id):
             "exclude_system": exclude_system_actions,
         }
 
-        return render(request, "auditlog/index.html", context)
+        # Check if this is an HTMX request
+        if request.headers.get("HX-Request"):
+            return render(request, "auditlog/audit_logs_table.html", context)
+        else:
+            return render(request, "auditlog/index.html", context)
 
     except Exception as e:
         # Handle any errors gracefully
@@ -139,4 +146,28 @@ def auditlog_list_view(request, organization_id):
             "error": str(e),
             "audit_logs": [],
         }
-        return render(request, "auditlog/index.html", context)
+
+        # Check if this is an HTMX request for error handling
+        if request.headers.get("HX-Request"):
+            return render(request, "auditlog/audit_logs_table.html", context)
+        else:
+            return render(request, "auditlog/index.html", context)
+
+
+def audit_detail_view(request, organization_id, audit_log_id):
+    try:
+        organization = get_organization_by_id(organization_id)
+        audit_log = get_audit_log_by_id(audit_log_id)
+        context = {
+            "organization": organization,
+            "audit_log": audit_log,
+        }
+        return render(request, "auditlog/audit_log_detail_modal.html", context)
+    except Exception as e:
+        print(e)
+        context = {
+            "organization": organization,
+            "error": str(e),
+            "audit_log": None,
+        }
+        return render(request, "auditlog/audit_log_detail_modal.html", context)

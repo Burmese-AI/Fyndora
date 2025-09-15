@@ -97,12 +97,25 @@
         </div>
       {% endif %}
     {% else %}
-      <div class="text-center py-8">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <h3 class="text-lg font-medium mt-2">No audit logs found</h3>
-        <p class="text-base-content/70">Try adjusting your filters or check back later.</p>
+      <div class="flex flex-col items-center justify-center py-12">
+        <div class="bg-base-200 rounded-full p-6 mb-4 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-primary mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold mt-2 text-base-content/80">No Audit Logs to Display</h3>
+        <p class="text-base-content/70 mt-2 max-w-md">
+          We couldn't find any audit logs matching your current filters.<br>
+          <span class="block mt-1">You can try:</span>
+          <ul class="list-disc list-inside text-sm text-base-content/60 mt-1">
+            <li>Clearing or broadening your filters above</li>
+            <li>Checking back after more activity occurs</li>
+            <li>Verifying your date range and search terms</li>
+          </ul>
+        </p>
+        <a href="{% url 'auditlog_list' organization_id=organization.pk %}" class="btn btn-outline btn-primary btn-sm mt-5">
+          Reset Filters
+        </a>
       </div>
     {% endif %}
   </div>

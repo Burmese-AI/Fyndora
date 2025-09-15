@@ -61,7 +61,9 @@ def accept_invitation(user: User, invitation: Invitation):
         return False
 
     # Add user to organization
-    member = OrganizationMember.objects.create(user=user, organization=invitation.organization)
+    member = OrganizationMember.objects.create(
+        user=user, organization=invitation.organization
+    )
     # Set audit context
     member._audit_user = user
 

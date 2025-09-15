@@ -188,7 +188,9 @@ def create_team_member_from_form(form, team, organization):
 
 
 @transaction.atomic
-def update_team_member_role(*, form, team_member, previous_role, team, user=None) -> TeamMember:
+def update_team_member_role(
+    *, form, team_member, previous_role, team, user=None
+) -> TeamMember:
     """
     Updates a team member role from a form.
     """
@@ -249,7 +251,9 @@ def update_team_member_role(*, form, team_member, previous_role, team, user=None
         raise TeamMemberUpdateError(f"Failed to update team member: {str(e)}")
 
 
-def update_team_from_form(form, team, organization, previous_team_coordinator, user=None) -> Team:
+def update_team_from_form(
+    form, team, organization, previous_team_coordinator, user=None
+) -> Team:
     """
     Updates a team from a form.
     """

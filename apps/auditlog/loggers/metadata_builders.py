@@ -17,7 +17,7 @@ class UserActionMetadataBuilder:
         action_suffix = "by" if action_type in ["create", "update", "delete"] else ""
         id_key = f"{action_type}{'_' + action_suffix if action_suffix else ''}_id"
         email_key = f"{action_type}{'_' + action_suffix if action_suffix else ''}_email"
-        
+
         metadata = {
             id_key: str(user.user_id),
             email_key: user.email,

@@ -23,10 +23,6 @@ class BaseAuditLogger(ABC):
         if not user or not user.is_authenticated:
             raise ValueError("Valid authenticated user required for audit logging")
 
-
-
-
-
     @staticmethod
     def _build_base_metadata(
         action: str, request: Optional[HttpRequest], **kwargs

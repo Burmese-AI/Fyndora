@@ -19,7 +19,6 @@ from apps.organizations.models import Organization, OrganizationMember
 from .models import OrganizationExchangeRate
 from .utils import (
     extract_organization_context,
-    extract_organization_exchange_rate_context,
     extract_organization_member_context,
     extract_request_metadata,
 )
@@ -268,7 +267,8 @@ def update_organization_exchange_rate(
 ):
     try:
         # Capture original note for audit logging
-        original_note = org_exchange_rate.note
+        # I commented the original_note as that variable is set but , not used and conflicting wtih ruff rules(THA)
+        # original_note = org_exchange_rate.note
 
         # Set audit context to prevent duplicate logging from signal handlers
         user = organization_member.user if organization_member else None

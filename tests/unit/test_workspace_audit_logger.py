@@ -549,11 +549,6 @@ class TestWorkspaceAuditLoggerComprehensiveScenarios(TestCase):
         )
         from tests.factories.workspace_factories import WorkspaceFactory
         from tests.factories.team_factories import TeamFactory, TeamMemberFactory
-        from tests.factories.auditlog_factories import (
-            WorkspaceCreatedAuditFactory,
-            WorkspaceUpdatedAuditFactory,
-            WorkspaceDeletedAuditFactory,
-        )
 
         self.logger = WorkspaceAuditLogger()
         self.user = CustomUserFactory()

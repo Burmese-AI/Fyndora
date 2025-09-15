@@ -114,12 +114,18 @@ def remittance_confirm_payment(*, remittance, user, organization_id):
         metadata={
             "action": "confirmed" if is_confirming else "unconfirmed",
             "remittance_id": str(updated_remittance.remittance_id),
-            "workspace_team_id": str(updated_remittance.workspace_team.workspace_team_id),
+            "workspace_team_id": str(
+                updated_remittance.workspace_team.workspace_team_id
+            ),
             "organization_id": str(organization_id),
             "due_amount": str(updated_remittance.due_amount),
             "paid_amount": str(updated_remittance.paid_amount),
-            "confirmed_by": str(organization_member.organization_member_id) if organization_member else None,
-            "confirmed_at": updated_remittance.confirmed_at.isoformat() if updated_remittance.confirmed_at else None,
+            "confirmed_by": str(organization_member.organization_member_id)
+            if organization_member
+            else None,
+            "confirmed_at": updated_remittance.confirmed_at.isoformat()
+            if updated_remittance.confirmed_at
+            else None,
         },
     )
 

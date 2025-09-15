@@ -1,0 +1,146 @@
+{% extends "components/new_base_modal.html" %}
+
+{% block modal_content %}
+<div class="modal-box max-w-4xl bg-base-100 rounded-xl p-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    {% if error %}
+  
+      <div class="alert alert-error flex items-center gap-2 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-1.414-1.414A9 9 0 105.636 18.364l1.414 1.414A9 9 0 1018.364 5.636z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" />
+        </svg>
+        <span class="font-semibold">Error:</span>
+        <span>{{ error }}</span>
+      </div>
+    
+{% endif %}
+    <div>
+      <h1 class="text-2xl font-bold text-base-content">Audit Log Details</h1>
+      <p class="text-sm text-base-content/70">ID: {{ audit_log.audit_id }}</p>
+    </div>
+    <div class="badge badge-outline">
+      {{ audit_log.get_action_type_display }}
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- Left Column - Basic Info -->
+    <div class="space-y-4">
+      <!-- Timestamp -->
+      <div class="card bg-base-200 p-4">
+        <h3 class="card-title text-sm text-base-content/70 mb-2">Timestamp</h3>
+        <div class="text-lg font-semibold">
+          {{ audit_log.timestamp|date:"F d, Y" }}
+        </div>
+        <div class="text-sm text-base-content/60">
+          {{ audit_log.timestamp|time:"H:i:s" }} UTC
+        </div>
+      </div>
+
+      <!-- User Information -->
+      <div class="card bg-base-200 p-4">
+        <h3 class="card-title text-sm text-base-content/70 mb-2">User</h3>
+        {% if audit_log.user %}
+          <div class="flex items-center gap-3">
+            <div>
+              <div class="font-semibold">User: {{ audit_log.user.username }}</div>
+              <div class="text-sm text-base-content/60">
+                Email: {{ audit_log.user.email }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="flex items-center gap-3">
+            <div>
+              <div class="font-semibold">System</div>
+              <div class="text-sm text-base-content/60">Automated action</div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Target Entity -->
+      <div class="card bg-base-200 p-4">
+        <h3 class="card-title text-sm text-base-content/70 mb-2">Target Entity</h3>
+        {% if audit_log.target_entity_type %}
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="badge badge-primary">{{ audit_log.target_entity_type.model|title }}</span>
+            </div>
+            {% if audit_log.target_entity_id %}
+              <div class="text-sm">
+                <span class="text-base-content/60">ID:</span>
+                <code class="bg-base-300 px-2 py-1 rounded text-xs">{{ audit_log.target_entity_id }}</code>
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <span class="text-sm text-base-content/50">No target entity</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column - Details & Metadata -->
+    <div class="space-y-4">
+      <!-- Action Details -->
+      <div class="card bg-base-200 p-4">
+        <h3 class="card-title text-sm text-base-content/70 mb-2">Action Details</h3>
+        <div class="space-y-2">
+          <div>
+            <span class="text-sm text-base-content/60">Type:</span>
+            <span class="ml-2 font-medium">{{ audit_log.get_action_type_display }}</span>
+          </div>
+          {% if audit_log.details %}
+            <div>
+              <span class="text-sm text-base-content/60">Description:</span>
+              <div class="mt-1 p-3 bg-base-100 rounded-lg text-sm">
+                {{ audit_log.details}}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      {% if audit_log.metadata %}
+        <div class="card bg-base-200 p-4">
+          <h3 class="card-title text-sm text-base-content/70 mb-2">Additional Information</h3>
+          <div class="bg-base-100 rounded-lg p-3">
+            <pre class="text-xs text-base-content whitespace-pre-wrap overflow-x-auto">{{ audit_log.metadata|pprint }}</pre>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Organization & Workspace -->
+      <div class="card bg-base-200 p-4">
+        <h3 class="card-title text-sm text-base-content/70 mb-2">Context</h3>
+        <div class="space-y-2 text-sm">
+          {% if audit_log.organization %}
+            <div>
+              <span class="text-base-content/60">Organization:</span>
+              <span class="ml-2 font-medium">{{ audit_log.organization.title }}</span>
+            </div>
+          {% endif %}
+          {% if audit_log.workspace %}
+            <div>
+              <span class="text-base-content/60">Workspace:</span>
+              <span class="ml-2 font-medium">{{ audit_log.workspace.title }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end pt-4">
+    <button type="button" class="btn btn-neutral btn-sm" onclick="this.closest('.modal').removeAttribute('open')">
+      Close
+    </button>
+  </div>
+  
+</div>
+{% endblock %}

@@ -88,6 +88,8 @@ class AuditTrailAdmin(admin.ModelAdmin):
         "user",
         "timestamp",
         "is_expired_display",
+        "organization",
+        "workspace",
     ]
     list_filter = [
         "action_type",

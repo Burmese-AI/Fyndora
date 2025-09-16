@@ -214,86 +214,65 @@ class EntryService:
                     "No exchange rate is defined for the given currency and date."
                 )
 
-        # Update Provided Fields
-        entry.amount = amount
-        entry.currency = currency
-        entry.occurred_at = occurred_at
-        entry.description = description
-
-        if new_exchange_rate_used:
-            entry.exchange_rate_used = new_exchange_rate_used.rate
-            # Reset org_exchange_rate_ref
-            entry.org_exchange_rate_ref = (
-                new_exchange_rate_used
-                if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
-                else None
-            )
-            # Reset workspace_exchange_rate_ref
-            entry.workspace_exchange_rate_ref = (
-                new_exchange_rate_used
-                if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
-                else None
-            )
-
         with transaction.atomic():
-            # Create the Entry with audit context
-            entry = Entry(
-                entry_type=entry_type,
-                amount=amount,
-                occurred_at=occurred_at,
-                description=description,
-                organization=organization,
-                workspace=workspace
-                or (workspace_team.workspace if workspace_team else None),
-                workspace_team=workspace_team,
-                currency=currency,
-                exchange_rate_used=exchange_rate_used.rate,
-                org_exchange_rate_ref=exchange_rate_used
-                if isinstance(exchange_rate_used, OrganizationExchangeRate)
-                else None,
-                workspace_exchange_rate_ref=exchange_rate_used
-                if isinstance(exchange_rate_used, WorkspaceExchangeRate)
-                else None,
-                submitted_by_org_member=submitted_by_org_member,
-                submitted_by_team_member=submitted_by_team_member,
-                is_flagged=not is_attachment_provided,
-            )
+            # Update Provided Fields
+            entry.amount = amount
+            entry.currency = currency
+            entry.occurred_at = occurred_at
+            entry.description = description
+
+            if new_exchange_rate_used:
+                entry.exchange_rate_used = new_exchange_rate_used.rate
+                # Reset org_exchange_rate_ref
+                entry.org_exchange_rate_ref = (
+                    new_exchange_rate_used
+                    if isinstance(new_exchange_rate_used, OrganizationExchangeRate)
+                    else None
+                )
+                # Reset workspace_exchange_rate_ref
+                entry.workspace_exchange_rate_ref = (
+                    new_exchange_rate_used
+                    if isinstance(new_exchange_rate_used, WorkspaceExchangeRate)
+                    else None
+                )
+
+                
             # Set audit context to prevent duplicate logging from signal handlers
             if user:
                 entry._audit_user = user
-        entry.save()
+            entry.save()
 
-        # If new attachments were provided, replace existing ones or append the new ones
-        if attachments:
-            replace_or_append_attachments(
-                entry=entry,
-                attachments=attachments,
-                replace_attachments=replace_attachments,
-                user=user,
-                request=request,
-            )
+            # If new attachments were provided, replace existing ones or append the new ones
+            if attachments:
+                replace_or_append_attachments(
+                    entry=entry,
+                    attachments=attachments,
+                    replace_attachments=replace_attachments,
+                    user=user,
+                    request=request,
+                )
 
-            # If the entry was flagged, unflag it
-            if entry.is_flagged:
-                entry.is_flagged = False
-                entry.save(update_fields=["is_flagged"])
+                # If the entry was flagged, unflag it
+                if entry.is_flagged:
+                    entry.is_flagged = False
+                    entry.save(update_fields=["is_flagged"])
 
 
-        # Business logic logging: Log entry submission with rich context
-        if user:
-            BusinessAuditLogger.log_entry_action(
-                user=user,
-                entry=entry,
-                action="update",
-                request=request,
-                updated_fields=["amount", "currency", "occurred_at", "description"],
-                currency_changed=is_currency_changed,
-                occurred_at_changed=is_occurred_at_changed,
-                exchange_rate_updated=new_exchange_rate_used is not None,
-                attachments_updated=bool(attachments),
-                replace_attachments=replace_attachments if attachments else False,
-                was_flagged=entry.is_flagged,
-            )
+            # Business logic logging: Log entry submission with rich context
+            if user:
+                BusinessAuditLogger.log_entry_action(
+                    user=user,
+                    entry=entry,
+                    action="update",
+                    request=request,
+                    updated_fields=["amount", "currency", "occurred_at", "description"],
+                    currency_changed=is_currency_changed,
+                    occurred_at_changed=is_occurred_at_changed,
+                    exchange_rate_updated=new_exchange_rate_used is not None,
+                    attachments_updated=bool(attachments),
+                    replace_attachments=replace_attachments if attachments else False,
+                    was_flagged=entry.is_flagged,
+                )
 
     @staticmethod
     @handle_service_errors(EntryServiceError)

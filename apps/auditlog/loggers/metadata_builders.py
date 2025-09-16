@@ -197,12 +197,6 @@ class EntityMetadataBuilder:
             "organization_title": BaseAuditLogger._safe_get_related_field(
                 entry, "organization.title"
             ),
-            "submitter_id": BaseAuditLogger._safe_get_related_field(
-                entry, "submitter.organization_member_id", str
-            ),
-            "submitter_email": BaseAuditLogger._safe_get_related_field(
-                entry, "submitter.user.email"
-            ),
         }
 
 

@@ -125,8 +125,8 @@ class EntryService:
         # unless its similar object has been created
 
         with transaction.atomic():
-            # Create the Entry
-            entry = Entry.objects.create(
+            # Create the Entry with audit context to ensure signal captures user info
+            entry = Entry(
                 entry_type=entry_type,
                 amount=amount,
                 occurred_at=occurred_at,
@@ -147,6 +147,10 @@ class EntryService:
                 submitted_by_team_member=submitted_by_team_member,
                 is_flagged=not is_attachment_provided,
             )
+            # Set audit context to ensure signal captures user info
+            if user:
+                entry._audit_user = user
+            entry.save()
 
             # Create the Attachments if any were provided
             if is_attachment_provided:
@@ -155,23 +159,6 @@ class EntryService:
                     attachments=attachments,
                     user=user,
                     request=request,
-                )
-
-            # Log entry creation with rich context
-            if user:
-                BusinessAuditLogger.log_entry_action(
-                    user=user,
-                    entry=entry,
-                    action="submit",
-                    request=request,
-                    entry_amount=str(amount),
-                    currency_code=currency.code,
-                    exchange_rate=exchange_rate_used.rate,
-                    has_attachments=is_attachment_provided,
-                    attachment_count=len(attachments) if attachments else 0,
-                    submitter_type="org_member"
-                    if submitted_by_org_member
-                    else "team_member",
                 )
 
         return entry
@@ -277,7 +264,6 @@ class EntryService:
             if entry.is_flagged:
                 entry.is_flagged = False
                 entry.save(update_fields=["is_flagged"])
-
 
         # Business logic logging: Log entry submission with rich context
         if user:

@@ -199,6 +199,36 @@ class EntityMetadataBuilder:
             ),
         }
 
+    @staticmethod
+    def build_workspaceteam_metadata(workspace_team: Any) -> Dict[str, Any]:
+        """Build workspace team-specific metadata."""
+        if not workspace_team:
+            return {}
+
+        from .base_logger import BaseAuditLogger
+
+        return {
+            "workspace_team_id": str(workspace_team.workspace_team_id),
+            "workspace_id": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "workspace.workspace_id", str
+            ),
+            "workspace_title": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "workspace.title"
+            ),
+            "team_id": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "team.team_id", str
+            ),
+            "team_title": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "team.title"
+            ),
+            "organization_id": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "workspace.organization.organization_id", str
+            ),
+            "organization_title": BaseAuditLogger._safe_get_related_field(
+                workspace_team, "workspace.organization.title"
+            ),
+        }
+
 
 class WorkflowMetadataBuilder:
     """Builder for workflow-specific metadata."""

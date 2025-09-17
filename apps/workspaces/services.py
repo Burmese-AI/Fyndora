@@ -3,6 +3,7 @@ import logging
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
+from django.utils import timezone
 
 from apps.auditlog.business_logger import BusinessAuditLogger
 from apps.core.utils import model_update
@@ -168,43 +169,21 @@ def remove_team_from_workspace(*, workspace_team, user=None, team=None):
                 removed_team.team_coordinator.user,
                 workspace,
             )
-        workspace_team.delete()
 
-        # Log successful team removal from workspace
-        try:
-            if user:
-                BusinessAuditLogger.log_workspace_team_action(
-                    user=user,
-                    workspace=workspace,
-                    team=removed_team,
-                    action="remove",
-                    removal_reason="Manual removal from workspace",
-                )
-        except Exception as log_error:
-            logger.error(
-                f"Failed to log workspace team removal: {log_error}", exc_info=True
-            )
+        # Set audit context for signal handler to capture removal metadata
+        if user:
+            workspace_team._audit_user = user
+            workspace_team._audit_context = {
+                "removal_reason": "Manual removal from workspace",
+                "removal_timestamp": timezone.now().isoformat(),
+                "remover_id": str(user.user_id),
+                "remover_email": user.email,
+            }
+
+        workspace_team.delete()
 
         return workspace_team
     except Exception as e:
-        # Log workspace team removal failure
-        try:
-            if user and workspace_team:
-                BusinessAuditLogger.log_operation_failure(
-                    user=user,
-                    operation_type="workspace_team_removal",
-                    error=e,
-                    workspace_id=str(workspace_team.workspace.workspace_id),
-                    workspace_title=workspace_team.workspace.title,
-                    team_id=str(workspace_team.team.team_id),
-                    team_title=workspace_team.team.title,
-                )
-        except Exception as log_error:
-            logger.error(
-                f"Failed to log workspace team removal failure: {log_error}",
-                exc_info=True,
-            )
-
         raise ValidationError(f"Failed to remove team from workspace: {str(e)}")
 
 

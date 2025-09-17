@@ -315,23 +315,8 @@ def update_team_from_form(
                 print(
                     "Team coordinator removed from workspace team group permission removed"
                 )
-            # Audit logging: Log coordinator removal
-            try:
-                BusinessAuditLogger.log_team_member_action(
-                    user=current_user,
-                    team_member=team_member,
-                    action="remove",
-                    request=None,
-                    operation_type="team_coordinator_removal",
-                    reason="coordinator_unassigned",
-                    removal_context="team_update",
-                )
-            except Exception as audit_error:
-                logger.error(
-                    f"Audit logging failed for coordinator removal: {audit_error}",
-                    exc_info=True,
-                )
-
+            # Set audit user for signal handler to capture coordinator removal metadata
+            team_member._audit_user = current_user
             team_member.delete()
             return team
 
@@ -452,77 +437,16 @@ def remove_team_member(team_member: TeamMember, team: Team, user=None) -> None:
     Removes a team member.
     """
     try:
-        # Store member info for audit logging before deletion
-        member_email = team_member.organization_member.user.email
-        member_role = team_member.role
-        was_coordinator = member_role == "team_coordinator"
-
-        # Audit logging: Log team member removal
-        try:
-            # Use the actual user performing the removal, fallback to team member's user
-            current_user = user if user else team_member.organization_member.user
-            BusinessAuditLogger.log_team_member_action(
-                user=current_user,
-                team_member=team_member,
-                action="remove",
-                request=None,
-                operation_type="team_member_removal",
-                reason="manual_removal",
-                member_role=member_role,
-                was_coordinator=was_coordinator,
-                removal_context="direct_removal",
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team member removal: {audit_error}",
-                exc_info=True,
-            )
+        # Set audit user for signal handler to capture removal metadata
+        current_user = user if user else team_member.organization_member.user
+        team_member._audit_user = current_user
 
         team_member.delete()
         team.team_coordinator = None
         team.save()
         update_team_coordinator_group(team, team_member.organization_member, None)
 
-        # Additional audit logging for coordinator changes if applicable
-        if was_coordinator:
-            try:
-                BusinessAuditLogger.log_team_action(
-                    user=current_user,
-                    team=team,
-                    action="update",
-                    request=None,
-                    operation_type="team_coordinator_cleared",
-                    coordinator_changed=True,
-                    previous_coordinator_email=member_email,
-                    new_coordinator_email=None,
-                    change_reason="coordinator_removed",
-                )
-            except Exception as audit_error:
-                logger.error(
-                    f"Audit logging failed for coordinator clearing: {audit_error}",
-                    exc_info=True,
-                )
-
     except Exception as e:
-        # Audit logging: Log team member removal failure
-        try:
-            # Use the current_user variable already set at the beginning of the function
-            BusinessAuditLogger.log_operation_failure(
-                user=current_user,
-                operation_type="team_member_removal",
-                error=e,
-                request=None,
-                team_id=str(team.team_id),
-                team_title=team.title,
-                team_member_id=str(team_member.pk),
-                member_email=team_member.organization_member.user.email,
-                member_role=team_member.role,
-            )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for team member removal failure: {audit_error}",
-                exc_info=True,
-            )
         raise TeamMemberDeletionError(f"Failed to remove team member: {str(e)}")
 
 

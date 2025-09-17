@@ -132,7 +132,7 @@ class AuditModelRegistry:
                     "updated": AuditActionType.TEAM_MEMBER_ROLE_CHANGED,
                     "deleted": AuditActionType.TEAM_MEMBER_REMOVED,
                 },
-                "tracked_fields": ["role"],
+                "tracked_fields": ["role", "deleted_at"],
             },
             "accounts.CustomUser": {
                 "action_types": {

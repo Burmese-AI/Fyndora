@@ -229,6 +229,40 @@ class EntityMetadataBuilder:
             ),
         }
 
+    @staticmethod
+    def build_teammember_metadata(team_member: Any) -> Dict[str, Any]:
+        """Build team member-specific metadata."""
+        if not team_member:
+            return {}
+
+        from .base_logger import BaseAuditLogger
+
+        return {
+            "team_member_id": str(team_member.team_member_id),
+            "team_member_role": getattr(team_member, "role", ""),
+            "team_id": BaseAuditLogger._safe_get_related_field(
+                team_member, "team.team_id", str
+            ),
+            "team_title": BaseAuditLogger._safe_get_related_field(
+                team_member, "team.title"
+            ),
+            "organization_member_id": BaseAuditLogger._safe_get_related_field(
+                team_member, "organization_member.organization_member_id", str
+            ),
+            "user_id": BaseAuditLogger._safe_get_related_field(
+                team_member, "organization_member.user.user_id", str
+            ),
+            "user_email": BaseAuditLogger._safe_get_related_field(
+                team_member, "organization_member.user.email"
+            ),
+            "organization_id": BaseAuditLogger._safe_get_related_field(
+                team_member, "team.organization.organization_id", str
+            ),
+            "organization_title": BaseAuditLogger._safe_get_related_field(
+                team_member, "team.organization.title"
+            ),
+        }
+
 
 class WorkflowMetadataBuilder:
     """Builder for workflow-specific metadata."""

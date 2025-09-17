@@ -123,7 +123,11 @@ def audit_create(
         if workspace and hasattr(workspace, "organization"):
             organization = workspace.organization
 
-        # Priority 2: From target entity (direct organization relationship)
+        # Priority 2: Target entity IS an organization
+        elif target_entity and target_entity.__class__.__name__ == 'Organization':
+            organization = target_entity
+
+        # Priority 3: From target entity (direct organization relationship)
         elif target_entity and hasattr(target_entity, "organization"):
             organization = target_entity.organization
 

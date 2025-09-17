@@ -66,11 +66,11 @@ class AuditLogSelector:
 
         # Organization filtering
         if organization_id:
-            qs = qs.filter(organization_id=organization_id)
+            qs = qs.filter(organization=organization_id)
 
         # Workspace filtering
         if workspace_id:
-            qs = qs.filter(workspace_id=workspace_id)
+            qs = qs.filter(workspace=workspace_id)
 
         # User filtering
         if user_id:

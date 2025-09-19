@@ -1,38 +1,30 @@
 """
-Unit tests for Entry services.
-
-Tests the service functions that handle business logic for entries.
+Fresh pytest unit tests for EntryService static methods.
 """
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch, Mock
 
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
 
+from apps.core.exceptions import BaseServiceError, BulkOperationError
 from apps.currencies.models import Currency
 from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.models import Entry
-from apps.entries.services import (
-    _extract_user_from_actor,
-    _validate_review_data,
-    approve_entry,
-    bulk_delete_entries,
-    bulk_review_entries,
-    bulk_update_entry_status,
-    create_entry_with_attachments,
-    delete_entry,
-    entry_create,
-    entry_review,
-    entry_update,
-    flag_entry,
-    get_org_expense_stats,
-    reject_entry,
-    update_entry_status,
-    update_entry_user_inputs,
-)
+from apps.entries.services import EntryService, EntryServiceError
+
+# Import related models for setup (if needed for object creation in fixtures)
+from apps.organizations.models import Organization, OrganizationExchangeRate
+from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
+from django.contrib.auth import get_user_model
+from tests.factories.organization_factories import OrganizationExchangeRateFactory
+from tests.factories.workspace_factories import WorkspaceExchangeRateFactory
+
+# Import factories for quick data creation
 from tests.factories import (
     EntryFactory,
     OrganizationMemberFactory,
@@ -43,797 +35,420 @@ from tests.factories import (
 )
 
 
-@pytest.mark.unit
+User = get_user_model()
+
+
+# --- Pytest Fixtures for common setup ---
+
+@pytest.fixture
 @pytest.mark.django_db
-class TestExtractUserFromActor:
-    """Test the _extract_user_from_actor helper function."""
+def setup_common_models():
+    """Fixture to create common model instances for tests, including currencies and exchange rates."""
+    organization = OrganizationWithOwnerFactory()
+    workspace = WorkspaceFactory(organization=organization)
+    workspace_team = WorkspaceTeamFactory(workspace=workspace)
+    user = User.objects.create_user(username="testuser", email="test@example.com", password="password")
+    org_member = OrganizationMemberFactory(organization=organization, user=user)
+    team_member = TeamMemberFactory(organization_member=org_member, team=workspace_team.team)
 
-    def test_extract_user_from_team_member(self):
-        """Test extracting user from TeamMember."""
-        team_member = TeamMemberFactory()
-        user = _extract_user_from_actor(team_member)
+    # Create or get currencies
+    currency_usd, _ = Currency.objects.get_or_create(code="USD", defaults={"name": "US Dollar"})
+    currency_eur, _ = Currency.objects.get_or_create(code="EUR", defaults={"name": "Euro"})
 
-        assert user == team_member.organization_member.user
+    # Create Organization Exchange Rates for these currencies
+    org_exchange_rate_usd = OrganizationExchangeRateFactory(
+        organization=organization,
+        currency=currency_usd,
+        rate=Decimal("1.00"),
+        effective_date=date.today(),
+        added_by=org_member,
+    )
 
-    def test_extract_user_from_org_member(self):
-        """Test extracting user from OrganizationMember."""
-        org_member = OrganizationMemberFactory()
-        user = _extract_user_from_actor(org_member)
+    org_exchange_rate_eur = OrganizationExchangeRateFactory(
+        organization=organization,
+        currency=currency_eur,
+        rate=Decimal("0.85"),
+        effective_date=date.today(),
+        added_by=org_member,
+    )
 
-        assert user == org_member.user
+    # Optional: Create a Workspace Exchange Rate (if your logic ever uses it)
+    workspace_exchange_rate_usd = WorkspaceExchangeRateFactory(
+        workspace=workspace,
+        currency=currency_usd,
+        rate=Decimal("1.02"),
+        effective_date=date.today(),
+        added_by=org_member,
+    )
 
-    def test_extract_user_from_user_object(self):
-        """Test extracting user from User object."""
-        org_member = OrganizationMemberFactory()
-        user_obj = org_member.user
-        user = _extract_user_from_actor(user_obj)
+    
 
-        assert user == user_obj
+    return {
+        "organization": organization,
+        "workspace": workspace,
+        "workspace_team": workspace_team,
+        "currency_usd": currency_usd,
+        "currency_eur": currency_eur,
+        "org_exchange_rate_usd": org_exchange_rate_usd,  # 👈 Added
+        "org_exchange_rate_eur": org_exchange_rate_eur,  # 👈 Added
+        "workspace_exchange_rate_usd": workspace_exchange_rate_usd,  # Optional
+        "user": user,
+        "org_member": org_member,
+        "team_member": team_member,
+    }
 
-    def test_extract_user_from_object_with_user_attr(self):
-        """Test extracting user from object with user attribute."""
-        org_member = OrganizationMemberFactory()
-        mock_actor = Mock()
-        mock_actor.user = org_member.user
+@pytest.fixture
+def mock_external_dependencies():
+    """
+    Fixture to patch external service dependencies globally for the test function.
+    Returns a dictionary of mock objects for easy access.
+    """
+    with patch("apps.entries.services.get_currency_by_code", autospec=True) as mock_get_currency, \
+         patch("apps.entries.services.get_closest_exchanged_rate", autospec=True) as mock_get_exchange_rate, \
+         patch("apps.entries.services.create_attachments", autospec=True) as mock_create_attachments, \
+         patch("apps.entries.services.replace_or_append_attachments", autospec=True) as mock_replace_or_append_attachments, \
+         patch("apps.entries.services.BusinessAuditLogger", autospec=True) as mock_audit_logger, \
+         patch("django.db.transaction.atomic", autospec=True) as mock_transaction_atomic:
 
-        user = _extract_user_from_actor(mock_actor)
+        # Configure mock_transaction_atomic to behave like a context manager
+        mock_transaction_atomic.return_value.__enter__.return_value = None
+        mock_transaction_atomic.return_value.__exit__.return_value = None
 
-        assert user == org_member.user
+        yield {
+            "get_currency_by_code": mock_get_currency,
+            "get_closest_exchanged_rate": mock_get_exchange_rate,
+            "create_attachments": mock_create_attachments,
+            "replace_or_append_attachments": mock_replace_or_append_attachments,
+            "audit_logger": mock_audit_logger,
+            "transaction_atomic": mock_transaction_atomic,
+        }
 
-
-@pytest.mark.unit
 @pytest.mark.django_db
-class TestValidateReviewData:
-    """Test the _validate_review_data helper function."""
+def test_build_entry_success(setup_common_models, mock_external_dependencies):
+    """Test that build_entry creates an Entry object correctly with valid inputs."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
 
-    def test_validate_approved_status(self):
-        """Test validation with approved status."""
-        # Should not raise any exception
-        _validate_review_data(status=EntryStatus.APPROVED)
+    # --- ARRANGE ---
+    # Configure mocks to return real model instances from the fixture
+    mocks["get_currency_by_code"].return_value = models["currency_usd"]
+    mocks["get_closest_exchanged_rate"].return_value = models["org_exchange_rate_usd"]
 
-    def test_validate_rejected_status(self):
-        """Test validation with rejected status."""
-        # Should not raise any exception
-        _validate_review_data(status=EntryStatus.REJECTED, notes="Rejection reason")
+    # Define explicit input parameters
+    test_amount = Decimal("100.00")
+    test_occurred_at = date.today()
+    test_description = "Test Entry Description"
+    test_entry_type = EntryType.INCOME
 
-    def test_validate_invalid_status(self):
-        """Test validation with invalid status."""
-        with pytest.raises(ValidationError, match="Invalid review status"):
-            _validate_review_data(status=EntryStatus.PENDING)
+    # --- ACT ---
+    entry = EntryService.build_entry(
+        currency_code="USD",
+        amount=test_amount,
+        occurred_at=test_occurred_at,
+        description=test_description,
+        entry_type=test_entry_type,
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        submitted_by_org_member=models["org_member"],
+        submitted_by_team_member=models["team_member"],
+    )
 
-    def test_validate_rejected_without_notes(self):
-        """Test validation with rejected status but no notes."""
-        with pytest.raises(
-            ValidationError, match="Notes are required when rejected an entry"
-        ):
-            _validate_review_data(status=EntryStatus.REJECTED)
+    # --- ASSERT ---
+    # 1. Verify an Entry object is returned
+    assert isinstance(entry, Entry)
 
+    # 2. Verify input fields
+    assert entry.amount == test_amount
+    assert entry.entry_type == test_entry_type
+    assert entry.organization == models["organization"]
+    assert entry.workspace == models["workspace"]
+    assert entry.workspace_team == models["workspace_team"]
+    assert entry.description == test_description
+    assert entry.occurred_at == test_occurred_at
+    assert entry.submitted_by_org_member == models["org_member"]
+    assert entry.submitted_by_team_member == models["team_member"]
 
-@pytest.mark.unit
+    # 3. Verify derived fields from service logic
+    assert entry.currency == models["currency_usd"]  # From get_currency_by_code
+    assert entry.exchange_rate_used == models["org_exchange_rate_usd"].rate  # From get_closest_exchanged_rate
+    assert entry.org_exchange_rate_ref == models["org_exchange_rate_usd"]  # Correct reference set
+    assert entry.workspace_exchange_rate_ref is None  # Because it's an OrgExchangeRate
+    assert entry.is_flagged is True  # Default for new entries
+    assert entry.status == EntryStatus.PENDING  # Default status
+
+    # 4. Verify external dependencies were called correctly
+    mocks["get_currency_by_code"].assert_called_once_with("USD")
+    mocks["get_closest_exchanged_rate"].assert_called_once_with(
+        currency=models["currency_usd"],
+        occurred_at=test_occurred_at,
+        organization=models["organization"],
+        workspace=models["workspace"],
+    )
+    
 @pytest.mark.django_db
-class TestCreateEntryWithAttachments:
-    """Test the create_entry_with_attachments service function."""
+def test_bulk_create_entry_success(setup_common_models):
+    """Test that bulk_create_entry successfully saves multiple Entry objects to the database."""
+    models = setup_common_models
 
-    def setup_method(self):
-        """Set up test data."""
-        self.organization = OrganizationWithOwnerFactory()
-        self.workspace = WorkspaceFactory(organization=self.organization)
-        self.team_member = TeamMemberFactory()
-        self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace, team=self.team_member.team
-        )
-        self.currency = Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    # --- ARRANGE ---
+    # Create unsaved Entry instances using build_entry (or manually)
+    entry1 = Entry(
+        entry_type=EntryType.INCOME,
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        description="First test entry",
+        amount=Decimal("100.00"),
+        occurred_at=date.today(),
+        currency=models["currency_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+        is_flagged=True,
+    )
 
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    @patch("apps.entries.services.create_attachments")
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_create_entry_with_attachments_success(
-        self, mock_logger, mock_create_attachments, mock_get_rate
-    ):
-        """Test successful entry creation with attachments."""
-        # Mock exchange rate
-        mock_rate = Mock()
-        mock_rate.rate = Decimal("1.00")
-        mock_get_rate.return_value = mock_rate
+    entry2 = Entry(
+        entry_type=EntryType.ORG_EXP,
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        description="Second test entry",
+        amount=Decimal("50.00"),
+        occurred_at=date.today(),
+        currency=models["currency_eur"],
+        exchange_rate_used=models["org_exchange_rate_eur"].rate,
+        org_exchange_rate_ref=models["org_exchange_rate_eur"],
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+        is_flagged=True,
+    )
 
-        # Mock attachments
-        mock_attachments = [Mock(), Mock()]
+    # --- ACT ---
+    created_entries = EntryService.bulk_create_entry(entries=[entry1, entry2])
 
-        entry = create_entry_with_attachments(
-            amount=Decimal("100.00"),
+    # --- ASSERT ---
+    assert len(created_entries) == 2
+    assert Entry.objects.count() == 2
+
+    # Verify first entry
+    db_entry1 = Entry.objects.get(description="First test entry")
+    assert db_entry1.amount == Decimal("100.00")
+    assert db_entry1.currency == models["currency_usd"]
+    assert db_entry1.org_exchange_rate_ref == models["org_exchange_rate_usd"]
+
+    # Verify second entry
+    db_entry2 = Entry.objects.get(description="Second test entry")
+    assert db_entry2.amount == Decimal("50.00")
+    assert db_entry2.currency == models["currency_eur"]
+    assert db_entry2.org_exchange_rate_ref == models["org_exchange_rate_eur"]
+    
+@pytest.mark.django_db
+def test_bulk_create_entry_raises_entry_service_error_on_db_exception(setup_common_models):
+    """Test that bulk_create_entry raises EntryServiceError if database integrity is violated."""
+    models = setup_common_models
+
+    # --- ARRANGE ---
+    # Create an Entry with a required field missing (e.g., no organization)
+    bad_entry = Entry(
+        entry_type=EntryType.INCOME,
+        # organization=models["organization"],  # ← Intentionally omitted to trigger error
+        workspace=models["workspace"],
+        description="Invalid entry",
+        amount=Decimal("100.00"),
+        occurred_at=date.today(),
+        currency=models["currency_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+        is_flagged=True,
+    )
+
+    # --- ACT & ASSERT ---
+    with pytest.raises(BulkOperationError):
+        with transaction.atomic():
+            EntryService.bulk_create_entry(entries=[bad_entry])
+
+    assert Entry.objects.count() == 0
+    
+@pytest.mark.django_db
+def test_create_entry_without_attachments_success(setup_common_models, mock_external_dependencies):
+    """Test that create_entry_with_attachments creates an Entry and calls attachments + audit logger."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    # --- ARRANGE ---
+    test_amount = Decimal("123.45")
+    test_occurred_at = date.today()
+    test_description = "Entry with attachments"
+
+    # Mock exchange rate return
+    mocks["get_closest_exchanged_rate"].return_value = models["org_exchange_rate_usd"]
+
+    # --- ACT ---
+    entry = EntryService.create_entry_with_attachments(
+        amount=test_amount,
+        occurred_at=test_occurred_at,
+        description=test_description,
+        attachments=[],
+        entry_type=EntryType.INCOME,
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        submitted_by_org_member=models["org_member"],
+        submitted_by_team_member=models["team_member"],
+        user=models["user"],
+        request=Mock(),
+    )
+
+    # --- ASSERT ---
+    # Entry persisted
+    assert Entry.objects.count() == 1
+    db_entry = Entry.objects.first()
+    assert db_entry == entry
+    assert db_entry.amount == test_amount
+    assert db_entry.currency == models["currency_usd"]
+    assert db_entry.org_exchange_rate_ref == models["org_exchange_rate_usd"]
+    assert db_entry.is_flagged is True
+
+
+    # Audit log called
+    mocks["audit_logger"].log_entry_action.assert_called_once()
+    call_kwargs = mocks["audit_logger"].log_entry_action.call_args.kwargs
+    assert call_kwargs["user"] == models["user"]
+    assert call_kwargs["entry"] == entry
+    assert call_kwargs["action"] == "submit"
+    assert call_kwargs["currency_code"] == "USD"
+    assert call_kwargs["attachment_count"] == 0
+
+
+@pytest.mark.django_db
+def test_create_entry_without_attachments_no_exchange_rate(setup_common_models, mock_external_dependencies):
+    """Test that ValueError is raised if no exchange rate is found."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    # Mock to return None
+    mocks["get_closest_exchanged_rate"].return_value = None
+
+    with pytest.raises(BaseServiceError) as exc_info:
+        EntryService.create_entry_with_attachments(
+            amount=Decimal("50.00"),
             occurred_at=date.today(),
-            description="Test entry",
-            attachments=mock_attachments,
+            description="No exchange rate",
+            attachments=[],
             entry_type=EntryType.INCOME,
-            organization=self.organization,
-            workspace=self.workspace,
-            workspace_team=self.workspace_team,
-            currency=self.currency,
-            submitted_by_team_member=self.team_member,
-            user=self.team_member.organization_member.user,
+            organization=models["organization"],
+            workspace=models["workspace"],
+            workspace_team=models["workspace_team"],
+            submitted_by_org_member=models["org_member"],
+            submitted_by_team_member=models["team_member"],
+            user=models["user"],
+            request=Mock(),
+            currency=models["currency_usd"],
         )
 
-        assert entry.amount == Decimal("100.00")
-        assert entry.description == "Test entry"
-        assert entry.entry_type == EntryType.INCOME
-        assert entry.organization == self.organization
-        assert entry.workspace == self.workspace
-        assert entry.workspace_team == self.workspace_team
-        assert entry.currency == self.currency
-        assert entry.submitted_by_team_member == self.team_member
-        assert entry.exchange_rate_used == Decimal("1.00")
-        assert entry.is_flagged is False  # Has attachments
-
-        # Verify attachments were created
-        mock_create_attachments.assert_called_once()
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    def test_create_entry_without_attachments(self, mock_get_rate):
-        """Test entry creation without attachments (should be flagged)."""
-        # Mock exchange rate
-        mock_rate = Mock()
-        mock_rate.rate = Decimal("1.00")
-        mock_get_rate.return_value = mock_rate
-
-        entry = create_entry_with_attachments(
-            amount=Decimal("100.00"),
-            occurred_at=date.today(),
-            description="Test entry",
-            attachments=None,
-            entry_type=EntryType.INCOME,
-            organization=self.organization,
-            workspace=self.workspace,
-            workspace_team=self.workspace_team,
-            currency=self.currency,
-            submitted_by_team_member=self.team_member,
-        )
-
-        assert entry.is_flagged is True  # No attachments
-
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    def test_create_entry_no_exchange_rate(self, mock_get_rate):
-        """Test entry creation when no exchange rate is available."""
-        mock_get_rate.return_value = None
-
-        with pytest.raises(ValueError, match="No exchange rate is defined"):
-            create_entry_with_attachments(
-                amount=Decimal("100.00"),
-                occurred_at=date.today(),
-                description="Test entry",
-                attachments=None,
-                entry_type=EntryType.INCOME,
-                organization=self.organization,
-                workspace=self.workspace,
-                workspace_team=self.workspace_team,
-                currency=self.currency,
-                submitted_by_team_member=self.team_member,
-            )
-
-
-@pytest.mark.unit
 @pytest.mark.django_db
-class TestUpdateEntryUserInputs:
-    """Test the update_entry_user_inputs service function."""
+def test_update_entry_user_inputs_success(setup_common_models, mock_external_dependencies):
+    """Test that update_entry_user_inputs updates fields, attachments, and logs properly."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+    request_mock = Mock()
 
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.organization = self.entry.organization
-        self.currency = Currency.objects.get_or_create(code="USD", name="US Dollar")[0]
+    # --- ARRANGE ---
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+        is_flagged=True,
+    )
 
-    def test_update_entry_user_inputs_success(self):
-        """Test successful entry update."""
-        # Create a different currency to trigger exchange rate update
-        different_currency = Currency.objects.get_or_create(code="EUR", name="Euro")[0]
+    new_amount = Decimal("250.00")
+    new_description = "Updated entry"
+    new_occurred_at = date.today() - timedelta(days=1)
+    new_currency = models["currency_eur"]
 
-        with patch("apps.entries.services.get_closest_exchanged_rate") as mock_get_rate:
-            mock_rate = Mock()
-            mock_rate.rate = Decimal("1.50")
-            mock_get_rate.return_value = mock_rate
+    # Make exchange rate lookup return the EUR rate
+    mocks["get_closest_exchanged_rate"].return_value = models["org_exchange_rate_eur"]
 
-            update_entry_user_inputs(
-                entry=self.entry,
-                organization=self.organization,
-                amount=Decimal("200.00"),
-                occurred_at=date.today(),
-                description="Updated description",
-                currency=different_currency,
-                attachments=None,
-                replace_attachments=False,
-            )
+    fake_attachments = [{"name": "new_file.pdf"}]
 
-            self.entry.refresh_from_db()
-            assert self.entry.amount == Decimal("200.00")
-            assert self.entry.description == "Updated description"
-            assert self.entry.currency == different_currency
-            assert self.entry.exchange_rate_used == Decimal("1.50")
+    # --- ACT ---
+    EntryService.update_entry_user_inputs(
+        entry=entry,
+        organization=models["organization"],
+        workspace=models["workspace"],
+        amount=new_amount,
+        occurred_at=new_occurred_at,
+        description=new_description,
+        currency=new_currency,
+        attachments=fake_attachments,
+        replace_attachments=True,
+        user=models["user"],
+        request=request_mock,
+    )
 
-    def test_update_entry_user_inputs_non_pending_status(self):
-        """Test updating entry with non-pending status."""
-        self.entry.status = EntryStatus.APPROVED
-        self.entry.save()
+    # --- REFRESH & ASSERT ---
+    entry.refresh_from_db()
+    assert entry.amount == new_amount
+    assert entry.description == new_description
+    assert entry.currency == new_currency
+    assert entry.exchange_rate_used == models["org_exchange_rate_eur"].rate
+    assert entry.org_exchange_rate_ref == models["org_exchange_rate_eur"]
+    assert entry.is_flagged is False  # was cleared since attachments added
 
-        with pytest.raises(
-            ValidationError,
-            match="User can only update Entry info during the pending stage",
-        ):
-            update_entry_user_inputs(
-                entry=self.entry,
-                organization=self.organization,
-                amount=Decimal("200.00"),
-                occurred_at=date.today(),
-                description="Updated description",
-                currency=self.currency,
-                attachments=None,
-                replace_attachments=False,
-            )
+    mocks["replace_or_append_attachments"].assert_called_once_with(
+        entry=entry,
+        attachments=fake_attachments,
+        replace_attachments=True,
+        user=models["user"],
+        request=request_mock,
+    )
 
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    def test_update_entry_user_inputs_no_exchange_rate(self, mock_get_rate):
-        """Test updating entry when no exchange rate is available."""
-        mock_get_rate.return_value = None
-
-        # Create a different currency to trigger exchange rate lookup
-        different_currency = Currency.objects.get_or_create(code="EUR", name="Euro")[0]
-
-        with pytest.raises(ValueError, match="No exchange rate is defined"):
-            update_entry_user_inputs(
-                entry=self.entry,
-                organization=self.organization,
-                amount=Decimal("200.00"),
-                occurred_at=date.today(),
-                description="Updated description",
-                currency=different_currency,
-                attachments=None,
-                replace_attachments=False,
-            )
+    mocks["audit_logger"].log_entry_action.assert_called_once()
+    log_kwargs = mocks["audit_logger"].log_entry_action.call_args.kwargs
+    assert log_kwargs["action"] == "update"
+    assert log_kwargs["currency_changed"] is True
+    assert log_kwargs["occurred_at_changed"] is True
+    assert log_kwargs["exchange_rate_updated"] is True
+    assert log_kwargs["attachments_updated"] is True
 
 
-@pytest.mark.unit
 @pytest.mark.django_db
-class TestUpdateEntryStatus:
-    """Test the update_entry_status service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory()
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_status_change")
-    def test_update_entry_status_success(self, mock_logger):
-        """Test successful status update."""
-
-        update_entry_status(
-            entry=self.entry,
-            status=EntryStatus.APPROVED,
-            status_note="Approved by reviewer",
-            last_status_modified_by=self.reviewer,
-        )
-
-        self.entry.refresh_from_db()
-        assert self.entry.status == EntryStatus.APPROVED
-        assert self.entry.status_note == "Approved by reviewer"
-        assert self.entry.last_status_modified_by == self.reviewer
-        assert self.entry.status_last_updated_at is not None
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestBulkUpdateEntryStatus:
-    """Test the bulk_update_entry_status service function."""
-
-    def test_bulk_update_entry_status(self):
-        """Test bulk status update."""
-        entries = [EntryFactory() for _ in range(3)]
-
-        # Update status for all entries
-        for entry in entries:
-            entry.status = EntryStatus.APPROVED
-            entry.status_note = "Bulk approved"
-            entry.last_status_modified_by = OrganizationMemberFactory()
-            entry.status_last_updated_at = timezone.now()
-
-        result = bulk_update_entry_status(entries=entries)
-
-        assert result == entries
-        # Verify all entries have been updated
-        for entry in entries:
-            entry.refresh_from_db()
-            assert entry.status == EntryStatus.APPROVED
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestDeleteEntry:
-    """Test the delete_entry service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_delete_entry_success(self, mock_logger):
-        """Test successful entry deletion."""
-        # Get user from either team member or org member
-        if self.entry.submitted_by_team_member:
-            user = self.entry.submitted_by_team_member.organization_member.user
-        else:
-            user = self.entry.submitted_by_org_member.user
-
-        result = delete_entry(entry=self.entry, user=user)
-
-        assert result == self.entry
-        assert not Entry.objects.filter(entry_id=self.entry.entry_id).exists()
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    def test_delete_entry_with_status_modified(self):
-        """Test deleting entry that has been status modified."""
-        self.entry.last_status_modified_by = OrganizationMemberFactory()
-        self.entry.save()
-
-        with pytest.raises(
-            ValidationError,
-            match="Cannot delete an entry when someone has already modified the status",
-        ):
-            delete_entry(entry=self.entry)
-
-    def test_delete_entry_non_pending_status(self):
-        """Test deleting entry with non-pending status."""
-        self.entry.status = EntryStatus.APPROVED
-        self.entry.save()
-
-        with pytest.raises(
-            ValidationError, match="Cannot delete an entry that is not pending review"
-        ):
-            delete_entry(entry=self.entry)
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestBulkDeleteEntries:
-    """Test the bulk_delete_entries service function."""
-
-    def test_bulk_delete_entries(self):
-        """Test bulk entry deletion."""
-        entries = [EntryFactory(status=EntryStatus.PENDING) for _ in range(3)]
-
-        # The function tries to call .delete() on the list, which will fail
-        # This test documents the current behavior (which has a bug)
-        with pytest.raises(
-            AttributeError, match="'list' object has no attribute 'delete'"
-        ):
-            bulk_delete_entries(entries=entries)
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestEntryCreate:
-    """Test the entry_create service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.organization = OrganizationWithOwnerFactory()
-        self.workspace = WorkspaceFactory(organization=self.organization)
-        self.team_member = TeamMemberFactory()
-        self.workspace_team = WorkspaceTeamFactory(
-            workspace=self.workspace, team=self.team_member.team
-        )
-
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_entry_create_success(self, mock_logger, mock_get_rate):
-        """Test successful entry creation."""
-        # Mock exchange rate
-        mock_rate = Mock()
-        mock_rate.rate = Decimal("1.00")
-        mock_get_rate.return_value = mock_rate
-
-        entry = entry_create(
-            submitted_by=self.team_member,
-            entry_type=EntryType.INCOME,
-            amount=Decimal("100.00"),
-            description="Test entry",
-            workspace=self.workspace,
-            workspace_team=self.workspace_team,
-            organization=self.organization,
-        )
-
-        assert entry.amount == Decimal("100.00")
-        assert entry.description == "Test entry"
-        assert entry.entry_type == EntryType.INCOME
-        assert entry.organization == self.organization
-        assert entry.workspace == self.workspace
-        assert entry.workspace_team == self.workspace_team
-        assert entry.submitted_by_team_member == self.team_member
-        assert entry.exchange_rate_used == Decimal("1.00")
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    def test_entry_create_workspace_expense_without_workspace(self):
-        """Test entry creation for workspace expense without workspace."""
-        with pytest.raises(
-            ValidationError, match="Workspace is required for workspace expense entries"
-        ):
-            entry_create(
-                submitted_by=self.team_member,
-                entry_type=EntryType.WORKSPACE_EXP,
-                amount=Decimal("100.00"),
-                description="Test entry",
-                organization=self.organization,
-            )
-
-    def test_entry_create_team_entry_without_workspace_team(self):
-        """Test entry creation for team entry without workspace team."""
-        with pytest.raises(
-            ValidationError, match="Workspace team is required for team-based entries"
-        ):
-            entry_create(
-                submitted_by=self.team_member,
-                entry_type=EntryType.INCOME,
-                amount=Decimal("100.00"),
-                description="Test entry",
-                organization=self.organization,
-            )
-
-    @patch("apps.entries.services.get_closest_exchanged_rate")
-    def test_entry_create_no_exchange_rate(self, mock_get_rate):
-        """Test entry creation when no exchange rate is available."""
-        mock_get_rate.return_value = None
-
-        with pytest.raises(ValueError, match="No exchange rate is defined"):
-            entry_create(
-                submitted_by=self.team_member,
-                entry_type=EntryType.INCOME,
-                amount=Decimal("100.00"),
-                description="Test entry",
-                workspace=self.workspace,
-                workspace_team=self.workspace_team,
-                organization=self.organization,
-            )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestEntryReview:
-    """Test the entry_review service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_entry_review_approve(self, mock_logger):
-        """Test entry approval."""
-        result = entry_review(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=EntryStatus.APPROVED,
-            notes="Approved",
-        )
-
-        assert result == self.entry
-        self.entry.refresh_from_db()
-        assert self.entry.status == EntryStatus.APPROVED
-        assert self.entry.status_note == "Approved"
-        assert self.entry.last_status_modified_by == self.reviewer
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_entry_review_reject(self, mock_logger):
-        """Test entry rejection."""
-        result = entry_review(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=EntryStatus.REJECTED,
-            notes="Rejected",
-        )
-
-        assert result == self.entry
-        self.entry.refresh_from_db()
-        assert self.entry.status == EntryStatus.REJECTED
-        assert self.entry.status_note == "Rejected"
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_entry_review_flag(self, mock_logger):
-        """Test entry flagging."""
-        result = entry_review(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=self.entry.status,  # Keep current status
-            is_flagged=True,
-            notes="Flagged for review",
-        )
-
-        assert result == self.entry
-        self.entry.refresh_from_db()
-        assert self.entry.is_flagged is True
-        assert self.entry.status_note == "Flagged for review"
-
-    def test_entry_review_invalid_status(self):
-        """Test entry review with invalid status."""
-        with pytest.raises(ValidationError, match="Invalid review status"):
-            entry_review(
-                entry=self.entry,
-                reviewer=self.reviewer,
-                status=EntryStatus.PENDING,
-            )
-
-    def test_entry_review_reject_without_notes(self):
-        """Test entry rejection without notes."""
-        with pytest.raises(
-            ValidationError, match="Notes are required when rejected an entry"
-        ):
-            entry_review(
-                entry=self.entry,
-                reviewer=self.reviewer,
-                status=EntryStatus.REJECTED,
-            )
-
-    def test_entry_review_flag_without_notes(self):
-        """Test entry flagging without notes."""
-        with pytest.raises(
-            ValidationError, match="Notes are required when flagging an entry"
-        ):
-            entry_review(
-                entry=self.entry,
-                reviewer=self.reviewer,
-                status=self.entry.status,
-                is_flagged=True,
-            )
-
-    def test_entry_review_non_pending_status(self):
-        """Test reviewing entry with non-pending status."""
-        self.entry.status = EntryStatus.APPROVED
-        self.entry.save()
-
-        with pytest.raises(ValidationError, match="Cannot review entry with status"):
-            entry_review(
-                entry=self.entry,
-                reviewer=self.reviewer,
-                status=EntryStatus.REJECTED,
-                notes="Rejected",
-            )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestApproveEntry:
-    """Test the approve_entry service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.entry_review")
-    def test_approve_entry(self, mock_entry_review):
-        """Test entry approval."""
-        mock_entry_review.return_value = self.entry
-
-        result = approve_entry(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            notes="Approved",
-        )
-
-        assert result == self.entry
-        mock_entry_review.assert_called_once_with(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=EntryStatus.APPROVED,
-            notes="Approved",
-            request=None,
-        )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestRejectEntry:
-    """Test the reject_entry service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.entry_review")
-    def test_reject_entry(self, mock_entry_review):
-        """Test entry rejection."""
-        mock_entry_review.return_value = self.entry
-
-        result = reject_entry(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            notes="Rejected",
-        )
-
-        assert result == self.entry
-        mock_entry_review.assert_called_once_with(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=EntryStatus.REJECTED,
-            notes="Rejected",
-            request=None,
-        )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestFlagEntry:
-    """Test the flag_entry service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.entry_review")
-    def test_flag_entry(self, mock_entry_review):
-        """Test entry flagging."""
-        mock_entry_review.return_value = self.entry
-
-        result = flag_entry(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            notes="Flagged",
-        )
-
-        assert result == self.entry
-        mock_entry_review.assert_called_once_with(
-            entry=self.entry,
-            reviewer=self.reviewer,
-            status=self.entry.status,
-            is_flagged=True,
-            notes="Flagged",
-            request=None,
-        )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestBulkReviewEntries:
-    """Test the bulk_review_entries service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entries = [EntryFactory(status=EntryStatus.PENDING) for _ in range(3)]
-        self.reviewer = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_bulk_operation")
-    def test_bulk_review_entries_success(self, mock_logger):
-        """Test successful bulk review."""
-        result = bulk_review_entries(
-            entries=self.entries,
-            reviewer=self.reviewer,
-            status=EntryStatus.APPROVED,
-            notes="Bulk approved",
-        )
-
-        assert len(result) == 3
-        for entry in result:
-            entry.refresh_from_db()
-            assert entry.status == EntryStatus.APPROVED
-            assert entry.status_note == "Bulk approved"
-            assert entry.last_status_modified_by == self.reviewer
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    def test_bulk_review_entries_invalid_status(self):
-        """Test bulk review with invalid status."""
-        with pytest.raises(ValidationError, match="Invalid review status"):
-            bulk_review_entries(
-                entries=self.entries,
-                reviewer=self.reviewer,
-                status=EntryStatus.PENDING,
-            )
-
-    def test_bulk_review_entries_reject_without_notes(self):
-        """Test bulk rejection without notes."""
-        with pytest.raises(
-            ValidationError, match="Notes are required when rejected an entry"
-        ):
-            bulk_review_entries(
-                entries=self.entries,
-                reviewer=self.reviewer,
-                status=EntryStatus.REJECTED,
-            )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestEntryUpdate:
-    """Test the entry_update service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.entry = EntryFactory(status=EntryStatus.PENDING)
-        self.updater = OrganizationMemberFactory()
-
-    @patch("apps.entries.services.BusinessAuditLogger.log_entry_action")
-    def test_entry_update_success(self, mock_logger):
-        """Test successful entry update."""
-        result = entry_update(
-            entry=self.entry,
-            updated_by=self.updater,
-            description="Updated description",
-            amount=Decimal("200.00"),
-        )
-
-        assert result == self.entry
-        self.entry.refresh_from_db()
-        assert self.entry.description == "Updated description"
-        assert self.entry.amount == Decimal("200.00")
-
-        # Verify audit logging
-        mock_logger.assert_called_once()
-
-    def test_entry_update_no_valid_fields(self):
-        """Test entry update with no valid fields."""
-        with pytest.raises(ValidationError, match="No valid fields to update"):
-            entry_update(
-                entry=self.entry,
-                updated_by=self.updater,
-                invalid_field="value",
-            )
-
-    def test_entry_update_approved_entry(self):
-        """Test updating approved entry."""
-        self.entry.status = EntryStatus.APPROVED
-        self.entry.save()
-
-        with pytest.raises(ValidationError, match="Cannot update an approved entry"):
-            entry_update(
-                entry=self.entry,
-                updated_by=self.updater,
-                description="Updated description",
-            )
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-class TestGetOrgExpenseStats:
-    """Test the get_org_expense_stats service function."""
-
-    def setup_method(self):
-        """Set up test data."""
-        self.organization = OrganizationWithOwnerFactory()
-
-    @patch("apps.entries.services.EntryStats")
-    def test_get_org_expense_stats(self, mock_entry_stats):
-        """Test getting organization expense stats."""
-        # Mock the EntryStats instance
-        mock_instance = Mock()
-        mock_instance.total.return_value = Decimal("1000.00")
-        mock_instance.this_month.return_value = Decimal("100.00")
-        mock_instance.last_month.return_value = Decimal("90.00")
-        mock_instance.average_monthly.return_value = Decimal("95.00")
-        mock_entry_stats.return_value = mock_instance
-
-        result = get_org_expense_stats(self.organization)
-
-        assert len(result) == 3
-        assert result[0]["title"] == "Total Expenses"
-        assert result[0]["value"] == Decimal("1000.00")
-        assert result[1]["title"] == "This Month's Expenses"
-        assert result[1]["value"] == Decimal("100.00")
-        assert result[2]["title"] == "Average Monthly Expense"
-        assert result[2]["value"] == Decimal("95.00")
-
-        # Verify EntryStats was called with correct parameters
-        mock_entry_stats.assert_called_once_with(
-            entry_types=[EntryType.ORG_EXP],
-            organization=self.organization,
+def test_update_entry_user_inputs_raises_if_not_pending(setup_common_models, mock_external_dependencies):
+    """Test that update_entry_user_inputs raises ValidationError if entry is not pending."""
+    models = setup_common_models
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.APPROVED,  # ❌ Not pending
+    )
+
+    with pytest.raises(BaseServiceError):
+        EntryService.update_entry_user_inputs(
+            entry=entry,
+            organization=models["organization"],
+            workspace=models["workspace"],
+            amount=Decimal("123.00"),
+            occurred_at=entry.occurred_at,
+            description="Should fail",
+            currency=models["currency_usd"],
+            attachments=[],
+            replace_attachments=False,
+            user=models["user"],
+            request=Mock(),
         )

@@ -29,7 +29,6 @@ class EntryService:
         organization: Organization,
         workspace: Workspace = None,
         workspace_team: WorkspaceTeam = None,
-        currency,
         submitted_by_org_member=None,
         submitted_by_team_member=None,
         status: EntryStatus = EntryStatus.PENDING,

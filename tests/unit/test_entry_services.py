@@ -4,12 +4,10 @@ Fresh pytest unit tests for EntryService static methods.
 
 from datetime import date, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, patch, Mock
+from unittest.mock import patch, Mock
 
 import pytest
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.utils import timezone
 
 from apps.core.exceptions import BaseServiceError, BulkOperationError
 from apps.currencies.models import Currency
@@ -18,8 +16,6 @@ from apps.entries.models import Entry
 from apps.entries.services import EntryService, EntryServiceError
 
 # Import related models for setup (if needed for object creation in fixtures)
-from apps.organizations.models import Organization, OrganizationExchangeRate
-from apps.workspaces.models import Workspace, WorkspaceExchangeRate, WorkspaceTeam
 from django.contrib.auth import get_user_model
 from tests.factories.organization_factories import OrganizationExchangeRateFactory
 from tests.factories.workspace_factories import WorkspaceExchangeRateFactory
@@ -40,6 +36,7 @@ User = get_user_model()
 
 # --- Pytest Fixtures for common setup ---
 
+
 @pytest.fixture
 @pytest.mark.django_db
 def setup_common_models():
@@ -47,13 +44,21 @@ def setup_common_models():
     organization = OrganizationWithOwnerFactory()
     workspace = WorkspaceFactory(organization=organization)
     workspace_team = WorkspaceTeamFactory(workspace=workspace)
-    user = User.objects.create_user(username="testuser", email="test@example.com", password="password")
+    user = User.objects.create_user(
+        username="testuser", email="test@example.com", password="password"
+    )
     org_member = OrganizationMemberFactory(organization=organization, user=user)
-    team_member = TeamMemberFactory(organization_member=org_member, team=workspace_team.team)
+    team_member = TeamMemberFactory(
+        organization_member=org_member, team=workspace_team.team
+    )
 
     # Create or get currencies
-    currency_usd, _ = Currency.objects.get_or_create(code="USD", defaults={"name": "US Dollar"})
-    currency_eur, _ = Currency.objects.get_or_create(code="EUR", defaults={"name": "Euro"})
+    currency_usd, _ = Currency.objects.get_or_create(
+        code="USD", defaults={"name": "US Dollar"}
+    )
+    currency_eur, _ = Currency.objects.get_or_create(
+        code="EUR", defaults={"name": "Euro"}
+    )
 
     # Create Organization Exchange Rates for these currencies
     org_exchange_rate_usd = OrganizationExchangeRateFactory(
@@ -81,8 +86,6 @@ def setup_common_models():
         added_by=org_member,
     )
 
-    
-
     return {
         "organization": organization,
         "workspace": workspace,
@@ -97,19 +100,31 @@ def setup_common_models():
         "team_member": team_member,
     }
 
+
 @pytest.fixture
 def mock_external_dependencies():
     """
     Fixture to patch external service dependencies globally for the test function.
     Returns a dictionary of mock objects for easy access.
     """
-    with patch("apps.entries.services.get_currency_by_code", autospec=True) as mock_get_currency, \
-         patch("apps.entries.services.get_closest_exchanged_rate", autospec=True) as mock_get_exchange_rate, \
-         patch("apps.entries.services.create_attachments", autospec=True) as mock_create_attachments, \
-         patch("apps.entries.services.replace_or_append_attachments", autospec=True) as mock_replace_or_append_attachments, \
-         patch("apps.entries.services.BusinessAuditLogger", autospec=True) as mock_audit_logger, \
-         patch("django.db.transaction.atomic", autospec=True) as mock_transaction_atomic:
-
+    with (
+        patch(
+            "apps.entries.services.get_currency_by_code", autospec=True
+        ) as mock_get_currency,
+        patch(
+            "apps.entries.services.get_closest_exchanged_rate", autospec=True
+        ) as mock_get_exchange_rate,
+        patch(
+            "apps.entries.services.create_attachments", autospec=True
+        ) as mock_create_attachments,
+        patch(
+            "apps.entries.services.replace_or_append_attachments", autospec=True
+        ) as mock_replace_or_append_attachments,
+        patch(
+            "apps.entries.services.BusinessAuditLogger", autospec=True
+        ) as mock_audit_logger,
+        patch("django.db.transaction.atomic", autospec=True) as mock_transaction_atomic,
+    ):
         # Configure mock_transaction_atomic to behave like a context manager
         mock_transaction_atomic.return_value.__enter__.return_value = None
         mock_transaction_atomic.return_value.__exit__.return_value = None
@@ -122,6 +137,7 @@ def mock_external_dependencies():
             "audit_logger": mock_audit_logger,
             "transaction_atomic": mock_transaction_atomic,
         }
+
 
 @pytest.mark.django_db
 def test_build_entry_success(setup_common_models, mock_external_dependencies):
@@ -171,8 +187,12 @@ def test_build_entry_success(setup_common_models, mock_external_dependencies):
 
     # 3. Verify derived fields from service logic
     assert entry.currency == models["currency_usd"]  # From get_currency_by_code
-    assert entry.exchange_rate_used == models["org_exchange_rate_usd"].rate  # From get_closest_exchanged_rate
-    assert entry.org_exchange_rate_ref == models["org_exchange_rate_usd"]  # Correct reference set
+    assert (
+        entry.exchange_rate_used == models["org_exchange_rate_usd"].rate
+    )  # From get_closest_exchanged_rate
+    assert (
+        entry.org_exchange_rate_ref == models["org_exchange_rate_usd"]
+    )  # Correct reference set
     assert entry.workspace_exchange_rate_ref is None  # Because it's an OrgExchangeRate
     assert entry.is_flagged is True  # Default for new entries
     assert entry.status == EntryStatus.PENDING  # Default status
@@ -185,7 +205,8 @@ def test_build_entry_success(setup_common_models, mock_external_dependencies):
         organization=models["organization"],
         workspace=models["workspace"],
     )
-    
+
+
 @pytest.mark.django_db
 def test_bulk_create_entry_success(setup_common_models):
     """Test that bulk_create_entry successfully saves multiple Entry objects to the database."""
@@ -243,9 +264,12 @@ def test_bulk_create_entry_success(setup_common_models):
     assert db_entry2.amount == Decimal("50.00")
     assert db_entry2.currency == models["currency_eur"]
     assert db_entry2.org_exchange_rate_ref == models["org_exchange_rate_eur"]
-    
+
+
 @pytest.mark.django_db
-def test_bulk_create_entry_raises_entry_service_error_on_db_exception(setup_common_models):
+def test_bulk_create_entry_raises_entry_service_error_on_db_exception(
+    setup_common_models,
+):
     """Test that bulk_create_entry raises EntryServiceError if database integrity is violated."""
     models = setup_common_models
 
@@ -272,9 +296,12 @@ def test_bulk_create_entry_raises_entry_service_error_on_db_exception(setup_comm
             EntryService.bulk_create_entry(entries=[bad_entry])
 
     assert Entry.objects.count() == 0
-    
+
+
 @pytest.mark.django_db
-def test_create_entry_without_attachments_success(setup_common_models, mock_external_dependencies):
+def test_create_entry_without_attachments_success(
+    setup_common_models, mock_external_dependencies
+):
     """Test that create_entry_with_attachments creates an Entry and calls attachments + audit logger."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -314,7 +341,6 @@ def test_create_entry_without_attachments_success(setup_common_models, mock_exte
     assert db_entry.org_exchange_rate_ref == models["org_exchange_rate_usd"]
     assert db_entry.is_flagged is True
 
-
     # Audit log called
     mocks["audit_logger"].log_entry_action.assert_called_once()
     call_kwargs = mocks["audit_logger"].log_entry_action.call_args.kwargs
@@ -326,7 +352,9 @@ def test_create_entry_without_attachments_success(setup_common_models, mock_exte
 
 
 @pytest.mark.django_db
-def test_create_entry_without_attachments_no_exchange_rate(setup_common_models, mock_external_dependencies):
+def test_create_entry_without_attachments_no_exchange_rate(
+    setup_common_models, mock_external_dependencies
+):
     """Test that ValueError is raised if no exchange rate is found."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -351,8 +379,11 @@ def test_create_entry_without_attachments_no_exchange_rate(setup_common_models, 
             currency=models["currency_usd"],
         )
 
+
 @pytest.mark.django_db
-def test_update_entry_user_inputs_success(setup_common_models, mock_external_dependencies):
+def test_update_entry_user_inputs_success(
+    setup_common_models, mock_external_dependencies
+):
     """Test that update_entry_user_inputs updates fields, attachments, and logs properly."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -423,7 +454,9 @@ def test_update_entry_user_inputs_success(setup_common_models, mock_external_dep
 
 
 @pytest.mark.django_db
-def test_update_entry_user_inputs_raises_if_not_pending(setup_common_models, mock_external_dependencies):
+def test_update_entry_user_inputs_raises_if_not_pending(
+    setup_common_models, mock_external_dependencies
+):
     """Test that update_entry_user_inputs raises ValidationError if entry is not pending."""
     models = setup_common_models
 
@@ -586,7 +619,9 @@ def test_bulk_update_entry_status_success(setup_common_models):
 
 
 @pytest.mark.django_db
-def test_bulk_update_entry_status_raises_service_error(monkeypatch, setup_common_models):
+def test_bulk_update_entry_status_raises_service_error(
+    monkeypatch, setup_common_models
+):
     """Test that bulk_update_entry_status raises EntryServiceError when bulk_update fails."""
     models = setup_common_models
 
@@ -610,8 +645,11 @@ def test_bulk_update_entry_status_raises_service_error(monkeypatch, setup_common
     with pytest.raises(EntryServiceError):
         EntryService.bulk_update_entry_status(entries=[entry])
 
+
 @pytest.mark.django_db
-def test_delete_entry_success_with_user(setup_common_models, mock_external_dependencies):
+def test_delete_entry_success_with_user(
+    setup_common_models, mock_external_dependencies
+):
     """Test that delete_entry deletes the entry and logs the deletion if user is provided."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -647,7 +685,9 @@ def test_delete_entry_success_with_user(setup_common_models, mock_external_depen
 
 
 @pytest.mark.django_db
-def test_delete_entry_success_without_user(setup_common_models, mock_external_dependencies):
+def test_delete_entry_success_without_user(
+    setup_common_models, mock_external_dependencies
+):
     """Test that delete_entry deletes the entry without logging if user is None."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -715,7 +755,9 @@ def test_delete_entry_raises_if_not_pending(setup_common_models):
 
 
 @pytest.mark.django_db
-def test_bulk_delete_entries_success_with_user(setup_common_models, mock_external_dependencies):
+def test_bulk_delete_entries_success_with_user(
+    setup_common_models, mock_external_dependencies
+):
     """Test that bulk_delete_entries deletes all entries and logs when user is provided."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -734,16 +776,20 @@ def test_bulk_delete_entries_success_with_user(setup_common_models, mock_externa
         for _ in range(2)
     ]
 
-    EntryService.bulk_delete_entries(entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
-                                     user=models["user"],
-                                     request=Mock())
+    EntryService.bulk_delete_entries(
+        entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
+        user=models["user"],
+        request=Mock(),
+    )
 
     # All deleted
     assert Entry.objects.count() == 0
 
 
 @pytest.mark.django_db
-def test_bulk_delete_entries_success_without_user(setup_common_models, mock_external_dependencies):
+def test_bulk_delete_entries_success_without_user(
+    setup_common_models, mock_external_dependencies
+):
     """Test that bulk_delete_entries deletes entries without logging when user is None."""
     models = setup_common_models
     mocks = mock_external_dependencies
@@ -762,8 +808,10 @@ def test_bulk_delete_entries_success_without_user(setup_common_models, mock_exte
         for _ in range(2)
     ]
 
-    EntryService.bulk_delete_entries(entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
-                                     user=None,
-                                     request=Mock())
+    EntryService.bulk_delete_entries(
+        entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
+        user=None,
+        request=Mock(),
+    )
 
     assert Entry.objects.count() == 0

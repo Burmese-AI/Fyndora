@@ -108,17 +108,21 @@ def extract_entry_business_context(entry):
     """
     if not entry:
         return {}
-    
+
     context = {
         "entry_id": str(entry.pk),
         "entry_type": entry.entry_type,
         "organization_id": str(entry.organization.pk),
     }
-    
-    if entry.entry_type in [EntryType.WORKSPACE_EXP, EntryType.INCOME, EntryType.DISBURSEMENT, EntryType.REMITTANCE]:
-        context["workspace_id"] = str(entry.workspace.pk),
-        context["workspace_name"] = entry.workspace.title,
 
+    if entry.entry_type in [
+        EntryType.WORKSPACE_EXP,
+        EntryType.INCOME,
+        EntryType.DISBURSEMENT,
+        EntryType.REMITTANCE,
+    ]:
+        context["workspace_id"] = (str(entry.workspace.pk),)
+        context["workspace_name"] = (entry.workspace.title,)
 
     return context
 

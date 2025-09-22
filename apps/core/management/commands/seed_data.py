@@ -377,6 +377,25 @@ class Command(BaseCommand):
                 {"code": "AUD", "name": "Australian Dollar"},
                 {"code": "CHF", "name": "Swiss Franc"},
                 {"code": "CNY", "name": "Chinese Yuan"},
+                {"code": "INR", "name": "Indian Rupee"},
+                {"code": "BDT", "name": "Bangladeshi Taka"},
+                {"code": "PKR", "name": "Pakistani Rupee"},
+                {"code": "NPR", "name": "Nepalese Rupee"},
+                {"code": "LKR", "name": "Sri Lankan Rupee"},
+                {"code": "MMK", "name": "Myanmar Kyat"},
+                {"code": "KHR", "name": "Cambodian Riel"},
+                {"code": "VND", "name": "Vietnamese Dong"},
+                {"code": "MYR", "name": "Malaysian Ringgit"},
+                {"code": "SGD", "name": "Singapore Dollar"},
+                {"code": "THB", "name": "Thai Baht"},
+                {"code": "IDR", "name": "Indonesian Rupiah"},
+                {"code": "PHP", "name": "Philippine Peso"},
+                {"code": "NZD", "name": "New Zealand Dollar"},
+                {"code": "HKD", "name": "Hong Kong Dollar"},
+                {"code": "MNT", "name": "Mongolian Tugrik"},
+                {"code": "BRL", "name": "Brazilian Real"},
+                {"code": "ARS", "name": "Argentine Peso"},
+                {"code": "CLP", "name": "Chilean Peso"},
             ]
 
             for currency_data in currencies_data:
@@ -858,14 +877,18 @@ class Command(BaseCommand):
                 selected_teams = random.sample(org_teams, num_teams)
 
                 for team in selected_teams:
-                    # Sometimes use custom remittance rate
-                    custom_rate = None
-                    if random.choice([True, False]):
+                    # Determine if the team should sync with workspace remittance rate
+                    syned_with_workspace_remittance_rate = random.choice([True, False])
+                    if syned_with_workspace_remittance_rate:
+                        custom_rate = None
+                    else:
+                        # Only set a custom rate when not synced with workspace rate
                         custom_rate = Decimal(random.randint(75, 100))
 
                     workspace_team = WorkspaceTeam(
                         team=team,
                         workspace=workspace,
+                        syned_with_workspace_remittance_rate=syned_with_workspace_remittance_rate,
                         custom_remittance_rate=custom_rate,
                     )
                     workspace_team._audit_user = (

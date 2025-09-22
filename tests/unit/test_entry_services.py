@@ -452,3 +452,318 @@ def test_update_entry_user_inputs_raises_if_not_pending(setup_common_models, moc
             user=models["user"],
             request=Mock(),
         )
+
+
+@pytest.mark.django_db
+def test_bulk_update_entry_status_success(setup_common_models):
+    """Test that bulk_update_entry_status successfully updates multiple Entry objects."""
+    models = setup_common_models
+
+    # --- ARRANGE ---
+    entry1 = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    entry2 = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    # Change values in memory (not saved yet)
+    entry1.status = EntryStatus.APPROVED
+    entry1.status_note = "Approved in bulk"
+    entry2.status = EntryStatus.REJECTED
+    entry2.status_note = "Rejected in bulk"
+
+    # --- ACT ---
+    updated_entries = EntryService.bulk_update_entry_status(
+        entries=[entry1, entry2],
+        request=Mock(),
+    )
+
+    # --- ASSERT ---
+    assert len(updated_entries) == 2
+
+    # Reload from DB to confirm persistence
+    entry1.refresh_from_db()
+    entry2.refresh_from_db()
+
+    assert entry1.status == EntryStatus.APPROVED
+    assert entry1.status_note == "Approved in bulk"
+    assert entry2.status == EntryStatus.REJECTED
+    assert entry2.status_note == "Rejected in bulk"
+
+
+@pytest.mark.django_db
+def test_bulk_update_entry_status_raises_error(monkeypatch, setup_common_models):
+    """Test that bulk_update_entry_status raises EntryServiceError if bulk_update fails."""
+    models = setup_common_models
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    # Monkeypatch bulk_update to raise an Exception
+    def fake_bulk_update(*args, **kwargs):
+        raise Exception("DB error")
+
+    monkeypatch.setattr(Entry.objects, "bulk_update", fake_bulk_update)
+
+    with pytest.raises(EntryServiceError):
+        EntryService.bulk_update_entry_status(entries=[entry])
+
+
+@pytest.mark.django_db
+def test_bulk_update_entry_status_success(setup_common_models):
+    """Test that bulk_update_entry_status successfully updates multiple Entry objects."""
+    models = setup_common_models
+
+    # --- ARRANGE ---
+    entry1 = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    entry2 = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    # Update fields in memory
+    entry1.status = EntryStatus.APPROVED
+    entry1.status_note = "Bulk approved"
+    entry2.status = EntryStatus.REJECTED
+    entry2.status_note = "Bulk rejected"
+
+    # --- ACT ---
+    updated_entries = EntryService.bulk_update_entry_status(
+        entries=[entry1, entry2],
+        request=Mock(),
+    )
+
+    # --- ASSERT ---
+    assert len(updated_entries) == 2
+
+    entry1.refresh_from_db()
+    entry2.refresh_from_db()
+
+    assert entry1.status == EntryStatus.APPROVED
+    assert entry1.status_note == "Bulk approved"
+    assert entry2.status == EntryStatus.REJECTED
+    assert entry2.status_note == "Bulk rejected"
+
+
+@pytest.mark.django_db
+def test_bulk_update_entry_status_raises_service_error(monkeypatch, setup_common_models):
+    """Test that bulk_update_entry_status raises EntryServiceError when bulk_update fails."""
+    models = setup_common_models
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    # Monkeypatch to force failure
+    def fake_bulk_update(*args, **kwargs):
+        raise Exception("DB error")
+
+    monkeypatch.setattr(Entry.objects, "bulk_update", fake_bulk_update)
+
+    with pytest.raises(EntryServiceError):
+        EntryService.bulk_update_entry_status(entries=[entry])
+
+@pytest.mark.django_db
+def test_delete_entry_success_with_user(setup_common_models, mock_external_dependencies):
+    """Test that delete_entry deletes the entry and logs the deletion if user is provided."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    # --- ACT ---
+    deleted_entry = EntryService.delete_entry(
+        entry=entry,
+        user=models["user"],
+        request=Mock(),
+    )
+
+    # --- ASSERT ---
+    assert deleted_entry == entry
+    assert Entry.objects.filter(pk=entry.pk).count() == 0
+
+    mocks["audit_logger"].log_entry_action.assert_called_once()
+    log_kwargs = mocks["audit_logger"].log_entry_action.call_args.kwargs
+    assert log_kwargs["action"] == "delete"
+    assert log_kwargs["entry"] == entry
+    assert log_kwargs["entry_status"] == EntryStatus.PENDING
+    assert log_kwargs["deletion_reason"] == "user_initiated"
+
+
+@pytest.mark.django_db
+def test_delete_entry_success_without_user(setup_common_models, mock_external_dependencies):
+    """Test that delete_entry deletes the entry without logging if user is None."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+    )
+
+    EntryService.delete_entry(entry=entry, user=None, request=Mock())
+
+    assert Entry.objects.filter(pk=entry.pk).count() == 0
+    mocks["audit_logger"].log_entry_action.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_delete_entry_raises_if_status_modified(setup_common_models):
+    """Test that delete_entry raises error if entry.last_status_modified_by is set."""
+    models = setup_common_models
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.PENDING,
+        last_status_modified_by=models["org_member"],  # ❌ should block deletion
+    )
+
+    with pytest.raises(EntryServiceError, match="already modified the status"):
+        EntryService.delete_entry(entry=entry, user=models["user"], request=Mock())
+
+    assert Entry.objects.filter(pk=entry.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_entry_raises_if_not_pending(setup_common_models):
+    """Test that delete_entry raises error if entry.status is not pending."""
+    models = setup_common_models
+
+    entry = EntryFactory(
+        organization=models["organization"],
+        workspace=models["workspace"],
+        workspace_team=models["workspace_team"],
+        currency=models["currency_usd"],
+        org_exchange_rate_ref=models["org_exchange_rate_usd"],
+        exchange_rate_used=models["org_exchange_rate_usd"].rate,
+        submitted_by_org_member=models["org_member"],
+        status=EntryStatus.APPROVED,  # ❌ should block deletion
+    )
+
+    with pytest.raises(EntryServiceError, match="not pending review"):
+        EntryService.delete_entry(entry=entry, user=models["user"], request=Mock())
+
+    assert Entry.objects.filter(pk=entry.pk).exists()
+
+
+@pytest.mark.django_db
+def test_bulk_delete_entries_success_with_user(setup_common_models, mock_external_dependencies):
+    """Test that bulk_delete_entries deletes all entries and logs when user is provided."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    entries = [
+        EntryFactory(
+            organization=models["organization"],
+            workspace=models["workspace"],
+            workspace_team=models["workspace_team"],
+            currency=models["currency_usd"],
+            org_exchange_rate_ref=models["org_exchange_rate_usd"],
+            exchange_rate_used=models["org_exchange_rate_usd"].rate,
+            submitted_by_org_member=models["org_member"],
+            status=EntryStatus.PENDING,
+        )
+        for _ in range(2)
+    ]
+
+    EntryService.bulk_delete_entries(entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
+                                     user=models["user"],
+                                     request=Mock())
+
+    # All deleted
+    assert Entry.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_bulk_delete_entries_success_without_user(setup_common_models, mock_external_dependencies):
+    """Test that bulk_delete_entries deletes entries without logging when user is None."""
+    models = setup_common_models
+    mocks = mock_external_dependencies
+
+    entries = [
+        EntryFactory(
+            organization=models["organization"],
+            workspace=models["workspace"],
+            workspace_team=models["workspace_team"],
+            currency=models["currency_usd"],
+            org_exchange_rate_ref=models["org_exchange_rate_usd"],
+            exchange_rate_used=models["org_exchange_rate_usd"].rate,
+            submitted_by_org_member=models["org_member"],
+            status=EntryStatus.PENDING,
+        )
+        for _ in range(2)
+    ]
+
+    EntryService.bulk_delete_entries(entries=Entry.objects.filter(pk__in=[e.pk for e in entries]),
+                                     user=None,
+                                     request=Mock())
+
+    assert Entry.objects.count() == 0

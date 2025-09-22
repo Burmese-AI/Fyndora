@@ -29,7 +29,6 @@ class EntryService:
         organization: Organization,
         workspace: Workspace = None,
         workspace_team: WorkspaceTeam = None,
-        currency,
         submitted_by_org_member=None,
         submitted_by_team_member=None,
         status: EntryStatus = EntryStatus.PENDING,
@@ -236,7 +235,6 @@ class EntryService:
                     else None
                 )
 
-                
             # Set audit context to prevent duplicate logging from signal handlers
             if user:
                 entry._audit_user = user
@@ -256,7 +254,6 @@ class EntryService:
                 if entry.is_flagged:
                     entry.is_flagged = False
                     entry.save(update_fields=["is_flagged"])
-
 
             # Business logic logging: Log entry submission with rich context
             if user:

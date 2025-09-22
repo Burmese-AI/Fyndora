@@ -327,7 +327,6 @@ class BaseEntryBulkCreateView(BaseEntryBulkActionView):
                     organization=self.organization,
                     workspace=getattr(self, "workspace", None),
                     workspace_team=getattr(self, "workspace_team", None),
-                    currency=row["Currency"],
                     submitted_by_org_member=self.org_member,
                     submitted_by_team_member=getattr(
                         self, "workspace_team_member", None

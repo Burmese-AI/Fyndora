@@ -5,7 +5,6 @@ from django.utils import timezone
 from apps.core.utils import handle_service_errors, model_update
 from apps.auditlog.constants import AuditActionType
 from apps.auditlog.services import audit_create
-from apps.core.utils import model_update
 from apps.entries.constants import EntryStatus, EntryType
 from apps.entries.selectors import get_total_amount_of_entries
 from apps.organizations.selectors import get_orgMember_by_user_id_and_organization_id

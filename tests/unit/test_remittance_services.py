@@ -3,19 +3,15 @@ Unit tests for Remittance services.
 """
 
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import pytest
 from django.utils import timezone
 
-from apps.remittance.services import (
-    calculate_due_amount,
-    calculate_paid_amount,
-    update_remittance,
-    remittance_confirm_payment,
-)
+from apps.remittance.services import RemittanceService
 from apps.remittance.constants import RemittanceStatus
 from apps.remittance.models import Remittance
 from apps.entries.constants import EntryStatus, EntryType
+from apps.auditlog.constants import AuditActionType
 from tests.factories import (
     WorkspaceTeamFactory,
     OrganizationFactory,
@@ -26,7 +22,7 @@ from tests.factories import (
 
 @pytest.mark.django_db
 class TestCalculateDueAmount:
-    """Test calculate_due_amount service function."""
+    """Test _calculate_due_amount service method."""
 
     @patch("apps.remittance.services.get_total_amount_of_entries")
     def test_calculate_due_amount_positive_income(self, mock_get_entries):
@@ -41,7 +37,7 @@ class TestCalculateDueAmount:
         workspace_team.custom_remittance_rate = 15  # 15%
         workspace_team.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # Expected: (1000 - 300) * 0.15 = 105.00
         expected_due = Decimal("105.00")
@@ -72,7 +68,7 @@ class TestCalculateDueAmount:
         workspace_team.custom_remittance_rate = 20  # 20%
         workspace_team.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # When income < disbursements, due amount should be 0
         assert result == Decimal("0.00")
@@ -89,7 +85,7 @@ class TestCalculateDueAmount:
         workspace_team.custom_remittance_rate = 25  # 25%
         workspace_team.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # When income = disbursements, due amount should be 0
         assert result == Decimal("0.00")
@@ -112,7 +108,7 @@ class TestCalculateDueAmount:
         workspace_team.workspace.remittance_rate = 18  # 18%
         workspace_team.workspace.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # Expected: (1000 - 200) * 0.18 = 144.00
         expected_due = Decimal("144.00")
@@ -134,7 +130,7 @@ class TestCalculateDueAmount:
         workspace_team.workspace.remittance_rate = 15  # 15% workspace rate
         workspace_team.workspace.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # Should use custom rate: (1000 - 100) * 0.25 = 225.00
         expected_due = Decimal("225.00")
@@ -152,7 +148,7 @@ class TestCalculateDueAmount:
         workspace_team.custom_remittance_rate = Decimal("12.5")  # 12.5%
         workspace_team.save()
 
-        result = calculate_due_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
 
         # Expected: (1234.56 - 234.56) * 0.125 = 125.00
         expected_due = Decimal("125.00")
@@ -161,7 +157,7 @@ class TestCalculateDueAmount:
 
 @pytest.mark.django_db
 class TestCalculatePaidAmount:
-    """Test calculate_paid_amount service function."""
+    """Test _calculate_paid_amount service method."""
 
     @patch("apps.remittance.services.get_total_amount_of_entries")
     def test_calculate_paid_amount(self, mock_get_entries):
@@ -170,7 +166,7 @@ class TestCalculatePaidAmount:
 
         workspace_team = WorkspaceTeamFactory()
 
-        result = calculate_paid_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_paid_amount(workspace_team=workspace_team)
 
         assert result == Decimal("500.00")
         mock_get_entries.assert_called_once_with(
@@ -186,14 +182,14 @@ class TestCalculatePaidAmount:
 
         workspace_team = WorkspaceTeamFactory()
 
-        result = calculate_paid_amount(workspace_team=workspace_team)
+        result = RemittanceService._calculate_paid_amount(workspace_team=workspace_team)
 
         assert result == Decimal("0.00")
 
 
 @pytest.mark.django_db
 class TestUpdateRemittance:
-    """Test update_remittance service function."""
+    """Test update_remittance service method."""
 
     def test_update_remittance_updates_all_fields(self):
         """Test that update_remittance calls all required methods and saves."""
@@ -208,7 +204,7 @@ class TestUpdateRemittance:
             patch.object(remittance, "check_if_overpaid") as mock_check_overpaid,
             patch.object(remittance, "save") as mock_save,
         ):
-            update_remittance(remittance=remittance)
+            RemittanceService.update_remittance(remittance=remittance)
 
             # Verify all methods were called
             mock_update_status.assert_called_once()
@@ -239,7 +235,7 @@ class TestUpdateRemittance:
         remittance.save()
 
         # Update the remittance
-        update_remittance(remittance=remittance)
+        RemittanceService.update_remittance(remittance=remittance)
 
         # Refresh from database
         remittance.refresh_from_db()
@@ -253,12 +249,13 @@ class TestUpdateRemittance:
 
 @pytest.mark.django_db
 class TestRemittanceConfirmPayment:
-    """Test remittance_confirm_payment service function."""
+    """Test remittance_confirm_payment service method."""
 
     @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
     @patch("apps.remittance.services.model_update")
+    @patch("apps.remittance.services.audit_create")
     def test_remittance_confirm_payment_first_time(
-        self, mock_model_update, mock_get_org_member
+        self, mock_audit_create, mock_model_update, mock_get_org_member
     ):
         """Test confirming payment for the first time."""
         # Setup
@@ -279,7 +276,7 @@ class TestRemittanceConfirmPayment:
         mock_model_update.return_value = remittance
 
         # Execute
-        result = remittance_confirm_payment(
+        result = RemittanceService.remittance_confirm_payment(
             remittance=remittance,
             user=user,
             organization_id=organization.organization_id,
@@ -297,12 +294,22 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
+        
+        # Verify audit log was created
+        mock_audit_create.assert_called_once()
+        audit_call_args = mock_audit_create.call_args
+        assert audit_call_args[1]["user"] == user
+        assert audit_call_args[1]["action_type"] == AuditActionType.REMITTANCE_CONFIRMED
+        assert audit_call_args[1]["target_entity"] == remittance
+        assert audit_call_args[1]["metadata"]["action"] == "confirmed"
+        
         assert result == remittance
 
     @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
     @patch("apps.remittance.services.model_update")
+    @patch("apps.remittance.services.audit_create")
     def test_remittance_confirm_payment_already_confirmed(
-        self, mock_model_update, mock_get_org_member
+        self, mock_audit_create, mock_model_update, mock_get_org_member
     ):
         """Test confirming payment when already confirmed (should unconfirm)."""
         # Setup
@@ -322,7 +329,7 @@ class TestRemittanceConfirmPayment:
         mock_model_update.return_value = remittance
 
         # Execute
-        result = remittance_confirm_payment(
+        result = RemittanceService.remittance_confirm_payment(
             remittance=remittance,
             user=user,
             organization_id=organization.organization_id,
@@ -339,12 +346,19 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
+        
+        # Verify audit log was created for unconfirmation
+        mock_audit_create.assert_called_once()
+        audit_call_args = mock_audit_create.call_args
+        assert audit_call_args[1]["metadata"]["action"] == "unconfirmed"
+        
         assert result == remittance
 
     @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
     @patch("apps.remittance.services.model_update")
+    @patch("apps.remittance.services.audit_create")
     def test_remittance_confirm_payment_organization_member_not_found(
-        self, mock_model_update, mock_get_org_member
+        self, mock_audit_create, mock_model_update, mock_get_org_member
     ):
         """Test confirming payment when organization member is not found."""
         # Setup
@@ -362,7 +376,7 @@ class TestRemittanceConfirmPayment:
         mock_model_update.return_value = remittance
 
         # Execute
-        result = remittance_confirm_payment(
+        result = RemittanceService.remittance_confirm_payment(
             remittance=remittance,
             user=user,
             organization_id=organization.organization_id,
@@ -380,48 +394,88 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
+        
+        # Verify audit log was created for unconfirmation
+        mock_audit_create.assert_called_once()
+        audit_call_args = mock_audit_create.call_args
+        assert audit_call_args[1]["metadata"]["action"] == "unconfirmed"
+        
         assert result == remittance
 
-    @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
-    @patch("apps.remittance.services.model_update")
-    def test_remittance_confirm_payment_timestamp_accuracy(
-        self, mock_model_update, mock_get_org_member
-    ):
-        """Test that the confirmed_at timestamp is accurate."""
-        # Setup
-        organization = OrganizationFactory()
-        user = CustomUserFactory()
-        organization_member = OrganizationMemberFactory(
-            organization=organization, user=user
-        )
 
-        # Create a workspace team and get its signal-created remittance
+@pytest.mark.django_db
+class TestSyncRemittance:
+    """Test sync_remittance service method."""
+
+    @patch("apps.remittance.services.RemittanceService._calculate_due_amount")
+    @patch("apps.remittance.services.RemittanceService._calculate_paid_amount")
+    @patch("apps.remittance.services.RemittanceService.update_remittance")
+    def test_sync_remittance_both_calculations(
+        self, mock_update, mock_calc_paid, mock_calc_due
+    ):
+        """Test sync_remittance with both due and paid amount calculations."""
         workspace_team = WorkspaceTeamFactory()
         remittance = Remittance.objects.get(workspace_team=workspace_team)
-        remittance.confirmed_by = None
-        remittance.confirmed_at = None
-        remittance.save()
+        
+        mock_calc_due.return_value = Decimal("500.00")
+        mock_calc_paid.return_value = Decimal("300.00")
+        mock_update.return_value = remittance
 
-        mock_get_org_member.return_value = organization_member
+        result = RemittanceService.sync_remittance(
+            workspace_team=workspace_team,
+            calc_due_amt=True,
+            calc_paid_amt=True,
+        )
 
-        # Mock timezone.now to return a specific time
-        test_time = timezone.now()
-        with patch("apps.remittance.services.timezone.now", return_value=test_time):
-            mock_model_update.return_value = remittance
+        mock_calc_due.assert_called_once_with(workspace_team=workspace_team)
+        mock_calc_paid.assert_called_once_with(workspace_team=workspace_team)
+        mock_update.assert_called_once_with(remittance=remittance)
+        assert result == remittance
 
-            # Execute
-            remittance_confirm_payment(
-                remittance=remittance,
-                user=user,
-                organization_id=organization.organization_id,
-            )
+    @patch("apps.remittance.services.RemittanceService._calculate_due_amount")
+    @patch("apps.remittance.services.RemittanceService._calculate_paid_amount")
+    @patch("apps.remittance.services.RemittanceService.update_remittance")
+    def test_sync_remittance_only_due_calculation(
+        self, mock_update, mock_calc_paid, mock_calc_due
+    ):
+        """Test sync_remittance with only due amount calculation."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+        
+        mock_calc_due.return_value = Decimal("500.00")
+        mock_update.return_value = remittance
 
-            # Verify the timestamp was passed correctly
-            mock_model_update.assert_called_once_with(
-                instance=remittance,
-                update_fields=["confirmed_by", "confirmed_at"],
-                data={"confirmed_by": organization_member, "confirmed_at": test_time},
-            )
+        result = RemittanceService.sync_remittance(
+            workspace_team=workspace_team,
+            calc_due_amt=True,
+            calc_paid_amt=False,
+        )
+
+        mock_calc_due.assert_called_once_with(workspace_team=workspace_team)
+        mock_calc_paid.assert_not_called()
+        mock_update.assert_called_once_with(remittance=remittance)
+        assert result == remittance
+
+    @patch("apps.remittance.services.RemittanceService._calculate_due_amount")
+    @patch("apps.remittance.services.RemittanceService._calculate_paid_amount")
+    @patch("apps.remittance.services.RemittanceService.update_remittance")
+    def test_sync_remittance_no_calculations(
+        self, mock_update, mock_calc_paid, mock_calc_due
+    ):
+        """Test sync_remittance with no calculations (should not update)."""
+        workspace_team = WorkspaceTeamFactory()
+        remittance = Remittance.objects.get(workspace_team=workspace_team)
+
+        result = RemittanceService.sync_remittance(
+            workspace_team=workspace_team,
+            calc_due_amt=False,
+            calc_paid_amt=False,
+        )
+
+        mock_calc_due.assert_not_called()
+        mock_calc_paid.assert_not_called()
+        mock_update.assert_not_called()
+        assert result == remittance
 
 
 @pytest.mark.django_db
@@ -446,11 +500,11 @@ class TestRemittanceServicesIntegration:
         remittance = Remittance.objects.get(workspace_team=workspace_team)
 
         # Calculate due amount
-        due_amount = calculate_due_amount(workspace_team=workspace_team)
+        due_amount = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
         assert due_amount == Decimal("300.00")  # (2000 - 500) * 0.20
 
         # Calculate paid amount
-        paid_amount = calculate_paid_amount(workspace_team=workspace_team)
+        paid_amount = RemittanceService._calculate_paid_amount(workspace_team=workspace_team)
         assert paid_amount == Decimal("300.00")
 
         # Update remittance with calculated values
@@ -459,7 +513,7 @@ class TestRemittanceServicesIntegration:
         remittance.save()
 
         # Update remittance status
-        update_remittance(remittance=remittance)
+        RemittanceService.update_remittance(remittance=remittance)
 
         # Verify the remittance was updated correctly
         remittance.refresh_from_db()

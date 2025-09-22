@@ -121,8 +121,8 @@ def extract_entry_business_context(entry):
         EntryType.DISBURSEMENT,
         EntryType.REMITTANCE,
     ]:
-        context["workspace_id"] = (str(entry.workspace.pk),)
-        context["workspace_name"] = (entry.workspace.title,)
+        context["workspace_id"] = str(entry.workspace.pk)
+        context["workspace_name"] = entry.workspace.title
 
     return context
 

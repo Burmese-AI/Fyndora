@@ -41,11 +41,15 @@ class BaseAuditLogger(ABC):
             current = obj
             for field in field_path.split("."):
                 if current is None:
-                    return default
+                    return None if default is None else (default(None) if callable(default) else default)
                 current = getattr(current, field, None)
+            
+            # If we got a value, apply conversion if default is callable
+            if current is not None and callable(default):
+                return default(current)
             return current
         except (AttributeError, TypeError):
-            return default
+            return None if default is None else (default(None) if callable(default) else default)
 
     @staticmethod
     def _handle_action_with_mapping(

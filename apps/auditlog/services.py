@@ -61,7 +61,7 @@ def audit_create(
 
         audit = AuditTrail()
 
-        # Auto-detect workspace if not provided
+        # Auto-detect workspace if not provided (but not if explicitly disabled with False)
         if workspace is None and target_entity:
             # Priority 1: Target entity is a workspace
             if isinstance(target_entity, Workspace):
@@ -123,7 +123,11 @@ def audit_create(
         if workspace and hasattr(workspace, "organization"):
             organization = workspace.organization
 
-        # Priority 2: From target entity (direct organization relationship)
+        # Priority 2: Target entity IS an organization
+        elif target_entity and target_entity.__class__.__name__ == 'Organization':
+            organization = target_entity
+
+        # Priority 3: From target entity (direct organization relationship)
         elif target_entity and hasattr(target_entity, "organization"):
             organization = target_entity.organization
 
@@ -169,7 +173,7 @@ def audit_create(
             "target_entity_id": target_entity_id,
             "target_entity_type": target_entity_type,
             "organization": organization,
-            "workspace": workspace,
+            "workspace": workspace if workspace else None,
             "metadata": serializable_metadata,
         }
 

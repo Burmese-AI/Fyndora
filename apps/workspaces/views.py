@@ -220,6 +220,7 @@ def edit_workspace_view(request, organization_id, workspace_id):
                             workspace=workspace,
                             previous_workspace_admin=previous_workspace_admin,
                             previous_operations_reviewer=previous_operations_reviewer,
+                            user=request.user,
                         )
 
                         # Update Remittance Due Amount

@@ -172,9 +172,8 @@ class TestUpdateOrganizationFromForm(TestCase):
                 form=mock_form, organization=self.organization, user=self.user
             )
 
-    @patch("apps.organizations.services.BusinessAuditLogger")
-    def test_update_organization_status_change(self, mock_audit_logger):
-        """Test organization update with status change."""
+    def test_update_organization_status_change(self):
+        """Test organization update with status change - auditing handled by signals."""
         # Mock form
         mock_form = MagicMock()
         mock_form.is_valid.return_value = True
@@ -185,12 +184,13 @@ class TestUpdateOrganizationFromForm(TestCase):
         with patch("apps.organizations.services.model_update") as mock_model_update:
             mock_model_update.return_value = updated_org
 
-            update_organization_from_form(
+            result = update_organization_from_form(
                 form=mock_form, organization=self.organization, user=self.user
             )
 
-            # Verify status change was logged
-            mock_audit_logger.log_status_change.assert_called()
+            # Verify organization was updated successfully
+            self.assertEqual(result.status, "CLOSED")
+            # Note: Audit logging is now handled automatically by signal handlers
 
 
 class TestCreateOrganizationExchangeRate(TestCase):

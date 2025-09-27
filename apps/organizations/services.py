@@ -128,59 +128,12 @@ def update_organization_from_form(*, form, organization, user) -> Organization:
         if not form.is_valid():
             raise OrganizationUpdateError(f"Form validation failed: {form.errors}")
 
-        # Capture original status for audit logging
-        original_status = getattr(organization, "status", None)
-
         # Set audit context to prevent duplicate logging from signal handlers
         organization._audit_user = user
         organization = model_update(organization, form.cleaned_data)
 
-        # Audit logging: Log organization update
-        try:
-            if user:
-                # Log status change if status was modified
-                if (
-                    "status" in form.cleaned_data
-                    and original_status != organization.status
-                ):
-                    BusinessAuditLogger.log_status_change(
-                        user=user,
-                        entity=organization,
-                        old_status=original_status,
-                        new_status=organization.status,
-                        request=None,
-                        organization_id=str(organization.organization_id),
-                        change_reason="Organization status updated via form",
-                        operation_type="organization_status_change",
-                        business_context=extract_organization_context(organization),
-                    )
-
-                # Note: General CRUD update logging removed - handled by signal handlers
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for organization update: {audit_error}",
-                exc_info=True,
-            )
-
         return organization
     except Exception as e:
-        # Audit logging: Log failed update
-        try:
-            if user:
-                BusinessAuditLogger.log_operation_failure(
-                    user=user,
-                    operation_type="organization_form_update_failed",
-                    error=e,
-                    request=None,
-                    organization_id=str(organization.organization_id),
-                    **extract_request_metadata(),
-                )
-        except Exception as audit_error:
-            logger.error(
-                f"Audit logging failed for organization update error: {audit_error}",
-                exc_info=True,
-            )
-
         raise OrganizationUpdateError(f"Failed to update organization: {str(e)}")
 
 

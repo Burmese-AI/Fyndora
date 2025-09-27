@@ -70,9 +70,9 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(organization, "workspace", None)
+        # Organizations should not have workspace context - pass False to disable auto-detection
         self._finalize_and_create_audit(
-            user, action_type, metadata, organization, workspace
+            user, action_type, metadata, organization, workspace=False
         )
 
     @safe_audit_log
@@ -142,7 +142,7 @@ class OrganizationAuditLogger(BaseAuditLogger):
         )
 
         # Finalize and create audit log
-        workspace = getattr(exchange_rate, "workspace", None)
+        # Organization exchange rates should not have workspace context - pass False to disable auto-detection
         self._finalize_and_create_audit(
-            user, action_type, metadata, exchange_rate, workspace
+            user, action_type, metadata, exchange_rate, workspace=False
         )

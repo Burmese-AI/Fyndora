@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -33,3 +34,7 @@ urlpatterns = [
     path("<uuid:organization_id>/", include("apps.reports.urls")),
     path("attachments/", include("apps.attachments.urls")),
 ]
+
+if settings.DEBUG:
+    from debug_toolbar.toolbar import debug_toolbar_urls
+    urlpatterns += debug_toolbar_urls()

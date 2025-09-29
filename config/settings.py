@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.reports",
     "guardian",
     "django_extensions",
+    "debug_toolbar",
 ]
 
 SITE_ID = 1
@@ -84,6 +85,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -258,3 +260,9 @@ EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 MEDIA_URL = "/media/"
 # Path where media is stored
 MEDIA_ROOT = BASE_DIR("media")
+
+INTERNAL_IPS = [
+    "localhost",
+    "0.0.0.0",
+    "127.0.0.1",
+]

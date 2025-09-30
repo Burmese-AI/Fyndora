@@ -22,7 +22,6 @@ dependencies = [
     "django-extensions>=4.1",
     "iso4217>=1.14.20250512",
     "fpdf>=1.7.2",
-    "django-debug-toolbar>=5.2.0",
 ]
 
 [dependency-groups]

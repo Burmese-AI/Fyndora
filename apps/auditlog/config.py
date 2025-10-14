@@ -54,33 +54,34 @@ class AuditConfig:
     # Models that should not have workspace context in audit logs
     MODELS_WITHOUT_WORKSPACE_CONTEXT = {
         # Organization-level models
-        'organization',
-        'organizationmember', 
-        'organizationexchangerate',
+        "organization",
+        "organizationmember",
+        "organizationexchangerate",
         # Team models (organization-level)
-        'team',
-        'teammember',
+        "team",
+        "teammember",
         # Organization-level entries
-        'entry',  # Will be filtered by entry_type in the signal handler
+        "entry",  # Will be filtered by entry_type in the signal handler
     }
 
     @classmethod
     def should_exclude_workspace_context(cls, instance):
         """Check if a model instance should exclude workspace context from audit logs"""
-        if not hasattr(instance, '_meta'):
+        if not hasattr(instance, "_meta"):
             return False
-            
+
         model_name = instance._meta.model_name
-        
+
         # Check if model is in the exclusion list
         if model_name in cls.MODELS_WITHOUT_WORKSPACE_CONTEXT:
             # Special handling for entries - only exclude workspace for organization-level entries
-            if model_name == 'entry':
+            if model_name == "entry":
                 # Import here to avoid circular imports
                 from apps.entries.constants import EntryType
-                return getattr(instance, 'entry_type', None) == EntryType.ORG_EXP
+
+                return getattr(instance, "entry_type", None) == EntryType.ORG_EXP
             return True
-            
+
         return False
 
     @classmethod

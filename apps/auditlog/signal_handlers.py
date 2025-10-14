@@ -366,15 +366,16 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                 # Check if this model should exclude workspace context
                 workspace_param = {}
                 from .config import AuditConfig
+
                 if AuditConfig.should_exclude_workspace_context(instance):
-                    workspace_param['workspace'] = False
-                    
+                    workspace_param["workspace"] = False
+
                 audit_create(
                     user=audit_context["user"],
                     action_type=action_types["created"],
                     target_entity=instance,
                     metadata=metadata,
-                    **workspace_param
+                    **workspace_param,
                 )
                 logger.debug(
                     f"Logged creation of {sender.__name__} with id={instance.pk}"
@@ -469,15 +470,16 @@ class GenericAuditSignalHandler(BaseAuditHandler):
                         # Check if this model should exclude workspace context
                         workspace_param = {}
                         from .config import AuditConfig
+
                         if AuditConfig.should_exclude_workspace_context(instance):
-                            workspace_param['workspace'] = False
-                            
+                            workspace_param["workspace"] = False
+
                         audit_create(
                             user=audit_context["user"],
                             action_type=action_type,
                             target_entity=instance,
                             metadata=metadata,
-                            **workspace_param
+                            **workspace_param,
                         )
                         logger.debug(
                             f"Logged {operation_type} of {sender.__name__} with id={instance.pk}, {len(changes)} changes"
@@ -509,15 +511,16 @@ class GenericAuditSignalHandler(BaseAuditHandler):
             # Check if this model should exclude workspace context
             workspace_param = {}
             from .config import AuditConfig
+
             if AuditConfig.should_exclude_workspace_context(instance):
-                workspace_param['workspace'] = False
-            
+                workspace_param["workspace"] = False
+
             audit_create(
                 user=audit_context["user"],
                 action_type=action_types["deleted"],
                 target_entity=instance,
                 metadata=metadata,
-                **workspace_param
+                **workspace_param,
             )
             logger.debug(f"Logged deletion of {sender.__name__} with id={instance.pk}")
 

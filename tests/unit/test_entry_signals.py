@@ -4,7 +4,6 @@ Unit tests for Entry signals.
 Tests the signal handlers that manage remittance updates when entries are created, updated, or deleted.
 """
 
-from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +14,6 @@ from apps.entries.signals import (
     keep_remittance_updated_with_entry,
     revert_remittance_on_entry_delete,
 )
-from apps.remittance.services import RemittanceService
 from tests.factories import (
     EntryFactory,
     IncomeEntryFactory,
@@ -57,7 +55,9 @@ class TestKeepRemittanceUpdatedWithEntry:
         )
 
     @patch("apps.entries.signals.RemittanceService.sync_remittance")
-    def test_disbursement_entry_triggers_due_amount_calculation(self, mock_sync_remittance):
+    def test_disbursement_entry_triggers_due_amount_calculation(
+        self, mock_sync_remittance
+    ):
         """Test that disbursement entry triggers due amount calculation."""
         # Create entry without triggering signals
         entry = EntryFactory(
@@ -80,7 +80,9 @@ class TestKeepRemittanceUpdatedWithEntry:
         )
 
     @patch("apps.entries.signals.RemittanceService.sync_remittance")
-    def test_remittance_entry_triggers_paid_amount_calculation(self, mock_sync_remittance):
+    def test_remittance_entry_triggers_paid_amount_calculation(
+        self, mock_sync_remittance
+    ):
         """Test that remittance entry triggers paid amount calculation."""
         # Create entry without triggering signals
         entry = EntryFactory(
@@ -197,14 +199,14 @@ class TestKeepRemittanceUpdatedWithEntry:
 
         # Verify sync_remittance was called twice with correct parameters
         assert mock_sync_remittance.call_count == 2
-        
+
         # First call for income entry
         mock_sync_remittance.assert_any_call(
             workspace_team=self.workspace_team,
             calc_due_amt=True,
             calc_paid_amt=False,
         )
-        
+
         # Second call for remittance entry
         mock_sync_remittance.assert_any_call(
             workspace_team=self.workspace_team,
@@ -400,14 +402,14 @@ class TestRevertRemittanceOnEntryDelete:
 
         # Verify sync_remittance was called twice with correct parameters
         assert mock_sync_remittance.call_count == 2
-        
+
         # First call for income entry
         mock_sync_remittance.assert_any_call(
             workspace_team=self.workspace_team,
             calc_due_amt=True,
             calc_paid_amt=False,
         )
-        
+
         # Second call for remittance entry
         mock_sync_remittance.assert_any_call(
             workspace_team=self.workspace_team,
@@ -506,8 +508,8 @@ class TestEntrySignalIntegration:
         # Both should call with calc_due_amt=True, calc_paid_amt=False
         for call in mock_sync_remittance.call_args_list:
             args, kwargs = call
-            assert kwargs['calc_due_amt'] == True
-            assert kwargs['calc_paid_amt'] == False
+            assert kwargs["calc_due_amt"] == True
+            assert kwargs["calc_paid_amt"] == False
 
     @patch("apps.entries.signals.RemittanceService.sync_remittance")
     def test_signal_handlers_with_expense_entries(self, mock_sync_remittance):

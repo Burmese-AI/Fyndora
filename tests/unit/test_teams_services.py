@@ -617,7 +617,7 @@ class TeamServicesAuditLoggingFailureTest(TestCase):
         # Ensure team has created_by set
         self.team.created_by = self.org_member
         self.team.save()
-        
+
         mock_form = MagicMock()
         mock_form.cleaned_data = {"title": "Updated Team"}
         mock_model_update.return_value = self.team
@@ -1090,7 +1090,7 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         # Ensure team has created_by set
         self.team.created_by = self.org_member
         self.team.save()
-        
+
         # Set up previous coordinator
         previous_coordinator = self.org_member
         self.team.team_coordinator = previous_coordinator
@@ -1152,7 +1152,7 @@ class TeamServicesEdgeCasesAndErrorTest(TestCase):
         # Ensure team has created_by set
         self.team.created_by = self.org_member
         self.team.save()
-        
+
         new_org_member = OrganizationMemberFactory(organization=self.organization)
 
         # Mock form data with new coordinator

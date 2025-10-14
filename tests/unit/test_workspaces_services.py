@@ -400,7 +400,7 @@ class TestAddTeamToWorkspace(TestCase):
                 workspace=self.workspace,
                 user=self.user,
             )
-        
+
         assert "cannot be set when syned" in str(context.exception).lower()
 
     @pytest.mark.django_db
@@ -999,7 +999,7 @@ class TestServiceErrorHandling(TestCase):
                     user=self.user,
                     team=team,
                 )
-            
+
             # Note: Business logging removed from services
 
     @pytest.mark.django_db
@@ -1019,7 +1019,7 @@ class TestServiceErrorHandling(TestCase):
                     workspace=self.workspace,
                     user=self.user,
                 )
-            
+
             # Note: Business logging removed from services, handled by signal handlers
 
     @pytest.mark.django_db
@@ -1048,7 +1048,7 @@ class TestServiceErrorHandling(TestCase):
                     syned_with_workspace_remittance_rate=False,
                     custom_remittance_rate=Decimal("80.00"),
                 )
-            
+
             # Note: Business logging removed from services
 
     @pytest.mark.django_db

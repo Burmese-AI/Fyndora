@@ -124,7 +124,7 @@ def audit_create(
             organization = workspace.organization
 
         # Priority 2: Target entity IS an organization
-        elif target_entity and target_entity.__class__.__name__ == 'Organization':
+        elif target_entity and target_entity.__class__.__name__ == "Organization":
             organization = target_entity
 
         # Priority 3: From target entity (direct organization relationship)

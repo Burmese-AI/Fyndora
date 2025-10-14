@@ -3,7 +3,7 @@ Unit tests for Remittance services.
 """
 
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pytest
 from django.utils import timezone
 
@@ -294,7 +294,7 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
-        
+
         # Verify audit log was created
         mock_audit_create.assert_called_once()
         audit_call_args = mock_audit_create.call_args
@@ -302,7 +302,7 @@ class TestRemittanceConfirmPayment:
         assert audit_call_args[1]["action_type"] == AuditActionType.REMITTANCE_CONFIRMED
         assert audit_call_args[1]["target_entity"] == remittance
         assert audit_call_args[1]["metadata"]["action"] == "confirmed"
-        
+
         assert result == remittance
 
     @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
@@ -346,12 +346,12 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
-        
+
         # Verify audit log was created for unconfirmation
         mock_audit_create.assert_called_once()
         audit_call_args = mock_audit_create.call_args
         assert audit_call_args[1]["metadata"]["action"] == "unconfirmed"
-        
+
         assert result == remittance
 
     @patch("apps.remittance.services.get_orgMember_by_user_id_and_organization_id")
@@ -394,12 +394,12 @@ class TestRemittanceConfirmPayment:
                 "confirmed_at": mock_model_update.call_args[1]["data"]["confirmed_at"],
             },
         )
-        
+
         # Verify audit log was created for unconfirmation
         mock_audit_create.assert_called_once()
         audit_call_args = mock_audit_create.call_args
         assert audit_call_args[1]["metadata"]["action"] == "unconfirmed"
-        
+
         assert result == remittance
 
 
@@ -416,7 +416,7 @@ class TestSyncRemittance:
         """Test sync_remittance with both due and paid amount calculations."""
         workspace_team = WorkspaceTeamFactory()
         remittance = Remittance.objects.get(workspace_team=workspace_team)
-        
+
         mock_calc_due.return_value = Decimal("500.00")
         mock_calc_paid.return_value = Decimal("300.00")
         mock_update.return_value = remittance
@@ -441,7 +441,7 @@ class TestSyncRemittance:
         """Test sync_remittance with only due amount calculation."""
         workspace_team = WorkspaceTeamFactory()
         remittance = Remittance.objects.get(workspace_team=workspace_team)
-        
+
         mock_calc_due.return_value = Decimal("500.00")
         mock_update.return_value = remittance
 
@@ -500,11 +500,15 @@ class TestRemittanceServicesIntegration:
         remittance = Remittance.objects.get(workspace_team=workspace_team)
 
         # Calculate due amount
-        due_amount = RemittanceService._calculate_due_amount(workspace_team=workspace_team)
+        due_amount = RemittanceService._calculate_due_amount(
+            workspace_team=workspace_team
+        )
         assert due_amount == Decimal("300.00")  # (2000 - 500) * 0.20
 
         # Calculate paid amount
-        paid_amount = RemittanceService._calculate_paid_amount(workspace_team=workspace_team)
+        paid_amount = RemittanceService._calculate_paid_amount(
+            workspace_team=workspace_team
+        )
         assert paid_amount == Decimal("300.00")
 
         # Update remittance with calculated values

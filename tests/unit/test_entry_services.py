@@ -362,7 +362,7 @@ def test_create_entry_without_attachments_no_exchange_rate(
     # Mock to return None
     mocks["get_closest_exchanged_rate"].return_value = None
 
-    with pytest.raises(BaseServiceError) as exc_info:
+    with pytest.raises(BaseServiceError):
         EntryService.create_entry_with_attachments(
             amount=Decimal("50.00"),
             occurred_at=date.today(),
@@ -760,7 +760,6 @@ def test_bulk_delete_entries_success_with_user(
 ):
     """Test that bulk_delete_entries deletes all entries and logs when user is provided."""
     models = setup_common_models
-    mocks = mock_external_dependencies
 
     entries = [
         EntryFactory(
@@ -792,7 +791,6 @@ def test_bulk_delete_entries_success_without_user(
 ):
     """Test that bulk_delete_entries deletes entries without logging when user is None."""
     models = setup_common_models
-    mocks = mock_external_dependencies
 
     entries = [
         EntryFactory(

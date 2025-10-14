@@ -67,18 +67,15 @@ class TestCreateWorkspaceFromForm(TestCase):
         with patch(
             "apps.workspaces.services.assign_workspace_permissions"
         ) as mock_assign:
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
-            ) as mock_log:
-                result = create_workspace_from_form(
-                    form=mock_form,
-                    orgMember=self.org_member,
-                    organization=self.organization,
-                )
+            result = create_workspace_from_form(
+                form=mock_form,
+                orgMember=self.org_member,
+                organization=self.organization,
+            )
 
-                self.assertIsInstance(result, Workspace)
-                mock_assign.assert_called_once()
-                mock_log.assert_called_once()
+            self.assertIsInstance(result, Workspace)
+            mock_assign.assert_called_once()
+            # Note: CRUD logging is now handled by signal handlers, not in service
 
     @pytest.mark.django_db
     def test_create_workspace_without_org_member(self):
@@ -93,19 +90,15 @@ class TestCreateWorkspaceFromForm(TestCase):
         with patch(
             "apps.workspaces.services.assign_workspace_permissions"
         ) as mock_assign:
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
-            ) as mock_log:
-                result = create_workspace_from_form(
-                    form=mock_form,
-                    orgMember=None,
-                    organization=self.organization,
-                )
+            result = create_workspace_from_form(
+                form=mock_form,
+                orgMember=None,
+                organization=self.organization,
+            )
 
-                self.assertIsInstance(result, Workspace)
-                mock_assign.assert_called_once()
-                # Should not log when no org member
-                mock_log.assert_not_called()
+            self.assertIsInstance(result, Workspace)
+            mock_assign.assert_called_once()
+            # Note: CRUD logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_create_workspace_form_save_error(self):
@@ -185,20 +178,17 @@ class TestUpdateWorkspaceFromForm(TestCase):
         with patch(
             "apps.workspaces.services.update_workspace_admin_group"
         ) as mock_update:
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_action"
-            ) as mock_log:
-                result = update_workspace_from_form(
-                    form=mock_form,
-                    workspace=self.workspace,
-                    previous_workspace_admin=self.previous_admin,
-                    previous_operations_reviewer=self.previous_reviewer,
-                    user=org_member,
-                )
+            result = update_workspace_from_form(
+                form=mock_form,
+                workspace=self.workspace,
+                previous_workspace_admin=self.previous_admin,
+                previous_operations_reviewer=self.previous_reviewer,
+                user=org_member,
+            )
 
-                self.assertEqual(result, self.workspace)
-                mock_update.assert_called_once()
-                mock_log.assert_called_once()
+            self.assertEqual(result, self.workspace)
+            mock_update.assert_called_once()
+            # Note: CRUD logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_workspace_without_user(self):
@@ -277,33 +267,26 @@ class TestRemoveTeamFromWorkspace(TestCase):
     @pytest.mark.django_db
     def test_remove_team_success(self):
         """Test successful team removal."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = remove_team_from_workspace(
-                workspace_team=self.workspace_team,
-                user=self.user,
-                team=self.team,
-            )
+        result = remove_team_from_workspace(
+            workspace_team=self.workspace_team,
+            user=self.user,
+            team=self.team,
+        )
 
-            self.assertEqual(result, self.workspace_team)
-            mock_log.assert_called_once()
+        self.assertEqual(result, self.workspace_team)
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_remove_team_without_user(self):
         """Test team removal without user."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = remove_team_from_workspace(
-                workspace_team=self.workspace_team,
-                user=None,
-                team=self.team,
-            )
+        result = remove_team_from_workspace(
+            workspace_team=self.workspace_team,
+            user=None,
+            team=self.team,
+        )
 
-            self.assertEqual(result, self.workspace_team)
-            # Should not log when no user
-            mock_log.assert_not_called()
+        self.assertEqual(result, self.workspace_team)
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_remove_team_with_team_coordinator(self):
@@ -313,19 +296,16 @@ class TestRemoveTeamFromWorkspace(TestCase):
         self.workspace_team.team.team_coordinator = team_member.organization_member
         self.workspace_team.team.save()
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            with patch("apps.workspaces.services.remove_perm") as mock_remove_perm:
-                result = remove_team_from_workspace(
-                    workspace_team=self.workspace_team,
-                    user=self.user,
-                    team=self.team,
-                )
+        with patch("apps.workspaces.services.remove_perm") as mock_remove_perm:
+            result = remove_team_from_workspace(
+                workspace_team=self.workspace_team,
+                user=self.user,
+                team=self.team,
+            )
 
-                self.assertEqual(result, self.workspace_team)
-                mock_log.assert_called_once()
-                mock_remove_perm.assert_called_once()
+            self.assertEqual(result, self.workspace_team)
+            mock_remove_perm.assert_called_once()
+            # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_remove_team_error(self):
@@ -361,81 +341,84 @@ class TestAddTeamToWorkspace(TestCase):
     @pytest.mark.django_db
     def test_add_team_success(self):
         """Test successful team addition."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = add_team_to_workspace(
-                workspace_id=self.workspace.workspace_id,
-                team_id=self.team.team_id,
-                custom_remittance_rate=Decimal("85.50"),
-                workspace=self.workspace,
-                user=self.user,
-            )
+        result = add_team_to_workspace(
+            workspace_id=self.workspace.workspace_id,
+            team_id=self.team.team_id,
+            custom_remittance_rate=Decimal("85.50"),
+            syned_with_workspace_remittance_rate=False,
+            workspace=self.workspace,
+            user=self.user,
+        )
 
-            self.assertIsInstance(result, WorkspaceTeam)
-            self.assertEqual(result.workspace, self.workspace)
-            self.assertEqual(result.team, self.team)
-            self.assertEqual(result.custom_remittance_rate, Decimal("85.50"))
-            mock_log.assert_called_once()
+        self.assertIsInstance(result, WorkspaceTeam)
+        self.assertEqual(result.workspace, self.workspace)
+        self.assertEqual(result.team, self.team)
+        self.assertEqual(result.custom_remittance_rate, Decimal("85.50"))
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_add_team_without_custom_rate(self):
-        """Test team addition without custom remittance rate."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = add_team_to_workspace(
-                workspace_id=self.workspace.workspace_id,
-                team_id=self.team.team_id,
-                custom_remittance_rate=None,
-                workspace=self.workspace,
-                user=self.user,
-            )
+        """Test team addition synced with workspace remittance rate."""
+        result = add_team_to_workspace(
+            workspace_id=self.workspace.workspace_id,
+            team_id=self.team.team_id,
+            custom_remittance_rate=None,
+            syned_with_workspace_remittance_rate=True,
+            workspace=self.workspace,
+            user=self.user,
+        )
 
-            self.assertIsInstance(result, WorkspaceTeam)
-            self.assertEqual(
-                result.custom_remittance_rate, self.workspace.remittance_rate
-            )
-            mock_log.assert_called_once()
+        self.assertIsInstance(result, WorkspaceTeam)
+        self.assertIsNone(result.custom_remittance_rate)
+        self.assertTrue(result.syned_with_workspace_remittance_rate)
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_add_team_without_user(self):
         """Test team addition without user."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = add_team_to_workspace(
+        result = add_team_to_workspace(
+            workspace_id=self.workspace.workspace_id,
+            team_id=self.team.team_id,
+            custom_remittance_rate=Decimal("80.00"),
+            syned_with_workspace_remittance_rate=False,
+            workspace=self.workspace,
+            user=None,
+        )
+
+        self.assertIsInstance(result, WorkspaceTeam)
+        # Note: Logging is now handled by signal handlers
+
+    @pytest.mark.django_db
+    def test_add_team_validation_error(self):
+        """Test team addition validation error when both custom rate and sync are set."""
+        with self.assertRaises(ValidationError) as context:
+            add_team_to_workspace(
                 workspace_id=self.workspace.workspace_id,
                 team_id=self.team.team_id,
                 custom_remittance_rate=Decimal("80.00"),
+                syned_with_workspace_remittance_rate=True,
                 workspace=self.workspace,
-                user=None,
+                user=self.user,
             )
-
-            self.assertIsInstance(result, WorkspaceTeam)
-            # Should not log when no user
-            mock_log.assert_not_called()
+        
+        assert "cannot be set when syned" in str(context.exception).lower()
 
     @pytest.mark.django_db
     def test_add_team_error(self):
         """Test team addition when an error occurs."""
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
-        ) as mock_log:
-            # Mock the create to raise an error
-            with patch.object(WorkspaceTeam.objects, "create") as mock_create:
-                mock_create.side_effect = Exception("Create error")
+        # Mock the create to raise an error
+        with patch.object(WorkspaceTeam.objects, "create") as mock_create:
+            mock_create.side_effect = Exception("Create error")
 
-                with self.assertRaises(Exception):
-                    add_team_to_workspace(
-                        workspace_id=self.workspace.workspace_id,
-                        team_id=self.team.team_id,
-                        custom_remittance_rate=Decimal("80.00"),
-                        workspace=self.workspace,
-                        user=self.user,
-                    )
-
-                    mock_log.assert_called_once()
+            with self.assertRaises(Exception):
+                add_team_to_workspace(
+                    workspace_id=self.workspace.workspace_id,
+                    team_id=self.team.team_id,
+                    custom_remittance_rate=Decimal("80.00"),
+                    syned_with_workspace_remittance_rate=False,
+                    workspace=self.workspace,
+                    user=self.user,
+                )
 
 
 @pytest.mark.unit
@@ -463,42 +446,39 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = update_workspace_team_remittance_rate_from_form(
-                form=mock_form,
-                workspace_team=self.workspace_team,
-                workspace=self.workspace,
-                user=self.user,
-            )
+        result = update_workspace_team_remittance_rate_from_form(
+            form=mock_form,
+            workspace_team=self.workspace_team,
+            workspace=self.workspace,
+            user=self.user,
+            syned_with_workspace_remittance_rate=False,
+            custom_remittance_rate=Decimal("80.00"),
+        )
 
-            self.assertEqual(result, self.workspace_team)
-            self.assertEqual(result.custom_remittance_rate, Decimal("80.00"))
-            mock_log.assert_called_once()
+        self.assertEqual(result, self.workspace_team)
+        self.assertEqual(result.custom_remittance_rate, Decimal("80.00"))
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_remittance_rate_to_workspace_default(self):
-        """Test updating remittance rate to workspace default (should set to None)."""
+        """Test updating remittance rate to sync with workspace."""
         # Mock form
         mock_form = Mock()
-        mock_form.cleaned_data = {
-            "custom_remittance_rate": Decimal("90.00")
-        }  # Same as workspace
+        mock_form.cleaned_data = {}
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = update_workspace_team_remittance_rate_from_form(
-                form=mock_form,
-                workspace_team=self.workspace_team,
-                workspace=self.workspace,
-                user=self.user,
-            )
+        result = update_workspace_team_remittance_rate_from_form(
+            form=mock_form,
+            workspace_team=self.workspace_team,
+            workspace=self.workspace,
+            user=self.user,
+            syned_with_workspace_remittance_rate=True,
+            custom_remittance_rate=None,
+        )
 
-            self.assertEqual(result, self.workspace_team)
-            self.assertIsNone(result.custom_remittance_rate)
-            mock_log.assert_called_once()
+        self.assertEqual(result, self.workspace_team)
+        self.assertIsNone(result.custom_remittance_rate)
+        self.assertTrue(result.syned_with_workspace_remittance_rate)
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_remittance_rate_without_user(self):
@@ -507,19 +487,17 @@ class TestUpdateWorkspaceTeamRemittanceRateFromForm(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            result = update_workspace_team_remittance_rate_from_form(
-                form=mock_form,
-                workspace_team=self.workspace_team,
-                workspace=self.workspace,
-                user=None,
-            )
+        result = update_workspace_team_remittance_rate_from_form(
+            form=mock_form,
+            workspace_team=self.workspace_team,
+            workspace=self.workspace,
+            user=None,
+            syned_with_workspace_remittance_rate=False,
+            custom_remittance_rate=Decimal("80.00"),
+        )
 
-            self.assertEqual(result, self.workspace_team)
-            # Should not log when no user
-            mock_log.assert_not_called()
+        self.assertEqual(result, self.workspace_team)
+        # Note: Logging is now handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_remittance_rate_error(self):
@@ -1008,58 +986,45 @@ class TestServiceErrorHandling(TestCase):
 
     @pytest.mark.django_db
     def test_remove_team_failure_logging_error(self):
-        """Test team removal failure when logging also fails."""
+        """Test team removal failure."""
         team = TeamFactory(organization=self.organization)
         workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=team)
 
         with patch.object(workspace_team, "delete") as mock_delete:
             mock_delete.side_effect = Exception("Delete error")
 
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
-            ) as mock_log_failure:
-                mock_log_failure.side_effect = Exception("Logging failure")
-
-                with patch("apps.workspaces.services.logger") as mock_logger:
-                    with self.assertRaises(ValidationError):
-                        remove_team_from_workspace(
-                            workspace_team=workspace_team,
-                            user=self.user,
-                            team=team,
-                        )
-
-                    # Verify logger.error was called for logging failure
-                    mock_logger.error.assert_called()
+            with self.assertRaises(ValidationError):
+                remove_team_from_workspace(
+                    workspace_team=workspace_team,
+                    user=self.user,
+                    team=team,
+                )
+            
+            # Note: Business logging removed from services
 
     @pytest.mark.django_db
     def test_add_team_failure_logging_error(self):
-        """Test team addition failure when logging also fails."""
+        """Test team addition failure."""
         team = TeamFactory(organization=self.organization)
 
         with patch.object(WorkspaceTeam.objects, "create") as mock_create:
             mock_create.side_effect = Exception("Create error")
 
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
-            ) as mock_log_failure:
-                mock_log_failure.side_effect = Exception("Logging failure")
-
-                with patch("apps.workspaces.services.logger") as mock_logger:
-                    with self.assertRaises(Exception):
-                        add_team_to_workspace(
-                            workspace_id=self.workspace.workspace_id,
-                            team_id=team.team_id,
-                            custom_remittance_rate=Decimal("80.00"),
-                            workspace=self.workspace,
-                            user=self.user,
-                        )
-
-                    # Verify logger.error was called for logging failure
-                    mock_logger.error.assert_called()
+            with self.assertRaises(Exception):
+                add_team_to_workspace(
+                    workspace_id=self.workspace.workspace_id,
+                    team_id=team.team_id,
+                    custom_remittance_rate=Decimal("80.00"),
+                    syned_with_workspace_remittance_rate=False,
+                    workspace=self.workspace,
+                    user=self.user,
+                )
+            
+            # Note: Business logging removed from services, handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_remittance_rate_failure_logging_error(self):
-        """Test remittance rate update failure when logging also fails."""
+        """Test remittance rate update failure."""
         team = TeamFactory(organization=self.organization)
         workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace,
@@ -1074,22 +1039,17 @@ class TestServiceErrorHandling(TestCase):
         with patch.object(workspace_team, "save") as mock_save:
             mock_save.side_effect = Exception("Save error")
 
-            with patch(
-                "apps.auditlog.business_logger.BusinessAuditLogger.log_operation_failure"
-            ) as mock_log_failure:
-                mock_log_failure.side_effect = Exception("Logging failure")
-
-                with patch("apps.workspaces.services.logger") as mock_logger:
-                    with self.assertRaises(Exception):
-                        update_workspace_team_remittance_rate_from_form(
-                            form=mock_form,
-                            workspace_team=workspace_team,
-                            workspace=self.workspace,
-                            user=self.user,
-                        )
-
-                    # Verify logger.error was called for logging failure
-                    mock_logger.error.assert_called()
+            with self.assertRaises(Exception):
+                update_workspace_team_remittance_rate_from_form(
+                    form=mock_form,
+                    workspace_team=workspace_team,
+                    workspace=self.workspace,
+                    user=self.user,
+                    syned_with_workspace_remittance_rate=False,
+                    custom_remittance_rate=Decimal("80.00"),
+                )
+            
+            # Note: Business logging removed from services
 
     @pytest.mark.django_db
     def test_create_exchange_rate_integrity_error_logging_failure(self):
@@ -1233,52 +1193,39 @@ class TestServiceErrorHandling(TestCase):
 
     @pytest.mark.django_db
     def test_remove_team_success_logging_failure(self):
-        """Test team removal success when logging fails."""
+        """Test team removal success."""
         team = TeamFactory(organization=self.organization)
         workspace_team = WorkspaceTeamFactory(workspace=self.workspace, team=team)
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            mock_log.side_effect = Exception("Logging error")
+        result = remove_team_from_workspace(
+            workspace_team=workspace_team,
+            user=self.user,
+            team=team,
+        )
 
-            with patch("apps.workspaces.services.logger") as mock_logger:
-                result = remove_team_from_workspace(
-                    workspace_team=workspace_team,
-                    user=self.user,
-                    team=team,
-                )
-
-                self.assertEqual(result, workspace_team)
-                # Verify logger.error was called for logging failure
-                mock_logger.error.assert_called()
+        self.assertEqual(result, workspace_team)
+        # Note: Business logging removed from services, handled by signal handlers
 
     @pytest.mark.django_db
     def test_add_team_success_logging_failure(self):
-        """Test team addition success when logging fails."""
+        """Test team addition success."""
         team = TeamFactory(organization=self.organization)
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            mock_log.side_effect = Exception("Logging error")
+        result = add_team_to_workspace(
+            workspace_id=self.workspace.workspace_id,
+            team_id=team.team_id,
+            custom_remittance_rate=Decimal("80.00"),
+            syned_with_workspace_remittance_rate=False,
+            workspace=self.workspace,
+            user=self.user,
+        )
 
-            with patch("apps.workspaces.services.logger") as mock_logger:
-                result = add_team_to_workspace(
-                    workspace_id=self.workspace.workspace_id,
-                    team_id=team.team_id,
-                    custom_remittance_rate=Decimal("80.00"),
-                    workspace=self.workspace,
-                    user=self.user,
-                )
-
-                self.assertIsInstance(result, WorkspaceTeam)
-                # Verify logger.error was called for logging failure
-                mock_logger.error.assert_called()
+        self.assertIsInstance(result, WorkspaceTeam)
+        # Note: Business logging removed from services, handled by signal handlers
 
     @pytest.mark.django_db
     def test_update_remittance_rate_success_logging_failure(self):
-        """Test remittance rate update success when logging fails."""
+        """Test remittance rate update success."""
         team = TeamFactory(organization=self.organization)
         workspace_team = WorkspaceTeamFactory(
             workspace=self.workspace,
@@ -1290,22 +1237,17 @@ class TestServiceErrorHandling(TestCase):
         mock_form = Mock()
         mock_form.cleaned_data = {"custom_remittance_rate": Decimal("80.00")}
 
-        with patch(
-            "apps.auditlog.business_logger.BusinessAuditLogger.log_workspace_team_action"
-        ) as mock_log:
-            mock_log.side_effect = Exception("Logging error")
+        result = update_workspace_team_remittance_rate_from_form(
+            form=mock_form,
+            workspace_team=workspace_team,
+            workspace=self.workspace,
+            user=self.user,
+            syned_with_workspace_remittance_rate=False,
+            custom_remittance_rate=Decimal("80.00"),
+        )
 
-            with patch("apps.workspaces.services.logger") as mock_logger:
-                result = update_workspace_team_remittance_rate_from_form(
-                    form=mock_form,
-                    workspace_team=workspace_team,
-                    workspace=self.workspace,
-                    user=self.user,
-                )
-
-                self.assertEqual(result, workspace_team)
-                # Verify logger.error was called for logging failure
-                mock_logger.error.assert_called()
+        self.assertEqual(result, workspace_team)
+        # Note: Business logging removed from services, handled by signal handlers
 
     @pytest.mark.django_db
     def test_create_exchange_rate_success_logging_failure(self):

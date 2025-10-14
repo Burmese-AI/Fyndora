@@ -260,7 +260,7 @@ class SeedDataCommandTest(TestCase):
 
         # Should create 1 organization
         self.assertEqual(len(organizations), 1)
-        
+
         # Verify the organization was created properly
         assert organizations[0].title is not None
         assert organizations[0].owner is not None
@@ -300,7 +300,7 @@ class SeedDataCommandTest(TestCase):
 
         # Should create 1 team
         self.assertEqual(len(teams), 1)
-        
+
         # Verify the team was created properly
         assert teams[0].title is not None
         assert teams[0].organization == org
@@ -354,7 +354,7 @@ class SeedDataCommandTest(TestCase):
 
         # Should create 1 workspace
         self.assertEqual(len(workspaces), 1)
-        
+
         # Verify the workspace was created properly
         assert workspaces[0].title is not None
         assert workspaces[0].organization == org
@@ -412,7 +412,7 @@ class SeedDataCommandTest(TestCase):
 
         # Should create workspace teams
         self.assertGreater(len(workspace_teams), 0)
-        
+
         # Verify the workspace team was created properly
         assert workspace_teams[0].workspace == workspace
         assert workspace_teams[0].team == team
@@ -503,16 +503,16 @@ class SeedDataCommandTest(TestCase):
         
         workspaces = [workspace]
         workspace_teams = []
-        
+
         # Make create_workspace_expense_entries raise an exception
         mock_create_workspace_expense.side_effect = Exception("Entry creation error")
 
         with self.assertRaises(Exception):
-            self.command.create_entries(
-                workspaces=workspaces,
-                workspace_teams=workspace_teams,
-                entries_per_workspace=5,
-            )
+                self.command.create_entries(
+                    workspaces=workspaces,
+                    workspace_teams=workspace_teams,
+                    entries_per_workspace=5,
+                )
 
         output = self.out.getvalue()
         self.assertIn("Error creating entries:", output)
@@ -544,7 +544,7 @@ class SeedDataCommandTest(TestCase):
 
         # Should create exchange rates
         from apps.organizations.models import OrganizationExchangeRate
-        
+
         # Organization exchange rates should be created (3 currencies × 3 rates each = 9)
         assert OrganizationExchangeRate.objects.count() > 0
 
@@ -804,14 +804,14 @@ class SeedDataCommandTest(TestCase):
             "get_appropriate_exchange_rate",
             return_value=(Decimal("1.0"), None, None),
         ):
-            self.command.create_workspace_expense_entries(
+                self.command.create_workspace_expense_entries(
                 workspace=workspace,
-                currencies=currencies,
-                entry_statuses=entry_statuses,
-                count=2,
-            )
+                    currencies=currencies,
+                    entry_statuses=entry_statuses,
+                    count=2,
+                )
 
-        # Should create entries
+                # Should create entries
         from apps.entries.models import Entry
         assert Entry.objects.count() == 2
 
@@ -835,16 +835,434 @@ class SeedDataCommandTest(TestCase):
             "get_appropriate_exchange_rate",
             return_value=(Decimal("1.0"), None, None),
         ):
-            self.command.create_organization_expense_entries(
+                self.command.create_organization_expense_entries(
                 workspace=workspace,
+                    currencies=currencies,
+                    entry_statuses=entry_statuses,
+                    count=2,
+                )
+
+                # Should create entries
+        from apps.entries.models import Entry
+        assert Entry.objects.count() == 2
+
+
+    def test_create_team_based_entries(self):
+        """Test team-based entry creation."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory, WorkspaceTeamFactory
+        from tests.factories.currency_factories import CurrencyFactory
+        from tests.factories.team_factories import TeamFactory, TeamMemberFactory
+        
+        # Create real objects
+        org = OrganizationWithOwnerFactory()
+        currency = CurrencyFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        workspace.operations_reviewer = OrganizationMemberFactory(organization=org)
+        workspace.save()
+        
+        team = TeamFactory(organization=org)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+        
+        # Add team members
+        TeamMemberFactory(team=team)
+        TeamMemberFactory(team=team)
+        
+        currencies = [currency]
+        entry_statuses = [EntryStatus.PENDING]
+        ws_teams = [workspace_team]
+        
+        with patch.object(
+            self.command,
+            "get_appropriate_exchange_rate",
+            return_value=(Decimal("1.0"), None, None),
+        ):
+            self.command.create_team_based_entries(
+                workspace=workspace,
+                ws_teams=ws_teams,
+                currencies=currencies,
+                entry_statuses=entry_statuses,
+                count=5,
+            )
+
+        # Should create entries
+        from apps.entries.models import Entry
+        assert Entry.objects.count() > 0
+
+    def test_create_team_based_entries_no_teams(self):
+        """Test team-based entry creation with no teams."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory
+        from tests.factories.currency_factories import CurrencyFactory
+        
+        # Create real objects
+        org = OrganizationWithOwnerFactory()
+        currency = CurrencyFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        
+        currencies = [currency]
+        entry_statuses = [EntryStatus.PENDING]
+        ws_teams = []
+        
+        # Should return early when no teams
+        self.command.create_team_based_entries(
+            workspace=workspace,
+            ws_teams=ws_teams,
+            currencies=currencies,
+            entry_statuses=entry_statuses,
+            count=5,
+        )
+
+        # Should not create any entries
+        from apps.entries.models import Entry
+        assert Entry.objects.count() == 0
+
+    def test_create_team_based_entries_no_exchange_rate(self):
+        """Test team-based entry creation when no exchange rate is available."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory, WorkspaceTeamFactory
+        from tests.factories.currency_factories import CurrencyFactory
+        from tests.factories.team_factories import TeamFactory
+        
+        # Create real objects
+        org = OrganizationWithOwnerFactory()
+        currency = CurrencyFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        workspace.operations_reviewer = OrganizationMemberFactory(organization=org)
+        workspace.save()
+        
+        team = TeamFactory(organization=org)
+        workspace_team = WorkspaceTeamFactory(workspace=workspace, team=team)
+        
+        currencies = [currency]
+        entry_statuses = [EntryStatus.PENDING]
+        ws_teams = [workspace_team]
+        
+        # Return None for exchange rate to trigger the skip
+        with patch.object(
+            self.command,
+            "get_appropriate_exchange_rate",
+            return_value=(None, None, None),
+        ):
+            self.command.create_team_based_entries(
+                workspace=workspace,
+                ws_teams=ws_teams,
                 currencies=currencies,
                 entry_statuses=entry_statuses,
                 count=2,
             )
 
-        # Should create entries
+        # Should not create any entries because exchange rate is None
         from apps.entries.models import Entry
-        assert Entry.objects.count() == 2
+        assert Entry.objects.count() == 0
+
+
+    def test_create_workspaces_insufficient_members(self):
+        """Test workspace creation when organization has insufficient members."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        
+        # Create organization with only owner (no additional members)
+        org = OrganizationWithOwnerFactory()
+        
+        with patch("apps.core.management.commands.seed_data.Workspace.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            organizations = [org]
+            workspaces = self.command.create_workspaces(
+                organizations=organizations, workspaces_per_org=3  # Request more than available members
+            )
+
+            # Should create 0 workspaces (only owner available, need at least 1 admin)
+            assert len(workspaces) == 0
+            
+            # Should show warning in output
+            output = self.out.getvalue()
+            assert "available members but needs" in output
+
+    def test_create_workspaces_no_unique_admin(self):
+        """Test workspace creation when running out of unique admins."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        
+        # Create organization with minimal members
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.Workspace.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            # Mock assign_workspace_permissions to avoid setup issues
+            with patch("apps.core.management.commands.seed_data.assign_workspace_permissions"):
+                organizations = [org]
+                workspaces = self.command.create_workspaces(
+                    organizations=organizations, workspaces_per_org=3  # Request more than available
+                )
+
+                # Should create only 1 workspace (only 1 member available for admin role)
+                assert len(workspaces) <= 1
+
+    def test_create_organizations_permission_failure(self):
+        """Test organization creation when permission assignment fails."""
+        with patch("apps.core.management.commands.seed_data.Organization.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            with patch("apps.core.management.commands.seed_data.Group.objects.get_or_create") as mock_group:
+                mock_group.side_effect = Exception("Permission error")
+                
+                # Should still create organization even if permissions fail
+                organizations = self.command.create_organizations(count=1, users_per_org=3)
+                
+                # Should create 1 organization
+                assert len(organizations) == 1
+                
+                # Should show warning in output
+                output = self.out.getvalue()
+                assert "Warning: Could not assign organization permissions" in output
+
+    def test_create_teams_permission_failure(self):
+        """Test team creation when permission assignment fails."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        
+        org = OrganizationWithOwnerFactory()
+        
+        with patch("apps.core.management.commands.seed_data.Team.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            with patch("apps.core.management.commands.seed_data.assign_team_permissions") as mock_assign:
+                mock_assign.side_effect = Exception("Permission error")
+                
+                organizations = [org]
+                teams = self.command.create_teams(organizations=organizations, teams_per_org=1)
+                
+                # Should create team even if permissions fail
+                assert len(teams) == 1
+                
+                # Should show warning in output
+                output = self.out.getvalue()
+                assert "Warning: Could not assign team permissions" in output
+
+    def test_create_workspaces_permission_failure(self):
+        """Test workspace creation when permission assignment fails."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        member2 = OrganizationMemberFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.Workspace.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            with patch("apps.core.management.commands.seed_data.assign_workspace_permissions") as mock_assign:
+                mock_assign.side_effect = Exception("Permission error")
+                
+                organizations = [org]
+                workspaces = self.command.create_workspaces(organizations=organizations, workspaces_per_org=1)
+                
+                # Should create workspace even if permissions fail
+                assert len(workspaces) == 1
+                
+                # Should show warning in output
+                output = self.out.getvalue()
+                assert "Warning: Could not assign workspace permissions" in output
+
+    def test_create_workspace_teams_permission_failure(self):
+        """Test workspace team creation when permission assignment fails."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        from tests.factories.team_factories import TeamFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory
+        
+        org = OrganizationWithOwnerFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        team = TeamFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.assign_workspace_team_permissions") as mock_assign:
+            mock_assign.side_effect = Exception("Permission error")
+            
+            workspaces = [workspace]
+            teams = [team]
+            workspace_teams = self.command.create_workspace_teams(workspaces=workspaces, teams=teams)
+            
+            # Should create workspace team even if permissions fail
+            assert len(workspace_teams) > 0
+            
+            # Should show warning in output
+            output = self.out.getvalue()
+            assert "Warning: Could not assign workspace team permissions" in output
+
+    def test_create_workspace_expense_entries_no_exchange_rate(self):
+        """Test workspace expense entry creation when no exchange rate is available."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory
+        from tests.factories.currency_factories import CurrencyFactory
+        
+        org = OrganizationWithOwnerFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        currency = CurrencyFactory()
+        
+        currencies = [currency]
+        entry_statuses = [EntryStatus.PENDING]
+        
+        # Return None for exchange rate to trigger the skip
+        with patch.object(
+            self.command,
+            "get_appropriate_exchange_rate",
+            return_value=(None, None, None),
+        ):
+            self.command.create_workspace_expense_entries(
+                workspace=workspace,
+                currencies=currencies,
+                entry_statuses=entry_statuses,
+                count=3,
+            )
+
+        # Should not create any entries because exchange rate is None
+        from apps.entries.models import Entry
+        assert Entry.objects.count() == 0
+
+    def test_create_organization_expense_entries_no_exchange_rate(self):
+        """Test organization expense entry creation when no exchange rate is available."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory
+        from tests.factories.currency_factories import CurrencyFactory
+        
+        org = OrganizationWithOwnerFactory()
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        currency = CurrencyFactory()
+        
+        currencies = [currency]
+        entry_statuses = [EntryStatus.PENDING]
+        
+        # Return None for exchange rate to trigger the skip
+        with patch.object(
+            self.command,
+            "get_appropriate_exchange_rate",
+            return_value=(None, None, None),
+        ):
+            self.command.create_organization_expense_entries(
+                workspace=workspace,
+                currencies=currencies,
+                entry_statuses=entry_statuses,
+                count=3,
+            )
+
+        # Should not create any entries because exchange rate is None
+        from apps.entries.models import Entry
+        assert Entry.objects.count() == 0
+
+    def test_create_teams_unique_name_collision(self):
+        """Test team creation when team name already exists."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        from tests.factories.team_factories import TeamFactory
+        
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        
+        # Create existing team with a specific name pattern
+        existing_team = TeamFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.Team.objects.filter") as mock_filter:
+            # Mock to return exists=True once (for duplicate check), then False
+            mock_filter.return_value.exists.side_effect = [True, False]
+            
+            with patch("apps.core.management.commands.seed_data.assign_team_permissions"):
+                organizations = [org]
+                teams = self.command.create_teams(organizations=organizations, teams_per_org=1)
+                
+                # Should create team with modified name
+                assert len(teams) == 1
+
+    def test_create_workspaces_unique_name_collision(self):
+        """Test workspace creation when workspace name already exists."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        from tests.factories.workspace_factories import WorkspaceFactory
+        
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        member2 = OrganizationMemberFactory(organization=org)
+        
+        # Create existing workspace with a specific name pattern
+        existing_workspace = WorkspaceFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.Workspace.objects.filter") as mock_filter:
+            # Mock to return exists=True once (for duplicate check), then False
+            mock_filter.return_value.exists.side_effect = [True, False]
+            
+            with patch("apps.core.management.commands.seed_data.assign_workspace_permissions"):
+                organizations = [org]
+                workspaces = self.command.create_workspaces(organizations=organizations, workspaces_per_org=1)
+                
+                # Should create workspace with modified name
+                assert len(workspaces) == 1
+
+    def test_create_organizations_unique_name_collision(self):
+        """Test organization creation when organization name already exists."""
+        with patch("apps.core.management.commands.seed_data.Organization.objects.filter") as mock_filter:
+            # Mock to return exists=True once (for duplicate check), then False
+            mock_filter.return_value.exists.side_effect = [True, False]
+            
+            with patch("apps.core.management.commands.seed_data.Group.objects.get_or_create"):
+                with patch("apps.core.management.commands.seed_data.get_permissions_for_role"):
+                    organizations = self.command.create_organizations(count=1, users_per_org=3)
+                    
+                    # Should create organization with modified name
+                    assert len(organizations) == 1
+
+    def test_create_workspaces_break_on_no_members(self):
+        """Test workspace creation breaks when no more unique members available."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        
+        # Create organization with just 2 members (owner + 1)
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        
+        with patch("apps.core.management.commands.seed_data.Workspace.objects.filter") as mock_filter:
+            mock_filter.return_value.exists.return_value = False
+            
+            # Mock assign_workspace_permissions to avoid setup issues
+            with patch("apps.core.management.commands.seed_data.assign_workspace_permissions"):
+                organizations = [org]
+                # Try to create 3 workspaces when only 1 member is available (excluding owner)
+                workspaces = self.command.create_workspaces(
+                    organizations=organizations, workspaces_per_org=5
+                )
+
+                # Should only create 1 workspace and show warning about no more members
+                assert len(workspaces) <= 1
+                
+                output = self.out.getvalue()
+                # Should show one of the warnings
+                assert "available members" in output or "no more unique members" in output
+
+    def test_resolve_role_conflicts_with_conflicts(self):
+        """Test resolve_role_conflicts when there are actual conflicts."""
+        from tests.factories.organization_factories import OrganizationWithOwnerFactory, OrganizationMemberFactory
+        from tests.factories.workspace_factories import WorkspaceWithAdminFactory
+        from tests.factories.team_factories import TeamFactory
+        
+        # Create organization with members
+        org = OrganizationWithOwnerFactory()
+        member1 = OrganizationMemberFactory(organization=org)
+        
+        # Create workspace and team using the same member for multiple roles
+        workspace = WorkspaceWithAdminFactory(organization=org)
+        workspace.workspace_admin = member1
+        workspace.operations_reviewer = member1  # Same member = conflict
+        workspace.save()
+        
+        team = TeamFactory(organization=org)
+        team.team_coordinator = member1  # Same member again = more conflict
+        team.save()
+        
+        organizations = [org]
+        workspaces = [workspace]
+        teams = [team]
+        
+        self.command.resolve_role_conflicts(
+            organizations=organizations, workspaces=workspaces, teams=teams
+        )
+        
+        output = self.out.getvalue()
+        # Should show conflicts
+        assert "role conflicts" in output.lower()
 
 
 class SeedDataCommandIntegrationTest(TestCase):

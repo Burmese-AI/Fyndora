@@ -46,12 +46,7 @@ def teams_view(request, organization_id):
                 request,
                 "You do not have permission to access this organization.",
             )
-        teams = get_teams_by_organization_id(organization_id)
-        attached_workspaces = []  # Initialize the variable
-        # to display the workspaces attached to the team
-        for team in teams:
-            attached_workspaces = WorkspaceTeam.objects.filter(team_id=team.team_id)
-            team.attached_workspaces = attached_workspaces
+        teams = get_teams_by_organization_id(organization_id, prefetch_workspaces=True)
         organization = get_organization_by_id(organization_id)
         # sending true or false to the template to display the new team button
         can_add_team = request.user.has_perm(
@@ -89,13 +84,7 @@ def create_team_view(request, organization_id):
                 )
                 messages.success(request, "Team created successfully.")
                 if request.headers.get("HX-Request"):
-                    teams = get_teams_by_organization_id(organization_id)
-                    attached_workspaces = []  # Initialize the variable
-                    for team in teams:
-                        attached_workspaces = WorkspaceTeam.objects.filter(
-                            team_id=team.team_id
-                        )
-                        team.attached_workspaces = attached_workspaces
+                    teams = get_teams_by_organization_id(organization_id, prefetch_workspaces=True)
                     context = {
                         "teams": teams,
                         "organization": organization,
@@ -192,29 +181,23 @@ def edit_team_view(request, organization_id, team_id):
                 )
 
                 messages.success(request, "Team updated successfully.")
-                teams = get_teams_by_organization_id(organization_id)
-                attached_workspaces = []  # Initialize the variable
-                for team in teams:
-                    attached_workspaces = WorkspaceTeam.objects.filter(
-                        team_id=team.team_id
-                    )
-                    team.attached_workspaces = attached_workspaces
-                    context = {
-                        "teams": teams,
-                        "organization": organization,
-                        "is_oob": True,
-                    }
-                    teams_grid_html = render_to_string(
-                        "teams/partials/teams_grid.html",
-                        context=context,
-                        request=request,
-                    )
-                    message_html = render_to_string(
-                        "includes/message.html", context=context, request=request
-                    )
-                    response = HttpResponse(f"{message_html} {teams_grid_html}")
-                    response["HX-trigger"] = "success"
-                    return response
+                teams = get_teams_by_organization_id(organization_id, prefetch_workspaces=True)
+                context = {
+                    "teams": teams,
+                    "organization": organization,
+                    "is_oob": True,
+                }
+                teams_grid_html = render_to_string(
+                    "teams/partials/teams_grid.html",
+                    context=context,
+                    request=request,
+                )
+                message_html = render_to_string(
+                    "includes/message.html", context=context, request=request
+                )
+                response = HttpResponse(f"{message_html} {teams_grid_html}")
+                response["HX-trigger"] = "success"
+                return response
             else:
                 messages.error(request, "Invalid form data.")
                 context = {
@@ -266,13 +249,7 @@ def delete_team_view(request, organization_id, team_id):
                 workspace_teams.delete()
                 team.delete()
                 messages.success(request, "Team deleted successfully.")
-                teams = get_teams_by_organization_id(organization_id)
-                attached_workspaces = []  # Initialize the variable
-                for team in teams:
-                    attached_workspaces = WorkspaceTeam.objects.filter(
-                        team_id=team.team_id
-                    )
-                    team.attached_workspaces = attached_workspaces
+                teams = get_teams_by_organization_id(organization_id, prefetch_workspaces=True)
                 context = {
                     "teams": teams,
                     "organization": organization,

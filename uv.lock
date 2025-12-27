@@ -433,6 +433,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "django-debug-toolbar" },
+    { name = "factory-boy" },
 ]
 prod = [
     { name = "gunicorn" },
@@ -467,7 +468,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "django-debug-toolbar", specifier = ">=5.2.0" }]
+dev = [
+    { name = "django-debug-toolbar", specifier = ">=5.2.0" },
+    { name = "factory-boy", specifier = ">=3.3.3" },
+]
 prod = [{ name = "gunicorn", specifier = ">=23.0.0" }]
 test = [
     { name = "factory-boy", specifier = ">=3.3.0" },

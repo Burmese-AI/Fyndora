@@ -236,7 +236,9 @@ class OrganizationMemberListView(LoginRequiredMixin, ListView):
         # list down all members except the owner to prevent the owner from being deleted
         query = OrganizationMember.objects.filter(
             organization=self.organization
-        ).exclude(user=self.organization.owner.user)
+        ).exclude(
+            user=self.organization.owner.user
+        ).select_related('user', 'organization')
         return query
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:

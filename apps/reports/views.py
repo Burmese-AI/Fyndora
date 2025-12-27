@@ -66,7 +66,7 @@ class OverviewFinanceReportView(
         }
 
     def _get_workspace_context(self, workspace: Workspace):
-        teams = workspace.joined_teams.select_related("team").all()
+        teams = workspace.joined_teams.select_related("team", "remittance").all()
         team_contexts = []
         total_income = Decimal("0.00")
         total_expense = Decimal("0.00")
@@ -99,7 +99,13 @@ class OverviewFinanceReportView(
         }
 
     def _get_organization_context(self, org: Organization):
-        workspaces = org.workspaces.all()
+        from django.db.models import Prefetch
+        workspaces = org.workspaces.prefetch_related(
+            Prefetch(
+                'joined_teams',
+                queryset=WorkspaceTeam.objects.select_related('team', 'remittance')
+            )
+        ).all()
         workspace_contexts = []
         total_income = Decimal("0.00")
         total_expense = Decimal("0.00")

@@ -30,7 +30,11 @@ def get_remittances_under_organization(
 
         remittances = (
             Remittance.objects.filter(base_q)
-            .select_related("workspace_team__workspace", "workspace_team__team")
+            .select_related(
+                "workspace_team__workspace",
+                "workspace_team__team",
+                "confirmed_by__user"
+            )
             .order_by("-created_at")
         )
 

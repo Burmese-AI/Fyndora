@@ -126,7 +126,9 @@ def get_org_exchange_rates(
     """
     Returns all exchange rates of the given organization.
     """
-    queryset = OrganizationExchangeRate.objects.filter(organization=organization)
+    queryset = OrganizationExchangeRate.objects.filter(
+        organization=organization
+    ).select_related('currency', 'added_by__user')
     return queryset
 
 

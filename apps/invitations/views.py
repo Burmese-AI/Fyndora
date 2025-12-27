@@ -49,7 +49,9 @@ class InvitationListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Invitation.objects.filter(organization=self.organization)
+        return Invitation.objects.filter(
+            organization=self.organization
+        ).select_related('organization', 'invited_by__user')
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)

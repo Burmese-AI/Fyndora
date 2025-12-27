@@ -27,6 +27,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "django-debug-toolbar>=5.2.0",
+    "factory-boy>=3.3.3",
 ]
 prod = [
     "gunicorn>=23.0.0",

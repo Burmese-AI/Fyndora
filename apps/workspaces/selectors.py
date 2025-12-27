@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from apps.workspaces.models import Workspace, WorkspaceExchangeRate
 from apps.organizations.models import Organization
 from apps.organizations.models import OrganizationMember
@@ -166,7 +166,11 @@ def get_workspace_teams_by_workspace_id(workspace_id):
     Return workspace teams by workspace ID.
     """
     try:
-        return WorkspaceTeam.objects.filter(workspace_id=workspace_id)
+        return WorkspaceTeam.objects.filter(workspace_id=workspace_id).select_related(
+            'team__team_coordinator__user',
+            'team__organization',
+            'workspace'
+        )
     except Exception as e:
         print(f"Error in get_workspace_teams_by_workspace_id: {str(e)}")
         return None
@@ -184,47 +188,38 @@ def get_team_by_id(team_id):
 
 
 def get_workspaces_with_team_counts(organization_id, user):
+    """
+    Return workspaces with team counts for the given organization.
+    Filters workspaces based on user's role in the organization.
+    """
     try:
         organization = get_organization_by_id(organization_id)
         # edge case for test cases
         if organization is None:
             return None
 
-        workspaces = get_user_workspaces_under_organization(organization_id)
-        # add teams count to each workspace for display purposes
-        for workspace in workspaces:
-            workspace.teams_count = get_workspace_teams_by_workspace_id(
-                workspace.workspace_id
-            ).count()
+        # Base queryset with team count annotation and necessary select_related
+        base_qs = Workspace.objects.filter(
+            organization_id=organization_id
+        ).annotate(
+            teams_count=Count('joined_teams')
+        ).select_related(
+            'workspace_admin__user',
+            'operations_reviewer__user',
+            'organization__owner__user'
+        )
 
         if organization.owner and user == organization.owner.user:
             # for owner, return all workspaces
-            return workspaces
+            return base_qs
         else:
-            # for other roles , filter the relevant workspaces based on the user's role
-            workspaces_filtered = []
-            for workspace in workspaces:
-                if workspace.workspace_admin and user == workspace.workspace_admin.user:
-                    # return workspaces where user is workspace admin
-                    workspaces_filtered.append(workspace)
-                elif (
-                    workspace.operations_reviewer
-                    and user == workspace.operations_reviewer.user
-                ):
-                    # return workspaces where user is operations reviewer
-                    workspaces_filtered.append(workspace)
-                else:
-                    # return workspaces where user is team coordinator
-                    workspace_teams = get_workspace_teams_by_workspace_id(
-                        workspace.workspace_id
-                    )
-                    for workspace_team in workspace_teams:
-                        if (
-                            workspace_team.team.team_coordinator
-                            and user == workspace_team.team.team_coordinator.user
-                        ):
-                            workspaces_filtered.append(workspace)
-            return workspaces_filtered
+            # for other roles, filter the relevant workspaces based on the user's role
+            # Use Q objects to filter in a single query instead of Python loops
+            return base_qs.filter(
+                Q(workspace_admin__user=user) |
+                Q(operations_reviewer__user=user) |
+                Q(joined_teams__team__team_coordinator__user=user)
+            ).distinct()
 
     except Exception as e:
         print(f"Error in get_workspaces_with_team_counts: {str(e)}")
@@ -232,13 +227,19 @@ def get_workspaces_with_team_counts(organization_id, user):
 
 
 def get_single_workspace_with_team_counts(workspace_id):
+    """
+    Return a single workspace with team count annotation.
+    """
     try:
-        workspace = get_workspace_by_id(workspace_id)
-        if workspace is None:
-            return None
-        workspace.teams_count = get_workspace_teams_by_workspace_id(
-            workspace.workspace_id
-        ).count()
+        workspace = Workspace.objects.filter(
+            workspace_id=workspace_id
+        ).annotate(
+            teams_count=Count('joined_teams')
+        ).select_related(
+            'workspace_admin__user',
+            'operations_reviewer__user',
+            'organization'
+        ).first()
         return workspace
     except Exception as e:
         print(f"Error in get_single_workspace_with_team_counts: {str(e)}")
@@ -257,7 +258,9 @@ def get_workspace_team_by_workspace_team_id(workspace_team_id):
 
 
 def get_workspace_exchange_rates(*, organization, workspace):
-    """"""
+    """
+    Return workspace exchange rates with related objects.
+    """
     try:
         # edge case for test cases
         if organization is None or workspace is None:
@@ -265,6 +268,11 @@ def get_workspace_exchange_rates(*, organization, workspace):
         return WorkspaceExchangeRate.objects.filter(
             workspace__organization=organization,
             workspace=workspace,
+        ).select_related(
+            'currency',
+            'added_by__user',
+            'approved_by__user',
+            'workspace'
         )
     except Exception as e:
         print(f"Error in get_workspace_exchange_rates: {str(e)}")

@@ -31,9 +31,14 @@ ENV UV_LINK_MODE=copy \
 
 # Copy dependency files and install Python deps
 COPY pyproject.toml uv.lock /_lock/
+ARG INSTALL_DEV=false
 RUN --mount=type=cache,target=/root/.cache \
     cd /_lock && \
-    uv sync --locked --no-group dev --group prod --group test
+    if [ "$INSTALL_DEV" = "true" ]; then \
+        uv sync --locked --group dev --group prod --group test; \
+    else \
+        uv sync --locked --no-group dev --group prod --group test; \
+    fi
 
 # Copy full source for building Tailwind
 WORKDIR /app
